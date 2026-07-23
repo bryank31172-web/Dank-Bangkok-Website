@@ -1,76 +1,67 @@
-/* LINE group message log + summarizer — the "Bryan AI monitor", folded into
-   the website deployment. Instead of SQLite it uses the shared store (Upstash
-   when configured); instead of node-cron it's driven by Vercel Cron hitting
-   /api/line-summary. Logging happens inside /api/line-webhook.                */
-import { getJSON, setJSON, indexAdd, indexList } from "./_store.js";
+/* /api/paygbp — GB Prime Pay (v3). Docs: https://doc.gbprimepay.com
+   Env:
+     GBP_SECRET_KEY   secret key (server; Basic auth username, blank password)
+     GBP_PUBLIC_KEY   public key (browser card tokenisation; optional)
+   Actions:
+     POST {orderId, action:"qr"}            → PromptPay QR (data URL) to scan
+     POST {orderId, action:"card", token}   → charge a tokenised card
+   Amounts are read from the saved order (server-side). GBP notifies
+   /api/gbp-webhook (set as backgroundUrl) to confirm payment.               */
 
-const KEEP = 1000;              // max messages kept per source
-const MAX_AGE = 7 * 24 * 3600 * 1000; // prune anything older than 7 days
-const IDX = "linelog:index";
+import { getJSON } from "./_store.js";
 
-export function monitoredIds() {
-  return (process.env.MONITORED_GROUP_IDS || "")
-    .split(",").map((s) => s.trim()).filter(Boolean);
-}
-/** Is this source one we should log? (all, unless MONITORED_GROUP_IDS restricts groups) */
-export function isMonitored(sourceType, sourceId) {
-  const m = monitoredIds();
-  if (!m.length) return true;
-  if (sourceType === "group" || sourceType === "room") return m.includes(sourceId);
-  return true; // 1:1 user chats always allowed
-}
+const SECRET = process.env.GBP_SECRET_KEY || "";
+const BASE = "https://api.gbprimepay.com";
+const AUTH = () => "Basic " + Buffer.from(SECRET + ":").toString("base64");
 
-export async function logMessage({ sourceType, sourceId, userId, displayName, type, text, at }) {
-  if (!sourceId) return;
-  const key = "linelog:" + sourceId;
-  const now = at || Date.now();
-  const list = (await getJSON(key)) || [];
-  list.push({ userId, displayName, type, text: text || null, at: now });
-  const pruned = list.filter((m) => now - m.at < MAX_AGE).slice(-KEEP);
-  await setJSON(key, pruned, 60 * 60 * 24 * 8);
-  await indexAdd(sourceId, IDX);
-}
+export default async function handler(req, res) {
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+  if (req.method === "OPTIONS") return res.status(204).end();
+  if (req.method !== "POST") return res.status(405).json({ error: "POST only" });
+  if (!SECRET) return res.status(200).json({ ok: false, error: "not_configured" });
 
-export async function getMessagesSince(sourceId, sinceMs) {
-  const list = (await getJSON("linelog:" + sourceId)) || [];
-  return list.filter((m) => m.at >= sinceMs);
-}
+  const b = req.body || {};
+  const order = await getJSON("order:" + b.orderId);
+  if (!order) return res.status(404).json({ error: "order not found" });
+  const amount = Number((order.total ?? order.subtotal)).toFixed(2);
+  const host = req.headers?.["x-forwarded-host"] || req.headers?.host || "dankbkk.com";
+  const bg = `https://${host}/api/gbp-webhook`;
+  const referenceNo = String(b.orderId);
 
-export async function listSources() {
-  const m = monitoredIds();
-  return m.length ? m : await indexList(IDX);
-}
-
-/** Summarize a batch of logged messages. Uses Grok when XAI_API_KEY is set,
-    else returns a simple activity digest so it still works without AI. */
-export async function summarize(messages, { sourceLabel = "กลุ่มนี้" } = {}) {
-  const texts = (messages || []).filter((m) => m.type === "text" && m.text);
-  if (!texts.length) return `ไม่มีข้อความใหม่ใน${sourceLabel}ในช่วงเวลานี้ค่ะ`;
-
-  if (!process.env.XAI_API_KEY) {
-    const people = new Set(texts.map((m) => m.displayName || m.userId)).size;
-    const preview = texts.slice(-8).map((m) => `• ${m.displayName || "?"}: ${m.text}`).join("\n");
-    return `สรุปแบบย่อ (ยังไม่ได้ตั้งค่า AI):\n${texts.length} ข้อความ จาก ${people} คน\n\nล่าสุด:\n${preview}`;
-  }
-
-  const transcript = texts.slice(-400)
-    .map((m) => `${m.displayName || "ไม่ทราบชื่อ"}: ${m.text}`).join("\n").slice(0, 12000);
-  const system = `คุณคือผู้ช่วยสรุปแชทกลุ่ม LINE ของธุรกิจ DANK. สรุปบทสนทนาต่อไปนี้ให้เป็นภาษาไทย กระชับ เป็นหัวข้อ (bullet) เน้นสิ่งที่ต้องทำ/ตัดสินใจ, ปัญหา, และคำถามที่ยังไม่ได้ตอบ. อย่าแต่งเรื่องเพิ่ม.`;
   try {
-    const r = await fetch("https://api.x.ai/v1/chat/completions", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${process.env.XAI_API_KEY}`, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        model: process.env.GROK_MODEL || "grok-4",
-        messages: [{ role: "system", content: system }, { role: "user", content: transcript }],
-        max_tokens: 700, temperature: 0.4,
-      }),
-    });
-    if (!r.ok) throw new Error("xAI " + r.status);
-    const j = await r.json();
-    return j.choices?.[0]?.message?.content?.trim() || "สรุปไม่สำเร็จ ลองใหม่อีกครั้งค่ะ";
+    if (b.action === "qr") {
+      const r = await fetch(`${BASE}/v3/qrcode`, {
+        method: "POST",
+        headers: { Authorization: AUTH(), "Content-Type": "application/json", Accept: "application/json" },
+        body: JSON.stringify({ amount, referenceNo, backgroundUrl: bg, detail: "dankbkk.com order" }),
+      });
+      const ct = r.headers.get("content-type") || "";
+      if (ct.includes("image")) {
+        const buf = Buffer.from(await r.arrayBuffer());
+        return res.status(200).json({ ok: true, qr: "data:image/png;base64," + buf.toString("base64"), referenceNo });
+      }
+      const j = await r.json();
+      const qr = j.qrcode || j.qrCode || j.resultUrl || (j.data && (j.data.qrcode || j.data.qrImage)) || null;
+      return res.status(200).json({ ok: Boolean(qr), qr, referenceNo, raw: j });
+    }
+    if (b.action === "card") {
+      if (!b.token) return res.status(400).json({ error: "card token required" });
+      const r = await fetch(`${BASE}/v3/charge`, {
+        method: "POST",
+        headers: { Authorization: AUTH(), "Content-Type": "application/json" },
+        body: JSON.stringify({
+          token: b.token, amount, referenceNo, detail: "dankbkk.com order",
+          customerName: order.customer?.name || "", responseUrl: `https://${host}/?paid=gbp&order=${b.orderId}`,
+          backgroundUrl: bg,
+        }),
+      });
+      const j = await r.json();
+      const paid = j.resultCode === "00" || /success/i.test(j.resultMessage || "");
+      return res.status(200).json({ ok: paid, paid, redirect: j.gbpReferenceNo ? j.data : (j.redirectUrl || null), raw: j });
+    }
+    return res.status(400).json({ error: "unknown action" });
   } catch (e) {
-    console.error("LINE summarize fail:", e.message);
-    return "ขอโทษค่ะ สรุปไม่สำเร็จ ลองใหม่อีกครั้ง";
+    return res.status(502).json({ ok: false, error: e.message });
   }
 }

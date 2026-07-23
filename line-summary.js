@@ -1,75 +1,79 @@
-/* /api/line-summary — daily LINE group summary (Bryan AI monitor), serverless.
-   Driven by Vercel Cron (see vercel.json) once a day, and callable on demand.
+/* ============================================================
+   Shared menu source — the single place every menu read goes through.
+   Priority of data sources:
+     1. MENU_FEED_URL   — any backend / BackStore web app that returns the
+        product JSON array (set this to your BackOffice/BRYAN POS feed URL).
+     2. StoreHub API     — via _storehub.js (STOREHUB_STORE + STOREHUB_TOKEN).
+     3. products.json    — bundled fallback so the site always works.
 
-     GET   (Vercel Cron, or ?key=STAFF_KEY)   → summarize last 24h of every
-           monitored source, push each to LINE_TO. Auth: Vercel's cron
-           Authorization: Bearer $CRON_SECRET, or ?key=STAFF_KEY.
-     POST  { sourceId?, hours?, key }         → summarize one source (or all),
-           push to LINE_TO, and return the text. Requires key = STAFF_KEY.
+   Results are cached in the shared store (Redis when configured) for
+   MENU_TTL_SECONDS (default 30s) so many visitors + background pollers
+   cause at most ~1 upstream fetch per interval. A content "rev" hash over
+   id|stock|price lets the storefront cheaply detect changes and refresh —
+   giving near-real-time stock/price without re-sending the whole menu.
+   The webhook (api/storehub-webhook.js) deletes menu:cache to force an
+   instant refresh on the next read.
+   ============================================================ */
 
-   Env: STAFF_KEY, LINE_CHANNEL_ACCESS_TOKEN, LINE_TO, XAI_API_KEY, CRON_SECRET
-        (optional, set it so Vercel Cron authorizes itself), SUMMARY_TO
-        (optional override of where summaries go; defaults to LINE_TO).        */
-import { listSources, getMessagesSince, summarize } from "./_linelog.js";
-import { linePush } from "./_line.js";
+import { readFile } from "node:fs/promises";
+import { join } from "node:path";
+import { getJSON, setJSON } from "./_store.js";
+import { shConfigured, fetchStoreHubProducts } from "./_storehub.js";
 
-const STAFF_KEY = process.env.STAFF_KEY || "dankstaff";
+const TTL = Number(process.env.MENU_TTL_SECONDS || 30) * 1000;
+const FEED = process.env.MENU_FEED_URL || "";
 
-function cronAuthed(req) {
-  const cs = process.env.CRON_SECRET;
-  if (cs && req.headers?.authorization === `Bearer ${cs}`) return true;
-  return false;
+function revOf(data) {
+  // Hash the fields that matter for "did the menu change": stock + price.
+  const s = data
+    .map((p) => `${p.id}:${p.stock}:${p.price ?? p.priceTiers?.[0]?.price ?? ""}`)
+    .join("|");
+  let h = 2166136261;
+  for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); }
+  return (h >>> 0).toString(36);
 }
 
-async function runAll(hours) {
-  const since = Date.now() - hours * 3600 * 1000;
-  const to = process.env.SUMMARY_TO || process.env.LINE_TO;
-  const ids = await listSources();
-  const out = [];
-  for (const id of ids) {
-    const msgs = await getMessagesSince(id, since);
-    const text = await summarize(msgs, { sourceLabel: id });
-    if (to) await linePush(to, `📋 สรุปกลุ่ม ${id} (${hours} ชม.)\n\n${text}`);
-    out.push({ sourceId: id, messages: msgs.length });
-  }
-  return out;
-}
-
-export default async function handler(req, res) {
-  res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
-  if (req.method === "OPTIONS") return res.status(204).end();
-
-  // ---- GET: cron / quick manual ----
-  if (req.method === "GET") {
-    if (!cronAuthed(req) && req.query?.key !== STAFF_KEY)
-      return res.status(401).json({ error: "unauthorized" });
-    const hours = Number(req.query?.hours) || 24;
+async function fetchUpstream() {
+  // 1) generic backstore feed
+  if (FEED) {
     try {
-      const done = await runAll(hours);
-      return res.status(200).json({ ok: true, summarized: done });
-    } catch (e) {
-      return res.status(500).json({ ok: false, error: e.message });
-    }
+      const r = await fetch(FEED, { headers: { Accept: "application/json" } });
+      if (r.ok) {
+        const j = await r.json();
+        const arr = Array.isArray(j) ? j : j.products || j.data || [];
+        if (arr.length) return { data: arr, source: "feed" };
+      }
+    } catch (e) { console.error("MENU_FEED_URL failed:", e.message); }
   }
-
-  // ---- POST: on-demand (staff) ----
-  if (req.method !== "POST") return res.status(405).json({ error: "method" });
-  const b = req.body || {};
-  if (b.key !== STAFF_KEY) return res.status(401).json({ error: "bad key" });
-  const hours = Number(b.hours) || 24;
-  const to = process.env.SUMMARY_TO || process.env.LINE_TO;
+  // 2) StoreHub
+  if (shConfigured()) {
+    try {
+      const d = await fetchStoreHubProducts();
+      if (d.length) return { data: d, source: "storehub" };
+    } catch (e) { console.error("StoreHub fetch failed:", e.message); }
+  }
+  // 3) bundled
   try {
-    if (b.sourceId) {
-      const since = Date.now() - hours * 3600 * 1000;
-      const msgs = await getMessagesSince(b.sourceId, since);
-      const summary = await summarize(msgs, { sourceLabel: b.sourceId });
-      if (to) await linePush(to, `📋 สรุปกลุ่ม ${b.sourceId} (${hours} ชม.)\n\n${summary}`);
-      return res.status(200).json({ ok: true, summary, messages: msgs.length });
-    }
-    const done = await runAll(hours);
-    return res.status(200).json({ ok: true, summarized: done });
+    const raw = await readFile(join(process.cwd(), "products.json"), "utf8");
+    return { data: JSON.parse(raw), source: "bundled" };
   } catch (e) {
-    return res.status(500).json({ ok: false, error: e.message });
+    return { data: [], source: "empty" };
   }
+}
+
+export async function getMenu(force = false) {
+  const now = Date.now();
+  const cached = await getJSON("menu:cache");
+  if (!force && cached && now - cached.at < TTL) return cached;
+
+  const { data, source } = await fetchUpstream();
+  const rev = revOf(data);
+  const changedAt = cached && cached.rev === rev ? cached.changedAt : now;
+  const rec = { data, rev, source, at: now, changedAt };
+  try { await setJSON("menu:cache", rec, 60 * 60 * 24); } catch (e) {}
+  return rec;
+}
+
+export async function bustMenu() {
+  try { await setJSON("menu:cache", null, 1); } catch (e) {}
 }

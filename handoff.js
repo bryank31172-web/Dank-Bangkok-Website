@@ -1,106 +1,62 @@
-/* POST /api/handoff — DANK AI transfers a chat to human staff.
-   Sends the full transcript + cart + customer contact to staff, fast:
+/* POST /api/chat — the open-ended brain for DANK AI, powered by Grok
+   (xAI) — the same model family behind Bryan AI in your POS.
+   The storefront's built-in engine handles common intents instantly;
+   anything it can't answer lands here with the live menu as context.
 
-     1. TELEGRAM_BOT_TOKEN + TELEGRAM_CHAT_ID → instant push to your
-        staff Telegram group (create a bot with @BotFather, add it to
-        the group, use the group's chat id). Best channel: free,
-        instant, phones buzz.
-     2. RESEND_API_KEY → email to HANDOFF_EMAIL_TO / ORDER_EMAIL_TO
-        (default dankclubbkk@gmail.com).
-     3. HANDOFF_FORWARD_URL → optional POST into BRYAN POS (e.g. its
-        Alerts/notifications intake) so it appears in the app too.
-
-   Returns {ok, ticketId, delivered} — delivered=false means no channel
-   is configured yet (logged in Vercel logs); the widget then sends the
-   customer straight to LINE so nobody is left hanging.              */
-
-import { notifyStaffLine } from "./_line.js";
-
-const esc = (s) => String(s ?? "").replace(/[<>&]/g, (c) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;" }[c]));
+   Env vars:
+     XAI_API_KEY   your xAI API key  (console.x.ai)
+     GROK_MODEL    optional, default "grok-4"                        */
 
 export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
   if (req.method === "OPTIONS") return res.status(204).end();
   if (req.method !== "POST") return res.status(405).json({ error: "POST only" });
-
-  const { transcript, customer, reason, cart, subtotal, threadId } = req.body || {};
-  if (!customer?.contact) return res.status(400).json({ error: "contact required" });
-
-  const ticketId = threadId || "CH" + Date.now().toString(36).toUpperCase();
-  const host = req.headers?.["x-forwarded-host"] || req.headers?.host || "dankbkk.com";
-  const consoleLink = `https://${host}/staff.html${threadId ? "#" + threadId : ""}`;
-  const when = new Date().toLocaleString("en-GB", { timeZone: "Asia/Bangkok" });
-  const chatLines = (Array.isArray(transcript) ? transcript : [])
-    .slice(-14)
-    .map((m) => `${m.role === "user" ? "🧑 Customer" : "🤖 DANK AI"}: ${m.text}`)
-    .join("\n");
-  const cartLines = (Array.isArray(cart) ? cart : [])
-    .map((c) => `• ${c.name} (${c.option}) ×${c.qty} — ฿${c.lineTotal}`)
-    .join("\n");
-
-  const plain =
-    `🙋 CHAT HANDOFF ${ticketId} — dankbkk.com\n` +
-    `Reason: ${reason || "customer asked for staff"}\n` +
-    `Time: ${when} (Bangkok)\n` +
-    `Customer: ${customer.name || "-"} · ${customer.contact}\n` +
-    (cartLines ? `\n🛒 Cart (฿${subtotal ?? "-"}):\n${cartLines}\n` : "\n🛒 Cart: empty\n") +
-    `\n💬 Conversation:\n${chatLines}\n\n` +
-    (threadId
-      ? `➡️ REPLY IN THE LIVE CHAT NOW: ${consoleLink}\n(backup: LINE/phone ${customer.contact})`
-      : `➡️ Reply to the customer now via LINE/phone: ${customer.contact}`);
-
-  const results = [];
-
-  // 1) Telegram — instant staff ping
-  if (process.env.TELEGRAM_BOT_TOKEN && process.env.TELEGRAM_CHAT_ID) {
-    try {
-      const r = await fetch(`https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/sendMessage`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ chat_id: process.env.TELEGRAM_CHAT_ID, text: plain }),
-      });
-      results.push(r.ok);
-    } catch (e) { results.push(false); }
+  if (!process.env.XAI_API_KEY) {
+    return res.status(200).json({ reply: "" }); // storefront shows its polite fallback
   }
 
-  // 2) Email
-  if (process.env.RESEND_API_KEY) {
-    try {
-      const to = process.env.HANDOFF_EMAIL_TO || process.env.ORDER_EMAIL_TO || "dankclubbkk@gmail.com";
-      const r = await fetch("https://api.resend.com/emails", {
-        method: "POST",
-        headers: { Authorization: `Bearer ${process.env.RESEND_API_KEY}`, "Content-Type": "application/json" },
-        body: JSON.stringify({
-          from: process.env.ORDER_EMAIL_FROM || "orders@dankbkk.com",
-          to: [to],
-          subject: `🙋 Chat handoff ${ticketId} — customer waiting (${customer.contact})`,
-          html: `<pre style="font-family:inherit;white-space:pre-wrap">${esc(plain)}</pre>`,
-        }),
-      });
-      results.push(r.ok);
-    } catch (e) { results.push(false); }
-  }
+  const { message, context, history } = req.body || {};
+  if (!message) return res.status(400).json({ error: "message required" });
 
-  // 2b) LINE push to staff (Bryan / staff group)
-  try { const r = await notifyStaffLine(plain); if (!r.skipped) results.push(r.ok); } catch (e) {}
+  const system = `${context || "You are DANK AI, a friendly budtender for DANK BKK in Bangkok."}
 
-  // 3) Forward into BRYAN POS
-  if (process.env.HANDOFF_FORWARD_URL) {
-    try {
-      const r = await fetch(process.env.HANDOFF_FORWARD_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ticketId, reason, customer, cart, subtotal, transcript, at: when }),
-      });
-      results.push(r.ok);
-    } catch (e) { results.push(false); }
-  }
+Rules:
+- Be warm, concise (2-4 sentences), and salesy-but-honest. Goal: help the customer choose and order.
+- Answer in the customer's language (Thai or English).
+- Only recommend items from the MENU above; quote real prices in ฿.
+- Never give medical claims; remind 20+ only if age comes up.
+- If the customer seems ready, tell them to tap Add / Checkout in this chat.`;
 
-  if (results.length === 0) {
-    console.log("HANDOFF (no channels configured):", plain);
-    return res.status(200).json({ ok: true, ticketId, delivered: false });
+  const messages = [
+    { role: "system", content: system },
+    ...(Array.isArray(history) ? history.slice(-8) : []).map((h) => ({
+      role: h.role === "user" ? "user" : "assistant",
+      content: String(h.text || "").slice(0, 500),
+    })),
+    { role: "user", content: String(message).slice(0, 1000) },
+  ];
+
+  try {
+    const r = await fetch("https://api.x.ai/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${process.env.XAI_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: process.env.GROK_MODEL || "grok-4",
+        messages,
+        max_tokens: 300,
+        temperature: 0.6,
+      }),
+    });
+    if (!r.ok) throw new Error(`xAI ${r.status}`);
+    const j = await r.json();
+    const reply = j.choices?.[0]?.message?.content?.trim() || "";
+    return res.status(200).json({ reply });
+  } catch (e) {
+    console.error("Grok call failed:", e.message);
+    return res.status(200).json({ reply: "" }); // graceful fallback client-side
   }
-  if (results.some(Boolean)) return res.status(200).json({ ok: true, ticketId, delivered: true });
-  return res.status(502).json({ error: "all handoff channels failed" });
 }
