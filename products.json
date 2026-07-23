@@ -1,0 +1,1863 @@
+[
+ {
+  "id": "crunch-berrie",
+  "name": "Crunch Berrie",
+  "category": "Exotics",
+  "type": "Hybrid",
+  "thc": 29,
+  "thcLabel": "29%",
+  "cbd": 0,
+  "featured": true,
+  "isNew": true,
+  "stock": 25,
+  "unit": "g",
+  "effects": [
+   "Relaxed",
+   "Happy",
+   "Euphoric"
+  ],
+  "flavors": [
+   "Berry",
+   "Sweet",
+   "Cream"
+  ],
+  "description": "Fresh drop — candy-berry exotic with a smooth, happy high. One of our newest strains.",
+  "image": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-6890.png?v=1782732640",
+  "priceTiers": [
+   {
+    "label": "½g",
+    "price": 400,
+    "member": 360
+   },
+   {
+    "label": "1 joint",
+    "price": 400,
+    "member": 360
+   },
+   {
+    "label": "1g",
+    "price": 800,
+    "member": 720
+   },
+   {
+    "label": "3.5g · 3+1 FREE",
+    "price": 2400,
+    "member": 2160
+   }
+  ],
+  "code": "EXO-01"
+ },
+ {
+  "id": "alien-mint",
+  "name": "Alien Mint",
+  "category": "Exotics",
+  "type": "Hybrid",
+  "thc": 30,
+  "thcLabel": "30%",
+  "cbd": 0,
+  "featured": true,
+  "isNew": true,
+  "stock": 22,
+  "unit": "g",
+  "effects": [
+   "Relaxed",
+   "Happy",
+   "Euphoric"
+  ],
+  "flavors": [
+   "Mint",
+   "Gas",
+   "Cookies"
+  ],
+  "description": "Minty, gassy and out of this world. New-season exotic at a full 30% THC.",
+  "image": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-6888.png?v=1782731863",
+  "priceTiers": [
+   {
+    "label": "½g",
+    "price": 400,
+    "member": 360
+   },
+   {
+    "label": "1 joint",
+    "price": 400,
+    "member": 360
+   },
+   {
+    "label": "1g",
+    "price": 800,
+    "member": 720
+   },
+   {
+    "label": "3.5g · 3+1 FREE",
+    "price": 2400,
+    "member": 2160
+   }
+  ],
+  "code": "EXO-02"
+ },
+ {
+  "id": "cookie-monster",
+  "name": "Cookie Monster",
+  "category": "Exotics",
+  "type": "Indica",
+  "thc": 31,
+  "thcLabel": "31%",
+  "cbd": 0,
+  "featured": true,
+  "isNew": true,
+  "stock": 18,
+  "unit": "g",
+  "effects": [
+   "Relaxed",
+   "Sleepy",
+   "Happy"
+  ],
+  "flavors": [
+   "Cookies",
+   "Sweet",
+   "Earthy"
+  ],
+  "description": "Indica-leaning heavyweight — doughy cookie flavour and a deep body melt.",
+  "image": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-6884.jpg?v=1782730860",
+  "priceTiers": [
+   {
+    "label": "½g",
+    "price": 400,
+    "member": 360
+   },
+   {
+    "label": "1 joint",
+    "price": 400,
+    "member": 360
+   },
+   {
+    "label": "1g",
+    "price": 800,
+    "member": 720
+   },
+   {
+    "label": "3.5g · 3+1 FREE",
+    "price": 2400,
+    "member": 2160
+   }
+  ],
+  "code": "EXO-03"
+ },
+ {
+  "id": "d-lish",
+  "name": "D-Lish",
+  "category": "Exotics",
+  "type": "Hybrid",
+  "thc": 30,
+  "thcLabel": "30%",
+  "cbd": 0,
+  "isNew": true,
+  "stock": 20,
+  "unit": "g",
+  "effects": [
+   "Relaxed",
+   "Happy",
+   "Euphoric"
+  ],
+  "flavors": [
+   "Fruity",
+   "Candy"
+  ],
+  "description": "Delicious by name — juicy candy terps with a balanced, blissful hybrid high.",
+  "image": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-6883.png?v=1782730523",
+  "priceTiers": [
+   {
+    "label": "½g",
+    "price": 400,
+    "member": 360
+   },
+   {
+    "label": "1 joint",
+    "price": 400,
+    "member": 360
+   },
+   {
+    "label": "1g",
+    "price": 800,
+    "member": 720
+   },
+   {
+    "label": "3.5g · 3+1 FREE",
+    "price": 2400,
+    "member": 2160
+   }
+  ],
+  "code": "EXO-04"
+ },
+ {
+  "id": "black-cherry",
+  "name": "Black Cherry",
+  "category": "Exotics",
+  "type": "Indica",
+  "thc": 32,
+  "thcLabel": "30–32%",
+  "cbd": 0,
+  "isNew": true,
+  "stock": 16,
+  "unit": "g",
+  "effects": [
+   "Relaxed",
+   "Sleepy",
+   "Calm"
+  ],
+  "flavors": [
+   "Cherry",
+   "Sweet",
+   "Earthy"
+  ],
+  "description": "Dark cherry indica — rich fruit flavour and a heavy, restful finish.",
+  "image": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-6879.jpg?v=1782729302",
+  "priceTiers": [
+   {
+    "label": "½g",
+    "price": 400,
+    "member": 360
+   },
+   {
+    "label": "1 joint",
+    "price": 400,
+    "member": 360
+   },
+   {
+    "label": "1g",
+    "price": 800,
+    "member": 720
+   },
+   {
+    "label": "3.5g · 3+1 FREE",
+    "price": 2400,
+    "member": 2160
+   }
+  ],
+  "code": "EXO-05"
+ },
+ {
+  "id": "orange-z",
+  "name": "Orange Z",
+  "category": "Exotics",
+  "type": "Hybrid",
+  "thc": 30,
+  "thcLabel": "29–30%",
+  "cbd": 0,
+  "isNew": true,
+  "stock": 20,
+  "unit": "g",
+  "effects": [
+   "Relaxed",
+   "Happy",
+   "Euphoric"
+  ],
+  "flavors": [
+   "Orange",
+   "Citrus",
+   "Zkittlez"
+  ],
+  "description": "Zesty citrus cross with Z-family sweetness. Bright, happy and potent.",
+  "image": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-6878.jpg?v=1782729032",
+  "priceTiers": [
+   {
+    "label": "½g",
+    "price": 400,
+    "member": 360
+   },
+   {
+    "label": "1 joint",
+    "price": 400,
+    "member": 360
+   },
+   {
+    "label": "1g",
+    "price": 800,
+    "member": 720
+   },
+   {
+    "label": "3.5g · 3+1 FREE",
+    "price": 2400,
+    "member": 2160
+   }
+  ],
+  "code": "EXO-06"
+ },
+ {
+  "id": "giraffe-puzzy",
+  "name": "Giraffe Puzzy",
+  "category": "Exotics",
+  "type": "Hybrid",
+  "thc": 30,
+  "thcLabel": "30%",
+  "cbd": 0,
+  "stock": 15,
+  "unit": "g",
+  "effects": [
+   "Relaxed",
+   "Happy",
+   "Euphoric"
+  ],
+  "flavors": [
+   "Exotic",
+   "Funky",
+   "Sweet"
+  ],
+  "description": "Rare exotic cut with funky terps and a tall, euphoric high.",
+  "image": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-6876.jpg?v=1782725629",
+  "priceTiers": [
+   {
+    "label": "½g",
+    "price": 400,
+    "member": 360
+   },
+   {
+    "label": "1 joint",
+    "price": 400,
+    "member": 360
+   },
+   {
+    "label": "1g",
+    "price": 800,
+    "member": 720
+   },
+   {
+    "label": "3.5g · 3+1 FREE",
+    "price": 2400,
+    "member": 2160
+   }
+  ],
+  "code": "EXO-07"
+ },
+ {
+  "id": "blue-nerdz",
+  "name": "Blue Nerdz",
+  "category": "Exotics",
+  "type": "Hybrid",
+  "thc": 32,
+  "thcLabel": "30–32%",
+  "cbd": 0,
+  "stock": 14,
+  "unit": "g",
+  "effects": [
+   "Relaxed",
+   "Happy",
+   "Euphoric"
+  ],
+  "flavors": [
+   "Blueberry",
+   "Candy"
+  ],
+  "description": "Blue candy terps stacked on serious potency — a fan favourite exotic.",
+  "image": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-6875.jpg?v=1782723699",
+  "priceTiers": [
+   {
+    "label": "½g",
+    "price": 400,
+    "member": 360
+   },
+   {
+    "label": "1 joint",
+    "price": 400,
+    "member": 360
+   },
+   {
+    "label": "1g",
+    "price": 800,
+    "member": 720
+   },
+   {
+    "label": "3.5g · 3+1 FREE",
+    "price": 2400,
+    "member": 2160
+   }
+  ],
+  "code": "EXO-08"
+ },
+ {
+  "id": "thai-orange-tea",
+  "name": "Thai Orange Tea",
+  "category": "Exotics",
+  "type": "Hybrid",
+  "thc": 30,
+  "thcLabel": "29–30%",
+  "cbd": 0,
+  "stock": 18,
+  "unit": "g",
+  "effects": [
+   "Relaxed",
+   "Happy",
+   "Euphoric"
+  ],
+  "flavors": [
+   "Thai Tea",
+   "Orange",
+   "Sweet"
+  ],
+  "description": "Local legend — Thai-tea sweetness with orange zest. Smooth and strong.",
+  "image": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-6873.jpg?v=1782722872",
+  "priceTiers": [
+   {
+    "label": "½g",
+    "price": 400,
+    "member": 360
+   },
+   {
+    "label": "1 joint",
+    "price": 400,
+    "member": 360
+   },
+   {
+    "label": "1g",
+    "price": 800,
+    "member": 720
+   },
+   {
+    "label": "3.5g · 3+1 FREE",
+    "price": 2400,
+    "member": 2160
+   }
+  ],
+  "code": "EXO-09"
+ },
+ {
+  "id": "red-hot",
+  "name": "Red Hot",
+  "category": "Exotics",
+  "type": "Hybrid",
+  "thc": 30,
+  "thcLabel": "29–30%",
+  "cbd": 0,
+  "stock": 20,
+  "unit": "g",
+  "effects": [
+   "Relaxed",
+   "Happy",
+   "Euphoric"
+  ],
+  "flavors": [
+   "Spice",
+   "Sweet",
+   "Gas"
+  ],
+  "description": "Fiery exotic with sweet-spice terps and a fast-hitting euphoria.",
+  "image": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-6090.jpg?v=1781096752",
+  "priceTiers": [
+   {
+    "label": "½g",
+    "price": 400,
+    "member": 360
+   },
+   {
+    "label": "1 joint",
+    "price": 400,
+    "member": 360
+   },
+   {
+    "label": "1g",
+    "price": 800,
+    "member": 720
+   },
+   {
+    "label": "3.5g · 3+1 FREE",
+    "price": 2400,
+    "member": 2160
+   }
+  ],
+  "code": "EXO-10"
+ },
+ {
+  "id": "coco-chanel",
+  "name": "Coco Chanel",
+  "category": "Exotics",
+  "type": "Hybrid",
+  "thc": 28,
+  "thcLabel": "26–28%",
+  "cbd": 0,
+  "stock": 19,
+  "unit": "g",
+  "effects": [
+   "Relaxed",
+   "Happy",
+   "Euphoric"
+  ],
+  "flavors": [
+   "Cocoa",
+   "Floral",
+   "Gas"
+  ],
+  "description": "Designer-grade flower — smooth cocoa florals with a luxury finish.",
+  "image": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/CB952B9D-5F70-4968-B268-A766D1893BCE.png?v=1780143593",
+  "priceTiers": [
+   {
+    "label": "½g",
+    "price": 400,
+    "member": 360
+   },
+   {
+    "label": "1 joint",
+    "price": 400,
+    "member": 360
+   },
+   {
+    "label": "1g",
+    "price": 800,
+    "member": 720
+   },
+   {
+    "label": "3.5g · 3+1 FREE",
+    "price": 2400,
+    "member": 2160
+   }
+  ],
+  "code": "EXO-11"
+ },
+ {
+  "id": "pink-zugar",
+  "name": "Pink Zugar",
+  "category": "Exotics",
+  "type": "Hybrid",
+  "thc": 27,
+  "thcLabel": "22–27%",
+  "cbd": 0,
+  "stock": 21,
+  "unit": "g",
+  "effects": [
+   "Relaxed",
+   "Happy",
+   "Euphoric"
+  ],
+  "flavors": [
+   "Sugar",
+   "Berry",
+   "Floral"
+  ],
+  "description": "Sweet pink sugar terps — a gentler exotic that's easy to love.",
+  "image": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-5581.png?v=1780144311",
+  "priceTiers": [
+   {
+    "label": "½g",
+    "price": 400,
+    "member": 360
+   },
+   {
+    "label": "1 joint",
+    "price": 400,
+    "member": 360
+   },
+   {
+    "label": "1g",
+    "price": 800,
+    "member": 720
+   },
+   {
+    "label": "3.5g · 3+1 FREE",
+    "price": 2400,
+    "member": 2160
+   }
+  ],
+  "code": "EXO-12"
+ },
+ {
+  "id": "lcg-rx11",
+  "name": "LCG RX11",
+  "category": "Exotics",
+  "type": "Hybrid",
+  "thc": 29,
+  "thcLabel": "29%",
+  "cbd": 0,
+  "stock": 17,
+  "unit": "g",
+  "effects": [
+   "Relaxed",
+   "Happy",
+   "Euphoric"
+  ],
+  "flavors": [
+   "Gelato",
+   "Cherry",
+   "Gas"
+  ],
+  "description": "Lemon Cherry Gelato pheno RX11 — connoisseur cut with loud terps.",
+  "image": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-5253.png?v=1779642559",
+  "priceTiers": [
+   {
+    "label": "½g",
+    "price": 400,
+    "member": 360
+   },
+   {
+    "label": "1 joint",
+    "price": 400,
+    "member": 360
+   },
+   {
+    "label": "1g",
+    "price": 800,
+    "member": 720
+   },
+   {
+    "label": "3.5g · 3+1 FREE",
+    "price": 2400,
+    "member": 2160
+   }
+  ],
+  "code": "EXO-13"
+ },
+ {
+  "id": "toad-venom",
+  "name": "Toad Venom",
+  "category": "Exotics",
+  "type": "Hybrid",
+  "thc": 35,
+  "thcLabel": "28–35%",
+  "cbd": 0,
+  "featured": true,
+  "stock": 15,
+  "unit": "g",
+  "effects": [
+   "Euphoric",
+   "Relaxed",
+   "Sleepy"
+  ],
+  "flavors": [
+   "Gas",
+   "Earthy",
+   "Pungent"
+  ],
+  "description": "One of the strongest flowers in the shop — up to 35% THC. Handle with respect.",
+  "image": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-5254.png?v=1779642336",
+  "priceTiers": [
+   {
+    "label": "½g",
+    "price": 400,
+    "member": 360
+   },
+   {
+    "label": "1 joint",
+    "price": 400,
+    "member": 360
+   },
+   {
+    "label": "1g",
+    "price": 800,
+    "member": 720
+   },
+   {
+    "label": "3.5g · 3+1 FREE",
+    "price": 2400,
+    "member": 2160
+   }
+  ],
+  "code": "EXO-14"
+ },
+ {
+  "id": "lemon-cherry-gelato",
+  "name": "Lemon Cherry Gelato",
+  "category": "Exotics",
+  "type": "Hybrid",
+  "thc": 31.5,
+  "thcLabel": "31.5%",
+  "cbd": 0,
+  "featured": true,
+  "stock": 18,
+  "unit": "g",
+  "effects": [
+   "Relaxed",
+   "Happy",
+   "Euphoric"
+  ],
+  "flavors": [
+   "Lemon",
+   "Cherry",
+   "Gelato"
+  ],
+  "description": "The famous LCG — creamy gelato with lemon-cherry brightness at 31.5%.",
+  "image": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/48E8E325-A1F7-43F4-8777-6520094BA6C9.png?v=1780151539",
+  "priceTiers": [
+   {
+    "label": "½g",
+    "price": 400,
+    "member": 360
+   },
+   {
+    "label": "1 joint",
+    "price": 400,
+    "member": 360
+   },
+   {
+    "label": "1g",
+    "price": 800,
+    "member": 720
+   },
+   {
+    "label": "3.5g · 3+1 FREE",
+    "price": 2400,
+    "member": 2160
+   }
+  ],
+  "code": "EXO-15"
+ },
+ {
+  "id": "gelato-x",
+  "name": "Gelato X",
+  "category": "Exotics",
+  "type": "Indica",
+  "thc": 28,
+  "thcLabel": "28%",
+  "cbd": 0,
+  "stock": 16,
+  "unit": "g",
+  "effects": [
+   "Relaxed",
+   "Happy",
+   "Sleepy"
+  ],
+  "flavors": [
+   "Gelato",
+   "Cream",
+   "Sweet"
+  ],
+  "description": "Indica-leaning Gelato cross — creamy, calming and dessert-sweet.",
+  "image": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/5BC567FD-D2D3-40DD-9E61-C184268D134C.png?v=1780151537",
+  "priceTiers": [
+   {
+    "label": "½g",
+    "price": 400,
+    "member": 360
+   },
+   {
+    "label": "1 joint",
+    "price": 450,
+    "member": 405
+   },
+   {
+    "label": "1g",
+    "price": 800,
+    "member": 720
+   },
+   {
+    "label": "3.5g · 3+1 FREE",
+    "price": 2400,
+    "member": 2160
+   }
+  ],
+  "code": "EXO-16"
+ },
+ {
+  "id": "og-zkittlez",
+  "name": "OG Kush × Zkittlez",
+  "category": "Topshelf",
+  "type": "Hybrid",
+  "thc": 30,
+  "thcLabel": "28–30%",
+  "cbd": 0,
+  "featured": true,
+  "stock": 24,
+  "unit": "g",
+  "effects": [
+   "Relaxed",
+   "Happy",
+   "Euphoric"
+  ],
+  "flavors": [
+   "OG",
+   "Zkittlez",
+   "Fruit"
+  ],
+  "description": "Classic OG structure with Zkittlez candy — best-of-both topshelf.",
+  "image": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-6880.jpg?v=1782729487",
+  "priceTiers": [
+   {
+    "label": "½g",
+    "price": 300,
+    "member": 270
+   },
+   {
+    "label": "1 joint",
+    "price": 300,
+    "member": 270
+   },
+   {
+    "label": "1g",
+    "price": 600,
+    "member": 540
+   },
+   {
+    "label": "3.5g · 3+1 FREE",
+    "price": 1800,
+    "member": 1620
+   }
+  ],
+  "code": "TOP-01"
+ },
+ {
+  "id": "ztupid",
+  "freeGift": true,
+  "name": "Ztupid",
+  "category": "Topshelf",
+  "type": "Hybrid",
+  "thc": 26,
+  "thcLabel": "26%",
+  "cbd": 0,
+  "stock": 20,
+  "unit": "g",
+  "effects": [
+   "Relaxed",
+   "Happy",
+   "Euphoric"
+  ],
+  "flavors": [
+   "Z",
+   "Fruity",
+   "Sweet"
+  ],
+  "description": "Ztupidly smooth — fruity Z-family topshelf at a friendly price.",
+  "image": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-5586.png?v=1780149518",
+  "priceTiers": [
+   {
+    "label": "½g",
+    "price": 300,
+    "member": 270
+   },
+   {
+    "label": "1 joint",
+    "price": 300,
+    "member": 270
+   },
+   {
+    "label": "1g",
+    "price": 600,
+    "member": 540
+   },
+   {
+    "label": "3.5g · 3+1 FREE",
+    "price": 1800,
+    "member": 1620
+   }
+  ],
+  "code": "TOP-02"
+ },
+ {
+  "id": "sherb-tank",
+  "name": "Sherb Tank",
+  "category": "Topshelf",
+  "type": "Hybrid",
+  "thc": 25,
+  "thcLabel": "25%",
+  "cbd": 0,
+  "stock": 22,
+  "unit": "g",
+  "effects": [
+   "Relaxed",
+   "Happy",
+   "Euphoric"
+  ],
+  "flavors": [
+   "Sherbet",
+   "Cream",
+   "Gas"
+  ],
+  "description": "Creamy sherbet terps in a tank of a flower. Reliable topshelf pick.",
+  "image": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-5575.png?v=1780144807",
+  "priceTiers": [
+   {
+    "label": "½g",
+    "price": 300,
+    "member": 270
+   },
+   {
+    "label": "1 joint",
+    "price": 300,
+    "member": 270
+   },
+   {
+    "label": "1g",
+    "price": 600,
+    "member": 540
+   },
+   {
+    "label": "3.5g · 3+1 FREE",
+    "price": 1800,
+    "member": 1620
+   }
+  ],
+  "code": "TOP-03"
+ },
+ {
+  "id": "king-cherry",
+  "name": "King Cherry",
+  "category": "Topshelf",
+  "type": "Hybrid",
+  "thc": 28,
+  "thcLabel": "28%",
+  "cbd": 0,
+  "stock": 20,
+  "unit": "g",
+  "effects": [
+   "Relaxed",
+   "Happy",
+   "Euphoric"
+  ],
+  "flavors": [
+   "Cherry",
+   "Sweet"
+  ],
+  "description": "Royal cherry flavour with a confident, balanced high.",
+  "image": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/6A808D23-ABAB-45D5-B098-B58A737A0113.png?v=1780144616",
+  "priceTiers": [
+   {
+    "label": "½g",
+    "price": 300,
+    "member": 270
+   },
+   {
+    "label": "1 joint",
+    "price": 300,
+    "member": 270
+   },
+   {
+    "label": "1g",
+    "price": 600,
+    "member": 540
+   },
+   {
+    "label": "3.5g · 3+1 FREE",
+    "price": 1800,
+    "member": 1620
+   }
+  ],
+  "code": "TOP-04"
+ },
+ {
+  "id": "baby-cake",
+  "name": "Baby Cake",
+  "category": "Topshelf",
+  "type": "Hybrid",
+  "thc": 28,
+  "thcLabel": "24–28%",
+  "cbd": 0,
+  "stock": 18,
+  "unit": "g",
+  "effects": [
+   "Relaxed",
+   "Happy",
+   "Calm"
+  ],
+  "flavors": [
+   "Cake",
+   "Vanilla",
+   "Sweet"
+  ],
+  "description": "Soft cake batter terps — sweet, mellow and easy-going.",
+  "image": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-5575.png?v=1780144807",
+  "priceTiers": [
+   {
+    "label": "½g",
+    "price": 300,
+    "member": 270
+   },
+   {
+    "label": "1 joint",
+    "price": 300,
+    "member": 270
+   },
+   {
+    "label": "1g",
+    "price": 600,
+    "member": 540
+   },
+   {
+    "label": "3.5g · 3+1 FREE",
+    "price": 1800,
+    "member": 1620
+   }
+  ],
+  "code": "TOP-05"
+ },
+ {
+  "id": "zkittles-top",
+  "name": "Zkittles",
+  "category": "Topshelf",
+  "type": "Hybrid",
+  "thc": 30,
+  "thcLabel": "30%",
+  "cbd": 0,
+  "stock": 21,
+  "unit": "g",
+  "effects": [
+   "Relaxed",
+   "Happy",
+   "Euphoric"
+  ],
+  "flavors": [
+   "Tropical",
+   "Berry",
+   "Candy"
+  ],
+  "description": "Taste the rainbow — award-winning candy strain at topshelf price.",
+  "image": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-5586.png?v=1780149518",
+  "priceTiers": [
+   {
+    "label": "½g",
+    "price": 300,
+    "member": 270
+   },
+   {
+    "label": "1 joint",
+    "price": 300,
+    "member": 270
+   },
+   {
+    "label": "1g",
+    "price": 600,
+    "member": 540
+   },
+   {
+    "label": "3.5g · 3+1 FREE",
+    "price": 1800,
+    "member": 1620
+   }
+  ],
+  "code": "TOP-06"
+ },
+ {
+  "id": "mac1",
+  "freeGift": true,
+  "name": "Mac1",
+  "category": "Midgrade",
+  "type": "Hybrid",
+  "thc": 29,
+  "thcLabel": "29%",
+  "cbd": 0,
+  "featured": true,
+  "stock": 30,
+  "unit": "g",
+  "effects": [
+   "Relaxed",
+   "Happy",
+   "Euphoric"
+  ],
+  "flavors": [
+   "Cream",
+   "Citrus",
+   "Diesel"
+  ],
+  "description": "MAC quality at midgrade money — our best-value smoke, hands down.",
+  "image": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-6886.png?v=1782731272",
+  "priceTiers": [
+   {
+    "label": "½g",
+    "price": 200,
+    "member": 180
+   },
+   {
+    "label": "1 joint",
+    "price": 200,
+    "member": 180
+   },
+   {
+    "label": "1g",
+    "price": 400,
+    "member": 360
+   },
+   {
+    "label": "3.5g · 3+1 FREE",
+    "price": 1200,
+    "member": 1080
+   }
+  ],
+  "code": "MID-01"
+ },
+ {
+  "id": "superboof",
+  "freeGift": true,
+  "name": "Superboof",
+  "category": "Midgrade",
+  "type": "Hybrid",
+  "thc": 30,
+  "thcLabel": "28–30%",
+  "cbd": 0,
+  "stock": 26,
+  "unit": "g",
+  "effects": [
+   "Relaxed",
+   "Happy",
+   "Euphoric"
+  ],
+  "flavors": [
+   "Citrus",
+   "Funk",
+   "Sweet"
+  ],
+  "description": "Punches way above its price tag — loud citrus funk for ฿400/g.",
+  "image": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-5258.png?v=1779643656",
+  "priceTiers": [
+   {
+    "label": "½g",
+    "price": 200,
+    "member": 180
+   },
+   {
+    "label": "1 joint",
+    "price": 200,
+    "member": 180
+   },
+   {
+    "label": "1g",
+    "price": 400,
+    "member": 360
+   },
+   {
+    "label": "3.5g · 3+1 FREE",
+    "price": 1200,
+    "member": 1080
+   }
+  ],
+  "code": "MID-02"
+ },
+ {
+  "id": "thai-durian",
+  "freeGift": true,
+  "name": "Thailand Durian",
+  "category": "Midgrade",
+  "type": "Hybrid",
+  "thc": 22,
+  "thcLabel": "22%",
+  "cbd": 0,
+  "stock": 28,
+  "unit": "g",
+  "effects": [
+   "Relaxed",
+   "Happy",
+   "Social"
+  ],
+  "flavors": [
+   "Durian",
+   "Tropical",
+   "Funky"
+  ],
+  "description": "Proudly Thai — real durian funk, smooth smoke, local price.",
+  "image": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/83C2F813-6C1F-4A98-BCBB-B53C99E3634D.jpg?v=1779643290",
+  "priceTiers": [
+   {
+    "label": "½g",
+    "price": 200,
+    "member": 180
+   },
+   {
+    "label": "1 joint",
+    "price": 200,
+    "member": 180
+   },
+   {
+    "label": "1g",
+    "price": 400,
+    "member": 360
+   },
+   {
+    "label": "3.5g · 3+1 FREE",
+    "price": 1200,
+    "member": 1080
+   }
+  ],
+  "code": "MID-03"
+ },
+ {
+  "id": "pineapple-express",
+  "name": "Snow Brands Pineapple Express",
+  "category": "Premium",
+  "type": "Sativa",
+  "thc": 60,
+  "thcLabel": "60%",
+  "cbd": 0,
+  "featured": true,
+  "stock": 10,
+  "unit": "g",
+  "effects": [
+   "Energetic",
+   "Euphoric",
+   "Creative"
+  ],
+  "flavors": [
+   "Pineapple",
+   "Tropical"
+  ],
+  "description": "SuperExo snow-frosted flower at a massive 60% THC. Sativa rocket fuel.",
+  "image": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/F8CDE9E5-64B9-4526-B65C-9E13833140ED.jpg?v=1776872037",
+  "priceTiers": [
+   {
+    "label": "½g",
+    "price": 450,
+    "member": 405
+   },
+   {
+    "label": "1 joint",
+    "price": 450,
+    "member": 405
+   },
+   {
+    "label": "3.5g · 3+1 FREE",
+    "price": 2700,
+    "member": 2430
+   }
+  ],
+  "code": "PRM-01"
+ },
+ {
+  "id": "kaws-rocks",
+  "name": "KAWS Moon Rocks",
+  "category": "Premium",
+  "type": "Hybrid",
+  "thc": 60,
+  "thcLabel": "60% · CBD 15%",
+  "cbd": 15,
+  "stock": 8,
+  "unit": "g",
+  "effects": [
+   "Euphoric",
+   "Relaxed",
+   "Sleepy"
+  ],
+  "flavors": [
+   "Hash",
+   "Earthy"
+  ],
+  "description": "Moon-rock hash — flower rolled in oil and kief. 60% THC, 15% CBD.",
+  "image": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-3052.jpg?v=1734773931",
+  "price": 713,
+  "member": 640,
+  "code": "PRM-02"
+ },
+ {
+  "id": "zooties",
+  "name": "Zooties Premium Joint",
+  "category": "Joints",
+  "type": "Hybrid",
+  "thc": 30,
+  "thcLabel": "Exotic",
+  "cbd": 0,
+  "featured": true,
+  "stock": 40,
+  "unit": "roll",
+  "effects": [
+   "Relaxed",
+   "Happy",
+   "Euphoric"
+  ],
+  "flavors": [
+   "Exotic"
+  ],
+  "description": "Premium exotic pre-roll, ready to smoke. Grab-and-go luxury.",
+  "image": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/18974187-610E-4BB3-8149-5F9240AEBA54.png?v=1692912822",
+  "price": 320,
+  "member": 288,
+  "code": "JNT-01"
+ },
+ {
+  "id": "backwoods",
+  "name": "Backwoods (Single)",
+  "category": "Joints",
+  "type": "Hybrid",
+  "thc": 0,
+  "thcLabel": "Blunt wrap",
+  "cbd": 0,
+  "stock": 50,
+  "unit": "pc",
+  "effects": [],
+  "flavors": [
+   "Original",
+   "Russian Cream",
+   "Berry"
+  ],
+  "description": "Single Backwoods leaf — Original, Russian Cream or Berry. Roll it fat.",
+  "image": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/E6E24816-9C5D-4224-BED4-E4EE198728EE.jpg?v=1722467143",
+  "price": 120,
+  "member": 108,
+  "code": "JNT-02"
+ },
+ {
+  "id": "sour-belts",
+  "name": "Sour Belts 3000mg",
+  "category": "Edibles",
+  "type": "Hybrid",
+  "thc": 3000,
+  "thcLabel": "3000mg pack",
+  "cbd": 0,
+  "featured": true,
+  "stock": 15,
+  "unit": "pack",
+  "effects": [
+   "Euphoric",
+   "Happy",
+   "Relaxed"
+  ],
+  "flavors": [
+   "Strawberry",
+   "Rainbow",
+   "Watermelon",
+   "Blueberry"
+  ],
+  "description": "Legendary sour belts — 3000mg per pack (or ฿300 per 300mg piece). Four flavours.",
+  "image": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/60A4B51E-20C4-491D-8DB1-F249A9A17F19.jpg?v=1722974672",
+  "priceTiers": [
+   {
+    "label": "1 piece 300mg",
+    "price": 300,
+    "member": 270
+   },
+   {
+    "label": "Full pack 3000mg",
+    "price": 2700,
+    "member": 2430
+   }
+  ],
+  "code": "EDB-01"
+ },
+ {
+  "id": "gummies-500",
+  "name": "Gummies 500mg",
+  "category": "Edibles",
+  "type": "Hybrid",
+  "thc": 500,
+  "thcLabel": "500mg",
+  "cbd": 0,
+  "stock": 25,
+  "unit": "pack",
+  "effects": [
+   "Relaxed",
+   "Happy"
+  ],
+  "flavors": [
+   "Mixed Fruit"
+  ],
+  "description": "Potent 500mg gummy pack — precisely dosed, seriously effective.",
+  "image": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/B6FCB2C5-67B8-48BE-8624-E5B5ED21ADD0.jpg?v=1774365683",
+  "price": 800,
+  "member": 720,
+  "code": "EDB-02"
+ },
+ {
+  "id": "wacky-worms",
+  "name": "Wacky Worms Gummies",
+  "category": "Edibles",
+  "type": "Hybrid",
+  "thc": 280,
+  "thcLabel": "infused",
+  "cbd": 0,
+  "stock": 30,
+  "unit": "pack",
+  "effects": [
+   "Happy",
+   "Giggly"
+  ],
+  "flavors": [
+   "Sour",
+   "Fruity"
+  ],
+  "description": "Wiggly, sour and infused — a fun entry-level edible.",
+  "image": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/B05B1BFE-3324-4490-9E53-DD30A3A804B5.jpg?v=1774365826",
+  "price": 280,
+  "member": 252,
+  "code": "EDB-03"
+ },
+ {
+  "id": "dank-cookie",
+  "name": "Dank Cookie 50mg",
+  "category": "Edibles",
+  "type": "Hybrid",
+  "thc": 50,
+  "thcLabel": "50mg",
+  "cbd": 0,
+  "stock": 35,
+  "unit": "pc",
+  "effects": [
+   "Relaxed",
+   "Happy"
+  ],
+  "flavors": [
+   "Cookie",
+   "Chocolate"
+  ],
+  "description": "Our house-baked 50mg cookie — the perfect single dose.",
+  "image": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/19BDC7A2-8DF2-4408-A427-3E36AA5CE49C.jpg?v=1774364851",
+  "price": 200,
+  "member": 180,
+  "code": "EDB-04"
+ },
+ {
+  "id": "brownies",
+  "name": "Cannabis Brownies 50mg",
+  "category": "Edibles",
+  "type": "Indica",
+  "thc": 50,
+  "thcLabel": "50mg each",
+  "cbd": 0,
+  "stock": 20,
+  "unit": "pack",
+  "effects": [
+   "Relaxed",
+   "Sleepy"
+  ],
+  "flavors": [
+   "Chocolate",
+   "Fudge"
+  ],
+  "description": "Fudgy infused brownies, 50mg each. 2-pack ฿500 or 5-pack ฿1,100.",
+  "image": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/D4BA6F7A-1C40-4F24-9DF0-3ADD1D365C47.png?v=1693553371",
+  "priceTiers": [
+   {
+    "label": "2 pack",
+    "price": 500,
+    "member": 450
+   },
+   {
+    "label": "5 pack",
+    "price": 1100,
+    "member": 990
+   }
+  ],
+  "code": "EDB-05"
+ },
+ {
+  "id": "muhameds-ed",
+  "name": "Muhameds Edible",
+  "category": "Edibles",
+  "type": "Hybrid",
+  "thc": 1000,
+  "thcLabel": "high dose",
+  "cbd": 0,
+  "stock": 12,
+  "unit": "pack",
+  "effects": [
+   "Euphoric",
+   "Relaxed"
+  ],
+  "flavors": [
+   "Candy"
+  ],
+  "description": "Heavy-hitter branded edible for experienced users only.",
+  "image": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/581081B6-E329-4DA3-9474-6DC414060F6E.jpg?v=1774365587",
+  "price": 2000,
+  "member": 1800,
+  "code": "EDB-06"
+ },
+ {
+  "id": "hidden-hills",
+  "name": "Hidden Hills Resin Jelly 1000mg",
+  "category": "Edibles",
+  "type": "Hybrid",
+  "thc": 1000,
+  "thcLabel": "1000mg",
+  "cbd": 0,
+  "stock": 18,
+  "unit": "pack",
+  "effects": [
+   "Euphoric",
+   "Relaxed"
+  ],
+  "flavors": [
+   "Bombsicle",
+   "Watermelon",
+   "ZAZA Blast",
+   "White Gummy"
+  ],
+  "description": "Live-resin infused jelly, 1000mg — four wild flavours.",
+  "image": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/93EC5B80-F590-46E5-96BD-F72CA565FB73.jpg?v=1774364815",
+  "price": 600,
+  "member": 540,
+  "code": "EDB-07"
+ },
+ {
+  "id": "muhameds-vape",
+  "name": "Muhameds Live Resin Disposable 2g",
+  "category": "Vapes",
+  "type": "Hybrid",
+  "thc": 90,
+  "thcLabel": "2000mg",
+  "cbd": 0,
+  "featured": true,
+  "isNew": true,
+  "stock": 22,
+  "unit": "pc",
+  "effects": [
+   "Euphoric",
+   "Relaxed"
+  ],
+  "flavors": [
+   "11 strains"
+  ],
+  "description": "NEW Season 2026 — 2000mg live-resin disposable, 11 strain flavours.",
+  "image": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-0764.jpg?v=1766923400",
+  "price": 2700,
+  "member": 2430,
+  "code": "VAP-01"
+ },
+ {
+  "id": "tre-rosin",
+  "name": "TRE Live Rosin Disposable 3.5g",
+  "category": "Vapes",
+  "type": "Hybrid",
+  "thc": 90,
+  "thcLabel": "3500mg",
+  "cbd": 0,
+  "stock": 15,
+  "unit": "pc",
+  "effects": [
+   "Euphoric",
+   "Relaxed"
+  ],
+  "flavors": [
+   "Blueberry Slushie",
+   "Frosted Guava",
+   "Peach Cobbler",
+   "Watermelon Gushers",
+   "Grape Guava",
+   "Blue Cereal"
+  ],
+  "description": "Solventless live rosin in a huge 3.5g disposable — six flavours.",
+  "image": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-0857.jpg?v=1726907546",
+  "price": 2800,
+  "member": 2520,
+  "code": "VAP-02"
+ },
+ {
+  "id": "live-resin",
+  "name": "Live Resin / Rosin 1g",
+  "category": "Vapes",
+  "type": "Hybrid",
+  "thc": 78,
+  "thcLabel": "78%",
+  "cbd": 0,
+  "stock": 14,
+  "unit": "g",
+  "effects": [
+   "Relaxed",
+   "Euphoric"
+  ],
+  "flavors": [
+   "Watermelon",
+   "Candy Apple",
+   "Peach Ring"
+  ],
+  "description": "Terpy dabs at 78% THC — watermelon, candy apple or peach ring.",
+  "image": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/F65C3592-4891-46E4-8DFD-F934040771D3.jpg?v=1693211965",
+  "price": 1200,
+  "member": 1080,
+  "code": "VAP-03"
+ },
+ {
+  "id": "diamond-wax",
+  "name": "Diamond Wax 98%",
+  "category": "Vapes",
+  "type": "Hybrid",
+  "thc": 98,
+  "thcLabel": "98%",
+  "cbd": 0,
+  "stock": 10,
+  "unit": "g",
+  "effects": [
+   "Very Potent"
+  ],
+  "flavors": [
+   "Pure"
+  ],
+  "description": "Near-pure THCA diamonds. 0.5g ฿1,250 · 1g ฿2,500 · 4g pays for 3.",
+  "image": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/490898B9-C7EB-4156-847A-80AA80C3CD7E.jpg?v=1722975003",
+  "priceTiers": [
+   {
+    "label": "0.5g",
+    "price": 1250,
+    "member": 1125
+   },
+   {
+    "label": "1g",
+    "price": 2500,
+    "member": 2250
+   },
+   {
+    "label": "4g · 3+1 FREE",
+    "price": 10000,
+    "member": 9000
+   }
+  ],
+  "code": "VAP-04"
+ },
+ {
+  "id": "crispyboy",
+  "name": "Crispy Boy Lager Can",
+  "category": "Beer",
+  "type": "Hybrid",
+  "thc": 0,
+  "thcLabel": "Craft beer",
+  "cbd": 0,
+  "stock": 94,
+  "unit": "can",
+  "effects": [
+   "Refreshing",
+   "Social"
+  ],
+  "flavors": [
+   "Crisp",
+   "Malt"
+  ],
+  "description": "Ice-cold local craft lager — the perfect session pairing. Non-infused.",
+  "image": "",
+  "price": 220,
+  "member": 198,
+  "code": "BER-01"
+ },
+ {
+  "id": "bong-session",
+  "name": "Bong Session",
+  "category": "Accessories",
+  "type": "Hybrid",
+  "thc": 0,
+  "thcLabel": "In-store",
+  "cbd": 0,
+  "stock": 9,
+  "unit": "session",
+  "effects": [],
+  "flavors": [],
+  "description": "Glass bong session at the shop — we set you up, you enjoy.",
+  "image": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/rn-image_picker_lib_temp_2a66b33b-ab91-43c9-88d3-d0872b46c111.jpg?v=1747352386",
+  "price": 1400,
+  "member": 1260,
+  "code": "ACC-01"
+ },
+ {
+  "id": "grinder-alu",
+  "name": "Aluminium Grinder 2-Piece",
+  "category": "Accessories",
+  "type": "Hybrid",
+  "thc": 0,
+  "thcLabel": "Gear",
+  "cbd": 0,
+  "stock": 20,
+  "unit": "pc",
+  "effects": [],
+  "flavors": [
+   "Silver",
+   "Black"
+  ],
+  "description": "Solid aluminium 2-piece grinder in silver or black.",
+  "image": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/rn-image_picker_lib_temp_5d48e56c-6cd3-479b-bd25-edcd554da20f.jpg?v=1747350208",
+  "price": 600,
+  "member": 540,
+  "code": "ACC-02"
+ },
+ {
+  "id": "allinone",
+  "name": "All-In-One Rolling Kit",
+  "category": "Accessories",
+  "type": "Hybrid",
+  "thc": 0,
+  "thcLabel": "Kit",
+  "cbd": 0,
+  "stock": 25,
+  "unit": "kit",
+  "effects": [],
+  "flavors": [
+   "5 designs"
+  ],
+  "description": "32 unbleached papers + 32 tips + shredder + tray, five artist designs.",
+  "image": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/rn-image_picker_lib_temp_ef9c4f40-e978-48d5-9118-8329f5030f81.jpg?v=1747347341",
+  "price": 240,
+  "member": 216,
+  "code": "ACC-03"
+ },
+ {
+  "id": "raw-quarter",
+  "name": "RAW ¼ Papers (+Tips)",
+  "category": "Accessories",
+  "type": "Hybrid",
+  "thc": 0,
+  "thcLabel": "Papers",
+  "cbd": 0,
+  "stock": 60,
+  "unit": "pack",
+  "effects": [],
+  "flavors": [],
+  "description": "RAW classic ¼ papers ฿60, or with tips ฿120.",
+  "image": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/rn-image_picker_lib_temp_51e6c7d8-7f16-4a03-a68d-5a791a7a4b95.jpg?v=1747351626",
+  "priceTiers": [
+   {
+    "label": "Papers",
+    "price": 60,
+    "member": 54
+   },
+   {
+    "label": "Papers + Tips",
+    "price": 120,
+    "member": 108
+   }
+  ],
+  "code": "ACC-04"
+ },
+ {
+  "id": "raw-king",
+  "name": "RAW Classic Kingsize",
+  "category": "Accessories",
+  "type": "Hybrid",
+  "thc": 0,
+  "thcLabel": "Papers",
+  "cbd": 0,
+  "stock": 60,
+  "unit": "pack",
+  "effects": [],
+  "flavors": [
+   "Classic",
+   "Black"
+  ],
+  "description": "Kingsize RAW — Classic ฿80 or Black ฿100.",
+  "image": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/5E938697-1B0F-4714-AFE7-E618B5C3CFD2.jpg?v=1693557480",
+  "priceTiers": [
+   {
+    "label": "Classic",
+    "price": 80,
+    "member": 72
+   },
+   {
+    "label": "Black",
+    "price": 100,
+    "member": 90
+   }
+  ],
+  "code": "ACC-05"
+ },
+ {
+  "id": "raw-tips",
+  "name": "RAW Tips / Wild Tips",
+  "category": "Accessories",
+  "type": "Hybrid",
+  "thc": 0,
+  "thcLabel": "Tips",
+  "cbd": 0,
+  "stock": 80,
+  "unit": "pack",
+  "effects": [],
+  "flavors": [],
+  "description": "RAW tips, regular or unrefined Wild — ฿51 a pack.",
+  "image": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/rn-image_picker_lib_temp_7f82c5da-3aa1-40bd-9f81-b748021a4bbd.jpg?v=1747347667",
+  "price": 51,
+  "member": 46,
+  "code": "ACC-06"
+ },
+ {
+  "id": "clipper",
+  "name": "Clipper Lighter",
+  "category": "Accessories",
+  "type": "Hybrid",
+  "thc": 0,
+  "thcLabel": "Lighter",
+  "cbd": 0,
+  "stock": 100,
+  "unit": "pc",
+  "effects": [],
+  "flavors": [],
+  "description": "The classic refillable Clipper. Don't let friends 'borrow' it.",
+  "image": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/rn-image_picker_lib_temp_f07fbe9d-1bb0-40ad-9ed2-1cecdddad837.jpg?v=1747349959",
+  "price": 40,
+  "member": 36,
+  "code": "ACC-07"
+ },
+ {
+  "id": "plastic-grinder",
+  "name": "Plastic Grinder",
+  "category": "Accessories",
+  "type": "Hybrid",
+  "thc": 0,
+  "thcLabel": "Gear",
+  "cbd": 0,
+  "stock": 40,
+  "unit": "pc",
+  "effects": [],
+  "flavors": [],
+  "description": "Simple, dependable pocket grinder.",
+  "image": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/5A110104-F265-40D5-AF13-F22D34C8CB97.jpg?v=1693557942",
+  "price": 84,
+  "member": 76,
+  "code": "ACC-08"
+ },
+ {
+  "id": "waterproof-bag",
+  "name": "Waterproof Bag",
+  "category": "Accessories",
+  "type": "Hybrid",
+  "thc": 0,
+  "thcLabel": "Gear",
+  "cbd": 0,
+  "stock": 30,
+  "unit": "pc",
+  "effects": [],
+  "flavors": [],
+  "description": "Smell-proof, waterproof stash bag.",
+  "image": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/9221D9D8-A023-4397-BDD5-584043191141.png?v=1710969052",
+  "price": 120,
+  "member": 108,
+  "code": "ACC-09"
+ },
+ {
+  "id": "tee-2026",
+  "name": "DANK Limited 2026 Tee",
+  "category": "Merch",
+  "type": "Hybrid",
+  "thc": 0,
+  "thcLabel": "M–2XL",
+  "cbd": 0,
+  "featured": true,
+  "stock": 24,
+  "unit": "pc",
+  "effects": [],
+  "flavors": [
+   "Black",
+   "White"
+  ],
+  "description": "Limited 2026 drop — black or white, sizes M to 2XL.",
+  "image": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-2016.jpg?v=1771238786",
+  "price": 343,
+  "member": 309,
+  "code": "MRC-01"
+ },
+ {
+  "id": "tee-2025",
+  "name": "DANK T-Shirt 2025 Collection",
+  "category": "Merch",
+  "type": "Hybrid",
+  "thc": 0,
+  "thcLabel": "M–2XL",
+  "cbd": 0,
+  "stock": 30,
+  "unit": "pc",
+  "effects": [],
+  "flavors": [
+   "White",
+   "Brown"
+  ],
+  "description": "2025 collection tee in white or brown, M–2XL.",
+  "image": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/rn-image_picker_lib_temp_19a88183-a299-4ea3-bcd6-08f12845a4ee.jpg?v=1756065454",
+  "price": 294,
+  "member": 265,
+  "code": "MRC-02"
+ },
+ {
+  "id": "tee-2023",
+  "name": "DANK 2023 White Limited Tee",
+  "category": "Merch",
+  "type": "Hybrid",
+  "thc": 0,
+  "thcLabel": "M–2XL",
+  "cbd": 0,
+  "stock": 15,
+  "unit": "pc",
+  "effects": [],
+  "flavors": [
+   "White"
+  ],
+  "description": "OG 2023 white limited tee — collector's piece.",
+  "image": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-7908.png?v=1710969383",
+  "price": 273,
+  "member": 246,
+  "code": "MRC-03"
+ }
+]

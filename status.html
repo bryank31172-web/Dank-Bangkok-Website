@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex,nofollow">
+<title>Connection Status · DANK BKK</title>
+<style>
+  :root{--bg:#060a07;--panel:#101a12;--line:#294634;--txt:#e8f5ec;--muted:#8fae9a;--green:#3ddc84;--gold:#d9b25b;--danger:#ff6b6b}
+  *{box-sizing:border-box;margin:0;padding:0;font-family:'Segoe UI',system-ui,sans-serif}
+  body{background:var(--bg);color:var(--txt);min-height:100vh;display:flex;align-items:flex-start;justify-content:center;padding:22px}
+  .wrap{width:100%;max-width:560px}
+  h1{font-size:20px;margin-bottom:4px}
+  .sub{color:var(--muted);font-size:13px;margin-bottom:18px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:22px;margin-bottom:14px}
+  .badge{display:inline-flex;align-items:center;gap:8px;font-weight:800;font-size:15px;padding:9px 16px;border-radius:999px;margin-bottom:12px}
+  .ok{background:rgba(61,220,132,.15);color:var(--green);border:1px solid var(--green)}
+  .warn{background:rgba(217,178,91,.15);color:var(--gold);border:1px solid var(--gold)}
+  .bad{background:rgba(255,107,107,.15);color:var(--danger);border:1px solid var(--danger)}
+  .detail{font-size:14px;line-height:1.55}
+  .grid{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+  .stat{flex:1;min-width:130px;background:#0b120d;border:1px solid var(--line);border-radius:12px;padding:12px}
+  .stat b{display:block;font-size:22px;color:var(--green)}
+  .stat span{color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:1px}
+  table{width:100%;border-collapse:collapse;margin-top:8px;font-size:13px}
+  th,td{text-align:left;padding:7px 6px;border-bottom:1px solid var(--line)}
+  th{color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.5px}
+  code{background:#0b120d;border:1px solid var(--line);border-radius:6px;padding:2px 6px;font-size:12px;color:var(--gold)}
+  button{background:var(--green);color:#04180d;font-weight:800;border:none;border-radius:10px;padding:11px 18px;font-size:14px;cursor:pointer}
+  .muted{color:var(--muted);font-size:12.5px;margin-top:10px;line-height:1.5}
+  a{color:var(--green)}
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>🌿 Backend Connection Status</h1>
+    <div class="sub">Live check of whether this site is pulling from your StoreHub / POS backend.</div>
+    <div class="card" id="card"><div class="detail">Checking…</div></div>
+    <button onclick="check()">↻ Re-check</button>
+    <div class="muted" id="foot"></div>
+  </div>
+<script>
+async function check(){
+  const card=document.getElementById('card');
+  card.innerHTML='<div class="detail">Checking…</div>';
+  try{
+    const r=await fetch('/api/health',{cache:'no-store'});
+    const j=await r.json();
+    const cls=j.status==='connected'?'ok':(j.status==='configured-but-not-loading'?'warn':'bad');
+    const icon=j.status==='connected'?'●':'▲';
+    let rows='';
+    if(j.sample&&j.sample.length){
+      rows='<table><tr><th>Code</th><th>Product</th><th>Stock</th><th>Price</th></tr>'+
+        j.sample.map(s=>`<tr><td><code>${s.code||'—'}</code></td><td>${s.name||''}</td><td>${s.stock??''}</td><td>${s.price!=null?('฿'+s.price):''}</td></tr>`).join('')+'</table>';
+    }
+    card.innerHTML=`
+      <span class="badge ${cls}">${icon} ${j.connected?'CONNECTED':(j.status==='configured-but-not-loading'?'CREDENTIALS SET · NOT LOADING':'NOT CONNECTED')}</span>
+      <div class="detail">${j.detail||''}</div>
+      <div class="grid">
+        <div class="stat"><b>${j.products??'—'}</b><span>Products</span></div>
+        <div class="stat"><b style="font-size:15px;padding-top:4px">${j.source||'—'}</b><span>Data source</span></div>
+        <div class="stat"><b style="font-size:15px;padding-top:4px">${j.storehubConfigured?'yes':'no'}</b><span>StoreHub keys set</span></div>
+      </div>
+      ${rows}`;
+    document.getElementById('foot').innerHTML =
+      'Sources: <code>storehub</code> = live from your POS backend · <code>bundled</code> = built-in demo catalog. '+
+      'Last checked '+ (j.updated? new Date(j.updated).toLocaleString():'now')+'.';
+  }catch(e){
+    card.innerHTML='<span class="badge bad">▲ NO RESPONSE</span><div class="detail">Could not reach <code>/api/health</code>. Open this page from the deployed site (not as a local file).</div>';
+  }
+}
+check();
+</script>
+</body>
+</html>

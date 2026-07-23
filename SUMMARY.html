@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>DANK BKK — Website & System Overview</title>
+<style>
+:root{--bg:#060a07;--bg2:#0b120d;--panel:#101a12;--line:#1f3325;--line2:#294634;--txt:#e8f5ec;--muted:#8fae9a;--green:#3ddc84;--green2:#7be389;--gold:#d9b25b;--font:'Segoe UI',system-ui,sans-serif}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--txt);font-family:var(--font);line-height:1.5}
+.wrap{max-width:900px;margin:0 auto;padding:32px 20px 60px}
+.hero{background:radial-gradient(700px 300px at 80% -10%,rgba(61,220,132,.18),transparent 60%),linear-gradient(180deg,#0a130d,var(--bg));border:1px solid var(--line2);border-radius:20px;padding:30px 26px;margin-bottom:22px}
+.hero h1{font-size:30px;margin:0 0 6px}.hero .dot{color:var(--green)}
+.hero p{color:var(--muted);margin:6px 0 0;max-width:60ch}
+.tag{display:inline-block;background:rgba(61,220,132,.12);border:1px solid var(--line2);color:var(--green2);font-size:12px;font-weight:800;padding:4px 11px;border-radius:999px;margin:2px 4px 2px 0}
+h2{font-size:17px;margin:26px 0 12px;display:flex;align-items:center;gap:8px}
+.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:15px 16px}
+.card h3{margin:0 0 6px;font-size:14.5px;color:var(--green2)}
+.card ul{margin:0;padding-left:18px;color:var(--muted);font-size:13px}
+.card li{margin:3px 0}
+.flow{background:var(--panel);border:1px solid var(--line2);border-radius:14px;padding:16px;color:var(--muted);font-size:13.5px}
+.flow b{color:var(--txt)}
+.steps{counter-reset:s;list-style:none;padding:0;margin:0}
+.steps li{position:relative;padding:8px 0 8px 34px;border-bottom:1px solid var(--line);font-size:13.5px;color:var(--muted)}
+.steps li::before{counter-increment:s;content:counter(s);position:absolute;left:0;top:7px;width:22px;height:22px;border-radius:50%;background:var(--green);color:#04180d;font-weight:800;font-size:12px;display:flex;align-items:center;justify-content:center}
+.steps li b{color:var(--txt)}
+.foot{margin-top:26px;color:var(--muted2,#6d8a78);font-size:12px;text-align:center}
+@media(max-width:640px){.grid{grid-template-columns:1fr}}
+</style></head>
+<body><div class="wrap">
+
+<div class="hero">
+  <h1><span class="dot">🌿</span> DANK BKK — Website & System Overview</h1>
+  <p>A complete cannabis e-commerce site for <b>dankbkk.com</b>, connected live to your StoreHub backend, with an AI budtender (น้องแดงค์), online payments, a staff console, and a wallet. One deployable package.</p>
+  <div style="margin-top:14px">
+    <span class="tag">Live StoreHub menu</span><span class="tag">น้องแดงค์ AI + Quiz</span><span class="tag">PromptPay & Card</span>
+    <span class="tag">Wallet +10%</span><span class="tag">Staff console</span><span class="tag">Delivery & Pickup</span><span class="tag">20+ gated</span>
+  </div>
+</div>
+
+<h2>🛍️ For customers</h2>
+<div class="grid">
+  <div class="card"><h3>Shop</h3><ul>
+    <li>Live menu by grade: Exotics, Topshelf, Midgrade, Premium + Joints, Edibles, Vapes, Beer, Accessories, Merch</li>
+    <li>Search, filter by type, sort by price/THC</li>
+    <li>Strain pages: THC, weight tiers, quantity, "you may also like"</li>
+    <li>Favorites ❤ · auto-generated photos when none on file</li></ul></div>
+  <div class="card"><h3>น้องแดงค์ — AI budtender</h3><ul>
+    <li>Answers anything 24/7 in Thai & English</li>
+    <li>Recommends & adds to cart to close the sale</li>
+    <li>Product-finder <b>Quiz</b> for "not sure" shoppers</li>
+    <li>Hands off to real staff live in-chat when needed</li></ul></div>
+  <div class="card"><h3>Checkout & payment</h3><ul>
+    <li>Delivery or pickup/reserve across 3 branches</li>
+    <li>PromptPay QR & card (Omise), or cash/transfer</li>
+    <li>Promo codes, delivery fee, minimum order</li>
+    <li>Order tracking: Placed → Confirmed → Preparing → Done</li></ul></div>
+  <div class="card"><h3>Loyalty & offers</h3><ul>
+    <li><b>Wallet:</b> top up, get <b>+10% bonus</b>, pay from balance</li>
+    <li><b>Register 1st order:</b> Buy 1G get 1G free</li>
+    <li>Free gram is a <b>manager-chosen</b> SKU, customer picks</li>
+    <li>Member prices · Buy 3 get 1 free on flower</li></ul></div>
+</div>
+
+<h2>👨‍💼 For staff (dankbkk.com/staff.html)</h2>
+<div class="grid">
+  <div class="card"><h3>Orders</h3><ul><li>Every online order, instantly, with sound + badge</li><li>Items, total, address/pickup, tap-to-call, PAID status</li><li>Telegram ping to staff phones (optional)</li><li>Mark done</li></ul></div>
+  <div class="card"><h3>Live chat & gifts</h3><ul><li>Answer customer chats transferred by น้องแดงค์</li><li>Full transcript + cart for context</li><li>🎁 Free-gram tab: pick which SKUs are given free</li></ul></div>
+</div>
+
+<h2>🔌 Backend & integrations</h2>
+<div class="flow">
+  <b>StoreHub</b> (api.storehubhq.com) → live menu, stock, prices — the same backend as your POS app, so they stay in sync. &nbsp;·&nbsp;
+  <b>Omise/Opn</b> → PromptPay + card. &nbsp;·&nbsp; <b>Grok (xAI)</b> → น้องแดงค์'s open-ended brain. &nbsp;·&nbsp;
+  <b>Telegram / Resend</b> → staff notifications. &nbsp;·&nbsp; <b>Upstash Redis</b> → orders, chats, wallet storage.
+  Everything degrades gracefully — the site always works and lights up each feature as its key is added.
+</div>
+
+<h2>🚀 To publish</h2>
+<ol class="steps">
+  <li>Create a free <b>Vercel</b> account.</li>
+  <li>Drag the project folder in (New → Project → Deploy).</li>
+  <li>Add env vars: <b>STOREHUB_STORE</b>=dankclub, <b>STOREHUB_TOKEN</b>=your token, <b>STAFF_KEY</b>=your secret (add Omise/Grok/Telegram later).</li>
+  <li>Deploy, then add domain <b>dankbkk.com</b> and set the DNS record shown.</li>
+  <li>Open <b>/staff.html</b>, log in, and you're live.</li>
+</ol>
+
+<div class="foot">DANK BKK · prepared overview — for staff & partners · 20+ only, consume responsibly.</div>
+</div></body></html>

@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<meta name="robots" content="noindex,nofollow"/>
+<title>🌿 DANK BKK — Staff Console</title>
+<style>
+:root{--bg:#060a07;--bg2:#0b120d;--panel:#101a12;--panel2:#16241a;--line:#1f3325;--line2:#294634;
+--txt:#e8f5ec;--muted:#8fae9a;--muted2:#6d8a78;--green:#3ddc84;--green2:#7be389;--deep:#1db960;
+--gold:#d9b25b;--danger:#ff6b6b;--font:'Segoe UI',system-ui,sans-serif}
+*{box-sizing:border-box}html,body{margin:0;height:100%}
+body{background:var(--bg);color:var(--txt);font-family:var(--font);display:flex;flex-direction:column}
+button{font-family:inherit;cursor:pointer;border:none;color:inherit;background:none}
+header{display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--line);background:var(--bg2)}
+header h1{font-size:17px;margin:0}
+header .st{margin-left:auto;font-size:12px;color:var(--muted2)}
+.pill{font-size:11px;font-weight:800;padding:3px 9px;border-radius:999px;border:1px solid var(--line2);color:var(--green2)}
+.pill.warn{color:var(--gold);border-color:var(--gold)}
+main{flex:1;display:flex;min-height:0}
+/* login */
+#login{margin:auto;background:var(--panel);border:1px solid var(--line2);border-radius:18px;padding:30px;max-width:340px;width:92%;text-align:center}
+#login input{width:100%;background:var(--bg2);border:1px solid var(--line2);color:var(--txt);padding:12px;border-radius:10px;font-size:15px;outline:none;margin:14px 0;text-align:center}
+.btn{background:linear-gradient(135deg,var(--green),var(--deep));color:#04180d;font-weight:800;padding:12px 18px;border-radius:11px;width:100%;font-size:15px}
+/* tabs */
+#tabs{display:flex;gap:6px;padding:10px 12px;border-bottom:1px solid var(--line);background:var(--bg2)}
+#tabs button{flex:1;padding:9px;border-radius:10px;border:1px solid var(--line2);color:var(--muted);font-weight:800;font-size:13px;position:relative}
+#tabs button.active{border-color:var(--green);color:var(--green2);background:rgba(61,220,132,.1)}
+#tabs .cnt{position:absolute;top:-7px;right:-4px;background:var(--gold);color:#20100a;font-size:10px;font-weight:900;min-width:18px;height:18px;border-radius:9px;display:flex;align-items:center;justify-content:center;padding:0 4px}
+/* orders */
+.ocard{margin:10px 12px;background:var(--panel);border:1px solid var(--line2);border-radius:14px;padding:13px 14px}
+.ocard.done{opacity:.55}
+.ocard .oh{display:flex;align-items:center;gap:8px}
+.ocard .oid{font-weight:800;font-size:13.5px;color:var(--green2)}
+.ocard .ot{margin-left:auto;font-size:11px;color:var(--muted2)}
+.ocard .items{font-size:12.5px;color:var(--muted);margin:7px 0;line-height:1.55}
+.ocard .tot{font-weight:800;font-size:15px}
+.ocard .meta{font-size:12px;color:var(--gold);margin-top:3px;line-height:1.5}
+.ocard .orow{display:flex;align-items:center;gap:8px;margin-top:9px}
+.done-btn{background:linear-gradient(135deg,var(--green),var(--deep));color:#04180d;font-weight:800;font-size:12px;padding:8px 13px;border-radius:9px}
+.grow{display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--line);cursor:pointer}
+.grow:hover{background:var(--panel)}
+.grow .chk{width:20px;height:20px;border-radius:6px;border:2px solid var(--line2);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:13px}
+.grow.on .chk{background:var(--green);border-color:var(--green);color:#04180d}
+.grow .gn{font-weight:700;font-size:13.5px}.grow .gm{font-size:11.5px;color:var(--muted)}
+.ghdr{padding:12px 14px;font-size:12.5px;color:var(--muted);border-bottom:1px solid var(--line)}
+.undo-btn{border:1px solid var(--line2);color:var(--muted);font-size:12px;padding:8px 13px;border-radius:9px}
+/* list */
+#listWrap{width:340px;border-right:1px solid var(--line);background:var(--bg2);flex-shrink:0;display:flex;flex-direction:column;min-height:0}
+#list{flex:1;overflow-y:auto}
+.trow{display:block;width:100%;text-align:left;padding:13px 14px;border-bottom:1px solid var(--line);position:relative}
+.trow:hover,.trow.sel{background:var(--panel)}
+.trow .top{display:flex;gap:8px;align-items:center}
+.trow .who{font-weight:800;font-size:14px}
+.trow .when{margin-left:auto;font-size:11px;color:var(--muted2)}
+.trow .prev{font-size:12.5px;color:var(--muted);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.trow .meta{font-size:11px;color:var(--gold);margin-top:3px}
+.trow.unread::before{content:"";position:absolute;left:5px;top:50%;transform:translateY(-50%);width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 8px var(--green)}
+.badge{font-size:10px;font-weight:800;padding:2px 7px;border-radius:99px;border:1px solid var(--line2);color:var(--muted)}
+.badge.open{color:var(--green2);border-color:var(--green2)}
+.badge.closed{color:var(--muted2)}
+/* chat */
+#chatWrap{flex:1;display:flex;flex-direction:column;min-width:0}
+#chatHead{padding:11px 16px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:12px;background:var(--bg2)}
+#chatHead .c-info{min-width:0}
+#chatHead .c-name{font-weight:800;font-size:15px}
+#chatHead .c-sub{font-size:12px;color:var(--muted)}
+#chatHead .actions{margin-left:auto;display:flex;gap:8px}
+.ghost{border:1px solid var(--line2);color:var(--muted);padding:8px 13px;border-radius:10px;font-size:12.5px;font-weight:700}
+.ghost:hover{border-color:var(--green);color:var(--green2)}
+.ghost.danger:hover{border-color:var(--danger);color:var(--danger)}
+#msgs{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px}
+.m{max-width:70%;padding:10px 13px;border-radius:14px;font-size:14px;line-height:1.45;white-space:pre-wrap;word-wrap:break-word}
+.m.customer{background:var(--panel);border:1px solid var(--line);align-self:flex-start;border-bottom-left-radius:4px}
+.m.staff{background:linear-gradient(135deg,var(--green),var(--deep));color:#04180d;align-self:flex-end;border-bottom-right-radius:4px;font-weight:500}
+.m.system{align-self:center;background:none;color:var(--muted2);font-size:12px;padding:2px}
+.m .t{display:block;font-size:10.5px;opacity:.65;margin-top:4px}
+#ctxBox{margin:0 16px 8px;background:var(--panel);border:1px solid var(--line2);border-radius:12px;padding:10px 14px;font-size:12.5px;color:var(--muted);max-height:130px;overflow-y:auto}
+#ctxBox b{color:var(--gold)}
+#replyBar{display:flex;gap:8px;padding:12px 16px;border-top:1px solid var(--line);background:var(--bg2)}
+#replyBar input{flex:1;background:var(--panel);border:1px solid var(--line2);color:var(--txt);padding:12px 14px;border-radius:11px;font-size:14px;outline:none}
+#replyBar input:focus{border-color:var(--green)}
+#sendBtn{background:linear-gradient(135deg,var(--green),var(--deep));color:#04180d;font-weight:800;padding:0 20px;border-radius:11px;font-size:14px}
+.quicks{display:flex;gap:6px;padding:0 16px 10px;flex-wrap:wrap}
+.quicks button{font-size:12px;padding:6px 11px;border-radius:99px;background:var(--panel);border:1px solid var(--line2);color:var(--green2)}
+.emptyc{margin:auto;color:var(--muted2);text-align:center;font-size:14px}
+@media(max-width:760px){ #listWrap{width:100%} #chatWrap{display:none} body.chatting #listWrap{display:none} body.chatting #chatWrap{display:flex} }
+</style>
+</head>
+<body>
+<header>
+  <span style="font-size:22px">🌿</span><h1>DANK BKK · Staff Console</h1>
+  <span class="st" id="storeStat"></span>
+  <button class="ghost" id="logoutBtn" style="display:none" onclick="logout()">Log out</button>
+</header>
+<main id="main">
+  <div id="login">
+    <div style="font-size:40px">👨‍💼</div>
+    <h2 style="margin:8px 0 2px">Staff login</h2>
+    <p style="color:var(--muted);font-size:13px;margin:4px 0 0">Enter the staff key to see live customer chats.</p>
+    <input id="keyInput" type="password" placeholder="Staff key" onkeydown="if(event.key==='Enter')login()">
+    <button class="btn" onclick="login()">Enter console</button>
+    <p id="loginErr" style="color:var(--danger);font-size:12.5px;height:14px;margin:10px 0 0"></p>
+  </div>
+  <div id="listWrap" style="display:none">
+    <div id="tabs">
+      <button id="tabChats" class="active" onclick="setTab('chats')">💬 Chats</button>
+      <button id="tabOrders" onclick="setTab('orders')">🛒 Orders<span class="cnt" id="ordCnt" style="display:none">0</span></button>
+      <button id="tabGifts" onclick="setTab('gifts')">🎁 Free gram</button>
+      <button id="tabCount" onclick="setTab('count')">📦 Count</button>
+    </div>
+    <div id="list"></div>
+  </div>
+  <div id="chatWrap" style="display:none">
+    <div class="emptyc" id="emptyc">Select a conversation ←</div>
+  </div>
+</main>
+<script>
+const API='/api/thread';
+let KEY=localStorage.getItem('dankStaffKey')||'';
+let cur=null, curSeq=0, pollT=null, listT=null, lastSeen={};   // threadId -> last seq seen
+let TAB='chats', ORDERS=[], knownOrders=new Set(), firstOrderLoad=true;
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??'').replace(/[<>&]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[c]));
+const ago=t=>{const s=(Date.now()-t)/1e3; if(s<60)return 'now'; if(s<3600)return Math.floor(s/60)+'m'; if(s<86400)return Math.floor(s/3600)+'h'; return Math.floor(s/86400)+'d';};
+function beep(){ try{ const a=new (window.AudioContext||window.webkitAudioContext)(); const o=a.createOscillator(),g=a.createGain();
+  o.connect(g); g.connect(a.destination); o.frequency.value=880; g.gain.value=.06; o.start(); o.stop(a.currentTime+.15);}catch(e){} }
+
+async function login(){
+  const k=$('#keyInput').value.trim()||KEY; if(!k){$('#loginErr').textContent='Enter the key';return;}
+  let r;
+  try{ r=await fetch(`${API}?list=1&key=${encodeURIComponent(k)}`); }
+  catch(e){ $('#loginErr').textContent='Network error — check your connection'; return; }
+  if(!r.ok){ $('#loginErr').textContent='Wrong key'; return; }
+  KEY=k; localStorage.setItem('dankStaffKey',k);
+  const j=await r.json();
+  $('#storeStat').innerHTML=j.redis?'<span class="pill">● storage: redis</span>':'<span class="pill warn">● storage: memory (set up Upstash for production)</span>';
+  $('#login').style.display='none'; $('#listWrap').style.display='flex'; $('#chatWrap').style.display='flex'; $('#logoutBtn').style.display='';
+  renderList(j.threads); startListPoll(); pollOrders(); setInterval(pollOrders,5000);
+  if(location.hash==='#orders') setTab('orders');
+  if(location.hash.length>3) openThread(location.hash.slice(1));
+}
+function logout(){ localStorage.removeItem('dankStaffKey'); location.reload(); }
+
+function setTab(t){ if(typeof stopCamScan==='function') stopCamScan(); TAB=t; $('#tabChats').classList.toggle('active',t==='chats'); $('#tabOrders').classList.toggle('active',t==='orders'); $('#tabGifts').classList.toggle('active',t==='gifts'); $('#tabCount').classList.toggle('active',t==='count');
+  if(t==='orders'){ renderOrders(); $('#ordCnt').style.display='none'; knownOrders=new Set(ORDERS.map(o=>o.orderId)); }
+  else if(t==='gifts'){ loadGifts(); }
+  else if(t==='count'){ loadCount(); }
+  else refreshChats(); }
+let GIFT_MENU=[], GIFT_SEL=new Set();
+async function loadGifts(){
+  const el=$('#list'); el.innerHTML='<div class="ghdr">Loading…</div>';
+  try{
+    const [mr,gr]=await Promise.all([fetch('/api/products'),fetch('/api/freegifts')]);
+    GIFT_MENU=(await mr.json()).filter(p=>p.priceTiers && ['Exotics','Topshelf','Midgrade','Premium'].includes(p.category));
+    GIFT_SEL=new Set((await gr.json()).skus||[]);
+    renderGifts();
+  }catch(e){ el.innerHTML='<div class="ghdr">Could not load menu.</div>'; }
+}
+function renderGifts(){
+  const el=$('#list');
+  el.innerHTML='<div class="ghdr">Tick the 1g flowers you\'ll give as the free gram. Customers pick from these on their first order.</div>'+
+    GIFT_MENU.map(p=>`<div class="grow ${GIFT_SEL.has(p.id)?'on':''}" onclick="toggleGift('${p.id}')">
+      <div class="chk">${GIFT_SEL.has(p.id)?'✓':''}</div>
+      <div><div class="gn">${esc(p.name)}</div><div class="gm">${esc(p.category)} · THC ${esc(p.thcLabel||p.thc)} · ฿${(p.priceTiers?.[0]?.price)||''}/g</div></div>
+    </div>`).join('');
+}
+async function toggleGift(id){
+  if(GIFT_SEL.has(id)) GIFT_SEL.delete(id); else GIFT_SEL.add(id);
+  renderGifts();
+  try{ await fetch('/api/freegifts',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:KEY,skus:[...GIFT_SEL]})}); }catch(e){}
+}
+async function refreshChats(){ try{ const r=await fetch(`${API}?list=1&key=${encodeURIComponent(KEY)}`); if(r.ok) renderList((await r.json()).threads); }catch(e){} }
+async function pollOrders(){
+  try{ const r=await fetch(`/api/orders?key=${encodeURIComponent(KEY)}`); if(!r.ok) return;
+    ORDERS=(await r.json()).orders||[];
+    const fresh=ORDERS.filter(o=>!knownOrders.has(o.orderId)&&o.status!=='done');
+    if(!firstOrderLoad && fresh.length){ beep(); const c=$('#ordCnt'); if(TAB!=='orders'){ c.textContent=fresh.length; c.style.display='flex'; } }
+    if(firstOrderLoad){ knownOrders=new Set(ORDERS.map(o=>o.orderId)); firstOrderLoad=false;
+      const n=ORDERS.filter(o=>o.status!=='done').length; if(n&&TAB!=='orders'){ $('#ordCnt').textContent=n; $('#ordCnt').style.display='flex'; } }
+    if(TAB==='orders') renderOrders();
+  }catch(e){}
+}
+function renderOrders(){
+  const el=$('#list');
+  if(!ORDERS.length){ el.innerHTML='<div style="padding:30px;color:var(--muted2);text-align:center;font-size:13.5px">No orders yet.<br>Online orders appear here instantly.</div>'; return; }
+  el.innerHTML=ORDERS.map(o=>{
+    const items=(o.items||[]).map(i=>`${esc(i.name)} (${esc(i.option)}) ×${i.qty}`).join('<br>');
+    const where=o.fulfilment==='delivery'
+      ?`🚚 ${esc(o.delivery?.zone||'')} — ${esc(o.delivery?.address||'')}`
+      :`🏬 ${esc(o.pickup?.branch||'')} ${o.pickup?.time?('· '+esc(o.pickup.time)):''}`;
+    return `<div class="ocard ${o.status==='done'?'done':''}">
+      <div class="oh"><span class="oid">${o.orderId}</span><span class="badge ${o.status==='done'?'closed':'open'}">${o.status}</span><span class="ot">${o.at?ago(o.at):''}</span></div>
+      <div class="items">${items}</div>
+      <div class="tot">฿${((o.total??o.subtotal)||0).toLocaleString()} · ${esc(o.payment||'')}${o.member?' ⭐':''}${o.payStatus==='paid'?' <span style="color:var(--green2)">· PAID ✅</span>':(['PromptPay','Card'].includes(o.payment)?' <span style="color:var(--gold)">· unpaid</span>':'')}</div>
+      ${o.discount>0||o.deliveryFee>0?`<div style="font-size:11px;color:var(--muted2);margin-top:2px">sub ฿${(o.subtotal||0).toLocaleString()}${o.discount>0?` · −฿${o.discount} ${esc(o.promo||'')}`:''}${o.deliveryFee>0?` · +฿${o.deliveryFee} delivery`:''}</div>`:''}
+      <div class="meta">${where}<br>👤 ${esc(o.customer?.name||'-')} · <a style="color:var(--green2)" href="tel:${esc(o.customer?.phone||'')}">${esc(o.customer?.phone||'')}</a>${o.notes?'<br>📝 '+esc(o.notes):''}</div>
+      <div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap">${o.slipUploaded?`<button class="undo-btn" onclick="viewSlip('${o.orderId}')">🧾 View slip</button>`:''}<button class="undo-btn" onclick="staffUploadSlip('${o.orderId}')">📎 Upload proof</button></div>
+      <div class="orow">${o.status==='done'
+        ?`<button class="undo-btn" onclick="setOrder('${o.orderId}','new')">↩ Reopen</button>`
+        :`<button class="done-btn" onclick="setOrder('${o.orderId}','done')">✓ Mark done</button>`}</div>
+    </div>`;}).join('');
+}
+async function viewSlip(id){
+  try{ const r=await fetch(`/api/slip?id=${encodeURIComponent(id)}&key=${encodeURIComponent(KEY)}`); const j=await r.json();
+    if(!j.image){ alert('No slip found'); return; }
+    let ov=document.getElementById('slipOv'); if(!ov){ ov=document.createElement('div'); ov.id='slipOv';
+      ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:200;display:flex;align-items:center;justify-content:center;padding:20px';
+      ov.onclick=()=>ov.remove(); document.body.appendChild(ov); }
+    ov.innerHTML=`<div style="max-width:90vw;max-height:90vh;text-align:center"><img src="${j.image}" style="max-width:100%;max-height:80vh;border-radius:12px"><div style="color:#fff;margin-top:10px;font-size:13px">Slip · ${id} — tap anywhere to close</div></div>`;
+  }catch(e){ alert('Could not load slip'); }
+}
+let _slipUpId="";
+function staffResize(file,maxW,q){ return new Promise((ok,err)=>{ const fr=new FileReader();
+  fr.onload=()=>{ const img=new Image(); img.onload=()=>{ const sc=Math.min(1,maxW/img.width); const c=document.createElement('canvas');
+    c.width=Math.round(img.width*sc); c.height=Math.round(img.height*sc); c.getContext('2d').drawImage(img,0,0,c.width,c.height);
+    ok(c.toDataURL('image/jpeg',q)); }; img.onerror=err; img.src=fr.result; }; fr.onerror=err; fr.readAsDataURL(file); }); }
+function staffUploadSlip(id){ _slipUpId=id; let inp=document.getElementById('staffSlipInput');
+  if(!inp){ inp=document.createElement('input'); inp.type='file'; inp.accept='image/*'; inp.id='staffSlipInput'; inp.style.display='none';
+    inp.onchange=async()=>{ const f=inp.files&&inp.files[0]; inp.value=''; if(!f||!_slipUpId) return;
+      try{ const dataUrl=await staffResize(f,1000,0.7);
+        const r=await fetch('/api/slip',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({orderId:_slipUpId,image:dataUrl})});
+        if(r.ok){ alert('✅ Proof uploaded for '+_slipUpId); pollOrders(); }
+        else { const j=await r.json().catch(()=>({})); alert('⚠️ '+(j.error||'Upload failed')); }
+      }catch(e){ alert('⚠️ Upload failed'); } };
+    document.body.appendChild(inp); }
+  inp.click();
+}
+async function setOrder(id,status){
+  await fetch('/api/orders',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({orderId:id,status,key:KEY})});
+  pollOrders();
+}
+function startListPoll(){ clearInterval(listT); listT=setInterval(async()=>{ if(TAB!=='chats')return;
+  try{ const r=await fetch(`${API}?list=1&key=${encodeURIComponent(KEY)}`); if(r.ok) renderList((await r.json()).threads); }catch(e){} },4000); }
+
+function renderList(threads){
+  const el=$('#list');
+  if(!threads.length){ el.innerHTML='<div style="padding:30px;color:var(--muted2);text-align:center;font-size:13.5px">No conversations yet.<br>Handoffs from DANK AI appear here.</div>'; return; }
+  el.innerHTML=threads.map(t=>{
+    const unread=t.lastFrom==='customer'&&(lastSeen[t.id]||0)<t.count;
+    if(unread&&document.hasFocus&&!document.hasFocus()){}
+    return `<button class="trow ${cur===t.id?'sel':''} ${unread?'unread':''}" onclick="openThread('${t.id}')">
+      <span class="top"><span class="who">${esc(t.customer?.name||t.customer?.contact||t.id)}</span>
+      <span class="badge ${t.status}">${t.status}</span><span class="when">${t.lastAt?ago(t.lastAt):''}</span></span>
+      <span class="prev">${t.lastFrom==='customer'?'🧑 ':t.lastFrom==='staff'?'👨‍💼 ':''}${esc(t.lastText||'')}</span>
+      ${t.cartCount?`<span class="meta">🛒 ${t.cartCount} items · ฿${(t.subtotal||0).toLocaleString()}</span>`:''}
+    </button>`;}).join('');
+}
+
+async function openThread(id){
+  cur=id; curSeq=0; document.body.classList.add('chatting'); location.hash=id;
+  $('#chatWrap').innerHTML=`
+    <div id="chatHead"><button class="ghost" onclick="backToList()" style="display:none" id="backBtn">←</button>
+      <div class="c-info"><div class="c-name" id="cName">…</div><div class="c-sub" id="cSub"></div></div>
+      <div class="actions"><button class="ghost danger" onclick="closeThread()">Close ticket</button></div></div>
+    <div id="msgs"></div>
+    <div id="ctxBox" style="display:none"></div>
+    <div class="quicks">
+      <button onclick="quick('On it! Give me one minute 🙏')">On it 🙏</button>
+      <button onclick="quick('Yes, that\\'s in stock right now ✅')">In stock ✅</button>
+      <button onclick="quick('We can deliver that today. Which area are you in?')">Delivery today</button>
+      <button onclick="quick('ได้เลยครับ รอสักครู่นะครับ 🙏')">ได้เลยครับ 🙏</button>
+    </div>
+    <div id="replyBar"><input id="reply" placeholder="Reply as staff…" onkeydown="if(event.key==='Enter')sendReply()"><button id="sendBtn" onclick="sendReply()">Send</button></div>`;
+  if(window.matchMedia('(max-width:760px)').matches) $('#backBtn').style.display='';
+  await pull(true);
+  clearInterval(pollT); pollT=setInterval(()=>pull(false),3000);
+}
+function backToList(){ document.body.classList.remove('chatting'); }
+
+async function pull(first){
+  if(!cur) return;
+  try{
+    const r=await fetch(`${API}?threadId=${encodeURIComponent(cur)}&since=${curSeq}&key=${encodeURIComponent(KEY)}`);
+    if(!r.ok) return;
+    const j=await r.json();
+    if(first){
+      $('#cName').textContent=j.customer?.name||j.customer?.contact||cur;
+      $('#cSub').textContent=`${j.customer?.contact||''} · ticket ${cur} · ${j.status}`;
+      let ctx='';
+      if(j.cart?.length) ctx+=`<b>🛒 Cart (฿${(j.subtotal||0).toLocaleString()}):</b> `+j.cart.map(c=>`${esc(c.name)} ×${c.qty}`).join(' · ')+'<br>';
+      if(j.transcript?.length) ctx+=`<b>🤖 AI chat before transfer:</b><br>`+j.transcript.map(m=>`${m.role==='user'?'🧑':'🤖'} ${esc(m.text)}`).join('<br>');
+      if(ctx){ $('#ctxBox').innerHTML=ctx; $('#ctxBox').style.display='block'; }
+    }
+    let gotCustomer=false;
+    for(const m of j.messages||[]){
+      curSeq=Math.max(curSeq,m.seq);
+      addMsg(m);
+      if(m.from==='customer'&&!first){ gotCustomer=true; }
+    }
+    lastSeen[cur]=curSeq;
+    if(gotCustomer) beep();
+  }catch(e){}
+}
+function addMsg(m){
+  const d=document.createElement('div'); d.className='m '+m.from;
+  d.innerHTML=esc(m.text)+`<span class="t">${new Date(m.at).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'})}</span>`;
+  $('#msgs').appendChild(d); $('#msgs').scrollTop=$('#msgs').scrollHeight;
+}
+function quick(t){ $('#reply').value=t; sendReply(); }
+async function sendReply(){
+  const t=$('#reply').value.trim(); if(!t||!cur)return; $('#reply').value='';
+  try{ await fetch(API,{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({action:'send',threadId:cur,text:t,key:KEY,staffName:'DANK Team'})});
+    pull(false);
+  }catch(e){ alert('Send failed'); }
+}
+async function closeThread(){
+  if(!cur||!confirm('Close this conversation?'))return;
+  await fetch(API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'close',threadId:cur,key:KEY})});
+  pull(false);
+}
+/* ===================== SHIFT COUNT / INVENTORY ===================== */
+let COUNT_PRODUCTS=[], COUNT_VALS={}, COUNT_PROOFS=[], selectedCode=null;
+let scalePort=null, scaleReader=null, lastWeight=null, scaleKeep=false;
+
+async function loadCount(){
+  const el=$('#list');
+  el.innerHTML='<div class="ghdr" style="padding:14px">Loading products…</div>';
+  try{
+    const res=await fetch('product-codes.json'); COUNT_PRODUCTS=await res.json();
+    // merge live stock (expected) from /api/products when available
+    try{ const live=await (await fetch('/api/products')).json();
+      const byId={}; (Array.isArray(live)?live:[]).forEach(p=>byId[p.id]=p);
+      COUNT_PRODUCTS.forEach(p=>{ if(byId[p.id]&&typeof byId[p.id].stock==='number') p.stock=byId[p.id].stock; });
+    }catch(e){}
+  }catch(e){ el.innerHTML='<div class="ghdr" style="padding:14px">Could not load product-codes.json.</div>'; return; }
+  COUNT_VALS={}; COUNT_PROOFS=[]; selectedCode=null;
+  renderCountUI();
+}
+
+function renderCountUI(){
+  const serialOK = ('serial' in navigator);
+  const rows=COUNT_PRODUCTS.map(p=>countRow(p)).join('');
+  $('#list').innerHTML=`
+  <div style="padding:12px 12px 90px">
+    <div style="background:var(--panel);border:1px solid var(--line2);border-radius:14px;padding:12px;margin-bottom:12px;position:sticky;top:0;z-index:5">
+      <div style="font-weight:800;margin-bottom:8px">📦 Shift Count · <span style="color:var(--muted)">${new Date().toLocaleDateString()}</span></div>
+      <input id="scanInput" placeholder="Scan a product QR / type a code, then Enter…" autocomplete="off"
+        style="width:100%;background:var(--bg2);border:1px solid var(--line2);color:var(--txt);padding:11px;border-radius:10px;font-size:15px;outline:none"
+        onkeydown="if(event.key==='Enter'){onScan(this.value);this.value='';event.preventDefault();}">
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">
+        <button class="undo-btn" onclick="startCamScan()">📷 Camera scan</button>
+        <button class="undo-btn" onclick="connectScale()" ${serialOK?'':'disabled title="Web Serial not supported here"'}>⚖️ ${serialOK?'Connect scale':'Scale n/a'}</button>
+        <span id="scaleRead" style="align-self:center;font-weight:800;color:var(--gold)">${serialOK?'scale: —':'use Chrome/Edge on desktop/Android for scale'}</span>
+      </div>
+      <div id="camBox" style="display:none;margin-top:8px;text-align:center">
+        <video id="camVid" playsinline style="width:100%;max-width:320px;border-radius:10px;background:#000"></video>
+        <div><button class="undo-btn" onclick="stopCamScan()" style="margin-top:6px">Stop camera</button></div>
+      </div>
+    </div>
+
+    <div style="display:flex;justify-content:space-between;color:var(--muted2);font-size:11px;font-weight:700;padding:0 6px 6px">
+      <span>PRODUCT</span><span>EXPECTED · COUNTED</span>
+    </div>
+    <div id="countRows">${rows}</div>
+
+    <div style="background:var(--panel);border:1px solid var(--line2);border-radius:14px;padding:12px;margin-top:14px">
+      <div style="font-weight:800;margin-bottom:4px">🧾 Proof of existence photos <span style="color:var(--danger)">*</span></div>
+      <div style="color:var(--muted);font-size:12px;margin-bottom:10px">Photograph the counted stock as proof. At least one photo is required to close the shift.</div>
+      <div id="proofGrid" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px"></div>
+      <label style="display:block;border:1px dashed var(--line2);border-radius:12px;padding:16px;text-align:center;color:var(--muted);cursor:pointer">
+        <input type="file" accept="image/*" capture="environment" multiple style="display:none" onchange="addProofPhotos(this)">
+        📎 Tap to add proof photo(s)
+      </label>
+    </div>
+
+    <button class="btn" style="margin-top:14px" onclick="submitCount()">✅ Submit &amp; Close shift</button>
+
+    <div style="margin-top:20px">
+      <div style="font-weight:800;margin-bottom:8px">Recent counts</div>
+      <div id="countHistory" style="color:var(--muted);font-size:13px">Loading…</div>
+    </div>
+  </div>`;
+  renderProofGrid(); loadCountHistory();
+  setTimeout(()=>$('#scanInput')&&$('#scanInput').focus(),120);
+}
+
+function countRow(p){
+  const v=COUNT_VALS[p.code];
+  const variance=(v!==undefined&&v!=='')?(Number(v)-Number(p.stock||0)):null;
+  const vColor=variance===null?'var(--muted2)':(variance===0?'var(--green2)':(variance>0?'var(--gold)':'var(--danger)'));
+  const vTxt=variance===null?'':(variance>0?'+'+variance:String(variance));
+  return `<div class="ocard" id="row-${p.code}" style="padding:10px 12px;margin-bottom:8px">
+    <div style="display:flex;align-items:center;gap:10px">
+      <div style="flex:1;min-width:0">
+        <div style="font-family:ui-monospace,monospace;font-weight:800;color:var(--green2);font-size:13px">${p.code}</div>
+        <div style="font-weight:600;font-size:13.5px">${esc(p.name)}</div>
+        <div style="color:var(--muted);font-size:11px">${[p.category,p.type].filter(Boolean).join(' · ')}</div>
+      </div>
+      <div style="text-align:right">
+        <div style="color:var(--muted2);font-size:11px">exp <b style="color:var(--muted)">${p.stock??0}</b></div>
+        <div style="display:flex;align-items:center;gap:6px;margin-top:3px">
+          <input inputmode="decimal" value="${v??''}" placeholder="0" oninput="setCount('${p.code}',this.value)"
+            style="width:66px;background:var(--bg2);border:1px solid var(--line2);color:var(--txt);padding:7px;border-radius:8px;font-size:14px;text-align:center;outline:none">
+          <button class="undo-btn" title="Apply scale reading" onclick="applyScale('${p.code}')" style="padding:7px 9px">⚖️</button>
+        </div>
+        <div id="var-${p.code}" style="font-size:11px;font-weight:800;margin-top:3px;color:${vColor}">${vTxt?('Δ '+vTxt):''}</div>
+      </div>
+    </div>
+  </div>`;
+}
+
+// Update ONLY the variance line in place — never re-render the row, or we'd
+// destroy the <input> the user is typing in (loses focus after each keystroke).
+function setCount(code,val){ COUNT_VALS[code]=val; updateVariance(code); }
+function updateVariance(code){
+  const p=COUNT_PRODUCTS.find(x=>x.code===code); if(!p)return;
+  const el=document.getElementById('var-'+code); if(!el)return;
+  const v=COUNT_VALS[code];
+  const variance=(v!==undefined&&v!=='')?(Number(v)-Number(p.stock||0)):null;
+  el.style.color=variance===null?'var(--muted2)':(variance===0?'var(--green2)':(variance>0?'var(--gold)':'var(--danger)'));
+  el.textContent=variance===null?'':('Δ '+(variance>0?'+'+variance:String(variance)));
+}
+function selectRow(code){
+  selectedCode=code;
+  const row=document.getElementById('row-'+code); if(!row)return;
+  row.scrollIntoView({behavior:'smooth',block:'center'});
+  row.style.boxShadow='0 0 0 2px var(--green)'; setTimeout(()=>{row.style.boxShadow='';},1200);
+  const inp=row.querySelector('input'); if(inp){ inp.focus(); inp.select(); }
+}
+function onScan(raw){
+  const code=String(raw||'').trim().toUpperCase();
+  if(!code) return;
+  const p=COUNT_PRODUCTS.find(x=>String(x.code).toUpperCase()===code);
+  if(p){ beep(); selectRow(p.code); }
+  else { alert('No product for code: '+code); }
+}
+
+/* ---- camera scan (lazy-load jsQR) ---- */
+let camStream=null, camRAF=null;
+function loadJsQR(){ return new Promise((ok)=>{ if(window.jsQR)return ok(); const s=document.createElement('script');
+  s.src='https://cdnjs.cloudflare.com/ajax/libs/jsQR/1.4.0/jsQR.min.js'; s.onload=ok; s.onerror=ok; document.head.appendChild(s); }); }
+async function startCamScan(){
+  await loadJsQR();
+  if(!window.jsQR){ alert('Camera scanner library unavailable — a USB scanner or manual entry still works.'); return; }
+  try{
+    camStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}});
+    const v=$('#camVid'); v.srcObject=camStream; await v.play(); $('#camBox').style.display='block';
+    const cv=document.createElement('canvas'), cx=cv.getContext('2d');
+    const tick=()=>{ if(!camStream)return; if(v.readyState===v.HAVE_ENOUGH_DATA){
+        cv.width=v.videoWidth; cv.height=v.videoHeight; cx.drawImage(v,0,0,cv.width,cv.height);
+        const img=cx.getImageData(0,0,cv.width,cv.height); const q=window.jsQR(img.data,cv.width,cv.height);
+        if(q&&q.data){ stopCamScan(); onScan(q.data); return; } }
+      camRAF=requestAnimationFrame(tick); };
+    tick();
+  }catch(e){ alert('Could not open camera: '+e.message); }
+}
+function stopCamScan(){ if(camRAF)cancelAnimationFrame(camRAF); camRAF=null;
+  if(camStream){ camStream.getTracks().forEach(t=>t.stop()); camStream=null; }
+  const box=$('#camBox'); if(box)box.style.display='none'; }
+
+/* ---- Web Serial scale ---- */
+async function connectScale(){
+  if(!('serial' in navigator)){ alert('Web Serial is not supported on this browser. Use Chrome or Edge on desktop or Android.'); return; }
+  try{
+    scalePort=await navigator.serial.requestPort();
+    await scalePort.open({baudRate:9600});
+    $('#scaleRead').textContent='scale: connected…';
+    scaleKeep=true; readScaleLoop();
+  }catch(e){ $('#scaleRead').textContent='scale: '+(e.message||'failed'); }
+}
+async function readScaleLoop(){
+  const dec=new TextDecoderStream(); const done=scalePort.readable.pipeTo(dec.writable).catch(()=>{});
+  scaleReader=dec.readable.getReader(); let buf='';
+  try{
+    while(scaleKeep){
+      const {value,done:d}=await scaleReader.read(); if(d)break;
+      buf+=value; let i;
+      while((i=buf.search(/[\r\n]/))>=0){ const line=buf.slice(0,i); buf=buf.slice(i+1); parseScale(line); }
+    }
+  }catch(e){}
+}
+function parseScale(line){
+  const m=String(line).match(/(-?\d+(?:\.\d+)?)/);
+  if(m){ lastWeight=parseFloat(m[0]); const el=$('#scaleRead'); if(el)el.textContent='scale: '+lastWeight+' g'; }
+}
+function applyScale(code){
+  if(lastWeight===null){ alert('No scale reading yet. Connect the scale and place product on it.'); return; }
+  const row=document.getElementById('row-'+code); const inp=row&&row.querySelector('input');
+  if(inp) inp.value=String(lastWeight);   // reflect it in the field (setCount no longer re-renders the row)
+  setCount(code, String(lastWeight));
+}
+
+/* ---- proof photos ---- */
+async function addProofPhotos(input){
+  const files=[...(input.files||[])]; input.value='';
+  for(const f of files){
+    if(COUNT_PROOFS.length>=12){ alert('Max 12 photos'); break; }
+    try{ const dataUrl=await staffResize(f,1100,0.7); COUNT_PROOFS.push(dataUrl); }catch(e){}
+  }
+  renderProofGrid();
+}
+function renderProofGrid(){
+  const g=$('#proofGrid'); if(!g)return;
+  g.innerHTML=COUNT_PROOFS.map((src,i)=>`<div style="position:relative">
+    <img src="${src}" style="width:72px;height:72px;object-fit:cover;border-radius:10px;border:1px solid var(--line2)">
+    <button onclick="COUNT_PROOFS.splice(${i},1);renderProofGrid()" style="position:absolute;top:-6px;right:-6px;background:var(--danger);color:#fff;border-radius:50%;width:20px;height:20px;font-weight:900;line-height:1">×</button>
+  </div>`).join('') || '<span style="color:var(--muted2);font-size:12px">No photos yet</span>';
+}
+
+/* ---- submit ---- */
+async function submitCount(){
+  if(!COUNT_PROOFS.length){ alert('Add at least one proof-of-existence photo before closing the shift.'); return; }
+  const lines=COUNT_PRODUCTS.map(p=>({code:p.code,name:p.name,expected:Number(p.stock||0),counted:(COUNT_VALS[p.code]??'')}));
+  const counted=lines.filter(l=>l.counted!=='').length;
+  if(!counted){ alert('Enter at least one counted quantity.'); return; }
+  if(!confirm(`Close shift?\n${counted}/${lines.length} items counted · ${COUNT_PROOFS.length} proof photo(s).`)) return;
+  try{
+    const r=await fetch('/api/count',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({staff:'DANK Team',lines,photos:COUNT_PROOFS,key:KEY})});
+    const j=await r.json();
+    if(r.ok){ alert(`✅ Shift count saved (${j.id}). Variances: ${j.varianceCount}.`); COUNT_VALS={};COUNT_PROOFS=[];selectedCode=null; renderCountUI(); }
+    else alert('⚠️ '+(j.error||'Failed to save'));
+  }catch(e){ alert('⚠️ Network error'); }
+}
+
+/* ---- history ---- */
+async function loadCountHistory(){
+  const el=$('#countHistory'); if(!el)return;
+  try{
+    const j=await (await fetch('/api/count?list=1&key='+encodeURIComponent(KEY))).json();
+    const s=j.sessions||[];
+    if(!s.length){ el.innerHTML='<span style="color:var(--muted2)">No counts yet.</span>'; return; }
+    el.innerHTML=s.map(x=>`<div class="ocard" style="padding:9px 12px;margin-bottom:6px;cursor:pointer" onclick="viewCount('${x.id}')">
+      <div style="display:flex;justify-content:space-between"><b>${x.id}</b><span style="color:var(--muted2)">${ago(x.at)}</span></div>
+      <div style="color:var(--muted);font-size:12px">${x.countedItems}/${x.total} counted · ${x.photoCount} photo(s) · <span style="color:${x.varianceCount?'var(--gold)':'var(--green2)'}">${x.varianceCount} variance${x.varianceCount===1?'':'s'}</span></div>
+    </div>`).join('');
+  }catch(e){ el.innerHTML='<span style="color:var(--muted2)">Could not load history.</span>'; }
+}
+async function viewCount(id){
+  try{
+    const x=await (await fetch('/api/count?id='+encodeURIComponent(id)+'&key='+encodeURIComponent(KEY))).json();
+    const vars=(x.lines||[]).filter(l=>l.variance!=null&&l.variance!==0);
+    let ov=document.getElementById('cntOv'); if(!ov){ ov=document.createElement('div'); ov.id='cntOv';
+      ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:200;overflow:auto;padding:18px'; document.body.appendChild(ov); }
+    ov.innerHTML=`<div style="max-width:560px;margin:0 auto;color:var(--txt)">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <b>${x.id} · ${new Date(x.at).toLocaleString()}</b>
+        <button class="undo-btn" onclick="document.getElementById('cntOv').remove()">Close ✕</button></div>
+      <div style="color:var(--muted);font-size:13px;margin-bottom:10px">By ${esc(x.staff||'')} · ${x.countedItems}/${x.total} counted · ${x.varianceCount} variance(s)</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">${(x.photos||[]).map(src=>`<img src="${src}" style="width:120px;height:120px;object-fit:cover;border-radius:10px;border:1px solid var(--line2)">`).join('')||'<span style="color:var(--muted2)">No photos</span>'}</div>
+      <div style="font-weight:800;margin-bottom:6px">Variances</div>
+      ${vars.length?vars.map(l=>`<div class="ocard" style="padding:8px 12px;margin-bottom:5px;display:flex;justify-content:space-between"><span>${l.code} · ${esc(l.name)}</span><span style="color:${l.variance>0?'var(--gold)':'var(--danger)'};font-weight:800">exp ${l.expected} → ${l.counted} (${l.variance>0?'+':''}${l.variance})</span></div>`).join(''):'<div style="color:var(--green2)">No variances 🎉</div>'}
+    </div>`;
+  }catch(e){ alert('Could not load count'); }
+}
+
+if(KEY){ $('#keyInput').value=KEY; login(); }
+</script>
+</body>
+</html>
