@@ -1,29 +1,49 @@
-/* GET /api/storehub-raw?key=STAFF_KEY — debug: dumps the raw StoreHub
-   /stores, /products and /inventory payloads (+ a normalized preview) so the
-   product mapping can be calibrated against your real catalogue after deploy.
-   Staff-key protected; never exposed publicly. */
-import { shRaw, shConfigured, fetchStoreHubProducts } from "./_storehub.js";
+/* ============================================================
+   Thread storage adapter.
+   Production: Upstash Redis (free tier) — set
+     UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN
+   (upstash.com → create Redis DB → REST API section, 2 minutes).
+   Without them: in-memory store — fine for local testing, but on
+   Vercel serverless memory isn't shared between instances, so set
+   Upstash before going live with staff chat.
+   ============================================================ */
 
-const STAFF_KEY = process.env.STAFF_KEY || "dankstaff";
+const URL_ = process.env.UPSTASH_REDIS_REST_URL || "";
+const TOK = process.env.UPSTASH_REDIS_REST_TOKEN || "";
+const mem = globalThis.__dankMem || (globalThis.__dankMem = new Map());
 
-export default async function handler(req, res) {
-  res.setHeader("Cache-Control", "no-store");
-  if (req.query?.key !== STAFF_KEY) return res.status(401).json({ error: "bad key" });
-  if (!shConfigured()) return res.status(200).json({ configured: false, note: "Set STOREHUB_STORE + STOREHUB_TOKEN" });
-  try {
-    const raw = await shRaw();
-    let normalized = [];
-    try { normalized = (await fetchStoreHubProducts()).slice(0, 10); } catch (e) { normalized = [{ error: e.message }]; }
-    return res.status(200).json({
-      configured: true,
-      storeId: raw.storeId,
-      productCount: Array.isArray(raw.products) ? raw.products.length : "n/a",
-      sampleRawProduct: Array.isArray(raw.products) ? raw.products[0] : raw.products,
-      sampleStore: Array.isArray(raw.stores) ? raw.stores[0] : raw.stores,
-      sampleInventory: Array.isArray(raw.inventory) ? raw.inventory.slice(0, 3) : raw.inventory,
-      normalizedPreview: normalized,
-    });
-  } catch (e) {
-    return res.status(502).json({ error: e.message });
+export const usingRedis = () => Boolean(URL_ && TOK);
+
+async function redis(cmd) {
+  const r = await fetch(URL_, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${TOK}`, "Content-Type": "application/json" },
+    body: JSON.stringify(cmd),
+  });
+  if (!r.ok) throw new Error(`redis ${r.status}`);
+  return (await r.json()).result;
+}
+
+export async function getJSON(key) {
+  if (usingRedis()) {
+    const v = await redis(["GET", key]);
+    return v ? JSON.parse(v) : null;
   }
+  return mem.has(key) ? JSON.parse(mem.get(key)) : null;
+}
+
+export async function setJSON(key, val, ttlSeconds = 60 * 60 * 24 * 14) {
+  const s = JSON.stringify(val);
+  if (usingRedis()) return redis(["SET", key, s, "EX", String(ttlSeconds)]);
+  mem.set(key, s);
+}
+
+export async function indexAdd(id, key = "threads:index") {
+  const idx = (await getJSON(key)) || [];
+  if (!idx.includes(id)) idx.unshift(id);
+  await setJSON(key, idx.slice(0, 200));
+}
+
+export async function indexList(key = "threads:index") {
+  return (await getJSON(key)) || [];
 }

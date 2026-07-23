@@ -1,74 +1,29 @@
-/* Shared LINE Messaging API helper for the DANK website.
-   Used for (1) staff alerts pushed to LINE and (2) the LINE Official Account
-   AI channel (api/line-webhook.js).
+/* GET /api/storehub-raw?key=STAFF_KEY — debug: dumps the raw StoreHub
+   /stores, /products and /inventory payloads (+ a normalized preview) so the
+   product mapping can be calibrated against your real catalogue after deploy.
+   Staff-key protected; never exposed publicly. */
+import { shRaw, shConfigured, fetchStoreHubProducts } from "./_storehub.js";
 
-   Env:
-     LINE_CHANNEL_ACCESS_TOKEN  — Messaging API channel access token
-     LINE_CHANNEL_SECRET        — channel secret (verifies incoming webhooks)
-     LINE_TO                    — where staff alerts go: Bryan's userId OR a
-                                  staff group id (the OA must be in that group)
-*/
-import crypto from "node:crypto";
+const STAFF_KEY = process.env.STAFF_KEY || "dankstaff";
 
-const TOKEN = process.env.LINE_CHANNEL_ACCESS_TOKEN || "";
-const SECRET = process.env.LINE_CHANNEL_SECRET || "";
-const STAFF_TO = process.env.LINE_TO || "";
-
-export const lineConfigured = () => Boolean(TOKEN);
-export const lineStaffConfigured = () => Boolean(TOKEN && STAFF_TO);
-
-// LINE caps a single text at 5000 chars and 5 messages per request.
-const chunk = (text) => (String(text).match(/[\s\S]{1,4900}/g) || [""]).slice(0, 5);
-
-export async function linePush(to, text) {
-  if (!TOKEN) return { ok: false, error: "no LINE token" };
-  const target = to || STAFF_TO;
-  if (!target) return { ok: false, error: "no target" };
+export default async function handler(req, res) {
+  res.setHeader("Cache-Control", "no-store");
+  if (req.query?.key !== STAFF_KEY) return res.status(401).json({ error: "bad key" });
+  if (!shConfigured()) return res.status(200).json({ configured: false, note: "Set STOREHUB_STORE + STOREHUB_TOKEN" });
   try {
-    const r = await fetch("https://api.line.me/v2/bot/message/push", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${TOKEN}` },
-      body: JSON.stringify({ to: target, messages: chunk(text).map((t) => ({ type: "text", text: t })) }),
+    const raw = await shRaw();
+    let normalized = [];
+    try { normalized = (await fetchStoreHubProducts()).slice(0, 10); } catch (e) { normalized = [{ error: e.message }]; }
+    return res.status(200).json({
+      configured: true,
+      storeId: raw.storeId,
+      productCount: Array.isArray(raw.products) ? raw.products.length : "n/a",
+      sampleRawProduct: Array.isArray(raw.products) ? raw.products[0] : raw.products,
+      sampleStore: Array.isArray(raw.stores) ? raw.stores[0] : raw.stores,
+      sampleInventory: Array.isArray(raw.inventory) ? raw.inventory.slice(0, 3) : raw.inventory,
+      normalizedPreview: normalized,
     });
-    if (!r.ok) return { ok: false, error: `${r.status} ${await r.text()}` };
-    return { ok: true };
-  } catch (e) { return { ok: false, error: e.message }; }
-}
-
-export async function lineReply(replyToken, text) {
-  if (!TOKEN || !replyToken) return { ok: false };
-  try {
-    const r = await fetch("https://api.line.me/v2/bot/message/reply", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${TOKEN}` },
-      body: JSON.stringify({ replyToken, messages: chunk(text).map((t) => ({ type: "text", text: t })) }),
-    });
-    return { ok: r.ok };
-  } catch (e) { return { ok: false, error: e.message }; }
-}
-
-/** Fire-and-forget staff alert to LINE_TO. No-op if LINE isn't configured. */
-export async function notifyStaffLine(text) {
-  if (!lineStaffConfigured()) return { ok: false, skipped: true };
-  return linePush(STAFF_TO, text);
-}
-
-export async function getLineProfile(userId) {
-  if (!TOKEN || !userId) return null;
-  try {
-    const r = await fetch(`https://api.line.me/v2/bot/profile/${userId}`, {
-      headers: { Authorization: `Bearer ${TOKEN}` },
-    });
-    if (!r.ok) return null;
-    return await r.json();
-  } catch { return null; }
-}
-
-/** Verify an incoming LINE webhook signature against the raw request body. */
-export function verifyLineSignature(rawBody, signature) {
-  if (!SECRET) return true; // if no secret set, skip (webhook URL should carry ?k= gate instead)
-  try {
-    const h = crypto.createHmac("sha256", SECRET).update(rawBody).digest("base64");
-    return h === signature;
-  } catch { return false; }
+  } catch (e) {
+    return res.status(502).json({ error: e.message });
+  }
 }

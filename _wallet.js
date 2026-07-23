@@ -1,34 +1,36 @@
-/* POST /api/eta — compute a delivery ETA and (optionally) send it on LINE.
-     { destLat, destLng } or { address }   → required (the customer's location)
-     { replyToken }                        → reply in the LINE chat, OR
-     { to, key }                           → push to a LINE userId (needs STAFF_KEY)
-   Returns { ok, minutes, travelMin, km, text }.
-   Used by the LINE webhook (location pin) and can be called by staff tools.   */
-import { computeEta, etaText, routeConfigured } from "./_route.js";
-import { lineReply, linePush } from "./_line.js";
+/* Wallet / store-credit helper. Balance is keyed by customer phone and
+   stored in the shared store (Redis when configured). Top-ups add a +10%
+   bonus; wallet can then pay for orders. */
+import { getJSON, setJSON } from "./_store.js";
 
-const STAFF_KEY = process.env.STAFF_KEY || "dankstaff";
+const YEAR = 60 * 60 * 24 * 365;
+const key = (p) => "wallet:" + String(p || "").replace(/\s+/g, "");
 
-export default async function handler(req, res) {
-  res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
-  if (req.method === "OPTIONS") return res.status(204).end();
-  if (req.method !== "POST") return res.status(405).json({ error: "POST only" });
-  if (!routeConfigured()) return res.status(200).json({ ok: false, error: "route provider not configured" });
-
-  const b = req.body || {};
-  if (b.destLat == null && b.destLng == null && !b.address)
-    return res.status(400).json({ error: "destLat/destLng or address required" });
-
-  const eta = await computeEta({ destLat: b.destLat, destLng: b.destLng, address: b.address });
-  const text = etaText(eta);
-
-  // deliver on LINE if asked
-  if (b.replyToken) await lineReply(b.replyToken, text);
-  else if (b.to) {
-    if (b.key !== STAFF_KEY) return res.status(401).json({ error: "bad key" });
-    await linePush(b.to, text);
-  }
-
-  return res.status(200).json({ ok: eta.ok, minutes: eta.minutes, travelMin: eta.travelMin, km: eta.km, text });
+export async function getWallet(phone) {
+  return (await getJSON(key(phone))) || { balance: 0, history: [] };
+}
+export async function getBalance(phone) {
+  return (await getWallet(phone)).balance || 0;
+}
+export async function credit(phone, amount, reason) {
+  const k = key(phone);
+  const w = (await getJSON(k)) || { balance: 0, history: [] };
+  w.balance = Math.round(w.balance + amount);
+  w.history.unshift({ t: "credit", amount: Math.round(amount), reason, at: Date.now() });
+  w.history = w.history.slice(0, 50);
+  await setJSON(k, w, YEAR);
+  return w.balance;
+}
+export async function debit(phone, amount, reason) {
+  const k = key(phone);
+  const amt = Math.round(Number(amount));
+  const w = (await getJSON(k)) || { balance: 0, history: [] };
+  // reject non-finite / non-positive amounts so a NaN can't bypass the balance check
+  if (!Number.isFinite(amt) || amt <= 0) return { ok: false, error: "bad amount", balance: w.balance };
+  if (w.balance < amt) return { ok: false, balance: w.balance };
+  w.balance -= amt;
+  w.history.unshift({ t: "debit", amount: amt, reason, at: Date.now() });
+  w.history = w.history.slice(0, 50);
+  await setJSON(k, w, YEAR);
+  return { ok: true, balance: w.balance };
 }
