@@ -1,30 +1,103 @@
-/* GET /api/track?id=DK... — customer-facing order status lookup.
-   Returns only what the order-holder already knows (status, fulfilment,
-   items summary, totals) — no other customers' data, no staff fields. */
-import { getJSON } from "./_store.js";
+/* /api/pos-feed — live menu receiver for BRYAN POS (dank-medical-pos-app).
+
+   The POS runs in the staff device's browser (its data lives there), so it
+   PUSHES the catalog here whenever products/stock/prices change (~45s watch):
+
+     POST {key, products:[{id,name,category,type,thc,cbd,unit,stock,price,member,img,sku}]}
+          → {ok, count}       (stores normalized feed, busts the menu cache)
+     GET  → {ok, at, ageSeconds, count}   (check the connection is alive)
+
+   api/_menu.js reads this feed FIRST (source "pos"), so the website mirrors
+   the POS within ~30s of any change. A feed older than POS_FEED_MAX_AGE_H
+   (default 72h) is ignored and the site falls back to StoreHub/bundled.
+
+   Auth: shared link key. Default is baked into both sides so it works with
+   zero setup; override with env POS_SYNC_KEY (website) + the API-key field
+   in the POS Settings → Website connection card (both must match).
+
+   Flower mapping: POS sells flowers per-gram (unit "g", price = 1g). The
+   website shows weight tiers, derived exactly from DANK's price card:
+   ½g = price/2 · 1g = price · 3.5g bulk = 3×price (the 3+1 deal), with
+   member prices from the POS mPrice (≈10% off).                             */
+import crypto from "node:crypto";
+import { getJSON, setJSON } from "./_store.js";
+import { bustMenu } from "./_menu.js";
+
+const KEY = process.env.POS_SYNC_KEY || "DANK-POS-LINK-8k3n9q2f";
+const MAX_ITEMS = 1000;
+
+const safeEq = (a, b) => {
+  const A = Buffer.from(String(a)), B = Buffer.from(String(b));
+  return A.length === B.length && crypto.timingSafeEqual(A, B);
+};
+const num = (v) => { const n = Number(v); return isFinite(n) ? n : 0; };
+const looksLikeImg = (s) => /^(https?:|data:image)/.test(String(s || ""));
+
+function normalize(list) {
+  const out = [];
+  for (let i = 0; i < Math.min(list.length, MAX_ITEMS); i++) {
+    const p = list[i];
+    if (!p || typeof p !== "object" || !p.name) continue;
+    const price = num(p.price);
+    const member = num(p.member) || Math.round(price * 0.9);
+    const item = {
+      id: String(p.id ?? p.sku ?? "pos-" + i),
+      name: String(p.name),
+      category: String(p.category || "Other"),
+      type: ["Indica", "Sativa", "Hybrid"].includes(p.type) ? p.type : "Hybrid",
+      thc: num(p.thc),
+      thcLabel: num(p.thc) > 0 ? num(p.thc) + "%" : "",
+      cbd: num(p.cbd),
+      stock: p.stock === undefined ? 99 : num(p.stock),
+      unit: String(p.unit || "pc"),
+      image: looksLikeImg(p.img) ? String(p.img) : "",
+      description: "",
+      effects: [],
+      flavors: [],
+    };
+    if (item.unit === "g" && price > 0) {
+      // POS price is per 1g — derive DANK's standard weight tiers
+      item.priceTiers = [
+        { label: "½g", price: Math.round(price / 2), member: Math.round(member / 2) },
+        { label: "1g", price, member },
+        { label: "3.5g bulk", price: price * 3, member: member * 3 },
+      ];
+    } else {
+      item.price = price;
+      item.member = member;
+    }
+    out.push(item);
+  }
+  return out;
+}
 
 export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Cache-Control", "no-store");
-  const id = req.query?.id;
-  if (!id) return res.status(400).json({ error: "id required" });
-  try {
-    const o = await getJSON("order:" + id);
-    if (!o) return res.status(200).json({ found: false });
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, x-api-key");
+  if (req.method === "OPTIONS") return res.status(204).end();
+
+  if (req.method === "GET") {
+    const rec = (await getJSON("pos:feed")) || null;
+    if (!rec) return res.status(200).json({ ok: true, connected: false, count: 0 });
     return res.status(200).json({
-      found: true,
-      orderId: o.orderId,
-      status: o.status || "new",              // new | done
-      payStatus: o.payStatus || (["PromptPay","Card"].includes(o.payment) ? "unpaid" : "on_arrival"),
-      payment: o.payment,
-      fulfilment: o.fulfilment,
-      items: (o.items || []).map((i) => ({ name: i.name, option: i.option, qty: i.qty })),
-      subtotal: o.subtotal, discount: o.discount || 0, deliveryFee: o.deliveryFee || 0,
-      total: o.total ?? o.subtotal,
-      zone: o.delivery?.zone || "", branch: o.pickup?.branch || "",
-      at: o.at,
+      ok: true, connected: true, at: rec.at,
+      ageSeconds: Math.round((Date.now() - rec.at) / 1000),
+      count: (rec.products || []).length,
     });
-  } catch (e) {
-    return res.status(500).json({ error: "lookup failed" });
   }
+  if (req.method !== "POST") return res.status(405).json({ error: "method" });
+
+  const b = req.body || {};
+  const key = b.key || req.headers["x-api-key"] || "";
+  if (!safeEq(key, KEY)) return res.status(401).json({ error: "bad key" });
+
+  if (!Array.isArray(b.products) || !b.products.length) {
+    return res.status(400).json({ error: "products must be a non-empty array" });
+  }
+  const products = normalize(b.products);
+  if (!products.length) return res.status(400).json({ error: "no valid products" });
+
+  await setJSON("pos:feed", { at: Date.now(), products }, 60 * 60 * 24 * 30);
+  try { await bustMenu(); } catch (e) {}
+  return res.status(200).json({ ok: true, count: products.length });
 }

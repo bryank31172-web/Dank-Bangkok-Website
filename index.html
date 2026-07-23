@@ -492,7 +492,7 @@
       </div>
     </div>
     <div class="foot-bottom">
-      <span>© <span id="footYear"></span> <span id="footBrand2">DANK BKK</span> · dankbkk.com</span>
+      <span>© <span id="footYear"></span> <span id="footBrand2">DANK BKK</span> · dankbkk.com · <a href="#" onclick="openOwnerLogin();return false;" style="color:var(--muted);text-decoration:none" title="Owner login">Owner</a></span>
       <span>For adults 20+. Please consume responsibly.</span>
     </div>
   </div>
@@ -556,10 +556,19 @@ const CONFIG = {
   deliveryZones:["Sukhumvit","Thonglor / Ekkamai","Silom / Sathorn","Pattanakarn","Ari / Phaya Thai","Other (we'll confirm)"],
   deliveryNote:"Free delivery over ฿1,500 in central zones. Pay by cash, transfer, PromptPay or crypto on arrival.",
   deliveryFee:100, freeDeliveryOver:1500, minOrder:300,   // baht
-  promos:{ "DANK10":{type:"pct",value:10,desc:"10% off your order"},
+  promos:{ "CRM10":{type:"pct",value:10,desc:"Members get 10% off 💚"},
+           "DANK10":{type:"pct",value:10,desc:"10% off your order"},
            "WELCOME50":{type:"fixed",value:50,min:400,desc:"฿50 off orders over ฿400"},
            "FREEDEL":{type:"freedelivery",desc:"Free delivery"} },
-  firstOrder:{ enabled:true, code:"FIRST1G", title:"Buy 1G get 1G FREE 🎁",
+  // ---- CRM membership: join free, get 10% off every order (a pop-up invites
+  //      every non-member on each visit; signing up unlocks member prices) ----
+  crm:{ enabled:true, discountPct:10, code:"CRM10",
+        title:"Join DANK Members — 10% OFF 💚",
+        sub:"Sign up free and save 10% on every order, plus members-only drops. Takes 10 seconds.",
+        firstDelayMs:1200, repeatMs:60000 },   // shows on entry, then re-invites every ~60s until they join
+  // ---- Volume deal: buy more grams of flower, get grams free (cart-wide total) ----
+  gramLadder:[ [3,1],[5,2],[9,3],[12,4],[15,5] ],   // [buy grams, free grams]
+  firstOrder:{ enabled:false, code:"FIRST1G", title:"Buy 1G get 1G FREE 🎁",
     sub:"First order only — register and get a free gram on any 1g flower." },
   wallet:{ enabled:true, bonusPct:10, amounts:[500,1000,2000,5000] },
   promptpay:{ enabled:true, id:"", note:"Scan with any banking app — accepts all banks. Enter the amount, pay, then upload your slip.",
@@ -599,10 +608,10 @@ const CONFIG = {
       member = member price (BRYAN POS "Member Price").
    ============================================================ */
 const CDN="https://cdn.shopify.com/s/files/1/0812/7053/8528/files/";
-const MID=[{label:"½g",price:200,member:180},{label:"1 joint",price:200,member:180},{label:"1g",price:400,member:360},{label:"3.5g · 3+1 FREE",price:1200,member:1080}];
-const TOP=[{label:"½g",price:300,member:270},{label:"1 joint",price:300,member:270},{label:"1g",price:600,member:540},{label:"3.5g · 3+1 FREE",price:1800,member:1620}];
-const EXO=[{label:"½g",price:400,member:360},{label:"1 joint",price:400,member:360},{label:"1g",price:800,member:720},{label:"3.5g · 3+1 FREE",price:2400,member:2160}];
-const SUP=[{label:"½g",price:450,member:405},{label:"1 joint",price:450,member:405},{label:"3.5g · 3+1 FREE",price:2700,member:2430}];
+const MID=[{label:"½g",price:200,member:180},{label:"1 joint",price:200,member:180},{label:"1g",price:400,member:360},{label:"3.5g bulk",price:1200,member:1080}];
+const TOP=[{label:"½g",price:300,member:270},{label:"1 joint",price:300,member:270},{label:"1g",price:600,member:540},{label:"3.5g bulk",price:1800,member:1620}];
+const EXO=[{label:"½g",price:400,member:360},{label:"1 joint",price:400,member:360},{label:"1g",price:800,member:720},{label:"3.5g bulk",price:2400,member:2160}];
+const SUP=[{label:"½g",price:450,member:405},{label:"1 joint",price:450,member:405},{label:"3.5g bulk",price:2700,member:2430}];
 const FX=["Relaxed","Happy","Euphoric"], FS=["Uplifted","Energetic","Creative"];
 const PRODUCTS=[
  // ===== EXOTICS (28–34% THC) — ฿400/½g · ฿800/g =====
@@ -621,7 +630,7 @@ const PRODUCTS=[
  {id:"lcg-rx11",name:"LCG RX11",category:"Exotics",type:"Hybrid",thc:29,thcLabel:"29%",cbd:0,stock:17,unit:"g",effects:FX,flavors:["Gelato","Cherry","Gas"],description:"Lemon Cherry Gelato pheno RX11 — connoisseur cut with loud terps.",image:CDN+"IMG-5253.png?v=1779642559",priceTiers:EXO},
  {id:"toad-venom",name:"Toad Venom",category:"Exotics",type:"Hybrid",thc:35,thcLabel:"28–35%",cbd:0,featured:true,stock:15,unit:"g",effects:["Euphoric","Relaxed","Sleepy"],flavors:["Gas","Earthy","Pungent"],description:"One of the strongest flowers in the shop — up to 35% THC. Handle with respect.",image:CDN+"IMG-5254.png?v=1779642336",priceTiers:EXO},
  {id:"lemon-cherry-gelato",name:"Lemon Cherry Gelato",category:"Exotics",type:"Hybrid",thc:31.5,thcLabel:"31.5%",cbd:0,featured:true,stock:18,unit:"g",effects:FX,flavors:["Lemon","Cherry","Gelato"],description:"The famous LCG — creamy gelato with lemon-cherry brightness at 31.5%.",image:CDN+"48E8E325-A1F7-43F4-8777-6520094BA6C9.png?v=1780151539",priceTiers:EXO},
- {id:"gelato-x",name:"Gelato X",category:"Exotics",type:"Indica",thc:28,thcLabel:"28%",cbd:0,stock:16,unit:"g",effects:["Relaxed","Happy","Sleepy"],flavors:["Gelato","Cream","Sweet"],description:"Indica-leaning Gelato cross — creamy, calming and dessert-sweet.",image:CDN+"5BC567FD-D2D3-40DD-9E61-C184268D134C.png?v=1780151537",priceTiers:[{label:"½g",price:400,member:360},{label:"1 joint",price:450,member:405},{label:"1g",price:800,member:720},{label:"3.5g · 3+1 FREE",price:2400,member:2160}]},
+ {id:"gelato-x",name:"Gelato X",category:"Exotics",type:"Indica",thc:28,thcLabel:"28%",cbd:0,stock:16,unit:"g",effects:["Relaxed","Happy","Sleepy"],flavors:["Gelato","Cream","Sweet"],description:"Indica-leaning Gelato cross — creamy, calming and dessert-sweet.",image:CDN+"5BC567FD-D2D3-40DD-9E61-C184268D134C.png?v=1780151537",priceTiers:[{label:"½g",price:400,member:360},{label:"1 joint",price:450,member:405},{label:"1g",price:800,member:720},{label:"3.5g bulk",price:2400,member:2160}]},
  // ===== TOPSHELF (24–27%) — ฿300/½g · ฿600/g =====
  {id:"og-zkittlez",name:"OG Kush × Zkittlez",category:"Topshelf",type:"Hybrid",thc:30,thcLabel:"28–30%",cbd:0,featured:true,stock:24,unit:"g",effects:FX,flavors:["OG","Zkittlez","Fruit"],description:"Classic OG structure with Zkittlez candy — best-of-both topshelf.",image:CDN+"IMG-6880.jpg?v=1782729487",priceTiers:TOP},
  {id:"ztupid",freeGift:true,name:"Ztupid",category:"Topshelf",type:"Hybrid",thc:26,thcLabel:"26%",cbd:0,stock:20,unit:"g",effects:FX,flavors:["Z","Fruity","Sweet"],description:"Ztupidly smooth — fruity Z-family topshelf at a friendly price.",image:CDN+"IMG-5586.png?v=1780149518",priceTiers:TOP},
@@ -677,11 +686,16 @@ let DATA = PRODUCTS.slice();
 let activeCat="All", memberMode=false, branch="All branches";
 let cart=[], pdCurrent=null, pdTierIdx=0, coFulfill="delivery", coPay="Cash";
 let favs=[], appliedPromo=null, pdQty=1;
+/* ---- owner / admin edit mode ---- */
+let adminMode=false, adminTok=null, ADMIN_OV={products:{},added:[],promos:{}}, adminDirty=false, BASE_PROMOS=null;
+let crmTimer=null;   // drives the always-on members pop-up (keeps re-inviting until they join)
 /* ---- safe persistence (works deployed; degrades in sandboxed previews) ---- */
 const LS={ get(k,d){ try{ const v=localStorage.getItem("dank_"+k); return v?JSON.parse(v):d; }catch(e){ return d; } },
            set(k,v){ try{ localStorage.setItem("dank_"+k,JSON.stringify(v)); }catch(e){} } };
 function saveCart(){ LS.set("cart",cart); }
-function loadPersisted(){ cart=LS.get("cart",[])||[]; favs=LS.get("favs",[])||[]; updateCartCount(); }
+function loadPersisted(){ cart=LS.get("cart",[])||[]; favs=LS.get("favs",[])||[]; memberMode=!!LS.get("memberOn",false); reflectMember(); updateCartCount(); }
+function reflectMember(){ const t=$("#memberToggle"); if(t) t.classList.toggle("on",memberMode); }
+function isMember(){ return !!LS.get("member",false); }
 function toggleFav(id,ev){ if(ev)ev.stopPropagation(); const i=favs.indexOf(id);
   if(i<0){ favs.push(id); toast("❤ Saved to favorites"); } else favs.splice(i,1);
   LS.set("favs",favs); buildChips(); render(); }
@@ -699,64 +713,112 @@ async function refreshFreeGifts(){
 }
 function freeGiftOptions(){
   const ids=(freeGiftIds&&freeGiftIds.length)?freeGiftIds:DATA.filter(p=>p.freeGift).map(p=>p.id);
-  return DATA.filter(p=>ids.includes(p.id)&&isFlower(p)&&p.stock>0);
+  return DATA.filter(p=>ids.includes(p.id)&&isFlower(p)&&p.stock>0&&!p._hidden);
 }
 function showBannerMaybe(){ const el=$("#promoBanner"); if(!el)return;
-  const show=CONFIG.firstOrder&&CONFIG.firstOrder.enabled&&!firstUsed()&&!LS.get("bannerX",false);
+  const c=CONFIG.crm||{};
+  const show=c.enabled&&!isMember()&&!LS.get("bannerX",false);
   el.style.display=show?"flex":"none";
-  $("#pbTitle").textContent=isRegistered()?"Your gift is ready: Buy 1G get 1G FREE":"First order? "+CONFIG.firstOrder.title; }
+  const t=$("#pbTitle"); if(t) t.textContent="Join DANK Members — 10% off every order 💚"; }
 function dismissBanner(){ LS.set("bannerX",true); $("#promoBanner").style.display="none"; }
-function openRegister(){
+function anyModalOpen(){ const o=$("#overlay"); return !!o&&o.classList.contains("show"); }
+/* ---- CRM membership pop-up: always shown to non-members. It appears shortly
+   after entry and keeps re-inviting (every crm.repeatMs) until they join, so
+   the 10%-off offer is always in front of anyone who isn't a member yet. ---- */
+function scheduleCRM(delay){ const c=CONFIG.crm||{};
+  if(!c.enabled||isMember()) return;
+  clearTimeout(crmTimer);
+  crmTimer=setTimeout(function tick(){
+    if(isMember()) return;                                   // stop the moment they join
+    if(anyModalOpen()){ crmTimer=setTimeout(tick,c.retryMs||4000); return; }   // busy (cart/checkout/popup already open) → check again soon
+    openCRM();
+    crmTimer=setTimeout(tick,c.repeatMs||60000);             // keep the cycle alive — survives any dismiss path until they join
+  }, delay);
+}
+function maybeShowCRM(){ scheduleCRM((CONFIG.crm&&CONFIG.crm.firstDelayMs)||1200); }
+function openCRM(){
+  const c=CONFIG.crm||{};
   showModal("#infoModal");
-  $("#infoCard").innerHTML=`<div class="drawer-head" style="border:none;padding:18px 20px 4px"><h2>🎁 ${CONFIG.firstOrder.title}</h2><button class="close-x" onclick="closeAll()">×</button></div>
+  $("#infoCard").innerHTML=`<div class="drawer-head" style="border:none;padding:18px 20px 4px"><h2>${c.title||"Join DANK Members — 10% OFF 💚"}</h2><button class="close-x" onclick="dismissCRM()">×</button></div>
     <div style="padding:6px 20px 22px">
-      <p style="color:var(--muted);font-size:13.5px;margin:0 0 14px">${CONFIG.firstOrder.sub} Register once — your free gram is added automatically at checkout on your first order.</p>
+      <div style="background:linear-gradient(135deg,#0e3a24,#0a2417);border:1px solid var(--line2);border-radius:14px;padding:15px 16px;margin:2px 0 14px;text-align:center">
+        <div style="font-size:34px;font-weight:900;color:var(--green2);line-height:1;letter-spacing:.5px">10% OFF</div>
+        <div style="font-size:12.5px;color:var(--gold);margin-top:3px;font-weight:700">every order · free to join · members-only drops</div>
+      </div>
+      <p style="color:var(--muted);font-size:13.5px;margin:0 0 14px">${c.sub||"Sign up free and save 10% on every order."}</p>
       <div class="field"><label>Name</label><input id="regName" placeholder="Your name"></div>
       <div class="field"><label>Phone or LINE</label><input id="regPhone" placeholder="+66…" inputmode="tel"></div>
       <label style="display:flex;gap:8px;align-items:flex-start;font-size:12.5px;color:var(--muted);margin:4px 0 14px"><input type="checkbox" id="regAge" style="width:auto;margin-top:2px"> I confirm I'm 20+ and agree to receive offers.</label>
-      <button class="btn btn-primary btn-block" onclick="register()">Register & unlock free gram</button>
+      <button class="btn btn-primary btn-block" onclick="joinMember()">💚 Join & unlock 10% off</button>
+      <button class="btn btn-ghost btn-block" style="margin-top:8px" onclick="dismissCRM()">Maybe later</button>
     </div>`;
+  setTimeout(()=>{ const e=$("#regName"); if(e) e.focus(); },80);
 }
-function register(){
-  const name=($("#regName").value||"").trim(), phone=($("#regPhone").value||"").trim(), age=$("#regAge").checked;
+function openRegister(){ openCRM(); }          // back-compat alias
+function dismissCRM(){ if(memberMode&&!isMember()){ memberMode=false; LS.set("memberOn",false); reflectMember(); repriceCart(); render(); } closeAll();
+  scheduleCRM((CONFIG.crm&&CONFIG.crm.repeatMs)||60000); }   // "Maybe later" → invite again shortly, until they join
+function joinMember(){
+  const name=($("#regName").value||"").trim(), phone=($("#regPhone").value||"").trim(), age=$("#regAge")?$("#regAge").checked:true;
   if(!name||phone.replace(/\s/g,"").length<6){ toast("Please add your name and phone"); return; }
   if(!age){ toast("Please confirm you're 20+"); return; }
   LS.set("reg",{name,phone,at:Date.now()});
-  appliedPromo={code:CONFIG.firstOrder.code,type:"bogo1g",desc:"1st order: Buy 1G get 1G FREE 🎁"};
-  ensureBonus(); updateCartCount(); showBannerMaybe(); refreshWallet();
-  closeAll(); toast("🎁 You're registered — buy any 1g flower, get 1g free!");
+  LS.set("member",true); LS.set("memberOn",true); memberMode=true; reflectMember(); clearTimeout(crmTimer);
+  repriceCart(); render(); showBannerMaybe(); refreshWallet();
+  if($("#cartDrawer")?.classList.contains("show")) renderCart();
+  closeAll(); toast("💚 You're a member — 10% off is on!");
+  submitMemberLead(name,phone);
+}
+function register(){ joinMember(); }           // back-compat alias
+/* best-effort: push the new member to your CRM/POS if an endpoint exists */
+function submitMemberLead(name,phone){
+  if(location.protocol==="file:") return;
+  try{ fetch("/api/member",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({name,phone,at:Date.now(),source:"web"})}).catch(()=>{}); }catch(e){}
+}
+/* ---- Volume deal: cart-wide free grams by total flower grams bought ----
+   Ladder from CONFIG.gramLadder: 3g→1g, 5g→2g, 9g→3g, 12g→4g, 15g→5g free. */
+function gramsOf(line){
+  if(!line||line.bonus) return 0;
+  if(!FLOWER_CATS.includes(line.category)) return 0;
+  const L=String(line.tierLabel||"").toLowerCase().replace(/½/g,"0.5");
+  const m=L.match(/([\d.]+)\s*g/);
+  const g=m?parseFloat(m[1]):(L.includes("joint")?1:0);   // count a joint as ~1g
+  return (g||0)*(line.qty||1);
+}
+function cartFlowerGrams(){ return cart.reduce((s,c)=>s+gramsOf(c),0); }
+function ladderFree(G){ let free=0; (CONFIG.gramLadder||[]).forEach(([buy,f])=>{ if(G>=buy&&f>free) free=f; }); return free; }
+function nextLadder(G){ const L=(CONFIG.gramLadder||[]).slice().sort((a,b)=>a[0]-b[0]);
+  for(const [buy,f] of L){ if(G<buy) return {need:+(buy-G).toFixed(1),buy,free:f}; } return null; }
+function freeGramStrain(){
+  if(chosenBonusId){ const p=DATA.find(x=>x.id===chosenBonusId&&isFlower(x)&&!x._hidden); if(p) return p; }
+  const g={}; cart.forEach(c=>{ const q=gramsOf(c); if(q>0) g[c.id]=(g[c.id]||0)+q; });
+  let id=null,best=-1; for(const k in g){ if(g[k]>best){ best=g[k]; id=k; } }
+  return id?DATA.find(p=>p.id===id):null;
 }
 function ensureBonus(){
   cart=cart.filter(c=>!c.bonus);
-  if(appliedPromo&&appliedPromo.type==="bogo1g"&&!bonusEligible()) appliedPromo=null;
-  if(appliedPromo&&appliedPromo.manual) return;   // a typed promo code wins over the auto free-gram
-  if(!bonusEligible()){ chosenBonusId=null; return; }
-  const q=cart.find(c=>c.tierLabel==="1g"&&FLOWER_CATS.includes(c.category));  // qualifying paid 1g
-  if(!q){ return; }
-  if(!appliedPromo||appliedPromo.type!=="bogo1g") appliedPromo={code:CONFIG.firstOrder.code,type:"bogo1g",desc:"1st order: Buy 1G get 1G FREE 🎁"};
-  const opts=freeGiftOptions();
-  let pick=null;
-  if(chosenBonusId){ pick=opts.find(p=>p.id===chosenBonusId)||DATA.find(p=>p.id===chosenBonusId&&isFlower(p)); }
-  if(!pick&&opts.length===1) pick=opts[0];
-  if(!pick&&opts.length===0) pick=DATA.find(p=>p.id===q.id);   // no manager picks set → same strain
-  if(pick){ chosenBonusId=pick.id; LS.set("bonusPick",pick.id);
-    cart.push({key:"BONUS|"+pick.id,id:pick.id,name:pick.name,tierLabel:"1g · FREE 🎁",price:0,qty:1,image:pick.image,type:pick.type,category:pick.category,bonus:true}); }
+  const G=cartFlowerGrams();
+  const free=ladderFree(G);
+  if(free<=0) return;
+  const strain=freeGramStrain(); if(!strain) return;
+  for(let i=0;i<free;i++){
+    cart.push({key:"BONUS|"+strain.id+"|"+i,id:strain.id,name:strain.name,tierLabel:"1g · FREE 🌿",price:0,qty:1,image:strain.image,type:strain.type,category:strain.category,bonus:true});
+  }
 }
 function openFreePicker(){
   const opts=freeGiftOptions();
   if(!opts.length){ toast("Free-gram options coming soon"); return; }
   showModal("#infoModal");
-  $("#infoCard").innerHTML=`<div class="drawer-head" style="border:none;padding:18px 20px 4px"><h2>🎁 Choose your free 1G</h2><button class="close-x" onclick="closeAll()">×</button></div>
-    <div style="padding:6px 20px 22px"><p style="color:var(--muted);font-size:13px;margin:0 0 12px">Our gift to you on your first order — pick one gram, on the house.</p>
+  $("#infoCard").innerHTML=`<div class="drawer-head" style="border:none;padding:18px 20px 4px"><h2>🌿 Choose your free grams</h2><button class="close-x" onclick="closeAll()">×</button></div>
+    <div style="padding:6px 20px 22px"><p style="color:var(--muted);font-size:13px;margin:0 0 12px">Your volume-deal free grams — pick which strain you'd like them in.</p>
     <div class="grid" style="grid-template-columns:repeat(2,1fr);gap:12px;padding:0">${opts.map(p=>`
       <article class="card" onclick="pickFree('${p.id}')" style="cursor:pointer">
         <div class="thumb">${imgTag(p,true)}<span class="type-tag" style="background:${typeColor(p.type)}">${p.type}</span></div>
         <div class="body" style="padding:11px 12px 13px"><h3 style="font-size:14.5px">${p.name}</h3>
         <div class="potency">THC <b>${thcTxt(p)}</b></div>
-        <button class="add-btn" style="margin-top:8px;width:100%">Pick this 🎁</button></div>
+        <button class="add-btn" style="margin-top:8px;width:100%">Pick this 🌿</button></div>
       </article>`).join("")}</div></div>`;
 }
-function pickFree(id){ chosenBonusId=id; LS.set("bonusPick",id); ensureBonus(); updateCartCount(); closeAll(); toast("🎁 Free gram added!"); openCart(); }
+function pickFree(id){ chosenBonusId=id; LS.set("bonusPick",id); ensureBonus(); updateCartCount(); closeAll(); toast("🌿 Free grams updated!"); openCart(); }
 /* ---- Wallet / store credit (+bonus top-up) ---- */
 let walletBalance=0, topupAmt=0, walletCfg={configured:false,bonusPct:(CONFIG.wallet&&CONFIG.wallet.bonusPct)||10};
 let chosenBonusId=LS.get("bonusPick",null), freeGiftIds=null;
@@ -823,7 +885,7 @@ const $=s=>document.querySelector(s);
 const money=n=>CONFIG.currency+Number(n).toLocaleString("en-US");
 const typeColor=t=>t==="Indica"?"var(--indica)":t==="Sativa"?"var(--sativa)":"var(--hybrid)";
 const catEmoji=c=>({Exotics:"🚀",Topshelf:"⭐",Midgrade:"💚",Premium:"💎",Joints:"🚬",Edibles:"🍬",Vapes:"💨",Beer:"🍺",Accessories:"🛠️",Merch:"👕",Flowers:"🌿",Edible:"🍬"}[c]||"🌿");
-const FLOWER_CATS=["Exotics","Topshelf","Midgrade","Premium"];
+const FLOWER_CATS=["Exotics","Topshelf","Midgrade","Premium","Flowers","Flower"];   // incl. BRYAN POS category names
 const isFlowerCat=p=>FLOWER_CATS.includes(p.category);
 const thcTxt=p=>p.thcLabel||(p.thc?p.thc+"%":"");
 const tiers=p=>p.priceTiers;
@@ -833,9 +895,7 @@ const isFlower=p=>!!p.priceTiers;
 
 function passGate(){ $("#ageGate").classList.add("hidden"); showBannerMaybe();
   if(!aiOpened) setTimeout(showNudge,6000);
-  if(CONFIG.firstOrder&&CONFIG.firstOrder.enabled&&!isRegistered()&&!firstUsed()&&!LS.get("regPromptSeen",false)){
-    LS.set("regPromptSeen",true); setTimeout(()=>{ if(!isRegistered()) openRegister(); },1600);
-  }
+  maybeShowCRM();   // invite non-members to join for 10% off, every visit
 }
 
 /* ---- Data load + near-real-time sync ---- */
@@ -881,13 +941,16 @@ function setLiveDot(src){ const el=$("#liveDot"); if(!el) return;
   const live=src&&src!=="bundled"&&src!=="empty";
   el.style.display="inline-flex"; el.title=live?("Live menu · "+src):"Menu"; el.style.opacity=live?"1":".45"; }
 function buildBranches(){ $("#branchSel").innerHTML=CONFIG.branches.map(b=>`<option>${b}</option>`).join(""); }
-function toggleMember(){ memberMode=!memberMode; $("#memberToggle").classList.toggle("on",memberMode); if(memberMode) toast("Member prices on ⭐"); repriceCart(); render(); if($("#cartDrawer")?.classList.contains("show")) renderCart(); }
+function toggleMember(){ memberMode=!memberMode; LS.set("memberOn",memberMode); $("#memberToggle").classList.toggle("on",memberMode);
+  if(memberMode&&!isMember()){ openCRM(); return; }   // flipping it on invites you to actually join
+  if(memberMode) toast("Member prices on ⭐"); repriceCart(); render(); if($("#cartDrawer")?.classList.contains("show")) renderCart(); }
 
 /* ---- Chips ---- */
 function buildChips(){
-  const cats=["All",...Array.from(new Set(DATA.map(p=>p.category)))];
+  const VD=adminMode?DATA:DATA.filter(p=>!p._hidden);
+  const cats=["All",...Array.from(new Set(VD.map(p=>p.category)))];
   if(favs.length) cats.push("❤ Saved");
-  const cnt=c=> c==="All"?DATA.length : c==="❤ Saved"?DATA.filter(p=>isFav(p.id)).length : DATA.filter(p=>p.category===c).length;
+  const cnt=c=> c==="All"?VD.length : c==="❤ Saved"?VD.filter(p=>isFav(p.id)).length : VD.filter(p=>p.category===c).length;
   $("#catChips").innerHTML=cats.map(c=>`<button class="chip ${c===activeCat?'active':''}" onclick="setCat('${c}')">${c==="All"?"🌿 All":c==="❤ Saved"?"❤ Saved":catEmoji(c)+" "+c}<span class="chip-n">${cnt(c)}</span></button>`).join("");
 }
 function setCat(c){ activeCat=c; buildChips(); render(); }
@@ -939,6 +1002,7 @@ function render(){
   const q=($("#searchInput").value||"").toLowerCase().trim();
   const tf=$("#typeFilter").value, sort=$("#sortBy").value;
   let list=DATA.filter(p=>{
+    if(p._hidden && !adminMode) return false;   // owner-hidden items never show to customers
     if(activeCat==="❤ Saved" && !favs.length) activeCat="All";
     if(activeCat==="❤ Saved"){ if(!isFav(p.id)) return false; }
     else if(activeCat!=="All"&&p.category!==activeCat) return false;
@@ -972,9 +1036,10 @@ function cardHTML(p){
   } else {
     foot=`<div class="foot">${priceBlock(p)}<button class="add-btn" onclick="quickAdd('${p.id}')">Add +</button></div>`;
   }
-  return `<article class="card">
+  return `<article class="card${adminMode&&p._hidden?' adm-hidden':''}">
     <button class="fav-btn ${isFav(p.id)?'on':''}" onclick="toggleFav('${p.id}',event)" title="Save">${isFav(p.id)?'❤':'♡'}</button>
-      <div class="thumb" onclick="openPD('${p.id}')"><span class="type-tag" style="background:${typeColor(p.type)}">${["Beer","Accessories","Merch","Joints"].includes(p.category)?p.category:p.type}</span>${p.isNew?'<span class="new-tag">🔥 NEW</span>':''}${stockTag}${thumb}</div>
+    ${adminMode?`<button class="adm-edit-btn" onclick="openEdit('${p.id}',event)" title="Edit product">✎ Edit</button>`:''}
+      <div class="thumb" onclick="openPD('${p.id}')"><span class="type-tag" style="background:${typeColor(p.type)}">${["Beer","Accessories","Merch","Joints"].includes(p.category)?p.category:p.type}</span>${p.isNew?'<span class="new-tag">🔥 NEW</span>':''}${adminMode&&p._hidden?'<span class="new-tag" style="background:#b23">🚫 HIDDEN</span>':''}${stockTag}${thumb}</div>
     <div class="body">
       <h3 onclick="openPD('${p.id}')">${p.name}</h3>
       <div class="potency">${potency}</div>
@@ -1030,7 +1095,7 @@ function openPD(id){
 function pdStep(d){ pdQty=Math.max(1,pdQty+d); const el=$("#pdQtyN"); if(el) el.textContent=pdQty; }
 function renderRelated(p){
   const box=$("#pdRelated"); if(!box) return;
-  const rel=DATA.filter(x=>x.id!==p.id && x.category===p.category && x.stock>0).slice(0,3);
+  const rel=DATA.filter(x=>x.id!==p.id && x.category===p.category && x.stock>0 && !x._hidden).slice(0,3);
   if(!rel.length){ box.innerHTML=""; return; }
   box.innerHTML=`<div class="pd-section-t">You may also like</div><div class="rel-row">${rel.map(r=>{
     const pr=isFlower(r)?(memberMode?r.priceTiers[0].member:r.priceTiers[0].price):(memberMode?r.member:r.price);
@@ -1086,8 +1151,8 @@ function cartLineHTML(c){
   if(c.bonus) return `<div class="cart-line bonus">
     <div class="ci-thumb">${thumb}</div>
     <div class="ci-main"><h4>${c.name} <span class="gift-badge">FREE</span></h4>
-      <div class="ci-opt">1st-order gift · ${c.tierLabel}</div>
-      <div class="ci-row"><span style="font-size:12px;color:var(--green2)">🎁 On the house</span>
+      <div class="ci-opt">Volume deal · ${c.tierLabel}</div>
+      <div class="ci-row"><span style="font-size:12px;color:var(--green2)">🌿 On the house</span>
       <div class="ci-price">฿0</div></div></div></div>`;
   return `<div class="cart-line">
     <div class="ci-thumb">${thumb}</div>
@@ -1112,9 +1177,11 @@ function renderCart(){
     <div class="cart-total-row"><span>Delivery</span><span>${coFulfill==="pickup"?'Pickup':fee===0?'Free':money(fee)}</span></div>
     <div class="cart-total-row grand"><span>Total</span><span>${money(tot)}</span></div>
     ${below?`<div class="minorder">Minimum order ${money(CONFIG.minOrder)} — add ${money(CONFIG.minOrder-sub)} more</div>`:''}
-    ${cart.some(c=>c.bonus)?`<div class="minorder" style="color:var(--green2)">🎁 Free gram added: ${cart.find(c=>c.bonus).name} — <button style="background:none;border:none;color:var(--green2);text-decoration:underline;cursor:pointer;font-size:12.5px" onclick="openFreePicker()">change</button></div>`
-      :(bonusEligible()&&cart.find(c=>c.tierLabel==="1g"&&FLOWER_CATS.includes(c.category))?`<button class="btn btn-block" style="margin-top:8px;background:linear-gradient(135deg,var(--gold),#b8923f);color:#20100a;font-weight:800" onclick="openFreePicker()">🎁 Choose your free 1G</button>`
-      :(bonusEligible()?`<div class="minorder" style="color:var(--green2)">🎁 Add any 1g flower to claim your free gram</div>`:''))}
+    ${(function(){ const G=cartFlowerGrams(), got=cart.filter(c=>c.bonus).length, nx=nextLadder(G);
+      if(got>0) return `<div class="minorder" style="color:var(--green2)">🌿 Volume deal: <b>${got}g FREE</b> added${nx?` · add ${nx.need}g more → ${nx.free}g free`:' · max deal reached 🎉'} — <button style="background:none;border:none;color:var(--green2);text-decoration:underline;cursor:pointer;font-size:12.5px" onclick="openFreePicker()">change strain</button></div>`;
+      if(nx&&G>0) return `<div class="minorder" style="color:var(--gold)">🌿 Add <b>${nx.need}g</b> more flower → get <b>${nx.free}g FREE</b></div>`;
+      if(G===0) return `<div class="minorder" style="color:var(--muted)">🌿 Buy 3g flower get 1g free · up to 15g→5g free</div>`;
+      return ''; })()}
     <button class="btn btn-primary btn-block" style="margin-top:12px${below?';opacity:.5;pointer-events:none':''}" onclick="openCheckout()">Checkout · ${money(tot)}</button>`;
 }
 
@@ -1426,10 +1493,12 @@ function showSuccess(via,msg){ if(bonusEligible()) LS.set("firstUsed",true); car
 function copyText(t){ try{ navigator.clipboard.writeText(t); }catch(e){} }
 
 /* ---- Overlay/modal helpers ---- */
-function showModal(sel){ $("#overlay").classList.add("show"); $(sel).classList.add("show"); document.body.style.overflow="hidden"; }
-function showDrawer(){ $("#overlay").classList.add("show"); $("#cartDrawer").classList.add("show"); document.body.style.overflow="hidden"; }
+function admBarHide(){ const ab=document.getElementById("adminBar"); if(ab) ab.style.display="none"; }
+function admBarShow(){ const ab=document.getElementById("adminBar"); if(ab&&adminMode) ab.style.display="flex"; }
+function showModal(sel){ $("#overlay").classList.add("show"); $(sel).classList.add("show"); document.body.style.overflow="hidden"; admBarHide(); }
+function showDrawer(){ $("#overlay").classList.add("show"); $("#cartDrawer").classList.add("show"); document.body.style.overflow="hidden"; admBarHide(); }
 function closeDrawerOnly(){ $("#cartDrawer").classList.remove("show"); }
-function closeAll(){ clearInterval(window._payPoll); clearInterval(window._gwPoll); clearInterval(window._topupPoll); $("#overlay").classList.remove("show"); $("#cartDrawer").classList.remove("show"); $("#pdModal").classList.remove("show"); $("#coModal").classList.remove("show"); $("#infoModal").classList.remove("show"); document.body.style.overflow=""; }
+function closeAll(){ clearInterval(window._payPoll); clearInterval(window._gwPoll); clearInterval(window._topupPoll); $("#overlay").classList.remove("show"); $("#cartDrawer").classList.remove("show"); $("#pdModal").classList.remove("show"); $("#coModal").classList.remove("show"); $("#infoModal").classList.remove("show"); document.body.style.overflow=""; admBarShow(); }
 function toast(m){ const t=$("#toast"); t.textContent=m; t.classList.add("show"); clearTimeout(t._t); t._t=setTimeout(()=>t.classList.remove("show"),1800); }
 
 /* ============================================================
@@ -1804,7 +1873,7 @@ function openInfo(){
       <div class="pd-section-t">Payment</div>
       <p style="color:var(--muted);margin:0 0 10px">PromptPay QR & card online (secured by Omise), or cash / transfer on delivery/pickup. Members save ~10%.</p>
       <div class="pd-section-t">Promo codes</div>
-      <p style="color:var(--muted);margin:0 0 10px">Enter a code in your cart. Try <b>DANK10</b> for 10% off. Buy 3 get 1 free on every flower (pick the 3.5g size).</p>
+      <p style="color:var(--muted);margin:0 0 10px">Members get <b>10% off</b> every order — tap Member or join the pop-up. Volume deal: <b>buy 3g get 1g free</b>, up to <b>15g → 5g free</b> — free grams are added automatically in your cart.</p>
       <div class="pd-section-t">Age & responsibility</div>
       <p style="color:var(--muted);margin:0 0 10px">Strictly 20+ with ID. Please consume responsibly.</p>
       <div class="pd-section-t">Contact</div>
@@ -1845,7 +1914,7 @@ function renderQuiz(){
 }
 function quizPick(v){ quizAns[QUIZ[quizStep].k]=v; quizStep++; renderQuiz(); }
 function quizResults(){
-  let list=DATA.filter(p=>p.stock>0);
+  let list=DATA.filter(p=>p.stock>0&&!p._hidden);
   const cat=quizAns.cat;
   if(cat==="flower") list=list.filter(p=>FLOWER_CATS.includes(p.category));
   else if(cat==="Edibles"||cat==="Vapes") list=list.filter(p=>p.category===cat);
@@ -1870,11 +1939,430 @@ function quizResults(){
     </div>`;
 }
 document.addEventListener("keydown",e=>{ if(e.key==="Escape"){ closeAll(); } });
-applyConfig(); loadPersisted(); loadData(); refreshWallet(); refreshFreeGifts(); refreshPayGW(); handlePayReturn();
+applyConfig(); loadPersisted(); loadData(); refreshWallet(); refreshFreeGifts(); refreshPayGW(); handlePayReturn(); loadAdmin();
 async function refreshPayGW(){ if(location.protocol==="file:") return; try{ const r=await fetch("/api/pay-config"); if(r.ok) payGW=await r.json(); }catch(e){} }
 function handlePayReturn(){ const q=new URLSearchParams(location.search); const paid=q.get("paid"), ord=q.get("order");
   if(paid&&ord){ setTimeout(()=>{ toast("Payment received — order "+ord+" 🌿"); openOrders&&openOrders(); },600);
     history.replaceState({},"",location.pathname); } }
+
+/* ============================================================
+   OWNER / ADMIN EDIT MODE
+   Log in (email+password → /api/admin) to manually edit products,
+   inventory, prices and promotions. Edits are held locally, then
+   "Save changes" publishes them (POST /api/admin save) so every
+   customer sees them within the normal ~30s menu refresh.
+   ============================================================ */
+const admN=v=>{ const n=Number(String(v==null?"":v).replace(/[^0-9.\-]/g,"")); return isNaN(n)?0:n; };
+const admAttr=s=>String(s==null?"":s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+const admSlug=s=>String(s||"").toLowerCase().trim().replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,"").slice(0,40)||("item-"+Date.now());
+
+function applyPromos(){ CONFIG.promos=Object.assign({},BASE_PROMOS||{});
+  Object.keys(ADMIN_OV.promos||{}).forEach(k=>{ if(ADMIN_OV.promos[k]) CONFIG.promos[k]=ADMIN_OV.promos[k]; }); }
+function applyProductOverridesLocal(){
+  const P=ADMIN_OV.products||{};
+  DATA=DATA.map(p=>P[p.id]?Object.assign({},p,P[p.id]):p);
+  const have=new Set(DATA.map(p=>p.id));
+  (ADMIN_OV.added||[]).forEach(a=>{ if(a&&a.id&&!have.has(a.id)){ DATA.push(a); have.add(a.id); } });
+}
+async function loadAdmin(silent){
+  if(BASE_PROMOS===null) BASE_PROMOS=Object.assign({},CONFIG.promos);
+  if(!adminTok){ const t=LS.get("admintok",null); if(t) adminTok=t; }
+  if(location.protocol==="file:") return;   // owner editing is a live-site feature
+  try{
+    const r=await fetch("/api/admin",{cache:"no-store"});
+    if(r.ok){ const j=await r.json(); const ov=j.overrides||{};
+      ADMIN_OV={ products:(ov.products&&typeof ov.products==="object")?ov.products:{},
+                 added:Array.isArray(ov.added)?ov.added:[],
+                 promos:(ov.promos&&typeof ov.promos==="object")?ov.promos:{} };
+      ADMIN_OV.added.forEach(a=>{ if(a) a._added=true; });
+      applyPromos(); applyProductOverridesLocal();
+      if(!silent){ buildChips(); render(); if(adminTok) enterAdmin(); }
+    }
+  }catch(e){}
+}
+function adminInjectCSS(){ if(document.getElementById("admCss")) return;
+  const s=document.createElement("style"); s.id="admCss"; s.textContent=
+   "#adminBar{position:fixed;left:50%;transform:translateX(-50%);bottom:14px;z-index:1400;display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:center;max-width:94vw;background:#0d1f16;border:1px solid #1f6b43;box-shadow:0 10px 34px rgba(0,0,0,.55);padding:8px 12px;border-radius:15px}"+
+   "#adminBar .ab-t{color:#7CF7B0;font-weight:800;font-size:13px;margin-right:2px;white-space:nowrap}"+
+   "#adminBar button{background:#12312a;border:1px solid #2a6b48;color:#dffceb;padding:8px 12px;border-radius:10px;font-size:13px;cursor:pointer;font-weight:700}"+
+   "#adminBar button.ab-save{background:#1c7a44;border-color:#3ac06e;color:#fff}#adminBar button.ab-save:disabled{opacity:.5;cursor:default}"+
+   "#adminBar button.ab-out{background:#3a1420;border-color:#7a2540;color:#ffd7e0}"+
+   ".adm-edit-btn{position:absolute;top:10px;left:10px;z-index:6;background:#0e2c1c;border:1px solid #3ac06e;color:#7CF7B0;font-size:12px;font-weight:800;padding:5px 10px;border-radius:9px;cursor:pointer}"+
+   ".card.adm-hidden{opacity:.6;outline:2px dashed #c0392b;outline-offset:-2px}"+
+   ".adm-form .field{margin-bottom:10px}.adm-form input,.adm-form select,.adm-form textarea{width:100%;box-sizing:border-box}"+
+   ".adm-form .two{display:flex;gap:10px}.adm-form .two .field{flex:1}"+
+   ".adm-tier-row{display:flex;gap:8px;align-items:center;margin-bottom:7px}.adm-tier-row .tl{flex:1;font-size:13px;color:var(--muted)}.adm-tier-row input{width:88px}";
+  document.head.appendChild(s);
+}
+function enterAdmin(){ adminMode=true; adminInjectCSS(); buildAdminBar(); buildChips(); render(); }
+function buildAdminBar(){ let bar=document.getElementById("adminBar");
+  if(!bar){ bar=document.createElement("div"); bar.id="adminBar"; document.body.appendChild(bar); }
+  bar.innerHTML='<span class="ab-t">🔧 Owner mode</span>'+
+    '<button onclick="openAddProduct()">＋ Add product</button>'+
+    '<button onclick="openPromoMgr()">🏷️ Promotions</button>'+
+    '<button class="ab-save" id="abSave" onclick="pushOverrides()">💾 Save changes</button>'+
+    '<button class="ab-out" onclick="ownerLogout()">Log out</button>';
+  bar.style.display="flex"; updateSaveBtn();
+}
+function updateSaveBtn(){ const b=$("#abSave"); if(b){ b.disabled=!adminDirty; b.textContent=adminDirty?"💾 Save changes":"💾 Saved"; } }
+function markDirty(){ adminDirty=true; updateSaveBtn(); }
+
+function openOwnerLogin(){
+  if(adminMode){ showModal("#infoModal");
+    $("#infoCard").innerHTML='<div class="drawer-head" style="border:none;padding:16px 20px 4px"><h2>🔧 Owner mode</h2><button class="close-x" onclick="closeAll()">×</button></div>'+
+      '<div style="padding:4px 20px 22px"><p style="color:var(--muted);font-size:13.5px;margin:0 0 14px">You\'re logged in. Tap <b>✎ Edit</b> on any product, or use the owner bar at the bottom.</p>'+
+      '<button class="btn btn-primary btn-block" onclick="closeAll();openAddProduct()">＋ Add a product</button>'+
+      '<button class="btn btn-ghost btn-block" style="margin-top:8px" onclick="closeAll();openPromoMgr()">🏷️ Manage promotions</button>'+
+      '<button class="btn btn-ghost btn-block" style="margin-top:8px" onclick="closeAll();ownerLogout()">Log out</button></div>';
+    return; }
+  if(location.protocol==="file:"){ toast("Owner editing works on the live site"); return; }
+  showModal("#infoModal");
+  $("#infoCard").innerHTML='<div class="drawer-head" style="border:none;padding:16px 20px 4px"><h2>🔧 Owner login</h2><button class="close-x" onclick="closeAll()">×</button></div>'+
+    '<div style="padding:4px 20px 22px">'+
+    '<p style="color:var(--muted);font-size:13.5px;margin:0 0 14px">Sign in to edit products, stock, prices and promotions. Owners only.</p>'+
+    '<div class="field"><label>Email</label><input id="ownEmail" type="email" placeholder="you@email.com" autocomplete="username"></div>'+
+    '<div class="field"><label>Password</label><input id="ownPass" type="password" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key===\'Enter\')doOwnerLogin()"></div>'+
+    '<button class="btn btn-primary btn-block" id="ownBtn" style="margin-top:6px" onclick="doOwnerLogin()">Log in</button></div>';
+  setTimeout(()=>{ const e=$("#ownEmail"); if(e) e.focus(); },90);
+}
+async function doOwnerLogin(){
+  const email=($("#ownEmail").value||"").trim(), password=$("#ownPass").value||"";
+  if(!email||!password){ toast("Enter email and password"); return; }
+  const btn=$("#ownBtn"); if(btn){ btn.textContent="Logging in…"; btn.style.pointerEvents="none"; }
+  try{
+    const r=await fetch("/api/admin",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"login",email,password})});
+    const j=await r.json();
+    if(r.ok&&j.ok&&j.token){ adminTok=j.token; LS.set("admintok",j.token); await loadAdmin(true); closeAll(); enterAdmin(); toast("✅ Owner mode on"); }
+    else { toast(j.error||"Wrong email or password"); if(btn){ btn.textContent="Log in"; btn.style.pointerEvents="auto"; } }
+  }catch(e){ toast("Login failed — check connection"); if(btn){ btn.textContent="Log in"; btn.style.pointerEvents="auto"; } }
+}
+function ownerLogout(){ const t=adminTok; adminTok=null; adminMode=false; adminDirty=false; LS.set("admintok",null);
+  const bar=document.getElementById("adminBar"); if(bar) bar.style.display="none";
+  buildChips(); render();
+  if(t){ fetch("/api/admin",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"logout",token:t})}).catch(()=>{}); }
+  toast("Logged out");
+}
+
+function openEdit(id,ev){ if(ev) ev.stopPropagation();
+  const p=DATA.find(x=>x.id===id); if(!p){ toast("Not found"); return; }
+  const isAdded=ADMIN_OV.added.some(a=>a.id===id);
+  const nTiers=(Array.isArray(p.priceTiers)&&p.priceTiers.length)?p.priceTiers.length:0;
+  const A=admAttr;
+  let priceBlock;
+  if(nTiers){
+    priceBlock='<div class="pd-section-t">Prices per size</div>'+p.priceTiers.map((t,i)=>
+      '<div class="adm-tier-row"><span class="tl">'+A(t.label)+'</span>'+
+      '<label style="font-size:11px;color:var(--muted)">฿ <input type="number" id="edTP_'+i+'" value="'+admN(t.price)+'"></label>'+
+      '<label style="font-size:11px;color:var(--muted)">⭐ <input type="number" id="edTM_'+i+'" value="'+admN(t.member!=null?t.member:t.price)+'"></label></div>').join("");
+  } else {
+    priceBlock='<div class="two"><div class="field"><label>Price ฿</label><input type="number" id="edPrice" value="'+admN(p.price)+'"></div>'+
+      '<div class="field"><label>Member ฿</label><input type="number" id="edMember" value="'+admN(p.member!=null?p.member:p.price)+'"></div></div>';
+  }
+  showModal("#infoModal");
+  $("#infoCard").innerHTML='<div class="drawer-head" style="border:none;padding:16px 20px 4px"><h2>✎ Edit product</h2><button class="close-x" onclick="closeAll()">×</button></div>'+
+   '<div class="adm-form" style="padding:4px 20px 22px" data-tiers="'+nTiers+'">'+
+   '<div class="field"><label>Name</label><input id="edName" value="'+A(p.name)+'"></div>'+
+   '<div class="two"><div class="field"><label>Category</label><input id="edCat" value="'+A(p.category)+'"></div>'+
+   '<div class="field"><label>Type</label><select id="edType">'+["Indica","Sativa","Hybrid"].map(t=>'<option'+(p.type===t?" selected":"")+'>'+t+'</option>').join("")+'</select></div></div>'+
+   '<div class="two"><div class="field"><label>THC label</label><input id="edThc" value="'+A(p.thcLabel)+'"></div>'+
+   '<div class="field"><label>Stock (inventory)</label><input type="number" id="edStock" value="'+admN(p.stock)+'"></div></div>'+
+   priceBlock+
+   '<div class="field"><label>Image URL (optional)</label><input id="edImg" value="'+A(p.image)+'"></div>'+
+   '<div class="field"><label>Description</label><textarea id="edDesc" rows="3">'+A(p.description)+'</textarea></div>'+
+   '<label style="display:flex;gap:8px;align-items:center;font-size:13px;margin:6px 0 14px"><input type="checkbox" id="edHidden"'+(p._hidden?" checked":"")+' style="width:auto"> Hide from customers (keep off the menu)</label>'+
+   '<button class="btn btn-primary btn-block" onclick="saveEdit(\''+id+'\')">Apply change</button>'+
+   '<button class="btn btn-ghost btn-block" style="margin-top:8px;color:'+(isAdded?"#ff9db0":"var(--muted)")+'" onclick="'+(isAdded?"deleteAdded(\'"+id+"\')":"resetProduct(\'"+id+"\')")+'">'+(isAdded?"🗑 Delete this product":"↺ Reset to automatic (remove my edits)")+'</button>'+
+   '<p style="color:var(--muted);font-size:12px;margin:10px 0 0">“Apply change” updates the page now. Then click <b>💾 Save changes</b> in the owner bar to publish for customers.</p></div>';
+}
+function saveEdit(id){
+  const p=DATA.find(x=>x.id===id); if(!p) return;
+  const nTiers=Number(($("#infoCard").querySelector(".adm-form")||{}).dataset?.tiers||0)||0;
+  const snap={ name:($("#edName").value||"").trim()||p.name, category:($("#edCat").value||"").trim()||p.category,
+    type:$("#edType").value, thcLabel:($("#edThc").value||"").trim(), stock:admN($("#edStock").value),
+    image:($("#edImg").value||"").trim(), description:($("#edDesc").value||"").trim(), _hidden:$("#edHidden").checked };
+  if(nTiers){
+    const arr=[]; for(let i=0;i<nTiers;i++){ const base=(p.priceTiers&&p.priceTiers[i])||{};
+      arr.push(Object.assign({},base,{price:admN($("#edTP_"+i).value),member:admN($("#edTM_"+i).value)})); }
+    snap.priceTiers=arr;
+  } else { snap.price=admN($("#edPrice").value); snap.member=admN($("#edMember").value); }
+  const added=ADMIN_OV.added.find(a=>a.id===id);
+  if(added){ Object.assign(added,snap); }
+  else { ADMIN_OV.products[id]=Object.assign({},ADMIN_OV.products[id]||{},snap); }
+  Object.assign(p,snap);
+  markDirty(); repriceCart(); buildChips(); render(); if($("#cartDrawer")?.classList.contains("show")) renderCart();
+  closeAll(); toast("✎ Updated — click Save changes to publish");
+}
+function resetProduct(id){ delete ADMIN_OV.products[id]; markDirty(); closeAll();
+  toast("↺ Reverts to automatic after you Save changes"); }
+function deleteAdded(id){ ADMIN_OV.added=ADMIN_OV.added.filter(a=>a.id!==id); DATA=DATA.filter(p=>p.id!==id);
+  markDirty(); buildChips(); render(); closeAll(); toast("🗑 Removed — Save changes to publish"); }
+
+function openAddProduct(){ showModal("#infoModal");
+  $("#infoCard").innerHTML='<div class="drawer-head" style="border:none;padding:16px 20px 4px"><h2>＋ Add product</h2><button class="close-x" onclick="closeAll()">×</button></div>'+
+   '<div class="adm-form" style="padding:4px 20px 22px">'+
+   '<div class="field"><label>Name</label><input id="apName" placeholder="e.g. Purple Punch"></div>'+
+   '<div class="two"><div class="field"><label>Category</label><input id="apCat" placeholder="Exotics / Edibles / …"></div>'+
+   '<div class="field"><label>Type</label><select id="apType"><option>Hybrid</option><option>Indica</option><option>Sativa</option></select></div></div>'+
+   '<div class="two"><div class="field"><label>THC label</label><input id="apThcL" placeholder="e.g. 28%"></div>'+
+   '<div class="field"><label>THC number</label><input type="number" id="apThc" placeholder="28"></div></div>'+
+   '<div class="two"><div class="field"><label>Price ฿</label><input type="number" id="apPrice" placeholder="800"></div>'+
+   '<div class="field"><label>Member ฿</label><input type="number" id="apMember" placeholder="720"></div></div>'+
+   '<div class="field"><label>Stock (inventory)</label><input type="number" id="apStock" placeholder="20"></div>'+
+   '<div class="field"><label>Image URL (optional)</label><input id="apImg" placeholder="https://…"></div>'+
+   '<div class="field"><label>Description</label><textarea id="apDesc" rows="3" placeholder="Short description"></textarea></div>'+
+   '<label style="display:flex;gap:8px;align-items:center;font-size:13px;margin:6px 0 14px"><input type="checkbox" id="apHidden" style="width:auto"> Add hidden (not shown to customers yet)</label>'+
+   '<button class="btn btn-primary btn-block" onclick="saveNewProduct()">Add product</button></div>';
+  setTimeout(()=>{ const e=$("#apName"); if(e) e.focus(); },90);
+}
+function saveNewProduct(){
+  const name=($("#apName").value||"").trim(); if(!name){ toast("Add a name"); return; }
+  let id=admSlug(name); if(DATA.some(p=>p.id===id)) id=id+"-"+Math.floor(Math.random()*900+100);
+  const price=admN($("#apPrice").value), member=admN($("#apMember").value)||price;
+  const prod={ id,name,category:($("#apCat").value||"").trim()||"Specials",type:$("#apType").value,
+    thc:admN($("#apThc").value), thcLabel:($("#apThcL").value||"").trim(), cbd:0,
+    stock:admN($("#apStock").value), unit:"each", effects:[], flavors:[],
+    description:($("#apDesc").value||"").trim(), image:($("#apImg").value||"").trim(),
+    price, member, _added:true, _hidden:$("#apHidden").checked };
+  ADMIN_OV.added.push(prod); DATA.push(prod);
+  markDirty(); buildChips(); render(); closeAll(); toast("＋ Added — Save changes to publish");
+}
+
+function openPromoMgr(){ showModal("#infoModal");
+  const all=Object.assign({},BASE_PROMOS||{},ADMIN_OV.promos||{});
+  const rows=Object.keys(all).map(code=>{ const d=all[code]||{}; const owner=(ADMIN_OV.promos||{})[code]!=null;
+    const desc=d.type==="pct"?(d.value+"% off"):d.type==="fixed"?("฿"+d.value+" off"):d.type==="freedelivery"?"Free delivery":"";
+    return '<div class="adm-tier-row" style="justify-content:space-between"><div><b>'+admAttr(code)+'</b> <span style="color:var(--muted);font-size:12px">'+desc+(d.min?(" · min ฿"+d.min):"")+(owner?"":" · built-in")+'</span></div>'+
+      '<div style="display:flex;gap:6px"><button class="chip" onclick="editPromo(\''+admAttr(code)+'\')">Edit</button>'+(owner?('<button class="chip" style="color:#ff9db0" onclick="deletePromo(\''+admAttr(code)+'\')">Delete</button>'):"")+'</div></div>';
+  }).join("");
+  $("#infoCard").innerHTML='<div class="drawer-head" style="border:none;padding:16px 20px 4px"><h2>🏷️ Promotions</h2><button class="close-x" onclick="closeAll()">×</button></div>'+
+    '<div class="adm-form" style="padding:4px 20px 22px">'+(rows||'<p style="color:var(--muted)">No promo codes yet.</p>')+
+    '<div class="pd-section-t" style="margin-top:14px">Add / edit a code</div>'+
+    '<div class="field"><label>Code</label><input id="pmCode" placeholder="e.g. SUMMER10" style="text-transform:uppercase"></div>'+
+    '<div class="two"><div class="field"><label>Type</label><select id="pmType"><option value="pct">% off</option><option value="fixed">฿ off</option><option value="freedelivery">Free delivery</option></select></div>'+
+    '<div class="field"><label>Value</label><input type="number" id="pmValue" placeholder="10"></div></div>'+
+    '<div class="two"><div class="field"><label>Min order ฿ (optional)</label><input type="number" id="pmMin" placeholder="0"></div>'+
+    '<div class="field"><label>Description</label><input id="pmDesc" placeholder="10% off"></div></div>'+
+    '<button class="btn btn-primary btn-block" onclick="savePromo()">Save code</button>'+
+    '<p style="color:var(--muted);font-size:12px;margin:10px 0 0">Then click <b>💾 Save changes</b> in the owner bar to publish.</p></div>';
+}
+function editPromo(code){ const d=Object.assign({},BASE_PROMOS||{},ADMIN_OV.promos||{})[code]||{};
+  $("#pmCode").value=code; $("#pmType").value=d.type||"pct"; $("#pmValue").value=d.value||""; $("#pmMin").value=d.min||""; $("#pmDesc").value=d.desc||"";
+  const el=$("#pmCode"); if(el) el.scrollIntoView({block:"center"}); }
+function savePromo(){ const code=($("#pmCode").value||"").trim().toUpperCase(); if(!code){ toast("Enter a code"); return; }
+  const type=$("#pmType").value, val=admN($("#pmValue").value), min=admN($("#pmMin").value);
+  const def={type}; if(type!=="freedelivery") def.value=val; if(min>0) def.min=min;
+  def.desc=($("#pmDesc").value||"").trim()||(type==="pct"?(val+"% off"):type==="fixed"?("฿"+val+" off"):"Free delivery");
+  ADMIN_OV.promos[code]=def; applyPromos(); markDirty(); openPromoMgr(); toast("🏷️ "+code+" saved — Save changes to publish"); }
+function deletePromo(code){ delete ADMIN_OV.promos[code]; applyPromos(); markDirty(); openPromoMgr(); toast("Removed "+code); }
+
+async function pushOverrides(){
+  if(!adminTok){ openOwnerLogin(); return; }
+  const btn=$("#abSave"); if(btn){ btn.textContent="Saving…"; btn.disabled=true; }
+  try{
+    const r=await fetch("/api/admin",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"save",token:adminTok,overrides:ADMIN_OV})});
+    if(r.status===401){ toast("Session expired — log in again"); LS.set("admintok",null); adminTok=null; if(btn){ btn.disabled=false; } openOwnerLogin(); return; }
+    const j=await r.json();
+    if(j.ok){ adminDirty=false; updateSaveBtn(); toast("✅ Saved — live for customers"); refreshMenu(true); }
+    else { toast(j.error||"Save failed"); updateSaveBtn(); }
+  }catch(e){ toast("Save failed — check connection"); if(btn){ btn.disabled=false; } }
+}
+</script>
+<script>
+/* ============================================================
+   DANK BKK — site-wide language picker (i18n.js)
+   English is the site's base language. The floating 🌐 button opens
+   a picker: English · ไทย · 中文 · Русский · 日本語 · Español.
+   Choice persists in localStorage("dankLang"). JS-rendered screens
+   are re-translated live via a MutationObserver; switching language
+   always restores the English originals first, so text never drifts.
+   Phrases not in a dictionary (product names etc.) stay in English.
+   ============================================================ */
+(function () {
+  "use strict";
+  if (window.__dankI18n) return; window.__dankI18n = 1;
+
+  var LANGS = [
+    { id: "en", flag: "🇬🇧", name: "English", short: "EN" },
+    { id: "th", flag: "🇹🇭", name: "ไทย", short: "ไทย" },
+    { id: "zh", flag: "🇨🇳", name: "中文", short: "中文" },
+    { id: "ru", flag: "🇷🇺", name: "Русский", short: "РУ" },
+    { id: "ja", flag: "🇯🇵", name: "日本語", short: "日本語" },
+    { id: "es", flag: "🇪🇸", name: "Español", short: "ES" }
+  ];
+
+  /* keys are the site's English strings */
+  var K = ["Search strains, edibles, drinks…","All branches","Member","member","Shop the menu","Take the quiz","Register free","All types","Featured","Price: low → high","Price: high → low","THC: high → low","Name A→Z","All","Saved","In stock","Sold out","NEW","Add +","Add","from","Relaxed","Happy","Euphoric","Uplifted","Energetic","Creative","Sleepy","Social","Focused","Calm","Hungry","Giggly","Your Cart","Your cart","Your cart is empty.","Browse the menu","Promo code","Apply","Remove","Subtotal","Subtotal (member ⭐)","Delivery","Pickup","Free","Total","Checkout","change","Choose your free 1G","Add any 1g flower to claim your free gram","1st-order gift","On the house","Pickup / Reserve","Your name","Name","Phone","Delivery area","Delivery address","Condo / street / room no.","Pickup branch","Pickup time","e.g. today 7pm","Notes (optional)","Preferred time, gate code, etc.","Payment","Bank transfer","Cash / COD","Card / e-wallet","Card","Crypto","Pay on arrival","Place order & show transfer details","Place order & pay crypto","Card number","Name on card","Order placed!","Payment received!","Done","Upload your payment slip","Tap to upload slip / screenshot","Slip received — we'll confirm","Uploading…","Shop","Full menu","Ask DANK AI","My wallet · top up +10%","Track my order","Help & info","Order on LINE","Visit & Contact","Get directions","Stay in the loop","Be first to know about new strains & exclusive offers.","Your email","Join","For adults 20+. Please consume responsibly.","Free Delivery","On orders over ฿1,500","Earn Points","With every purchase","24/7 Support","We're here for you","Choose Your Weed","How Much Weed?","Add Resin?","Add Hash?","Filter Options","Select Paper","Your Joint Preview","Order Summary","ADD TO CART","Add to Cart","TOTAL","Browse all flowers","Hide flowers","Included","Hand Rolled","By our experts","Custom Made","Just for you","Fresh & Top Shelf","Premium flower","Discreet Packaging","100% discreet","Important Info","Staff login","Enter the staff key to see live customer chats.","Staff key","Enter console","Log out","Chats","Orders","Free gram","Count","Mark done","Reopen","View slip","Upload proof","Recent counts","Backend Connection Status","Re-check","Products","Data source","Print / Save PDF","Category:","Columns:"];
+
+  var V = {
+  th: ["ค้นหาสายพันธุ์ ขนม เครื่องดื่ม…","ทุกสาขา","สมาชิก","สมาชิก","ดูเมนู","ทำควิซ","สมัครฟรี","ทุกประเภท","แนะนำ","ราคา: ต่ำ → สูง","ราคา: สูง → ต่ำ","THC: สูง → ต่ำ","ชื่อ A→Z","ทั้งหมด","ที่บันทึก","มีของ","หมด","ใหม่","หยิบ +","เพิ่ม","เริ่ม","ผ่อนคลาย","มีความสุข","เคลิบเคลิ้ม","สดชื่น","กระปรี้กระเปร่า","ครีเอทีฟ","ง่วงสบาย","เข้าสังคม","โฟกัส","ใจสงบ","เจริญอาหาร","ขำง่าย","ตะกร้าของคุณ","ตะกร้าของคุณ","ตะกร้ายังว่างอยู่","ดูเมนูก่อน","โค้ดส่วนลด","ใช้โค้ด","ลบ","ยอดสินค้า","ยอดสินค้า (สมาชิก ⭐)","จัดส่ง","รับที่ร้าน","ฟรี","รวมทั้งหมด","ชำระเงิน","เปลี่ยน","เลือกกรัมฟรีของคุณ","เพิ่มดอก 1g เพื่อรับกรัมฟรี","ของขวัญออเดอร์แรก","ทางร้านเลี้ยง","รับที่ร้าน / จอง","ชื่อของคุณ","ชื่อ","เบอร์โทร","พื้นที่จัดส่ง","ที่อยู่จัดส่ง","คอนโด / ถนน / เลขห้อง","สาขาที่รับ","เวลารับของ","เช่น วันนี้ 1 ทุ่ม","หมายเหตุ (ถ้ามี)","เวลาที่สะดวก, รหัสประตู ฯลฯ","วิธีชำระเงิน","โอนธนาคาร","เงินสด / เก็บปลายทาง","บัตร / e-wallet","บัตรเครดิต","คริปโต","จ่ายตอนรับของ","สั่งซื้อ & ดูบัญชีโอน","สั่งซื้อ & จ่ายคริปโต","เลขบัตร","ชื่อบนบัตร","สั่งซื้อสำเร็จ!","ได้รับเงินแล้ว!","เสร็จสิ้น","อัปโหลดสลิปโอนเงิน","แตะเพื่ออัปโหลดสลิป / ภาพหน้าจอ","ได้รับสลิปแล้ว — รอทีมงานยืนยัน","กำลังอัปโหลด…","ร้านค้า","เมนูทั้งหมด","ถาม DANK AI","วอลเล็ต · เติมเงิน +10%","ติดตามออเดอร์","ช่วยเหลือ & ข้อมูล","สั่งทาง LINE","ที่ตั้ง & ติดต่อ","นำทาง","รับข่าวสาร","รู้ก่อนใครเมื่อมีสายพันธุ์ใหม่และโปรพิเศษ","อีเมลของคุณ","สมัคร","สำหรับผู้ใหญ่ 20+ โปรดใช้อย่างรับผิดชอบ","ส่งฟรี","เมื่อสั่งครบ ฿1,500","สะสมแต้ม","ทุกยอดซื้อ","ดูแล 24 ชม.","พร้อมช่วยเสมอ","เลือกดอก","เลือกปริมาณ","เพิ่มเรซิน?","เพิ่มแฮช?","เลือกฟิลเตอร์","เลือกกระดาษ","พรีวิวจอยท์ของคุณ","สรุปคำสั่งซื้อ","ใส่ตะกร้า","ใส่ตะกร้า","ยอดรวม","ดูดอกทั้งหมด","ซ่อนรายการดอก","รวมแล้ว","มวนด้วยมือ","โดยมืออาชีพ","ทำตามสั่ง","เพื่อคุณโดยเฉพาะ","สดใหม่เกรดท็อป","ดอกพรีเมียม","แพ็คมิดชิด","มิดชิด 100%","ข้อมูลสำคัญ","เข้าสู่ระบบพนักงาน","ใส่รหัสพนักงานเพื่อดูแชทลูกค้าแบบสด","รหัสพนักงาน","เข้าคอนโซล","ออกจากระบบ","แชท","ออเดอร์","กรัมฟรี","นับสต๊อก","เสร็จแล้ว","เปิดใหม่","ดูสลิป","อัปโหลดสลิป","ประวัติการนับ","สถานะการเชื่อมต่อหลังบ้าน","เช็คอีกครั้ง","สินค้า","แหล่งข้อมูล","พิมพ์ / บันทึก PDF","หมวด:","คอลัมน์:"],
+  zh: ["搜索品种、食品、饮品…","所有分店","会员","会员","浏览菜单","做测验","免费注册","全部类型","推荐","价格：低 → 高","价格：高 → 低","THC：高 → 低","名称 A→Z","全部","收藏","有货","售罄","新品","加入 +","加入","起","放松","快乐","欣快","振奋","活力","创意","助眠","社交","专注","平静","开胃","傻笑","购物车","购物车","购物车是空的","去逛菜单","优惠码","使用","移除","小计","小计（会员 ⭐）","配送","自取","免费","总计","结账","更换","选择你的免费1克","加购任意1克花即可领取免费一克","首单礼物","本店赠送","自取 / 预订","姓名","姓名","电话","配送区域","配送地址","公寓 / 街道 / 房号","自取分店","自取时间","例如 今晚7点","备注（可选）","方便的时间、门禁密码等","支付方式","银行转账","现金 / 货到付款","银行卡 / 电子钱包","银行卡","加密货币","到付","下单并查看转账信息","下单并用加密货币支付","卡号","持卡人姓名","下单成功！","已收到付款！","完成","上传付款凭证","点击上传凭证 / 截图","已收到凭证 — 我们会尽快确认","上传中…","商店","完整菜单","问 DANK AI","我的钱包 · 充值 +10%","查询订单","帮助与信息","通过 LINE 下单","到店与联系","导航","订阅资讯","新品与专属优惠第一时间知道","你的邮箱","订阅","仅限20岁以上，请理性消费","免费配送","订单满 ฿1,500","积分奖励","每次消费都有","全天候客服","随时为你服务","选择花材","选择克数","加树脂?","加哈希?","选择过滤嘴","选择卷纸","你的卷烟预览","订单摘要","加入购物车","加入购物车","总计","浏览所有花材","收起花材","已包含","手工卷制","由专业师傅","个性定制","专属于你","新鲜顶级","优质花材","隐私包装","100% 保密","重要信息","员工登录","输入员工密钥查看实时客户聊天","员工密钥","进入控制台","退出","聊天","订单","免费克","盘点","完成","重开","查看凭证","上传凭证","盘点记录","后台连接状态","重新检查","商品","数据来源","打印 / 保存PDF","分类：","列数："],
+  ru: ["Поиск сортов, еды, напитков…","Все филиалы","Участник","участник","Смотреть меню","Пройти тест","Регистрация бесплатно","Все типы","Рекомендуем","Цена: по возрастанию","Цена: по убыванию","THC: по убыванию","Название A→Z","Все","Избранное","В наличии","Распродано","НОВИНКА","В корзину +","Добавить","от","Расслабление","Радость","Эйфория","Подъём","Энергия","Креатив","Сонливость","Общительность","Фокус","Спокойствие","Аппетит","Смешливость","Ваша корзина","Ваша корзина","Корзина пуста","Смотреть меню","Промокод","Применить","Убрать","Подытог","Подытог (участник ⭐)","Доставка","Самовывоз","Бесплатно","Итого","Оформить","изменить","Выберите бесплатный 1G","Добавьте любой цветок 1g и получите грамм бесплатно","Подарок за первый заказ","За счёт заведения","Самовывоз / Бронь","Ваше имя","Имя","Телефон","Район доставки","Адрес доставки","Дом / улица / квартира","Филиал самовывоза","Время самовывоза","напр. сегодня в 19:00","Комментарий (необязательно)","Удобное время, код домофона и т.д.","Оплата","Банковский перевод","Наличные / при получении","Карта / кошелёк","Карта","Крипто","Оплата при получении","Заказать и показать реквизиты","Заказать и оплатить криптой","Номер карты","Имя на карте","Заказ оформлен!","Оплата получена!","Готово","Загрузите чек об оплате","Нажмите, чтобы загрузить чек","Чек получен — скоро подтвердим","Загрузка…","Магазин","Всё меню","Спросить DANK AI","Кошелёк · пополнение +10%","Отследить заказ","Помощь и инфо","Заказ в LINE","Адрес и контакты","Маршрут","Будьте в курсе","Узнавайте первыми о новых сортах и акциях","Ваш email","Подписаться","Только для взрослых 20+. Употребляйте ответственно","Бесплатная доставка","при заказе от ฿1,500","Бонусные баллы","с каждой покупки","Поддержка 24/7","Мы всегда на связи","Выберите цветок","Сколько грамм?","Добавить смолу?","Добавить гашиш?","Выбор фильтра","Выбор бумаги","Предпросмотр джоинта","Сводка заказа","В КОРЗИНУ","В корзину","ИТОГО","Все цветы","Скрыть цветы","Включено","Ручная крутка","От наших мастеров","Индивидуально","Только для вас","Свежее и топовое","Премиум цветок","Незаметная упаковка","100% конфиденциально","Важная информация","Вход для персонала","Введите ключ персонала, чтобы видеть чаты клиентов","Ключ персонала","Войти","Выйти","Чаты","Заказы","Бесплатный грамм","Учёт","Готово","Открыть снова","Чек","Загрузить чек","История учёта","Статус подключения","Проверить снова","Товары","Источник данных","Печать / PDF","Категория:","Колонки:"],
+  ja: ["品種・エディブル・ドリンクを検索…","全店舗","メンバー","メンバー","メニューを見る","クイズで探す","無料登録","全タイプ","おすすめ","価格：安い順","価格：高い順","THC：高い順","名前 A→Z","すべて","お気に入り","在庫あり","売切れ","新着","追加 +","追加","最安","リラックス","ハッピー","多幸感","気分アップ","エナジー","クリエイティブ","眠気","ソーシャル","集中","落ち着き","食欲増進","笑い上戸","カート","カート","カートは空です","メニューを見る","クーポンコード","適用","削除","小計","小計（メンバー ⭐）","配達","店頭受取","無料","合計","レジへ","変更","無料1Gを選ぶ","1gの花を追加で無料1gプレゼント","初回特典","サービス","受取 / 予約","お名前","名前","電話番号","配達エリア","配達先住所","マンション / 通り / 部屋番号","受取店舗","受取時間","例：今日19時","備考（任意）","希望時間・ゲートコード等","お支払い","銀行振込","現金 / 代引き","カード / 電子マネー","カード","仮想通貨","受取時に支払い","注文して振込先を見る","注文して仮想通貨で支払う","カード番号","カード名義","ご注文完了！","お支払い確認！","完了","振込明細をアップロード","タップして明細をアップ","明細を受領 — 確認します","アップロード中…","ショップ","全メニュー","DANK AIに質問","ウォレット · チャージ+10%","注文を追跡","ヘルプ","LINEで注文","店舗・連絡先","道順","最新情報を受取る","新入荷と限定オファーをいち早く","メールアドレス","登録","20歳以上限定。適量でお楽しみください","送料無料","฿1,500以上のご注文で","ポイント獲得","毎回のお買い物で","24時間サポート","いつでもどうぞ","花を選ぶ","グラム数を選ぶ","レジン追加?","ハッシュ追加?","フィルター選択","ペーパー選択","ジョイントプレビュー","注文内容","カートに入れる","カートに入れる","合計","全ての花を見る","花を隠す","込み","ハンドロール","職人による","カスタムメイド","あなただけに","新鮮・最高級","プレミアムフラワー","目立たない梱包","100%プライバシー","重要情報","スタッフログイン","スタッフキーを入力してチャットを表示","スタッフキー","コンソールへ","ログアウト","チャット","注文","無料グラム","棚卸し","完了","再開","明細を見る","証明をアップ","棚卸し履歴","バックエンド接続状況","再チェック","商品","データソース","印刷 / PDF保存","カテゴリ：","列数："],
+  es: ["Buscar cepas, comestibles, bebidas…","Todas las sucursales","Miembro","miembro","Ver el menú","Haz el quiz","Regístrate gratis","Todos los tipos","Destacados","Precio: menor → mayor","Precio: mayor → menor","THC: mayor → menor","Nombre A→Z","Todo","Guardados","Disponible","Agotado","NUEVO","Añadir +","Añadir","desde","Relajado","Feliz","Eufórico","Animado","Energético","Creativo","Somnoliento","Social","Concentrado","Tranquilo","Hambriento","Risueño","Tu carrito","Tu carrito","Tu carrito está vacío","Ver el menú","Código promo","Aplicar","Quitar","Subtotal","Subtotal (miembro ⭐)","Envío","Recogida","Gratis","Total","Pagar","cambiar","Elige tu 1G gratis","Añade cualquier flor de 1g y llévate un gramo gratis","Regalo del primer pedido","Invita la casa","Recoger / Reservar","Tu nombre","Nombre","Teléfono","Zona de envío","Dirección de envío","Edificio / calle / n.º","Sucursal de recogida","Hora de recogida","ej. hoy 19:00","Notas (opcional)","Hora preferida, código de puerta, etc.","Pago","Transferencia bancaria","Efectivo / contra entrega","Tarjeta / e-wallet","Tarjeta","Cripto","Pagar al recibir","Pedir y ver datos de transferencia","Pedir y pagar con cripto","Número de tarjeta","Nombre en la tarjeta","¡Pedido realizado!","¡Pago recibido!","Listo","Sube tu comprobante de pago","Toca para subir el comprobante","Comprobante recibido — lo confirmaremos","Subiendo…","Tienda","Menú completo","Pregunta a DANK AI","Mi cartera · recarga +10%","Seguir mi pedido","Ayuda e info","Pedir por LINE","Visítanos y contacto","Cómo llegar","Mantente al día","Sé el primero en saber de nuevas cepas y ofertas","Tu email","Unirme","Solo adultos 20+. Consume responsablemente","Envío gratis","En pedidos de más de ฿1,500","Gana puntos","Con cada compra","Soporte 24/7","Estamos para ti","Elige tu flor","¿Cuánta flor?","¿Añadir resina?","¿Añadir hash?","Opciones de filtro","Elige el papel","Vista previa del porro","Resumen del pedido","AÑADIR AL CARRITO","Añadir al carrito","TOTAL","Ver todas las flores","Ocultar flores","Incluido","Liado a mano","Por expertos","Hecho a medida","Solo para ti","Fresco y de primera","Flor premium","Empaque discreto","100% discreto","Información importante","Acceso del personal","Introduce la clave del personal para ver los chats","Clave del personal","Entrar","Salir","Chats","Pedidos","Gramo gratis","Inventario","Hecho","Reabrir","Ver comprobante","Subir comprobante","Recuentos recientes","Estado de conexión","Verificar de nuevo","Productos","Fuente de datos","Imprimir / Guardar PDF","Categoría:","Columnas:"]
+  };
+
+  /* build DICTS[lang] = {english: translated} */
+  var DICTS = {};
+  for (var lg in V) { var d = {}; for (var i = 0; i < K.length; i++) d[K[i]] = V[lg][i]; DICTS[lg] = d; }
+
+  /* dynamic strings with numbers/amounts — per language */
+  var PATTERNS = [
+    /^(\d+) items?( · .+)?$/, /^Only (\d+) left$/, /^Discount \((.+)\)$/,
+    /^Minimum order (.+) — add (.+) more$/, /^Checkout · (.+)$/, /^Place order · (.+)$/,
+    /^Pay (฿[\d,\.]+) from wallet$/, /^Pay (฿[\d,\.]+)$/, /^Wallet (฿[\d,\.]+)$/,
+    /^Free gram added: (.+?) — ?$/
+  ];
+  var REPL = {
+    th: ["$1 รายการ$2","เหลือ $1 ชิ้นสุดท้าย","ส่วนลด ($1)","สั่งขั้นต่ำ $1 — เพิ่มอีก $2","ชำระเงิน · $1","สั่งซื้อ · $1","จ่าย $1 จากวอลเล็ต","จ่าย $1","วอลเล็ต $1","ได้กรัมฟรี: $1 — "],
+    zh: ["$1 件$2","仅剩 $1 件","折扣（$1）","最低消费 $1 — 还差 $2","结账 · $1","下单 · $1","用钱包支付 $1","支付 $1","钱包 $1","已加免费克：$1 — "],
+    ru: ["$1 поз.$2","Осталось $1","Скидка ($1)","Мин. заказ $1 — добавьте ещё $2","Оформить · $1","Заказать · $1","Оплатить $1 из кошелька","Оплатить $1","Кошелёк $1","Бесплатный грамм: $1 — "],
+    ja: ["$1 件$2","残り$1点","割引（$1）","最低注文 $1 — あと $2","レジへ · $1","注文する · $1","ウォレットで $1 支払う","$1 を支払う","ウォレット $1","無料1g追加：$1 — "],
+    es: ["$1 artículos$2","Solo quedan $1","Descuento ($1)","Pedido mínimo $1 — añade $2 más","Pagar · $1","Pedir · $1","Pagar $1 con la cartera","Pagar $1","Cartera $1","Gramo gratis: $1 — "]
+  };
+
+  var LKEY = "dankLang";
+  var lang = "en";
+  try { lang = localStorage.getItem(LKEY) || "en"; } catch (e) {}
+  if (!DICTS[lang] && lang !== "en") lang = "en";
+  var savedText = new Map(), savedAttr = new Map();
+  var observer = null, busy = false;
+  var ATTRS = ["placeholder", "title"];
+  var SKIP = { SCRIPT: 1, STYLE: 1, TEXTAREA: 1, NOSCRIPT: 1 };
+
+  function trStr(s) {
+    if (lang === "en") return null;
+    var DICT = DICTS[lang], RULES = REPL[lang];
+    var t = s.trim(); if (!t) return null;
+    if (DICT[t]) return s.replace(t, DICT[t]);
+    var p = "", x = "", core = t;
+    var pre = core.match(/^[^A-Za-z]+/);
+    if (pre) { p = pre[0]; core = core.slice(p.length); }
+    var suf = core.match(/[^A-Za-z!?.%)]+$/);
+    if (suf) { x = suf[0]; core = core.slice(0, core.length - x.length); }
+    if (core && DICT[core]) return s.replace(t, p + DICT[core] + x);
+    for (var i = 0; i < PATTERNS.length; i++) {
+      if (PATTERNS[i].test(t)) return s.replace(t, t.replace(PATTERNS[i], RULES[i]));
+    }
+    return null;
+  }
+
+  function walk(root, fn) {
+    var w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+      acceptNode: function (n) {
+        var el = n.parentNode;
+        if (!el || SKIP[el.nodeName]) return NodeFilter.FILTER_REJECT;
+        if (el.closest && el.closest("#langBtn,#langMenu")) return NodeFilter.FILTER_REJECT;
+        return NodeFilter.FILTER_ACCEPT;
+      }
+    });
+    var n; while ((n = w.nextNode())) fn(n);
+  }
+
+  function translate(root) {
+    walk(root, function (n) {
+      var out = trStr(n.nodeValue);
+      if (out !== null) { if (!savedText.has(n)) savedText.set(n, n.nodeValue); n.nodeValue = out; }
+    });
+    var els = root.querySelectorAll ? root.querySelectorAll("[placeholder],[title]") : [];
+    for (var i = 0; i < els.length; i++) {
+      var el = els[i];
+      for (var a = 0; a < ATTRS.length; a++) {
+        var at = ATTRS[a], v = el.getAttribute(at); if (!v) continue;
+        var out = trStr(v);
+        if (out !== null) {
+          var rec = savedAttr.get(el) || {}; if (!(at in rec)) { rec[at] = v; savedAttr.set(el, rec); }
+          el.setAttribute(at, out);
+        }
+      }
+    }
+  }
+
+  function restoreAll() {
+    savedText.forEach(function (orig, n) { try { n.nodeValue = orig; } catch (e) {} });
+    savedAttr.forEach(function (rec, el) { for (var a in rec) { try { el.setAttribute(a, rec[a]); } catch (e) {} } });
+    savedText = new Map(); savedAttr = new Map();
+  }
+
+  function startObserver() {
+    if (observer) return;
+    observer = new MutationObserver(function () {
+      if (busy || lang === "en") return;
+      busy = true;
+      try { translate(document.body); } finally { observer.takeRecords(); busy = false; }
+    });
+    observer.observe(document.body, { childList: true, subtree: true, characterData: true });
+  }
+  function stopObserver() { if (observer) { observer.disconnect(); observer = null; } }
+
+  function applyLang(next) {
+    busy = true;
+    try {
+      if (lang !== "en") { stopObserver(); restoreAll(); }   // back to English originals first
+      lang = next;
+      try { localStorage.setItem(LKEY, lang); } catch (e) {}
+      document.documentElement.lang = lang;
+      if (lang !== "en") { translate(document.body); startObserver(); }
+    } finally { if (observer) observer.takeRecords(); busy = false; }
+    var btn = document.getElementById("langBtn");
+    if (btn) {
+      var cur = LANGS.filter(function (l) { return l.id === lang; })[0] || LANGS[0];
+      btn.textContent = "🌐 " + cur.short;
+    }
+    closeMenu();
+  }
+
+  /* ---- picker UI ---- */
+  function closeMenu() { var m = document.getElementById("langMenu"); if (m) m.remove(); }
+  function openMenu() {
+    if (document.getElementById("langMenu")) { closeMenu(); return; }
+    var btn = document.getElementById("langBtn");
+    var m = document.createElement("div");
+    m.id = "langMenu";
+    m.style.cssText = "position:fixed;left:14px;bottom:" + (parseInt(btn.style.bottom, 10) + 46) + "px;" +
+      "z-index:2147483001;background:#0e1a11;border:1px solid #2f8a33;border-radius:14px;overflow:hidden;" +
+      "box-shadow:0 14px 44px rgba(0,0,0,.55);min-width:170px;font:600 14px/1 'Segoe UI',system-ui,sans-serif";
+    LANGS.forEach(function (l) {
+      var r = document.createElement("button");
+      r.type = "button";
+      r.textContent = l.flag + "  " + l.name + (l.id === lang ? "  ✓" : "");
+      r.style.cssText = "display:block;width:100%;text-align:left;padding:12px 16px;border:none;cursor:pointer;" +
+        "background:" + (l.id === lang ? "rgba(61,220,132,.16)" : "transparent") + ";color:" + (l.id === lang ? "#7be389" : "#e8f5ec");
+      r.onmouseover = function () { r.style.background = "rgba(61,220,132,.12)"; };
+      r.onmouseout = function () { r.style.background = l.id === lang ? "rgba(61,220,132,.16)" : "transparent"; };
+      r.onclick = function (ev) { ev.stopPropagation(); applyLang(l.id); };
+      m.appendChild(r);
+    });
+    document.body.appendChild(m);
+    setTimeout(function () {
+      document.addEventListener("click", function h(ev) {
+        if (!m.contains(ev.target) && ev.target.id !== "langBtn") { closeMenu(); document.removeEventListener("click", h); }
+      });
+    }, 0);
+  }
+
+  function makeButton() {
+    if (document.getElementById("langBtn")) return;
+    var b = document.createElement("button");
+    b.id = "langBtn"; b.type = "button";
+    var cur = LANGS.filter(function (l) { return l.id === lang; })[0] || LANGS[0];
+    b.textContent = "🌐 " + cur.short;
+    var lift = document.querySelector(".mcart") ? "96" : "14";
+    b.style.cssText = "position:fixed;left:14px;bottom:" + lift + "px;z-index:2147483000;" +
+      "background:#0e1a11;color:#7be389;border:1px solid #2f8a33;border-radius:999px;" +
+      "padding:9px 14px;font:700 13px/1 'Segoe UI',system-ui,sans-serif;cursor:pointer;" +
+      "box-shadow:0 6px 20px rgba(0,0,0,.45)";
+    b.onclick = function (ev) { ev.stopPropagation(); openMenu(); };
+    document.body.appendChild(b);
+  }
+
+  function boot() {
+    makeButton();
+    if (lang !== "en") { var keep = lang; lang = "en"; applyLang(keep); }
+  }
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot);
+  else boot();
+})();
+
 </script>
 </body>
 </html>

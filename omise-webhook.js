@@ -1,137 +1,114 @@
-/* Delivery ETA with automatic NEAREST-BRANCH selection.
-   Products go out from several shops; when a customer shares a location we
-   check drive time from every branch (Google Routes API) and quote the closest.
+/* /api/admin — owner login + manual catalog editing (products / inventory /
+   prices / promotions) straight from the website.
 
-   Env:
-     GOOGLE_MAPS_API_KEY  — key with the Routes API enabled
-     DELIVERY_MODE        — "TWO_WHEELER" (motorbike, default) or "DRIVE"
-     DELIVERY_PREP_MIN    — minutes added for prep/packing (default 15)
-     SHOP_BRANCHES        — OPTIONAL JSON array to override branches.json, e.g.
-                            [{"id":"pattanakarn","name":"...","origin":"13.70,100.65"}]
-     SHOP_ORIGIN          — OPTIONAL single origin fallback if no branches file
-     ROUTE_API_URL        — OPTIONAL your own endpoint (skips Google entirely)
+     POST {action:"login", email, password}    → {ok, token}   (7-day session)
+     POST {action:"save", token, overrides}    → {ok}          (stores edits, busts menu cache)
+     POST {action:"logout", token}             → {ok}
+     GET                                       → {ok, overrides}  (public — this is menu data)
 
-   Each branch `origin` may be "lat,lng" (most accurate) or a plain address
-   (Google geocodes it). branches.json ships with all four DANK shops.        */
-import { readFile } from "node:fs/promises";
-import { join } from "node:path";
+   Overrides shape (all optional):
+     { products:{ [id]: {name,price,member,stock,thcLabel,category,type,_hidden,priceTiers} },
+       added:[ full product objects created by the owner ],
+       promos:{ CODE:{type:"pct"|"fixed"|"freedelivery", value, min, desc} } }
 
-const PREP = () => Number(process.env.DELIVERY_PREP_MIN || 15);
+   The live menu (api/_menu.js) applies these on top of whatever source is
+   active (StoreHub / feed / bundled), so edits show for every customer within
+   the normal ~30s refresh — instantly after the save busts the cache.
 
-function parseLoc(s) {
-  const m = String(s || "").match(/^\s*(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)\s*$/);
-  return m ? { latLng: { latitude: +m[1], longitude: +m[2] } } : null;
+   SECURITY
+   --------
+   • The password is NEVER stored in source — only its SHA-256 hash. So this
+     file is safe to keep in a public GitHub repo.
+   • Sessions are stateless, signed tokens (HMAC-SHA256). No shared session
+     store is needed, so login keeps working even if Redis is unavailable.
+   • Override the built-in owner login with host env vars:
+        ADMIN_EMAIL      – owner email (default below)
+        ADMIN_PASSWORD   – plaintext password; if set, it replaces the baked hash
+        ADMIN_SECRET     – token signing secret (optional; a stable one is
+                           derived from the credentials when not provided)
+   NOTE: saving edits still needs the Upstash Redis env vars
+   (UPSTASH_REDIS_REST_URL / UPSTASH_REDIS_REST_TOKEN) so overrides persist
+   across serverless instances — the same store the wallet/chat already use.  */
+import crypto from "node:crypto";
+import { getJSON, setJSON } from "./_store.js";
+import { bustMenu } from "./_menu.js";
+
+const sha256 = (s) => crypto.createHash("sha256").update(String(s)).digest("hex");
+
+const EMAIL = (process.env.ADMIN_EMAIL || "bryank31172@gmail.com").toLowerCase();
+// SHA-256 of the owner password. Set ADMIN_PASSWORD (plaintext) in your host
+// env to change it; otherwise this baked hash is used (plaintext stays secret).
+const PASS_HASH = process.env.ADMIN_PASSWORD
+  ? sha256(process.env.ADMIN_PASSWORD)
+  : "85118f4772b2d0e364cada94808faa4617b9ed6935aa0b2bffbbc997789c982c";
+const SECRET = process.env.ADMIN_SECRET || sha256("dank-admin|" + EMAIL + "|" + PASS_HASH);
+const TTL_MS = 1000 * 60 * 60 * 24 * 7; // 7 days
+
+const b64u = (buf) =>
+  Buffer.from(buf).toString("base64").replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+const b64uDecode = (s) =>
+  Buffer.from(String(s).replace(/-/g, "+").replace(/_/g, "/"), "base64").toString("utf8");
+
+const safeEq = (a, b) => {
+  const A = Buffer.from(String(a)), B = Buffer.from(String(b));
+  return A.length === B.length && crypto.timingSafeEqual(A, B);
+};
+const sign = (payload) => b64u(crypto.createHmac("sha256", SECRET).update(payload).digest());
+
+function makeToken() {
+  const payload = b64u(JSON.stringify({ e: EMAIL, x: Date.now() + TTL_MS }));
+  return payload + "." + sign(payload);
 }
-function originField(origin) {
-  const loc = parseLoc(origin);
-  return loc ? { location: loc } : { address: String(origin || "") };
+function verifyToken(tok) {
+  if (!tok || typeof tok !== "string" || tok.indexOf(".") < 0) return false;
+  const i = tok.indexOf(".");
+  const payload = tok.slice(0, i), sig = tok.slice(i + 1);
+  if (!safeEq(sig, sign(payload))) return false;
+  try {
+    const p = JSON.parse(b64uDecode(payload));
+    return !!p.x && Date.now() < p.x;
+  } catch (e) { return false; }
 }
 
-export function routeConfigured() {
-  return Boolean(process.env.ROUTE_API_URL || process.env.GOOGLE_MAPS_API_KEY);
-}
+export default async function handler(req, res) {
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+  if (req.method === "OPTIONS") return res.status(204).end();
 
-let _branchCache = null;
-export async function getBranches() {
-  if (_branchCache) return _branchCache;
-  // 1) env override
-  if (process.env.SHOP_BRANCHES) {
-    try { const a = JSON.parse(process.env.SHOP_BRANCHES); if (Array.isArray(a) && a.length) return (_branchCache = a); } catch {}
+  if (req.method === "GET") {
+    const ov = (await getJSON("admin:overrides")) || {};
+    return res.status(200).json({ ok: true, overrides: ov });
   }
-  // 2) bundled branches.json
-  try {
-    const raw = await readFile(join(process.cwd(), "branches.json"), "utf8");
-    const a = JSON.parse(raw);
-    if (Array.isArray(a) && a.length) return (_branchCache = a);
-  } catch {}
-  // 3) single origin fallback
-  if (process.env.SHOP_ORIGIN) return (_branchCache = [{ id: "main", name: "DANK", origin: process.env.SHOP_ORIGIN }]);
-  return (_branchCache = []);
-}
+  if (req.method !== "POST") return res.status(405).json({ error: "method" });
 
-// one Google Routes call: branch origin → customer destination
-async function routeOne(origin, destination, key, mode) {
-  try {
-    const r = await fetch("https://routes.googleapis.com/directions/v2:computeRoutes", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-Goog-Api-Key": key,
-        "X-Goog-FieldMask": "routes.duration,routes.distanceMeters",
-      },
-      body: JSON.stringify({
-        origin: originField(origin),
-        destination,
-        travelMode: mode,
-        routingPreference: "TRAFFIC_AWARE",
-        languageCode: "th-TH",
-        units: "METRIC",
-      }),
-    });
-    if (!r.ok) return null;
-    const route = (await r.json()).routes?.[0];
-    if (!route) return null;
-    const sec = parseInt(String(route.duration || "0").replace("s", ""), 10) || 0;
-    return { sec, meters: route.distanceMeters ?? null };
-  } catch { return null; }
-}
+  const b = req.body || {};
 
-/**
- * @returns {ok, minutes, travelMin, km, prep, branch:{id,name}, error?}
- * Picks the branch with the shortest travel time to the customer.
- */
-export async function computeEta({ destLat, destLng, address } = {}) {
-  const prep = PREP();
-
-  // Your own endpoint takes over completely, if set
-  if (process.env.ROUTE_API_URL) {
-    try {
-      const r = await fetch(process.env.ROUTE_API_URL, {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ destLat, destLng, address }),
-      });
-      if (r.ok) {
-        const j = await r.json();
-        const travelMin = j.minutes ?? j.durationMin ?? (j.durationSec ? j.durationSec / 60 : null);
-        const km = j.km ?? (j.distanceMeters ? j.distanceMeters / 1000 : null);
-        if (travelMin != null) return { ok: true, travelMin: Math.round(travelMin), minutes: Math.round(travelMin) + prep, km: km != null ? +km.toFixed(1) : null, prep, branch: j.branch || null };
-      }
-    } catch {}
+  if (b.action === "login") {
+    const okEmail = String(b.email || "").trim().toLowerCase() === EMAIL;
+    const okPass = safeEq(sha256(b.password || ""), PASS_HASH);
+    if (!okEmail || !okPass) return res.status(401).json({ error: "wrong email or password" });
+    return res.status(200).json({ ok: true, token: makeToken() });
   }
 
-  const key = process.env.GOOGLE_MAPS_API_KEY;
-  if (!key) return { ok: false, error: "no route provider configured" };
+  // everything below needs a valid signed session
+  if (!verifyToken(b.token)) return res.status(401).json({ error: "session expired — log in again" });
 
-  const destination =
-    destLat != null && destLng != null
-      ? { location: { latLng: { latitude: +destLat, longitude: +destLng } } }
-      : { address: String(address || "") };
-  const mode = process.env.DELIVERY_MODE || "TWO_WHEELER";
+  if (b.action === "logout") {
+    // stateless tokens — the client just drops it; nothing to revoke server-side
+    return res.status(200).json({ ok: true });
+  }
 
-  const branches = await getBranches();
-  if (!branches.length) return { ok: false, error: "no branches configured" };
+  if (b.action === "save") {
+    const ov = b.overrides || {};
+    const clean = {
+      products: typeof ov.products === "object" && ov.products ? ov.products : {},
+      added: Array.isArray(ov.added) ? ov.added.slice(0, 200) : [],
+      promos: typeof ov.promos === "object" && ov.promos ? ov.promos : {},
+    };
+    await setJSON("admin:overrides", clean, 60 * 60 * 24 * 365);
+    try { await bustMenu(); } catch (e) {}
+    return res.status(200).json({ ok: true });
+  }
 
-  // check every branch in parallel, keep the fastest
-  const results = await Promise.all(
-    branches.map(async (b) => ({ b, r: await routeOne(b.origin, destination, key, mode) }))
-  );
-  const viable = results.filter((x) => x.r).sort((a, b) => a.r.sec - b.r.sec);
-  if (!viable.length) return { ok: false, error: "no route from any branch" };
-
-  const best = viable[0];
-  const travelMin = Math.round(best.r.sec / 60);
-  const km = best.r.meters != null ? +(best.r.meters / 1000).toFixed(1) : null;
-  return { ok: true, travelMin, minutes: travelMin + prep, km, prep, branch: { id: best.b.id, name: best.b.name } };
-}
-
-/** Friendly Thai + English ETA text (names the branch it ships from). */
-export function etaText(eta) {
-  if (!eta.ok) return "ขอโทษค่ะ ตอนนี้คำนวณเวลาจัดส่งอัตโนมัติไม่ได้ เดี๋ยวทีมงานแจ้งเวลาให้นะคะ 🙏";
-  const from = eta.branch?.name ? `จากสาขา ${eta.branch.name} ` : "";
-  const dist = eta.km != null ? ` (${eta.km} กม.)` : "";
-  return (
-    `🛵 ${from}ถึงคุณประมาณ ~${eta.minutes} นาที${dist}\n` +
-    `รวมเวลาเตรียมของ ~${eta.prep} นาที + เดินทาง ~${eta.travelMin} นาที แล้วค่ะ 🌿\n` +
-    `(Est. delivery ~${eta.minutes} min${eta.km != null ? `, ${eta.km} km` : ""}${eta.branch?.name ? ` from ${eta.branch.name}` : ""})`
-  );
+  return res.status(400).json({ error: "unknown action" });
 }

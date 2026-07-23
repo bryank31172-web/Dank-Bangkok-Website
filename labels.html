@@ -87,5 +87,6 @@ if(Array.isArray(embedded)&&embedded.length) boot(embedded);
 else fetch('product-codes.json').then(r=>r.json()).then(boot)
   .catch(()=>{ $('#sheet').innerHTML='<p style="padding:20px">Could not load product-codes.json — open this page from the deployed site (same folder).</p>'; });
 </script>
+<script src="i18n.js"></script>
 </body>
 </html>

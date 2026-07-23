@@ -31,8 +31,32 @@ DELIVERY_MODE=TWO_WHEELER
 # ^ TWO_WHEELER (motorbike, default) or DRIVE
 DELIVERY_PREP_MIN=15
 # ROUTE_API_URL=   # optional: your own route endpoint instead of calling Google
+# ── Redis (needed for wallet, staff chat, AND owner edit-mode overrides) ──
 UPSTASH_REDIS_REST_URL=
 UPSTASH_REDIS_REST_TOKEN=
+# ── Owner edit-mode login (/api/admin). All optional — sensible defaults are
+#    baked in (password is stored only as a hash, never plaintext). Set these
+#    to change the owner credentials without touching code: ──
+ADMIN_EMAIL=
+# ^ owner login email (default: bryank31172@gmail.com)
+ADMIN_PASSWORD=
+# ^ owner login password in plaintext; if set it replaces the baked-in hash
+ADMIN_SECRET=
+# ^ optional token-signing secret; a stable one is derived from the login when blank
+# ── Live catalog from your BRYAN POS app (dank-medical-pos-app) ──
+# The POS PUSHES its menu to this website (POST /api/pos-feed) every ~45s;
+# the site serves it as the freshest source. Both sides ship with a matching
+# built-in link key, so it works with zero setup. To rotate the key: set
+# POS_SYNC_KEY here AND paste the same key in POS Settings → Website connection.
+POS_SYNC_KEY=
+POS_FEED_MAX_AGE_H=72
+# ^ how long the site trusts the last POS push before falling back (hours)
+POS_APP_URL=https://dank-medical-pos-app.vercel.app
+# ^ legacy pull path: also probes the POS URL for a JSON list (harmless backup)
+# POS_FEED_PATHS=/api/products,/api/menu,/api/catalog,/api/inventory
+# ^ optional override of which POS paths to try (comma-separated)
+CRM_WEBHOOK_URL=
+# ^ optional: new website members are also POSTed here (wire to your POS/CRM)
 TWOC2P_MERCHANT_ID=
 TWOC2P_SECRET=
 TWOC2P_ENV=sandbox
