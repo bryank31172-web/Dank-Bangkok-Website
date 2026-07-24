@@ -40,7 +40,17 @@
   .btn-primary:hover{filter:brightness(1.08)}
   .btn-ghost{background:transparent;border:1px solid var(--line2);color:var(--muted)}
   .btn-ghost:hover{border-color:var(--green);color:var(--green)}
+  .btn-gold{background:linear-gradient(135deg,var(--gold),#b8923f);color:#20100a;font-weight:800}
+  .btn-gold:hover{filter:brightness(1.08)}
   .btn-block{width:100%}
+  /* Build-Your-Joint feature card in the grid */
+  .byj-card{grid-column:1/-1;display:flex;align-items:center;gap:18px;background:linear-gradient(120deg,#14251a,#0d1a12 60%),radial-gradient(circle at 88% 30%,rgba(207,168,90,.25),transparent 55%);border:1px solid var(--line2);border-radius:var(--radius);padding:18px 22px;cursor:pointer;transition:.15s}
+  .byj-card:hover{border-color:var(--gold)}
+  .byj-card .ic{font-size:44px;line-height:1;filter:drop-shadow(0 4px 10px rgba(0,0,0,.5))}
+  .byj-card h3{font-size:18.5px;margin:0 0 3px}
+  .byj-card p{color:var(--muted);font-size:13px;margin:0}
+  .byj-card .go{margin-left:auto;white-space:nowrap}
+  @media(max-width:560px){ .byj-card{flex-wrap:wrap;padding:16px} .byj-card .go{margin-left:0;width:100%} }
 
   /* ---------- Age gate ---------- */
   #ageGate{position:fixed;inset:0;z-index:120;display:flex;align-items:center;justify-content:center;background:radial-gradient(circle at 50% 30%,#0c1a11,#040705 70%);padding:24px}
@@ -393,6 +403,7 @@
         <span class="switch"></span><span class="mt-label">Member</span>
       </button>
       <button class="wallet-chip" id="walletChip" onclick="openWallet()" title="Wallet">💚 <span id="walletBal">฿0</span></button>
+      <button class="icon-btn" title="Member login" onclick="openCRM(isMember()?undefined:'login')">👤</button>
       <button class="icon-btn" title="My orders" onclick="openOrders()">📦</button>
       <button class="icon-btn" title="Cart" onclick="openCart()">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.7 13.4a2 2 0 0 0 2 1.6h9.7a2 2 0 0 0 2-1.6L23 6H6"/></svg>
@@ -415,6 +426,7 @@
     <p id="heroSub">Browse our live menu, unlock member prices, and order in seconds — delivery or pickup at Pattanakarn, Sathorn & Bars. Or just ask DANK AI, 24/7.</p>
     <div class="hero-cta">
       <a class="btn btn-primary" href="#menu" onclick="document.getElementById('menu').scrollIntoView({behavior:'smooth'});return false;">Shop the menu</a>
+      <a class="btn btn-gold" href="build-your-joint.html">🚬 Build your joint</a>
       <a class="btn btn-ghost" onclick="openQuiz()">🧭 Take the quiz</a>
       <a class="btn btn-ghost" onclick="openAI()">💬 Chat น้องแดงค์</a>
     </div>
@@ -465,8 +477,10 @@
       <div>
         <h4>Shop</h4>
         <a href="#menu">Full menu</a>
+        <a href="build-your-joint.html">Build your joint 🚬</a>
         <a href="#" onclick="openCart();return false;">Your cart</a>
         <a href="#" onclick="openAI('Hi! What are you looking for today?');return false;">Ask DANK AI</a>
+        <a href="#" onclick="openCRM(isMember()?undefined:'login');return false;">Member login · 10% off 👤</a>
         <a href="#" onclick="openWallet();return false;">My wallet · top up +10%</a>
         <a href="#" onclick="openOrders();return false;">Track my order</a>
         <a href="#" onclick="openInfo();return false;">Help & info</a>
@@ -736,23 +750,81 @@ function scheduleCRM(delay){ const c=CONFIG.crm||{};
   }, delay);
 }
 function maybeShowCRM(){ scheduleCRM((CONFIG.crm&&CONFIG.crm.firstDelayMs)||1200); }
-function openCRM(){
+function openCRM(tab){
   const c=CONFIG.crm||{};
+  if(isMember()){ openMemberCard(); return; }
   showModal("#infoModal");
+  const t=tab==="login"?"login":"join";
   $("#infoCard").innerHTML=`<div class="drawer-head" style="border:none;padding:18px 20px 4px"><h2>${c.title||"Join DANK Members — 10% OFF 💚"}</h2><button class="close-x" onclick="dismissCRM()">×</button></div>
     <div style="padding:6px 20px 22px">
       <div style="background:linear-gradient(135deg,#0e3a24,#0a2417);border:1px solid var(--line2);border-radius:14px;padding:15px 16px;margin:2px 0 14px;text-align:center">
         <div style="font-size:34px;font-weight:900;color:var(--green2);line-height:1;letter-spacing:.5px">10% OFF</div>
         <div style="font-size:12.5px;color:var(--gold);margin-top:3px;font-weight:700">every order · free to join · members-only drops</div>
       </div>
+      <div class="seg" style="margin-bottom:14px">
+        <button class="${t==='join'?'active':''}" onclick="openCRM('join')">💚 Join free</button>
+        <button class="${t==='login'?'active':''}" onclick="openCRM('login')">👤 Member log in</button>
+      </div>
+      ${t==="join"?`
       <p style="color:var(--muted);font-size:13.5px;margin:0 0 14px">${c.sub||"Sign up free and save 10% on every order."}</p>
       <div class="field"><label>Name</label><input id="regName" placeholder="Your name"></div>
       <div class="field"><label>Phone or LINE</label><input id="regPhone" placeholder="+66…" inputmode="tel"></div>
       <label style="display:flex;gap:8px;align-items:flex-start;font-size:12.5px;color:var(--muted);margin:4px 0 14px"><input type="checkbox" id="regAge" style="width:auto;margin-top:2px"> I confirm I'm 20+ and agree to receive offers.</label>
       <button class="btn btn-primary btn-block" onclick="joinMember()">💚 Join & unlock 10% off</button>
-      <button class="btn btn-ghost btn-block" style="margin-top:8px" onclick="dismissCRM()">Maybe later</button>
+      <button class="btn btn-ghost btn-block" style="margin-top:8px" onclick="dismissCRM()">Maybe later</button>`
+      :`
+      <p style="color:var(--muted);font-size:13.5px;margin:0 0 14px">Already a DANK member? Enter the phone number you joined with — your 10% switches on right away.</p>
+      <div class="field"><label>Phone number</label><input id="loginPhone" placeholder="+66…" inputmode="tel" onkeydown="if(event.key==='Enter')loginMember()"></div>
+      <button class="btn btn-primary btn-block" id="loginBtn" onclick="loginMember()">👤 Log in</button>
+      <button class="btn btn-ghost btn-block" style="margin-top:8px" onclick="openCRM('join')">New here? Join free →</button>`}
     </div>`;
-  setTimeout(()=>{ const e=$("#regName"); if(e) e.focus(); },80);
+  setTimeout(()=>{ const e=$(t==="join"?"#regName":"#loginPhone"); if(e) e.focus(); },80);
+}
+async function loginMember(){
+  const phone=($("#loginPhone").value||"").trim();
+  if(phone.replace(/\s/g,"").length<6){ toast("Enter your phone number"); return; }
+  const btn=$("#loginBtn"); if(btn){ btn.textContent="Checking…"; btn.style.pointerEvents="none"; }
+  let found=false, name="", points=0, visits=0;
+  if(location.protocol!=="file:"){
+    try{ const r=await fetch("/api/member",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"login",phone})});
+      if(r.ok){ const j=await r.json(); found=!!j.found; name=j.name||""; points=j.points||0; visits=j.visits||0; } }catch(e){}
+  }
+  if(found){
+    LS.set("reg",{name:name||"Member",phone,points,visits,at:Date.now()});
+    LS.set("member",true); LS.set("memberOn",true); memberMode=true; reflectMember(); clearTimeout(crmTimer);
+    repriceCart(); render(); showBannerMaybe(); refreshWallet();
+    if($("#cartDrawer")?.classList.contains("show")) renderCart();
+    closeAll(); toast("💚 Welcome back"+(name?", "+name:"")+(points>0?" — "+points.toLocaleString()+" points ⭐":" — 10% off is on!"));
+  } else {
+    if(btn){ btn.textContent="👤 Log in"; btn.style.pointerEvents="auto"; }
+    toast("Number not found — join free below 💚");
+    setTimeout(()=>openCRM("join"),900);
+  }
+}
+function openMemberCard(){
+  const r=LS.get("reg",{})||{};
+  showModal("#infoModal");
+  $("#infoCard").innerHTML=`<div class="drawer-head" style="border:none;padding:18px 20px 4px"><h2>💚 DANK Member</h2><button class="close-x" onclick="closeAll()">×</button></div>
+    <div style="padding:6px 20px 22px">
+      <div style="background:linear-gradient(135deg,#0e3a24,#0a2417);border:1px solid var(--gold);border-radius:14px;padding:18px;margin:2px 0 14px;text-align:center">
+        <div style="font-size:15px;font-weight:800">${r.name||"DANK Member"}</div>
+        <div style="color:var(--muted);font-size:12.5px;margin-top:2px">${r.phone||""}</div>
+        <div style="font-size:22px;font-weight:900;color:var(--green2);margin-top:8px">10% OFF active ⭐</div>
+        <div style="font-size:11.5px;color:var(--gold);margin-top:2px">member prices are showing across the menu</div>
+        ${r.points>0?`<div style="display:flex;gap:10px;justify-content:center;margin-top:12px">
+          <div style="background:rgba(0,0,0,.3);border:1px solid var(--line2);border-radius:10px;padding:8px 16px"><div style="font-size:17px;font-weight:900;color:var(--gold)">${(+r.points).toLocaleString()}</div><div style="font-size:10px;color:var(--muted)">points</div></div>
+          ${r.visits>0?`<div style="background:rgba(0,0,0,.3);border:1px solid var(--line2);border-radius:10px;padding:8px 16px"><div style="font-size:17px;font-weight:900;color:var(--green2)">${r.visits}</div><div style="font-size:10px;color:var(--muted)">visits</div></div>`:""}
+        </div><div style="font-size:10.5px;color:var(--muted);margin-top:6px">synced from the shop CRM</div>`:""}
+      </div>
+      <button class="btn btn-ghost btn-block" onclick="openWallet()">💚 My wallet</button>
+      <button class="btn btn-ghost btn-block" style="margin-top:8px" onclick="openOrders()">📦 My orders</button>
+      <button class="btn btn-ghost btn-block" style="margin-top:8px;color:#ff9db0" onclick="memberLogout()">Log out</button>
+    </div>`;
+}
+function memberLogout(){
+  LS.set("member",false); LS.set("memberOn",false); LS.set("reg",null);
+  memberMode=false; reflectMember(); repriceCart(); buildChips(); render();
+  closeAll(); toast("Logged out — see you soon 🌿"); maybeShowCRM();
 }
 function openRegister(){ openCRM(); }          // back-compat alias
 function dismissCRM(){ if(memberMode&&!isMember()){ memberMode=false; LS.set("memberOn",false); reflectMember(); repriceCart(); render(); } closeAll();
@@ -1019,8 +1091,13 @@ function render(){
   });
   $("#resultCount").textContent=`${list.length} item${list.length!==1?"s":""}${branch!=="All branches"?" · "+branch:""}`;
   const g=$("#grid");
-  if(!list.length){ g.innerHTML=`<div class="empty" style="grid-column:1/-1">No products match.<br><br><button class="btn btn-ghost" onclick="resetFilters()">Clear filters</button></div>`; return; }
-  g.innerHTML=list.map(cardHTML).join("");
+  const byj=(activeCat==="All"&&!q)?`<div class="byj-card" onclick="location.href='build-your-joint.html'">
+      <span class="ic">🚬</span>
+      <div><h3>Build Your Joint 🌿</h3><p>Pick your weed · size · resin · hash · filter · paper — we hand-roll it exactly how you like it.</p></div>
+      <a class="btn btn-gold go" href="build-your-joint.html" onclick="event.stopPropagation()">Start building →</a>
+    </div>`:"";
+  if(!list.length){ g.innerHTML=byj+`<div class="empty" style="grid-column:1/-1">No products match.<br><br><button class="btn btn-ghost" onclick="resetFilters()">Clear filters</button></div>`; return; }
+  g.innerHTML=byj+list.map(cardHTML).join("");
 }
 function cardHTML(p){
   const out=p.stock<=0;

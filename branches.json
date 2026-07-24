@@ -1,64 +1,26 @@
-STOREHUB_STORE=your-store-subdomain
-STOREHUB_TOKEN=your-storehub-api-token
-STAFF_KEY=pick-a-secret
-XAI_API_KEY=
-OMISE_PUBLIC_KEY=
-OMISE_SECRET_KEY=
-RESEND_API_KEY=
-TELEGRAM_BOT_TOKEN=
-TELEGRAM_CHAT_ID=
-# ── LINE (staff alerts + LINE OA becomes น้องแดงค์) ──
-LINE_CHANNEL_ACCESS_TOKEN=
-LINE_CHANNEL_SECRET=
-LINE_TO=
-# ^ LINE_TO = Bryan's userId OR a staff group id (the OA must be in that group)
-# ── LINE group monitor / daily summary (Bryan AI, folded in) ──
-MONITORED_GROUP_IDS=
-# ^ optional comma-separated group ids to log; blank = log all groups the OA is in
-SUMMARY_TO=
-# ^ optional: where daily summaries go (defaults to LINE_TO)
-CRON_SECRET=
-# ^ set any secret so Vercel Cron can authorize the daily /api/line-summary run
-# ── Delivery ETA (Google Routes) replied to customers on LINE ──
-GOOGLE_MAPS_API_KEY=
-# Branches you deliver from live in branches.json (all 4 DANK shops). The bot
-# quotes the NEAREST branch automatically. Edit branches.json (best: put each
-# origin as "lat,lng"), or override here with a JSON array:
-# SHOP_BRANCHES=[{"id":"pattanakarn","name":"DANK Pattanakarn","origin":"13.70,100.65"}]
-SHOP_ORIGIN=
-# ^ optional single-origin fallback if you don't use branches.json
-DELIVERY_MODE=TWO_WHEELER
-# ^ TWO_WHEELER (motorbike, default) or DRIVE
-DELIVERY_PREP_MIN=15
-# ROUTE_API_URL=   # optional: your own route endpoint instead of calling Google
-# ── Redis (needed for wallet, staff chat, AND owner edit-mode overrides) ──
-UPSTASH_REDIS_REST_URL=
-UPSTASH_REDIS_REST_TOKEN=
-# ── Owner edit-mode login (/api/admin). All optional — sensible defaults are
-#    baked in (password is stored only as a hash, never plaintext). Set these
-#    to change the owner credentials without touching code: ──
-ADMIN_EMAIL=
-# ^ owner login email (default: bryank31172@gmail.com)
-ADMIN_PASSWORD=
-# ^ owner login password in plaintext; if set it replaces the baked-in hash
-ADMIN_SECRET=
-# ^ optional token-signing secret; a stable one is derived from the login when blank
-# ── Live catalog from your BRYAN POS app (dank-medical-pos-app) ──
-# The POS PUSHES its menu to this website (POST /api/pos-feed) every ~45s;
-# the site serves it as the freshest source. Both sides ship with a matching
-# built-in link key, so it works with zero setup. To rotate the key: set
-# POS_SYNC_KEY here AND paste the same key in POS Settings → Website connection.
-POS_SYNC_KEY=
-POS_FEED_MAX_AGE_H=72
-# ^ how long the site trusts the last POS push before falling back (hours)
-POS_APP_URL=https://dank-medical-pos-app.vercel.app
-# ^ legacy pull path: also probes the POS URL for a JSON list (harmless backup)
-# POS_FEED_PATHS=/api/products,/api/menu,/api/catalog,/api/inventory
-# ^ optional override of which POS paths to try (comma-separated)
-CRM_WEBHOOK_URL=
-# ^ optional: new website members are also POSTed here (wire to your POS/CRM)
-TWOC2P_MERCHANT_ID=
-TWOC2P_SECRET=
-TWOC2P_ENV=sandbox
-GBP_SECRET_KEY=
-GBP_PUBLIC_KEY=
+[
+  {
+    "id": "pattanakarn",
+    "name": "DANK Pattanakarn (Main)",
+    "origin": "DANK Cannabis Club, Pattanakan Road, Suan Luang, Bangkok, Thailand",
+    "map": "https://maps.app.goo.gl/DrrFY3CofjGQhthR9"
+  },
+  {
+    "id": "sathorn",
+    "name": "DANK Sathorn",
+    "origin": "DANK Sathorn, Sathon, Bangkok, Thailand",
+    "map": "https://maps.app.goo.gl/wgVvPU2qsBxsGmWy8"
+  },
+  {
+    "id": "petchaboon",
+    "name": "DANK Petchaboon",
+    "origin": "DANK, Phetchabun, Thailand",
+    "map": "https://maps.app.goo.gl/RyUc4nYd5vpdhqqX9"
+  },
+  {
+    "id": "phuket",
+    "name": "DANK Hotel Phuket",
+    "origin": "DANK Hotel, Phuket, Thailand",
+    "map": "https://maps.app.goo.gl/M6WvMje9KFiXKgT27"
+  }
+]
