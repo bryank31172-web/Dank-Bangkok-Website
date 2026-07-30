@@ -118,10 +118,69 @@ main{flex:1;display:flex;min-height:0}
 <script>
 const API='/api/thread';
 let KEY=localStorage.getItem('dankStaffKey')||'';
-let cur=null, curSeq=0, pollT=null, listT=null, lastSeen={};   // threadId -> last seq seen
-let TAB='chats', ORDERS=[], knownOrders=new Set(), firstOrderLoad=true;
+let cur=null, curSeq=0, pollT=null, listT=null, ordersT=null, lastSeen={};   // threadId -> last seq seen
+let TAB='chats', ORDERS=[], knownOrders=new Set(), firstOrderLoad=true, LIVE=false;
 const $=s=>document.querySelector(s);
-const esc=s=>String(s??'').replace(/[<>&]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[c]));
+
+/* Everything this console displays on the Orders and Chats tabs arrives from
+   POST /api/order and POST /api/thread, and neither of those asks the caller
+   for any credential — anyone on the internet can place an order or open a
+   chat and choose exactly what text lands here. This page holds the staff key
+   and can read every customer's name, phone and address, so a single script
+   that runs in it hands the whole order book to whoever sent it.
+
+   esc() used to cover only & < >. That is enough in text position but not in
+   an attribute, and it was being used in attributes — href="tel:${…}",
+   value="${…}" — where a customer "name" of  " onmouseover="…  simply closed
+   the quote and carried on as markup. It now covers the quotes too, plus /
+   so a value can never start closing a tag it was never inside. */
+const ESC_MAP={'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;','/':'&#x2F;'};
+const esc=s=>String(s??'').replace(/[&<>"'\/]/g,c=>ESC_MAP[c]);
+
+/* Slips and shift-count proof photos are rendered straight into <img src="…">.
+   The API side only tests that the string begins with "data:image/", which
+   something like  data:image/x," onerror="…  passes without trouble, so the
+   console re-checks the shape itself: unless it reads as a base64 raster data
+   URL it is not rendered at all. Returns '' for anything else, so callers can
+   show a placeholder instead of a booby-trapped tag. */
+const imgSrc=u=>{ const s=String(u??'');
+  return /^data:image\/(png|jpe?g|gif|webp|bmp);base64,[A-Za-z0-9+\/=\s]+$/i.test(s)?esc(s):''; };
+
+/* The staff key used to ride in the query string of every GET (…?key=…). A
+   query string is the one part of a URL that gets written down everywhere: the
+   platform's access log, any proxy in front of it, and the Referer header the
+   browser attaches to anything the page loads or links to. The key is now sent
+   as a header instead, where none of that happens.
+
+   Two headers, for a reason. api/_auth.js — the shared check the rest of the
+   API now goes through — reads the key from ?key=, from body.key, or from
+   X-Staff-Key, so X-Staff-Key is the one that actually works today.
+   Authorization: Bearer is the shape this console was asked to speak and the
+   one to keep if the two ever converge; sending it costs a header and means
+   that switch needs no change here. Both are safe to add without tripping a
+   CORS preflight, because the console only ever calls its own origin.
+
+   Two calls still have to put the key where it will be logged, and they are the
+   ones api/thread.js reads by hand instead of through _auth.js: the open-thread
+   poll (it decides from req.query.key whether to hand back the customer name,
+   cart and transcript) and sending a reply (it decides from body.key whether
+   the message is from staff or from the customer). Header-only there would not
+   fail loudly — the context panel would quietly come back empty and staff
+   replies would be filed as the customer's. So those two pass legacy:true and
+   nothing else does. When thread.js moves onto _auth.js, delete the two
+   arguments and the branches below, and the key is out of the logs for good. */
+function authGet(url,k,legacy){
+  const key=k??KEY;
+  const sep=url.includes('?')?'&':'?';
+  return fetch(legacy?url+sep+'key='+encodeURIComponent(key):url,
+    {headers:{'X-Staff-Key':key,'Authorization':'Bearer '+key}});
+}
+function authPost(url,body,legacy){
+  return fetch(url,{method:'POST',
+    headers:{'Content-Type':'application/json','X-Staff-Key':KEY,'Authorization':'Bearer '+KEY},
+    body:JSON.stringify(legacy?{...body,key:KEY}:body)});
+}
+
 const ago=t=>{const s=(Date.now()-t)/1e3; if(s<60)return 'now'; if(s<3600)return Math.floor(s/60)+'m'; if(s<86400)return Math.floor(s/3600)+'h'; return Math.floor(s/86400)+'d';};
 function beep(){ try{ const a=new (window.AudioContext||window.webkitAudioContext)(); const o=a.createOscillator(),g=a.createGain();
   o.connect(g); g.connect(a.destination); o.frequency.value=880; g.gain.value=.06; o.start(); o.stop(a.currentTime+.15);}catch(e){} }
@@ -129,18 +188,25 @@ function beep(){ try{ const a=new (window.AudioContext||window.webkitAudioContex
 async function login(){
   const k=$('#keyInput').value.trim()||KEY; if(!k){$('#loginErr').textContent='Enter the key';return;}
   let r;
-  try{ r=await fetch(`${API}?list=1&key=${encodeURIComponent(k)}`); }
+  try{ r=await authGet(`${API}?list=1`,k); }
   catch(e){ $('#loginErr').textContent='Network error — check your connection'; return; }
   if(!r.ok){ $('#loginErr').textContent='Wrong key'; return; }
-  KEY=k; localStorage.setItem('dankStaffKey',k);
+  KEY=k; localStorage.setItem('dankStaffKey',k); LIVE=true;
   const j=await r.json();
   $('#storeStat').innerHTML=j.redis?'<span class="pill">● storage: redis</span>':'<span class="pill warn">● storage: memory (set up Upstash for production)</span>';
   $('#login').style.display='none'; $('#listWrap').style.display='flex'; $('#chatWrap').style.display='flex'; $('#logoutBtn').style.display='';
-  renderList(j.threads); startListPoll(); pollOrders(); setInterval(pollOrders,5000);
-  if(location.hash==='#orders') setTab('orders');
-  if(location.hash.length>3) openThread(location.hash.slice(1));
+  renderList(j.threads); startListPoll(); pollOrders(); startOrderPoll();
+  /* The Telegram and LINE alerts link back here as staff.html#orders and
+     staff.html#count. These were two separate ifs, so #orders matched the tab
+     branch and then fell through to the thread branch as well: the console
+     opened a conversation called "orders" that does not exist, and on a phone
+     the `chatting` class it sets hid the order list behind an empty chat pane.
+     Exactly one branch runs now. */
+  const hash=decodeURIComponent(location.hash.slice(1));
+  if(hash==='orders'||hash==='count'||hash==='gifts'||hash==='chats') setTab(hash);
+  else if(hash.length>2) openThread(hash);
 }
-function logout(){ localStorage.removeItem('dankStaffKey'); location.reload(); }
+function logout(){ localStorage.removeItem('dankStaffKey'); LIVE=false; location.reload(); }
 
 function setTab(t){ if(typeof stopCamScan==='function') stopCamScan(); TAB=t; $('#tabChats').classList.toggle('active',t==='chats'); $('#tabOrders').classList.toggle('active',t==='orders'); $('#tabGifts').classList.toggle('active',t==='gifts'); $('#tabCount').classList.toggle('active',t==='count');
   if(t==='orders'){ renderOrders(); $('#ordCnt').style.display='none'; knownOrders=new Set(ORDERS.map(o=>o.orderId)); }
@@ -160,19 +226,19 @@ async function loadGifts(){
 function renderGifts(){
   const el=$('#list');
   el.innerHTML='<div class="ghdr">Tick the 1g flowers you\'ll give as the free gram. Customers pick from these on their first order.</div>'+
-    GIFT_MENU.map(p=>`<div class="grow ${GIFT_SEL.has(p.id)?'on':''}" onclick="toggleGift('${p.id}')">
+    GIFT_MENU.map(p=>`<div class="grow ${GIFT_SEL.has(p.id)?'on':''}" data-act="gift" data-id="${esc(p.id)}">
       <div class="chk">${GIFT_SEL.has(p.id)?'✓':''}</div>
-      <div><div class="gn">${esc(p.name)}</div><div class="gm">${esc(p.category)} · THC ${esc(p.thcLabel||p.thc)} · ฿${(p.priceTiers?.[0]?.price)||''}/g</div></div>
+      <div><div class="gn">${esc(p.name)}</div><div class="gm">${esc(p.category)} · THC ${esc(p.thcLabel||p.thc)} · ฿${esc((p.priceTiers?.[0]?.price)??'')}/g</div></div>
     </div>`).join('');
 }
 async function toggleGift(id){
   if(GIFT_SEL.has(id)) GIFT_SEL.delete(id); else GIFT_SEL.add(id);
   renderGifts();
-  try{ await fetch('/api/freegifts',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:KEY,skus:[...GIFT_SEL]})}); }catch(e){}
+  try{ await authPost('/api/freegifts',{skus:[...GIFT_SEL]}); }catch(e){}
 }
-async function refreshChats(){ try{ const r=await fetch(`${API}?list=1&key=${encodeURIComponent(KEY)}`); if(r.ok) renderList((await r.json()).threads); }catch(e){} }
+async function refreshChats(){ try{ const r=await authGet(`${API}?list=1`); if(r.ok) renderList((await r.json()).threads); }catch(e){} }
 async function pollOrders(){
-  try{ const r=await fetch(`/api/orders?key=${encodeURIComponent(KEY)}`); if(!r.ok) return;
+  try{ const r=await authGet('/api/orders'); if(!r.ok) return;
     ORDERS=(await r.json()).orders||[];
     const fresh=ORDERS.filter(o=>!knownOrders.has(o.orderId)&&o.status!=='done');
     if(!firstOrderLoad && fresh.length){ beep(); const c=$('#ordCnt'); if(TAB!=='orders'){ c.textContent=fresh.length; c.style.display='flex'; } }
@@ -184,30 +250,46 @@ async function pollOrders(){
 function renderOrders(){
   const el=$('#list');
   if(!ORDERS.length){ el.innerHTML='<div style="padding:30px;color:var(--muted2);text-align:center;font-size:13.5px">No orders yet.<br>Online orders appear here instantly.</div>'; return; }
+  /* Every field below is customer-supplied: POST /api/order takes no key and
+     spreads the whole posted body over the stored record, so even orderId and
+     status are whatever the sender chose. The card is still built with a
+     template literal because it is mostly layout, but that means every single
+     hole has to go through esc() — including the numbers, because
+     (5).toLocaleString() formats a number while ("<img …>").toLocaleString()
+     just returns the string it was given. */
   el.innerHTML=ORDERS.map(o=>{
-    const items=(o.items||[]).map(i=>`${esc(i.name)} (${esc(i.option)}) ×${i.qty}`).join('<br>');
+    const items=(o.items||[]).map(i=>`${esc(i.name)} (${esc(i.option)}) ×${esc(i.qty)}`).join('<br>');
     const where=o.fulfilment==='delivery'
       ?`🚚 ${esc(o.delivery?.zone||'')} — ${esc(o.delivery?.address||'')}`
       :`🏬 ${esc(o.pickup?.branch||'')} ${o.pickup?.time?('· '+esc(o.pickup.time)):''}`;
+    const id=esc(o.orderId||'');
     return `<div class="ocard ${o.status==='done'?'done':''}">
-      <div class="oh"><span class="oid">${o.orderId}</span><span class="badge ${o.status==='done'?'closed':'open'}">${o.status}</span><span class="ot">${o.at?ago(o.at):''}</span></div>
+      <div class="oh"><span class="oid">${id}</span><span class="badge ${o.status==='done'?'closed':'open'}">${esc(o.status||'')}</span><span class="ot">${o.at?ago(o.at):''}</span></div>
       <div class="items">${items}</div>
-      <div class="tot">฿${((o.total??o.subtotal)||0).toLocaleString()} · ${esc(o.payment||'')}${o.member?' ⭐':''}${o.payStatus==='paid'?' <span style="color:var(--green2)">· PAID ✅</span>':(['PromptPay','Card'].includes(o.payment)?' <span style="color:var(--gold)">· unpaid</span>':'')}</div>
-      ${o.discount>0||o.deliveryFee>0?`<div style="font-size:11px;color:var(--muted2);margin-top:2px">sub ฿${(o.subtotal||0).toLocaleString()}${o.discount>0?` · −฿${o.discount} ${esc(o.promo||'')}`:''}${o.deliveryFee>0?` · +฿${o.deliveryFee} delivery`:''}</div>`:''}
+      <div class="tot">฿${esc(((o.total??o.subtotal)||0).toLocaleString())} · ${esc(o.payment||'')}${o.member?' ⭐':''}${o.payStatus==='paid'?' <span style="color:var(--green2)">· PAID ✅</span>':(['PromptPay','Card'].includes(o.payment)?' <span style="color:var(--gold)">· unpaid</span>':'')}</div>
+      ${o.discount>0||o.deliveryFee>0?`<div style="font-size:11px;color:var(--muted2);margin-top:2px">sub ฿${esc((o.subtotal||0).toLocaleString())}${o.discount>0?` · −฿${esc(o.discount)} ${esc(o.promo||'')}`:''}${o.deliveryFee>0?` · +฿${esc(o.deliveryFee)} delivery`:''}</div>`:''}
       <div class="meta">${where}<br>👤 ${esc(o.customer?.name||'-')} · <a style="color:var(--green2)" href="tel:${esc(o.customer?.phone||'')}">${esc(o.customer?.phone||'')}</a>${o.notes?'<br>📝 '+esc(o.notes):''}</div>
-      <div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap">${o.slipUploaded?`<button class="undo-btn" onclick="viewSlip('${o.orderId}')">🧾 View slip</button>`:''}<button class="undo-btn" onclick="staffUploadSlip('${o.orderId}')">📎 Upload proof</button></div>
+      <div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap">${o.slipUploaded?`<button class="undo-btn" data-act="slip" data-id="${id}">🧾 View slip</button>`:''}<button class="undo-btn" data-act="upload" data-id="${id}">📎 Upload proof</button></div>
       <div class="orow">${o.status==='done'
-        ?`<button class="undo-btn" onclick="setOrder('${o.orderId}','new')">↩ Reopen</button>`
-        :`<button class="done-btn" onclick="setOrder('${o.orderId}','done')">✓ Mark done</button>`}</div>
+        ?`<button class="undo-btn" data-act="order" data-id="${id}" data-status="new">↩ Reopen</button>`
+        :`<button class="done-btn" data-act="order" data-id="${id}" data-status="done">✓ Mark done</button>`}</div>
     </div>`;}).join('');
 }
 async function viewSlip(id){
-  try{ const r=await fetch(`/api/slip?id=${encodeURIComponent(id)}&key=${encodeURIComponent(KEY)}`); const j=await r.json();
+  try{ const r=await authGet(`/api/slip?id=${encodeURIComponent(id)}`); const j=await r.json();
     if(!j.image){ alert('No slip found'); return; }
+    /* Anyone can POST a slip for a known order id, and the stored value went
+       into src="…" as it came. imgSrc() refuses anything that is not a base64
+       raster data URL, so a slip crafted to close the attribute renders as a
+       "not an image" line instead of running. */
+    const src=imgSrc(j.image);
     let ov=document.getElementById('slipOv'); if(!ov){ ov=document.createElement('div'); ov.id='slipOv';
       ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:200;display:flex;align-items:center;justify-content:center;padding:20px';
       ov.onclick=()=>ov.remove(); document.body.appendChild(ov); }
-    ov.innerHTML=`<div style="max-width:90vw;max-height:90vh;text-align:center"><img src="${j.image}" style="max-width:100%;max-height:80vh;border-radius:12px"><div style="color:#fff;margin-top:10px;font-size:13px">Slip · ${id} — tap anywhere to close</div></div>`;
+    ov.innerHTML=`<div style="max-width:90vw;max-height:90vh;text-align:center">${src
+        ?`<img src="${src}" style="max-width:100%;max-height:80vh;border-radius:12px">`
+        :'<div style="color:#ff6b6b">That slip is not a readable image — it was rejected.</div>'
+      }<div style="color:#fff;margin-top:10px;font-size:13px">Slip · ${esc(id)} — tap anywhere to close</div></div>`;
   }catch(e){ alert('Could not load slip'); }
 }
 let _slipUpId="";
@@ -219,7 +301,10 @@ function staffUploadSlip(id){ _slipUpId=id; let inp=document.getElementById('sta
   if(!inp){ inp=document.createElement('input'); inp.type='file'; inp.accept='image/*'; inp.id='staffSlipInput'; inp.style.display='none';
     inp.onchange=async()=>{ const f=inp.files&&inp.files[0]; inp.value=''; if(!f||!_slipUpId) return;
       try{ const dataUrl=await staffResize(f,1000,0.7);
-        const r=await fetch('/api/slip',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({orderId:_slipUpId,image:dataUrl})});
+        // Sent with the key: /api/slip rate-limits anonymous uploads to a
+        // handful per order, which is right for customers and wrong for a
+        // member of staff working through a stack of transfers.
+        const r=await authPost('/api/slip',{orderId:_slipUpId,image:dataUrl});
         if(r.ok){ alert('✅ Proof uploaded for '+_slipUpId); pollOrders(); }
         else { const j=await r.json().catch(()=>({})); alert('⚠️ '+(j.error||'Upload failed')); }
       }catch(e){ alert('⚠️ Upload failed'); } };
@@ -227,11 +312,29 @@ function staffUploadSlip(id){ _slipUpId=id; let inp=document.getElementById('sta
   inp.click();
 }
 async function setOrder(id,status){
-  await fetch('/api/orders',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({orderId:id,status,key:KEY})});
+  await authPost('/api/orders',{orderId:id,status});
   pollOrders();
 }
 function startListPoll(){ clearInterval(listT); listT=setInterval(async()=>{ if(TAB!=='chats')return;
-  try{ const r=await fetch(`${API}?list=1&key=${encodeURIComponent(KEY)}`); if(r.ok) renderList((await r.json()).threads); }catch(e){} },4000); }
+  try{ const r=await authGet(`${API}?list=1`); if(r.ok) renderList((await r.json()).threads); }catch(e){} },4000); }
+
+/* The order poll was started with a bare setInterval() whose handle nobody
+   kept. Anything that called login() again — and the tab-switching path did —
+   stacked a second timer on the first, so a console left open all shift ended
+   up asking /api/orders several times a second without anyone noticing. Each
+   of the three polls now has exactly one live handle, cleared before it is
+   replaced, and they all stop while the tab is in the background: a phone in a
+   pocket has no reason to keep the API busy. */
+function startOrderPoll(){ clearInterval(ordersT); ordersT=setInterval(pollOrders,5000); }
+function startThreadPoll(){ clearInterval(pollT); pollT=setInterval(()=>pull(false),3000); }
+function stopPolls(){ clearInterval(ordersT); clearInterval(listT); clearInterval(pollT); ordersT=listT=pollT=null; }
+document.addEventListener('visibilitychange',()=>{
+  if(document.hidden){ stopPolls(); return; }
+  if(!LIVE) return;
+  pollOrders(); startOrderPoll(); startListPoll();
+  if(TAB==='chats') refreshChats();
+  if(cur){ pull(false); startThreadPoll(); }
+});
 
 function renderList(threads){
   const el=$('#list');
@@ -239,11 +342,15 @@ function renderList(threads){
   el.innerHTML=threads.map(t=>{
     const unread=t.lastFrom==='customer'&&(lastSeen[t.id]||0)<t.count;
     if(unread&&document.hasFocus&&!document.hasFocus()){}
-    return `<button class="trow ${cur===t.id?'sel':''} ${unread?'unread':''}" onclick="openThread('${t.id}')">
+    /* Name, contact and preview text all come from POST /api/thread, which any
+       visitor can call without a key — same rule as the order cards, every
+       hole escaped, and the thread id carried as data-id rather than
+       interpolated into an onclick string. */
+    return `<button class="trow ${cur===t.id?'sel':''} ${unread?'unread':''}" data-act="thread" data-id="${esc(t.id)}">
       <span class="top"><span class="who">${esc(t.customer?.name||t.customer?.contact||t.id)}</span>
-      <span class="badge ${t.status}">${t.status}</span><span class="when">${t.lastAt?ago(t.lastAt):''}</span></span>
+      <span class="badge ${esc(t.status||'')}">${esc(t.status||'')}</span><span class="when">${t.lastAt?ago(t.lastAt):''}</span></span>
       <span class="prev">${t.lastFrom==='customer'?'🧑 ':t.lastFrom==='staff'?'👨‍💼 ':''}${esc(t.lastText||'')}</span>
-      ${t.cartCount?`<span class="meta">🛒 ${t.cartCount} items · ฿${(t.subtotal||0).toLocaleString()}</span>`:''}
+      ${t.cartCount?`<span class="meta">🛒 ${esc(t.cartCount)} items · ฿${esc((t.subtotal||0).toLocaleString())}</span>`:''}
     </button>`;}).join('');
 }
 
@@ -264,21 +371,21 @@ async function openThread(id){
     <div id="replyBar"><input id="reply" placeholder="Reply as staff…" onkeydown="if(event.key==='Enter')sendReply()"><button id="sendBtn" onclick="sendReply()">Send</button></div>`;
   if(window.matchMedia('(max-width:760px)').matches) $('#backBtn').style.display='';
   await pull(true);
-  clearInterval(pollT); pollT=setInterval(()=>pull(false),3000);
+  startThreadPoll();
 }
 function backToList(){ document.body.classList.remove('chatting'); }
 
 async function pull(first){
   if(!cur) return;
   try{
-    const r=await fetch(`${API}?threadId=${encodeURIComponent(cur)}&since=${curSeq}&key=${encodeURIComponent(KEY)}`);
+    const r=await authGet(`${API}?threadId=${encodeURIComponent(cur)}&since=${encodeURIComponent(curSeq)}`,null,true);
     if(!r.ok) return;
     const j=await r.json();
     if(first){
       $('#cName').textContent=j.customer?.name||j.customer?.contact||cur;
       $('#cSub').textContent=`${j.customer?.contact||''} · ticket ${cur} · ${j.status}`;
       let ctx='';
-      if(j.cart?.length) ctx+=`<b>🛒 Cart (฿${(j.subtotal||0).toLocaleString()}):</b> `+j.cart.map(c=>`${esc(c.name)} ×${c.qty}`).join(' · ')+'<br>';
+      if(j.cart?.length) ctx+=`<b>🛒 Cart (฿${esc((j.subtotal||0).toLocaleString())}):</b> `+j.cart.map(c=>`${esc(c.name)} ×${esc(c.qty)}`).join(' · ')+'<br>';
       if(j.transcript?.length) ctx+=`<b>🤖 AI chat before transfer:</b><br>`+j.transcript.map(m=>`${m.role==='user'?'🧑':'🤖'} ${esc(m.text)}`).join('<br>');
       if(ctx){ $('#ctxBox').innerHTML=ctx; $('#ctxBox').style.display='block'; }
     }
@@ -292,22 +399,30 @@ async function pull(first){
     if(gotCustomer) beep();
   }catch(e){}
 }
+/* A chat message is whatever the person on the other end typed, so it is built
+   out of text nodes rather than markup — nothing here can be mistaken for a
+   tag. `from` decides the bubble style and used to be pasted into className
+   unchecked; it is now matched against the three classes the stylesheet
+   actually defines. The pre-wrap on .m keeps line breaks readable. */
 function addMsg(m){
-  const d=document.createElement('div'); d.className='m '+m.from;
-  d.innerHTML=esc(m.text)+`<span class="t">${new Date(m.at).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'})}</span>`;
+  const from=m.from==='staff'?'staff':m.from==='system'?'system':'customer';
+  const d=document.createElement('div'); d.className='m '+from;
+  d.textContent=String(m.text??'');
+  const t=document.createElement('span'); t.className='t';
+  t.textContent=new Date(m.at).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+  d.appendChild(t);
   $('#msgs').appendChild(d); $('#msgs').scrollTop=$('#msgs').scrollHeight;
 }
 function quick(t){ $('#reply').value=t; sendReply(); }
 async function sendReply(){
   const t=$('#reply').value.trim(); if(!t||!cur)return; $('#reply').value='';
-  try{ await fetch(API,{method:'POST',headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({action:'send',threadId:cur,text:t,key:KEY,staffName:'DANK Team'})});
+  try{ await authPost(API,{action:'send',threadId:cur,text:t,staffName:'DANK Team'},true);
     pull(false);
   }catch(e){ alert('Send failed'); }
 }
 async function closeThread(){
   if(!cur||!confirm('Close this conversation?'))return;
-  await fetch(API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'close',threadId:cur,key:KEY})});
+  await authPost(API,{action:'close',threadId:cur});
   pull(false);
 }
 /* ===================== SHIFT COUNT / INVENTORY ===================== */
@@ -381,21 +496,26 @@ function countRow(p){
   const variance=(v!==undefined&&v!=='')?(Number(v)-Number(p.stock||0)):null;
   const vColor=variance===null?'var(--muted2)':(variance===0?'var(--green2)':(variance>0?'var(--gold)':'var(--danger)'));
   const vTxt=variance===null?'':(variance>0?'+'+variance:String(variance));
-  return `<div class="ocard" id="row-${p.code}" style="padding:10px 12px;margin-bottom:8px">
+  /* Names and codes here come from product-codes.json, but `stock` is merged in
+     from /api/products, and the code lands in three attributes as well as in
+     the text — so it all goes through esc() and the row keeps its code in a
+     data- attribute instead of inside an inline handler. */
+  const code=esc(p.code);
+  return `<div class="ocard" id="row-${code}" style="padding:10px 12px;margin-bottom:8px">
     <div style="display:flex;align-items:center;gap:10px">
       <div style="flex:1;min-width:0">
-        <div style="font-family:ui-monospace,monospace;font-weight:800;color:var(--green2);font-size:13px">${p.code}</div>
+        <div style="font-family:ui-monospace,monospace;font-weight:800;color:var(--green2);font-size:13px">${code}</div>
         <div style="font-weight:600;font-size:13.5px">${esc(p.name)}</div>
-        <div style="color:var(--muted);font-size:11px">${[p.category,p.type].filter(Boolean).join(' · ')}</div>
+        <div style="color:var(--muted);font-size:11px">${esc([p.category,p.type].filter(Boolean).join(' · '))}</div>
       </div>
       <div style="text-align:right">
-        <div style="color:var(--muted2);font-size:11px">exp <b style="color:var(--muted)">${p.stock??0}</b></div>
+        <div style="color:var(--muted2);font-size:11px">exp <b style="color:var(--muted)">${esc(p.stock??0)}</b></div>
         <div style="display:flex;align-items:center;gap:6px;margin-top:3px">
-          <input inputmode="decimal" value="${v??''}" placeholder="0" oninput="setCount('${p.code}',this.value)"
+          <input inputmode="decimal" value="${esc(v??'')}" placeholder="0" data-act="count" data-code="${code}"
             style="width:66px;background:var(--bg2);border:1px solid var(--line2);color:var(--txt);padding:7px;border-radius:8px;font-size:14px;text-align:center;outline:none">
-          <button class="undo-btn" title="Apply scale reading" onclick="applyScale('${p.code}')" style="padding:7px 9px">⚖️</button>
+          <button class="undo-btn" title="Apply scale reading" data-act="scale" data-code="${code}" style="padding:7px 9px">⚖️</button>
         </div>
-        <div id="var-${p.code}" style="font-size:11px;font-weight:800;margin-top:3px;color:${vColor}">${vTxt?('Δ '+vTxt):''}</div>
+        <div id="var-${code}" style="font-size:11px;font-weight:800;margin-top:3px;color:${vColor}">${vTxt?('Δ '+vTxt):''}</div>
       </div>
     </div>
   </div>`;
@@ -429,7 +549,20 @@ function onScan(raw){
 
 /* ---- camera scan (lazy-load jsQR) ---- */
 let camStream=null, camRAF=null;
+/* This pulls third-party code into a page that is holding the staff key, so
+   whatever cdnjs serves gets to read the order book. It needs an integrity=
+   hash so the browser refuses a file that is not the exact 1.4.0 build we
+   expect. The hash is missing because it could not be computed here: outbound
+   HTTPS in this environment is blocked by egress policy, and a guessed or
+   copied hash is worse than none — it would silently break the camera scanner
+   the first time it was wrong. Compute it once from the exact URL below and
+   paste it in as s.integrity:
+     curl -s https://cdnjs.cloudflare.com/ajax/libs/jsQR/1.4.0/jsQR.min.js | openssl dgst -sha384 -binary | openssl base64 -A
+   crossOrigin is set already, because integrity only takes effect on a
+   CORS-enabled request — with it in place, adding the hash is a one-line
+   change. The version is pinned in the URL, so the hash will not drift. */
 function loadJsQR(){ return new Promise((ok)=>{ if(window.jsQR)return ok(); const s=document.createElement('script');
+  s.crossOrigin='anonymous'; s.referrerPolicy='no-referrer';
   s.src='https://cdnjs.cloudflare.com/ajax/libs/jsQR/1.4.0/jsQR.min.js'; s.onload=ok; s.onerror=ok; document.head.appendChild(s); }); }
 async function startCamScan(){
   await loadJsQR();
@@ -494,8 +627,8 @@ async function addProofPhotos(input){
 function renderProofGrid(){
   const g=$('#proofGrid'); if(!g)return;
   g.innerHTML=COUNT_PROOFS.map((src,i)=>`<div style="position:relative">
-    <img src="${src}" style="width:72px;height:72px;object-fit:cover;border-radius:10px;border:1px solid var(--line2)">
-    <button onclick="COUNT_PROOFS.splice(${i},1);renderProofGrid()" style="position:absolute;top:-6px;right:-6px;background:var(--danger);color:#fff;border-radius:50%;width:20px;height:20px;font-weight:900;line-height:1">×</button>
+    <img src="${imgSrc(src)}" style="width:72px;height:72px;object-fit:cover;border-radius:10px;border:1px solid var(--line2)">
+    <button data-act="proof-del" data-i="${i}" style="position:absolute;top:-6px;right:-6px;background:var(--danger);color:#fff;border-radius:50%;width:20px;height:20px;font-weight:900;line-height:1">×</button>
   </div>`).join('') || '<span style="color:var(--muted2);font-size:12px">No photos yet</span>';
 }
 
@@ -507,8 +640,7 @@ async function submitCount(){
   if(!counted){ alert('Enter at least one counted quantity.'); return; }
   if(!confirm(`Close shift?\n${counted}/${lines.length} items counted · ${COUNT_PROOFS.length} proof photo(s).`)) return;
   try{
-    const r=await fetch('/api/count',{method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({staff:'DANK Team',lines,photos:COUNT_PROOFS,key:KEY})});
+    const r=await authPost('/api/count',{staff:'DANK Team',lines,photos:COUNT_PROOFS});
     const j=await r.json();
     if(r.ok){ alert(`✅ Shift count saved (${j.id}). Variances: ${j.varianceCount}.`); COUNT_VALS={};COUNT_PROOFS=[];selectedCode=null; renderCountUI(); }
     else alert('⚠️ '+(j.error||'Failed to save'));
@@ -519,32 +651,66 @@ async function submitCount(){
 async function loadCountHistory(){
   const el=$('#countHistory'); if(!el)return;
   try{
-    const j=await (await fetch('/api/count?list=1&key='+encodeURIComponent(KEY))).json();
+    const j=await (await authGet('/api/count?list=1')).json();
     const s=j.sessions||[];
     if(!s.length){ el.innerHTML='<span style="color:var(--muted2)">No counts yet.</span>'; return; }
-    el.innerHTML=s.map(x=>`<div class="ocard" style="padding:9px 12px;margin-bottom:6px;cursor:pointer" onclick="viewCount('${x.id}')">
-      <div style="display:flex;justify-content:space-between"><b>${x.id}</b><span style="color:var(--muted2)">${ago(x.at)}</span></div>
-      <div style="color:var(--muted);font-size:12px">${x.countedItems}/${x.total} counted · ${x.photoCount} photo(s) · <span style="color:${x.varianceCount?'var(--gold)':'var(--green2)'}">${x.varianceCount} variance${x.varianceCount===1?'':'s'}</span></div>
+    /* POST /api/count has been open to unauthenticated callers, so a session in
+       this list is not necessarily one a member of staff created — treat every
+       field as untrusted text. */
+    el.innerHTML=s.map(x=>`<div class="ocard" style="padding:9px 12px;margin-bottom:6px;cursor:pointer" data-act="count-view" data-id="${esc(x.id)}">
+      <div style="display:flex;justify-content:space-between"><b>${esc(x.id)}</b><span style="color:var(--muted2)">${ago(x.at)}</span></div>
+      <div style="color:var(--muted);font-size:12px">${esc(x.countedItems)}/${esc(x.total)} counted · ${esc(x.photoCount)} photo(s) · <span style="color:${x.varianceCount?'var(--gold)':'var(--green2)'}">${esc(x.varianceCount)} variance${x.varianceCount===1?'':'s'}</span></div>
     </div>`).join('');
   }catch(e){ el.innerHTML='<span style="color:var(--muted2)">Could not load history.</span>'; }
 }
 async function viewCount(id){
   try{
-    const x=await (await fetch('/api/count?id='+encodeURIComponent(id)+'&key='+encodeURIComponent(KEY))).json();
+    const x=await (await authGet('/api/count?id='+encodeURIComponent(id))).json();
     const vars=(x.lines||[]).filter(l=>l.variance!=null&&l.variance!==0);
+    /* Same warning as the history list: this session may have been posted by a
+       stranger. The photos are the sharpest edge — the API only tested that
+       each one starts with "data:image/", which  data:image/x," onerror="…
+       satisfies, so they go through imgSrc() and anything that is not a real
+       base64 raster is dropped rather than rendered. */
+    const photos=(x.photos||[]).map(imgSrc).filter(Boolean);
     let ov=document.getElementById('cntOv'); if(!ov){ ov=document.createElement('div'); ov.id='cntOv';
       ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:200;overflow:auto;padding:18px'; document.body.appendChild(ov); }
     ov.innerHTML=`<div style="max-width:560px;margin:0 auto;color:var(--txt)">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-        <b>${x.id} · ${new Date(x.at).toLocaleString()}</b>
+        <b>${esc(x.id)} · ${new Date(x.at).toLocaleString()}</b>
         <button class="undo-btn" onclick="document.getElementById('cntOv').remove()">Close ✕</button></div>
-      <div style="color:var(--muted);font-size:13px;margin-bottom:10px">By ${esc(x.staff||'')} · ${x.countedItems}/${x.total} counted · ${x.varianceCount} variance(s)</div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">${(x.photos||[]).map(src=>`<img src="${src}" style="width:120px;height:120px;object-fit:cover;border-radius:10px;border:1px solid var(--line2)">`).join('')||'<span style="color:var(--muted2)">No photos</span>'}</div>
+      <div style="color:var(--muted);font-size:13px;margin-bottom:10px">By ${esc(x.staff||'')} · ${esc(x.countedItems)}/${esc(x.total)} counted · ${esc(x.varianceCount)} variance(s)</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">${photos.map(src=>`<img src="${src}" style="width:120px;height:120px;object-fit:cover;border-radius:10px;border:1px solid var(--line2)">`).join('')||'<span style="color:var(--muted2)">No photos</span>'}</div>
       <div style="font-weight:800;margin-bottom:6px">Variances</div>
-      ${vars.length?vars.map(l=>`<div class="ocard" style="padding:8px 12px;margin-bottom:5px;display:flex;justify-content:space-between"><span>${l.code} · ${esc(l.name)}</span><span style="color:${l.variance>0?'var(--gold)':'var(--danger)'};font-weight:800">exp ${l.expected} → ${l.counted} (${l.variance>0?'+':''}${l.variance})</span></div>`).join(''):'<div style="color:var(--green2)">No variances 🎉</div>'}
+      ${vars.length?vars.map(l=>`<div class="ocard" style="padding:8px 12px;margin-bottom:5px;display:flex;justify-content:space-between"><span>${esc(l.code)} · ${esc(l.name)}</span><span style="color:${l.variance>0?'var(--gold)':'var(--danger)'};font-weight:800">exp ${esc(l.expected)} → ${esc(l.counted)} (${l.variance>0?'+':''}${esc(l.variance)})</span></div>`).join(''):'<div style="color:var(--green2)">No variances 🎉</div>'}
     </div>`;
   }catch(e){ alert('Could not load count'); }
 }
+
+/* Every row and button the console draws into #list used to carry its own
+   onclick="doThing('<some id>')". That put an untrusted id inside a quoted
+   attribute inside a JavaScript string — two nested escaping rules, and an
+   order id of  ');alert(1);('  satisfied neither. The ids ride in data-
+   attributes now, where esc() is the only rule that applies, and one listener
+   on #list (which outlives every re-render) reads them back and calls the
+   function directly. Nothing here builds code out of a string. */
+$('#list').addEventListener('click',e=>{
+  const el=e.target.closest('[data-act]'); if(!el) return;
+  const d=el.dataset;
+  switch(d.act){
+    case 'thread':     openThread(d.id); break;
+    case 'gift':       toggleGift(d.id); break;
+    case 'slip':       viewSlip(d.id); break;
+    case 'upload':     staffUploadSlip(d.id); break;
+    case 'order':      setOrder(d.id,d.status); break;
+    case 'count-view': viewCount(d.id); break;
+    case 'scale':      applyScale(d.code); break;
+    case 'proof-del':  COUNT_PROOFS.splice(Number(d.i),1); renderProofGrid(); break;
+  }
+});
+$('#list').addEventListener('input',e=>{
+  const el=e.target.closest('[data-act="count"]'); if(el) setCount(el.dataset.code,el.value);
+});
 
 if(KEY){ $('#keyInput').value=KEY; login(); }
 </script>

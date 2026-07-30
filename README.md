@@ -19,8 +19,13 @@ them private; rotate the token if it leaks.
 3. **Add environment variables** (Project → Settings → Environment Variables).
    Minimum to go live with the real menu:
    - `STOREHUB_STORE` = `dankclub`
-   - `STOREHUB_TOKEN` = `7e19734882c844c4bfa87906cf3a94c5`
-   - `STAFF_KEY` = *(pick your own staff password)*
+   - `STOREHUB_TOKEN` = *(your StoreHub API token — already set in Vercel)*
+   - `STAFF_KEY` = *(your staff password — already set in Vercel)*
+
+   Real values are deliberately not written into this repo, because these files
+   get committed to GitHub. Read them back any time from Vercel → Project →
+   Settings → Environment Variables.
+
    Then add the rest as you get them (Omise, xAI/Grok, Resend, Telegram, Upstash — table below).
 4. **Deploy.** Open the preview URL; confirm the menu loads. Check
    `your-url/api/storehub-raw?key=YOUR_STAFF_KEY` to see the raw StoreHub data

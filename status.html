@@ -36,15 +36,24 @@
     <h1>🌿 Backend Connection Status</h1>
     <div class="sub">Live check of whether this site is pulling from your StoreHub / POS backend.</div>
     <div class="card" id="card"><div class="detail">Checking…</div></div>
-    <button onclick="check()">↻ Re-check</button>
+    <button id="recheck" onclick="check()">↻ Re-check</button>
     <div class="muted" id="foot"></div>
   </div>
 <script>
+/* Re-check has to LOOK like it did something even when the answer is identical:
+   the button locks while the request is in flight and the footer always stamps
+   the time, so a second press is never mistaken for a dead button. */
+let checking=false;
 async function check(){
+  if(checking) return;
+  checking=true;
   const card=document.getElementById('card');
+  const btn=document.getElementById('recheck');
+  if(btn){ btn.disabled=true; if(!btn.dataset.label) btn.dataset.label=btn.textContent; btn.textContent='⏳ Checking…'; }
   card.innerHTML='<div class="detail">Checking…</div>';
   try{
     const r=await fetch('/api/health',{cache:'no-store'});
+    if(!r.ok) throw new Error('HTTP '+r.status);
     const j=await r.json();
     const cls=j.status==='connected'?'ok':(j.status==='configured-but-not-loading'?'warn':'bad');
     const icon=j.status==='connected'?'●':'▲';
@@ -64,9 +73,14 @@ async function check(){
       ${rows}`;
     document.getElementById('foot').innerHTML =
       'Sources: <code>storehub</code> = live from your POS backend · <code>bundled</code> = built-in demo catalog. '+
-      'Last checked '+ (j.updated? new Date(j.updated).toLocaleString():'now')+'.';
+      'Last checked '+ new Date().toLocaleTimeString()+
+      (j.updated? ' · data from '+new Date(j.updated).toLocaleString():'')+'.';
   }catch(e){
     card.innerHTML='<span class="badge bad">▲ NO RESPONSE</span><div class="detail">Could not reach <code>/api/health</code>. Open this page from the deployed site (not as a local file).</div>';
+    document.getElementById('foot').textContent='Last checked '+new Date().toLocaleTimeString()+'.';
+  }finally{
+    checking=false;
+    if(btn){ btn.disabled=false; btn.textContent=btn.dataset.label||'↻ Re-check'; }
   }
 }
 check();
