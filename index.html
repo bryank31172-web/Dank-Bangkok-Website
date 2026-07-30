@@ -295,6 +295,14 @@
   .stat .k{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
   .stat .v{font-size:19px;font-weight:800;margin-top:2px}
   .pd-desc{color:var(--muted);font-size:14px;margin:12px 0}
+.pd-kv{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.07);font-size:13px}
+.pd-kv span{color:var(--muted2);white-space:nowrap}
+.pd-kv b{text-align:right;color:#eaf4ee;font-weight:600}
+.effs{display:flex;flex-direction:column;gap:8px}
+.eff-row{display:flex;align-items:center;gap:10px}
+.eff-n{width:92px;flex:none;font-size:13px;color:var(--muted)}
+.eff-bar{flex:1;height:8px;border-radius:6px;background:rgba(255,255,255,.09);overflow:hidden}
+.eff-bar i{display:block;height:100%;border-radius:6px;background:linear-gradient(90deg,var(--green2,#35c97e),#9defc0)}
   .pd-section-t{font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--muted2);margin:14px 0 7px}
   .tier-opts{display:flex;gap:8px;flex-wrap:wrap}
   .tier{padding:9px 13px;border-radius:11px;border:1px solid var(--line2);background:var(--panel);font-size:13.5px;font-weight:700;display:flex;flex-direction:column;align-items:center;gap:2px;min-width:74px}
@@ -1212,7 +1220,7 @@ const esc=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;'
    server actually generates (DK + base36 + 4 symbols) at the one point it arrives. */
 const oid=s=>String(s==null?"":s).replace(/[^A-Za-z0-9_-]/g,"");
 const money=n=>CONFIG.currency+Number(n).toLocaleString("en-US");
-const typeColor=t=>t==="Indica"?"var(--indica)":t==="Sativa"?"var(--sativa)":"var(--hybrid)";
+const typeColor=t=>/^indica/i.test(t||"")?"var(--indica)":/^sativa/i.test(t||"")?"var(--sativa)":"var(--hybrid)";
 const catEmoji=c=>({Exotics:"🚀",Topshelf:"⭐",Midgrade:"💚",Premium:"💎",Joints:"🚬",Edibles:"🍬",Vapes:"💨",Beer:"🍺",Accessories:"🛠️",Merch:"👕",Flowers:"🌿",Edible:"🍬"}[c]||"🌿");
 const FLOWER_CATS=["Exotics","Topshelf","Midgrade","Premium","Flowers","Flower"];   // incl. BRYAN POS category names
 const isFlowerCat=p=>FLOWER_CATS.includes(p.category);
@@ -1425,6 +1433,41 @@ function priceBlock(p){
 }
 function resetFilters(){ activeCat="All"; $("#searchInput").value=""; $("#typeFilter").value=""; $("#sortBy").value="featured"; $("#branchSel").value="All branches"; buildChips(); render(); }
 
+/* ---- Leafly-style strain sections ----
+   Everything under the stats row of the product page: description, lineage,
+   dominant terpene, effect meters, flavour chips. Rendered from whatever the
+   menu already knows (POS fields, strain-db.json filled in by the server, or
+   the owner editor). For a brand-new strain none of them know yet,
+   hydrateStrain() asks /api/strain-info — which tries a live leafly lookup on
+   the server — and repaints just this block when an answer arrives. */
+function strainSectionsHTML(p){
+  const s=p.strain||{};
+  let kv="";
+  if(s.lineage) kv+=`<div class="pd-kv"><span>🧬 Lineage</span><b>${esc(s.lineage)}</b></div>`;
+  if(s.terpene) kv+=`<div class="pd-kv"><span>🌿 Dominant terpene</span><b>${esc(s.terpene)}</b></div>`;
+  const eff=(p.effects||[]).slice(0,4), fla=(p.flavors||[]).slice(0,4), W=[88,74,62,52];
+  return `${p.description?`<p class="pd-desc">${esc(p.description)}</p>`:""}${kv}`+
+    (eff.length?`<div class="pd-section-t">Effects</div><div class="effs">${eff.map((e,i)=>`<div class="eff-row"><span class="eff-n">${esc(e)}</span><span class="eff-bar"><i style="width:${W[i]||48}%"></i></span></div>`).join("")}</div>`:"")+
+    (fla.length?`<div class="pd-section-t">Flavours</div><div class="tags">${fla.map(e=>`<span class="tag">${esc(e)}</span>`).join("")}</div>`:"");
+}
+function hydrateStrain(p){
+  try{
+    const weedish=/weed|flower|exotic|top\s*shelf|mid\s*grade|indica|sativa/i.test((p.name||"")+" "+(p.category||""));
+    if(!weedish&&!isFlower(p)) return;
+    if((p.effects&&p.effects.length)||(p.description&&p.description.trim())) return;
+    fetch("/api/strain-info?name="+encodeURIComponent(p.name||"")).then(r=>r&&r.ok?r.json():null).then(j=>{
+      if(!j||!j.found||!j.strain||pdCurrent!==p) return;
+      const s=j.strain;
+      if(!(p.description&&p.description.trim())&&s.desc) p.description=s.desc;
+      if(!(p.effects&&p.effects.length)&&s.effects&&s.effects.length) p.effects=s.effects;
+      if(!(p.flavors&&p.flavors.length)&&s.flavors&&s.flavors.length) p.flavors=s.flavors;
+      p.strain={name:s.name||"",terpene:s.terpene||"",lineage:s.lineage||""};
+      if(s.type&&/^hybrid$/i.test(p.type||"")) p.type=s.type;
+      const el=$("#pdStrainX"); if(el) el.innerHTML=strainSectionsHTML(p);
+    }).catch(()=>{});
+  }catch(e){}
+}
+
 /* ---- Product detail ---- */
 function openPD(id){
   const p=DATA.find(x=>x.id===id); if(!p)return; pdCurrent=p; pdTierIdx=0; pdQty=1;
@@ -1442,9 +1485,7 @@ function openPD(id){
       <div class="pd-sub">${catEmoji(p.category)} ${esc(p.category)} · ${esc(p.type)} · ${esc(branch)}</div>
       <h2>${esc(p.name)}</h2>
       <div class="pd-stats">${potStat}<div class="stat"><div class="k">Stock</div><div class="v" style="color:${out?'var(--danger)':p.stock<=5?'var(--gold)':'var(--green2)'}">${out?'0':p.stock}</div></div></div>
-      <p class="pd-desc">${esc(p.description)}</p>
-      ${(p.effects||[]).length?`<div class="pd-section-t">Effects</div><div class="tags">${p.effects.map(e=>`<span class="tag">${esc(e)}</span>`).join("")}</div>`:""}
-      ${(p.flavors||[]).length?`<div class="pd-section-t">Flavours</div><div class="tags">${p.flavors.map(e=>`<span class="tag">${esc(e)}</span>`).join("")}</div>`:""}
+      <div id="pdStrainX">${strainSectionsHTML(p)}</div>
       ${tierBlock}
       <div class="pd-add-row">
         <div class="price" id="pdPrice">${money(price)}</div>
@@ -1455,6 +1496,7 @@ function openPD(id){
     </div></div>`;
   showModal("#pdModal");
   renderRelated(p);
+  hydrateStrain(p);
 }
 function pdStep(d){ pdQty=Math.max(1,pdQty+d); const el=$("#pdQtyN"); if(el) el.textContent=pdQty; }
 function renderRelated(p){
