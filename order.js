@@ -50,6 +50,23 @@ export default async function handler(req, res) {
   if (!(await requireRate(req, res, "order", 12, 600))) return;
 
   const o = req.body || {};
+  /* A phone number is how staff reach a delivery or pickup customer, so it stays
+     required for those. A customer sitting at T3 who scanned the QR card on the
+     table has no reason to hand one over — the table IS the address. Table
+     orders are therefore identified by a recognised table name instead, and we
+     fill the phone field with "TABLE-T3" so every downstream consumer (staff
+     console, POS feed, LINE and Telegram alerts) still sees a non-empty value
+     rather than needing its own special case. */
+  const TABLE_NAMES = ["T1", "T2", "T3", "T4", "T5", "T6", "Bar 1", "Bar 2"];
+  const norm = (v) => String(v || "").trim().toLowerCase().replace(/\s+/g, "");
+  const matchedTable =
+    o.fulfilment === "table" ? TABLE_NAMES.find((t) => norm(t) === norm(o.table)) : null;
+  if (matchedTable) {
+    o.table = matchedTable;
+    o.customer = { ...(o.customer || {}) };
+    if (!o.customer.phone) o.customer.phone = "TABLE-" + matchedTable.replace(/\s+/g, "");
+    if (!o.customer.name) o.customer.name = matchedTable;
+  }
   if (!o.items?.length || !o.customer?.phone) {
     return res.status(400).json({ error: "invalid order" });
   }
@@ -133,7 +150,9 @@ export default async function handler(req, res) {
     try {
       const host = req.headers?.["x-forwarded-host"] || req.headers?.host || "dankbkk.com";
       const lines = o.items.map((i) => `• ${i.name} (${i.option}) ×${i.qty} — ฿${i.lineTotal}`).join("\n");
-      const where = o.fulfilment === "delivery"
+      const where = matchedTable
+        ? `🪑 TABLE ${matchedTable} — bring it over`
+        : o.fulfilment === "delivery"
         ? `🚚 Delivery — ${o.delivery?.zone || ""}\n${o.delivery?.address || ""}`
         : `🏬 Pickup — ${o.pickup?.branch || ""} ${o.pickup?.time ? "at " + o.pickup.time : ""}`;
       const text =
@@ -153,7 +172,9 @@ export default async function handler(req, res) {
   try {
     const host = req.headers?.["x-forwarded-host"] || req.headers?.host || "dankbkk.com";
     const lines = o.items.map((i) => `• ${i.name} (${i.option}) ×${i.qty} — ฿${i.lineTotal}`).join("\n");
-    const where = o.fulfilment === "delivery"
+    const where = matchedTable
+      ? `🪑 TABLE ${matchedTable} — bring it over`
+      : o.fulfilment === "delivery"
       ? `🚚 Delivery — ${o.delivery?.zone || ""} ${o.delivery?.address || ""}`
       : `🏬 Pickup — ${o.pickup?.branch || ""} ${o.pickup?.time || ""}`;
     const r = await notifyStaffLine(
@@ -189,7 +210,9 @@ export default async function handler(req, res) {
         <b>Payment:</b> ${o.payment}<br>
         <b>Fulfilment:</b> ${o.fulfilment}<br>
         <b>Name:</b> ${esc(o.customer?.name)} · <b>Phone:</b> ${esc(o.customer?.phone)}<br>
-        ${o.fulfilment === "delivery"
+        ${matchedTable
+          ? `<b>Table:</b> ${esc(matchedTable)}`
+          : o.fulfilment === "delivery"
           ? `<b>Area:</b> ${esc(o.delivery?.zone)} · <b>Address:</b> ${esc(o.delivery?.address)}`
           : `<b>Branch:</b> ${esc(o.pickup?.branch)} · <b>Time:</b> ${esc(o.pickup?.time)}`}<br>
         ${o.notes ? `<b>Notes:</b> ${esc(o.notes)}` : ""}</p>`;
