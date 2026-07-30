@@ -259,7 +259,12 @@ function renderOrders(){
      just returns the string it was given. */
   el.innerHTML=ORDERS.map(o=>{
     const items=(o.items||[]).map(i=>`${esc(i.name)} (${esc(i.option)}) ×${esc(i.qty)}`).join('<br>');
-    const where=o.fulfilment==='delivery'
+    /* A table order has no address and no pickup branch — the table IS the
+       destination, and it is the one thing a runner has to read at a glance,
+       so it gets the gold treatment instead of being squeezed into "🏬  ". */
+    const where=o.fulfilment==='table'
+      ?`<b style="color:var(--gold);font-size:14px">🪑 ${esc(o.table||'')}</b> — in-house, bring it over`
+      :o.fulfilment==='delivery'
       ?`🚚 ${esc(o.delivery?.zone||'')} — ${esc(o.delivery?.address||'')}`
       :`🏬 ${esc(o.pickup?.branch||'')} ${o.pickup?.time?('· '+esc(o.pickup.time)):''}`;
     const id=esc(o.orderId||'');

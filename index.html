@@ -2,6 +2,20 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
+<!-- Table QR guard: a code scanned at a table must open the food & drinks page,
+     never the shop. If a ?table= (or ?t=/?tb=) lands here it is forwarded on
+     before anything else renders. -->
+<script>
+(function(){
+  try{
+    var q = new URLSearchParams(location.search);
+    var raw = q.get("table") || q.get("t") || q.get("tb");
+    if (raw && String(raw).trim()){
+      location.replace("food.html?table=" + encodeURIComponent(String(raw).trim()));
+    }
+  }catch(e){}
+})();
+</script>
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
 <meta name="theme-color" content="#060a07" />
 <meta name="description" content="DANK BKK — premium cannabis in Bangkok. Live menu, member prices, PromptPay & card checkout, delivery & pickup across Pattanakarn, Sathorn & Bars. Ask DANK AI 24/7." />
@@ -42,6 +56,36 @@
   .btn-ghost:hover{border-color:var(--green);color:var(--green)}
   .btn-gold{background:linear-gradient(135deg,var(--gold),#b8923f);color:#20100a;font-weight:800}
   .btn-gold:hover{filter:brightness(1.08)}
+  /* Order food & drinks — the animated one. Two things move: the gradient
+     slides across the fill, and the whole pill breathes every few seconds so
+     it reads as "tap me" next to the two static buttons. Both are paused for
+     anyone who has asked their phone to reduce motion. */
+  .btn-food{
+    position:relative;overflow:hidden;font-weight:800;color:#2a1206;border:none;
+    background:linear-gradient(110deg,#ffb347,#ff7a45 22%,#4ade80 52%,#ffb347 78%,#ff7a45);
+    background-size:300% 100%;
+    animation:foodslide 7s linear infinite, foodbreathe 3.4s ease-in-out infinite;
+    box-shadow:0 6px 20px rgba(255,140,60,.28);
+  }
+  .btn-food::after{
+    content:"";position:absolute;top:0;left:-60%;width:45%;height:100%;
+    background:linear-gradient(100deg,transparent,rgba(255,255,255,.55),transparent);
+    transform:skewX(-18deg);animation:foodshine 3.6s ease-in-out infinite;
+  }
+  .btn-food:hover{filter:brightness(1.06)}
+  .btn-food .fk{animation:foodwiggle 2.6s ease-in-out infinite;display:inline-block}
+  .btn-food .newdot{
+    background:#2a1206;color:#ffd9a8;font-size:10px;font-weight:900;letter-spacing:.6px;
+    border-radius:999px;padding:2px 7px;margin-left:2px;
+  }
+  @keyframes foodslide{to{background-position:-300% 0}}
+  @keyframes foodbreathe{0%,100%{transform:scale(1)}50%{transform:scale(1.045)}}
+  @keyframes foodshine{0%{left:-60%}55%,100%{left:130%}}
+  @keyframes foodwiggle{0%,100%{transform:rotate(0) translateY(0)}30%{transform:rotate(-11deg) translateY(-2px)}60%{transform:rotate(9deg) translateY(0)}}
+  @media (prefers-reduced-motion:reduce){
+    .btn-food,.btn-food::after,.btn-food .fk{animation:none}
+    .btn-food::after{display:none}
+  }
   .btn-block{width:100%}
   /* Build-Your-Joint feature card in the grid */
   .byj-card{grid-column:1/-1;display:flex;align-items:center;gap:18px;background:linear-gradient(120deg,#14251a,#0d1a12 60%),radial-gradient(circle at 88% 30%,rgba(207,168,90,.25),transparent 55%);border:1px solid var(--line2);border-radius:var(--radius);padding:18px 22px;cursor:pointer;transition:.15s}
@@ -416,6 +460,7 @@
       </button>
       <button class="wallet-chip" id="walletChip" onclick="openWallet()" title="Wallet">💚 <span id="walletBal">฿0</span></button>
       <button class="icon-btn" title="Member login" onclick="openCRM(isMember()?undefined:'login')">👤</button>
+      <button class="icon-btn" title="Order food & drinks" onclick="location.href='food.html'">🍽️</button>
       <button class="icon-btn" title="My orders" onclick="openOrders()">📦</button>
       <button class="icon-btn" title="Cart" onclick="openCart()">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.7 13.4a2 2 0 0 0 2 1.6h9.7a2 2 0 0 0 2-1.6L23 6H6"/></svg>
@@ -439,6 +484,7 @@
     <div class="hero-cta">
       <a class="btn btn-primary" href="#menu" onclick="document.getElementById('menu').scrollIntoView({behavior:'smooth'});return false;">Shop the menu</a>
       <a class="btn btn-gold" href="build-your-joint.html">🚬 Build your joint</a>
+      <a class="btn btn-food" href="food.html"><span class="fk">🍜</span> Order food &amp; drinks <span class="newdot">NEW</span></a>
       <a class="btn btn-ghost" onclick="openQuiz()">🧭 Take the quiz</a>
       <a class="btn btn-ghost" onclick="openAI()">💬 Chat น้องแดงค์</a>
     </div>

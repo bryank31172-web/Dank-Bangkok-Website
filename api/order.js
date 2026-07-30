@@ -6,15 +6,36 @@
         (default dankclubbkk@gmail.com) via resend.com (free tier).
    Always returns {ok:true, orderId} if at least one channel succeeded,
    so the storefront can show success. If everything fails, returns 502
-   and the storefront automatically falls back to LINE.               */
+   and the storefront automatically falls back to LINE.
+   Paying by Wallet reserves the amount instead of spending it: the reply
+   carries {walletPending:true, balance} and staff settle it from the
+   console. See the wallet block below for why.                       */
 
+import crypto from "node:crypto";
 import { setJSON, indexAdd } from "./_store.js";
-import { debit } from "./_wallet.js";
+import { getBalance } from "./_wallet.js";
 import { pushTransaction } from "./_storehub.js";
 import { getMenu } from "./_menu.js";
 import { notifyStaffLine } from "./_line.js";
+import { requireRate } from "./_ratelimit.js";
 
 const OWNER_EMAIL = process.env.ORDER_EMAIL_TO || "dankclubbkk@gmail.com";
+
+/* Order ids used to be nothing but "DK" + the clock in base 36, which meant
+   every id placed in the same minute sat in a short contiguous range. GET
+   /api/track?id= needs no key, so a few thousand guesses would have walked the
+   whole day's order book — names, phone numbers, addresses. The timestamp stays
+   (it sorts, and staff read it back over the phone), followed by four random
+   characters from a 32-symbol alphabet with the easily-misheard letters left
+   out. That is ~1M ids per timestamp to guess through instead of one. */
+const ID_ALPHABET = "0123456789ABCDEFGHJKMNPQRSTVWXYZ";
+function newOrderId() {
+  const bytes = crypto.randomBytes(4);
+  let tail = "";
+  // 256 is an exact multiple of 32, so the modulo keeps every symbol equally likely.
+  for (const b of bytes) tail += ID_ALPHABET[b % 32];
+  return "DK" + Date.now().toString(36).toUpperCase() + tail;
+}
 
 export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
@@ -22,11 +43,34 @@ export default async function handler(req, res) {
   if (req.method === "OPTIONS") return res.status(204).end();
   if (req.method !== "POST") return res.status(405).json({ error: "POST only" });
 
+  /* Anyone can post here — that is the point of a shop — but nobody needs to
+     place a dozen orders in ten minutes. Generous enough for a family sharing a
+     café's address, tight enough that the order index and the staff's phones
+     can't be flooded by a script. */
+  if (!(await requireRate(req, res, "order", 12, 600))) return;
+
   const o = req.body || {};
+  /* A phone number is how staff reach a delivery or pickup customer, so it stays
+     required for those. A customer sitting at T3 who scanned the QR card on the
+     table has no reason to hand one over — the table IS the address. Table
+     orders are therefore identified by a recognised table name instead, and we
+     fill the phone field with "TABLE-T3" so every downstream consumer (staff
+     console, POS feed, LINE and Telegram alerts) still sees a non-empty value
+     rather than needing its own special case. */
+  const TABLE_NAMES = ["T1", "T2", "T3", "T4", "T5", "T6", "Bar 1", "Bar 2"];
+  const norm = (v) => String(v || "").trim().toLowerCase().replace(/\s+/g, "");
+  const matchedTable =
+    o.fulfilment === "table" ? TABLE_NAMES.find((t) => norm(t) === norm(o.table)) : null;
+  if (matchedTable) {
+    o.table = matchedTable;
+    o.customer = { ...(o.customer || {}) };
+    if (!o.customer.phone) o.customer.phone = "TABLE-" + matchedTable.replace(/\s+/g, "");
+    if (!o.customer.name) o.customer.name = matchedTable;
+  }
   if (!o.items?.length || !o.customer?.phone) {
     return res.status(400).json({ error: "invalid order" });
   }
-  const orderId = "DK" + Date.now().toString(36).toUpperCase();
+  const orderId = newOrderId();
 
   // --- Server-side price guard -------------------------------------------
   // For live (StoreHub) items, recompute the charge base from the menu so a
@@ -36,7 +80,11 @@ export default async function handler(req, res) {
   try {
     const items = o.items || [];
     if (items.length && items.every((i) => i.shId)) {
-      const menu = await getMenu();
+      // getMenu() answers with a {data, rev, source, at, changedAt} record, not
+      // the product array. Iterating the record threw "menu is not iterable" on
+      // every order, straight into the empty catch below, so this guard had
+      // never once run and a client could post its own price for anything.
+      const { data: menu } = await getMenu();
       const price = {};
       for (const p of menu || []) {
         const tiers = p.priceTiers || (p.price != null ? [{ label: p.option || "", price: p.price }] : []);
@@ -57,24 +105,43 @@ export default async function handler(req, res) {
         o.priceAdjusted = true;
       }
     }
-  } catch (e) { /* never block an order on the price guard */ }
+  } catch (e) {
+    // A broken guard must not stop a customer ordering, but it must not be
+    // invisible either — the silence above is exactly how the bug it guards
+    // against survived. Log it so the next breakage shows up in the Vercel logs.
+    console.error("price guard skipped:", e.message);
+  }
 
-  // Pay from wallet (store credit) if chosen — verify + deduct server-side.
+  /* Wallet: reserve now, staff settle later.
+     This used to debit the wallet right here, from a phone number that arrived
+     in an unauthenticated request body — so anyone who knew a customer's number
+     could spend that customer's store credit by posting an order. Until there
+     is a real login (phone OTP), no unauthenticated endpoint moves money: we
+     check the balance covers the order, mark it pending, and let staff settle
+     it from the console (POST /api/wallet {action:"settle"}) once they have the
+     customer in front of them. Nothing is deducted before that. */
   if (o.payment === "Wallet") {
     const amt = Math.round(Number(o.total ?? o.subtotal));
     if (!Number.isFinite(amt) || amt <= 0) return res.status(400).json({ error: "invalid amount" });
-    const r = await debit(o.customer?.phone, amt, "Order " + orderId);
-    if (!r.ok) return res.status(402).json({ error: "insufficient wallet", balance: r.balance });
-    o.payStatus = "paid";
-    o.walletPaid = true;
-    o.walletBalanceAfter = r.balance;
+    const balance = await getBalance(o.customer?.phone);
+    if (balance < amt) return res.status(402).json({ error: "insufficient wallet", balance });
+    o.payStatus = "wallet_pending";
+    o.walletReserved = true;
+    o.walletAmount = amt;
+    o.walletBalance = balance;
   }
+  // Extra fields the storefront needs on a wallet order, so it can say "pay on
+  // collection" rather than the "paid from your wallet" it used to say.
+  const walletInfo = o.walletReserved ? { walletPending: true, balance: o.walletBalance } : {};
 
   const results = [];
 
   // 0) ALWAYS save the order so it shows in the staff console's Orders tab
   try {
-    await setJSON("order:" + orderId, { orderId, ...o, at: Date.now(), status: "new" });
+    // orderId AFTER the spread. With it first, a body carrying its own
+    // "orderId" overwrote the real one, so the record stored under
+    // order:<returned id> claimed to be a different order entirely.
+    await setJSON("order:" + orderId, { ...o, orderId, at: Date.now(), status: "new" });
     await indexAdd(orderId, "orders:index");
   } catch (e) { console.error("order save failed:", e.message); }
 
@@ -83,7 +150,9 @@ export default async function handler(req, res) {
     try {
       const host = req.headers?.["x-forwarded-host"] || req.headers?.host || "dankbkk.com";
       const lines = o.items.map((i) => `• ${i.name} (${i.option}) ×${i.qty} — ฿${i.lineTotal}`).join("\n");
-      const where = o.fulfilment === "delivery"
+      const where = matchedTable
+        ? `🪑 TABLE ${matchedTable} — bring it over`
+        : o.fulfilment === "delivery"
         ? `🚚 Delivery — ${o.delivery?.zone || ""}\n${o.delivery?.address || ""}`
         : `🏬 Pickup — ${o.pickup?.branch || ""} ${o.pickup?.time ? "at " + o.pickup.time : ""}`;
       const text =
@@ -103,7 +172,9 @@ export default async function handler(req, res) {
   try {
     const host = req.headers?.["x-forwarded-host"] || req.headers?.host || "dankbkk.com";
     const lines = o.items.map((i) => `• ${i.name} (${i.option}) ×${i.qty} — ฿${i.lineTotal}`).join("\n");
-    const where = o.fulfilment === "delivery"
+    const where = matchedTable
+      ? `🪑 TABLE ${matchedTable} — bring it over`
+      : o.fulfilment === "delivery"
       ? `🚚 Delivery — ${o.delivery?.zone || ""} ${o.delivery?.address || ""}`
       : `🏬 Pickup — ${o.pickup?.branch || ""} ${o.pickup?.time || ""}`;
     const r = await notifyStaffLine(
@@ -121,7 +192,7 @@ export default async function handler(req, res) {
       const r = await fetch(process.env.ORDER_FORWARD_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ orderId, ...o }),
+        body: JSON.stringify({ ...o, orderId }), // same reason as the stored record: ours wins
       });
       results.push(r.ok);
     } catch (e) { results.push(false); }
@@ -139,7 +210,9 @@ export default async function handler(req, res) {
         <b>Payment:</b> ${o.payment}<br>
         <b>Fulfilment:</b> ${o.fulfilment}<br>
         <b>Name:</b> ${esc(o.customer?.name)} · <b>Phone:</b> ${esc(o.customer?.phone)}<br>
-        ${o.fulfilment === "delivery"
+        ${matchedTable
+          ? `<b>Table:</b> ${esc(matchedTable)}`
+          : o.fulfilment === "delivery"
           ? `<b>Area:</b> ${esc(o.delivery?.zone)} · <b>Address:</b> ${esc(o.delivery?.address)}`
           : `<b>Branch:</b> ${esc(o.pickup?.branch)} · <b>Time:</b> ${esc(o.pickup?.time)}`}<br>
         ${o.notes ? `<b>Notes:</b> ${esc(o.notes)}` : ""}</p>`;
@@ -164,9 +237,9 @@ export default async function handler(req, res) {
     // Nothing configured yet — accept and log so testing works,
     // but tell the client so it can also push via LINE.
     console.log("ORDER (no channels configured):", orderId, JSON.stringify(o));
-    return res.status(200).json({ ok: true, orderId, delivered: false });
+    return res.status(200).json({ ok: true, orderId, delivered: false, ...walletInfo });
   }
-  if (results.some(Boolean)) return res.status(200).json({ ok: true, orderId, delivered: true });
+  if (results.some(Boolean)) return res.status(200).json({ ok: true, orderId, delivered: true, ...walletInfo });
   return res.status(502).json({ error: "all order channels failed" });
 }
 
