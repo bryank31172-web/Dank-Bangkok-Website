@@ -70,23 +70,105 @@
   /* ---------- Items ---------- */
   h2.sec{font-size:19px;margin:22px 0 10px;display:flex;align-items:center;gap:9px}
   h2.sec small{color:var(--muted2);font-weight:600;font-size:13px}
-  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px}
-  .item{
-    background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:13px 14px;
-    display:flex;gap:12px;align-items:flex-start;transition:.18s;position:relative;
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(168px,1fr));gap:13px}
+
+  /* ---------- 3D photo cards ----------
+     Three nested layers on purpose: the outer one owns the perspective, the
+     middle one takes the tilt (scroll position on a phone, pointer on a
+     desktop, the gyroscope if the customer allows it), and the inner one does
+     the flip. Keeping tilt and flip on separate elements is what stops the two
+     transforms fighting each other. */
+  /* Cards in a row stretch to the tallest one so the grid doesn't come out
+     ragged, and the + button is pinned to the bottom of each. */
+  .item{ perspective:900px; position:relative; height:100%; }
+  .item > .c3tilt, .item .c3in, .face.front{ height:100% }
+  .face.front{ display:flex; flex-direction:column }
+  .body3{ flex:1; display:flex; flex-direction:column }
+  .body3 .qty{ margin-top:auto }
+  .body3 > .tag{ align-self:flex-start }
+  .face.rear > *{ max-width:100% }
+  .c3tilt{
+    transform:rotateX(var(--rx,0deg)) rotateY(var(--ry,0deg));
+    transition:transform .18s ease-out; will-change:transform;
   }
-  .item:hover{border-color:var(--line2);transform:translateY(-2px);box-shadow:var(--shadow)}
-  .item.inCart{border-color:var(--green);box-shadow:0 0 0 1px rgba(74,222,128,.35)}
-  .item .ico{font-size:26px;line-height:1;flex:0 0 auto;margin-top:2px}
-  .item .nm{font-weight:700;font-size:15px;line-height:1.25}
-  .item .th{color:var(--muted2);font-size:12.5px;margin-top:2px}
-  .item .ds{color:var(--muted);font-size:12.5px;margin-top:5px;line-height:1.4}
-  .item .pr{color:var(--gold);font-weight:800;margin-top:7px;font-size:15px}
+  .c3in{
+    position:relative;transform-style:preserve-3d;transition:transform .62s cubic-bezier(.2,.8,.25,1);
+  }
+  .item.flipped .c3in{ transform:rotateY(180deg) }
+  /* Only the side facing the customer takes taps — otherwise the hidden
+     front face swallows the click on the back's "go back" line. */
+  .face.rear{pointer-events:none}
+  .item.flipped .face.front{pointer-events:none}
+  .item.flipped .face.rear{pointer-events:auto}
+  .face{
+    backface-visibility:hidden;-webkit-backface-visibility:hidden;
+    background:var(--panel);border:1px solid var(--line);border-radius:16px;overflow:hidden;
+    box-shadow:0 10px 26px rgba(0,0,0,.45),0 2px 5px rgba(0,0,0,.4);
+  }
+  .face.rear{
+    position:absolute;inset:0;transform:rotateY(180deg);
+    background:linear-gradient(160deg,#16211a,#0e150f);padding:14px 14px 12px;
+    display:flex;flex-direction:column;
+  }
+  .item.inCart .face.front{border-color:var(--green);box-shadow:0 0 0 1px rgba(74,222,128,.4),0 12px 28px rgba(0,0,0,.5)}
+
+  .photo{ position:relative;aspect-ratio:4/3;background:#16201a;overflow:hidden }
+  .photo img{
+    width:100%;height:100%;object-fit:cover;display:block;
+    transform:translateZ(28px) scale(1.06);transition:transform .3s;
+  }
+  .item:hover .photo img{ transform:translateZ(38px) scale(1.12) }
+  .photo .emofb{
+    position:absolute;inset:0;display:none;align-items:center;justify-content:center;font-size:52px;
+    background:radial-gradient(circle at 50% 35%,#1e2f23,#101a13);
+  }
+  .photo.noimg img{display:none}
+  .photo.noimg .emofb{display:flex}
+  /* A soft sheen across the glass so the photo reads as a lit surface with the
+     dish sitting under it, not a flat rectangle. */
+  .photo .gloss{
+    position:absolute;inset:0;pointer-events:none;
+    background:linear-gradient(150deg,rgba(255,255,255,.16),transparent 42%),
+               linear-gradient(0deg,rgba(6,10,7,.72),transparent 52%);
+    transform:translateZ(40px);
+  }
+  .photo .pr{
+    position:absolute;left:9px;bottom:8px;transform:translateZ(52px);
+    background:linear-gradient(135deg,var(--gold),#b8923f);color:#20100a;
+    font-weight:900;font-size:14px;border-radius:999px;padding:4px 11px;
+    box-shadow:0 5px 14px rgba(0,0,0,.5);
+  }
+  .flipbtn{
+    position:absolute;right:8px;top:8px;transform:translateZ(52px);
+    width:29px;height:29px;border-radius:50%;border:1px solid rgba(255,255,255,.22);
+    background:rgba(10,16,11,.62);backdrop-filter:blur(6px);color:#dcefe1;
+    font-size:14px;font-weight:800;line-height:1;display:flex;align-items:center;justify-content:center;
+  }
+  .flipbtn:active{transform:translateZ(52px) scale(.88)}
+
+  .body3{padding:10px 12px 12px;position:relative}
+  .item .nm{font-weight:800;font-size:14.5px;line-height:1.25;transform:translateZ(18px)}
+  .item .th{color:var(--muted2);font-size:12px;margin-top:2px}
+  .item .ds{color:var(--muted);font-size:12px;margin-top:5px;line-height:1.4}
   .tag{display:inline-block;font-size:10.5px;font-weight:800;letter-spacing:.4px;padding:2px 7px;border-radius:999px;margin:6px 5px 0 0;border:1px solid var(--line2);color:var(--muted2)}
   .tag.spicy{color:#fca5a5;border-color:#4b1f1f}
   .tag.veg{color:#86efac;border-color:#1e3a25}
   .tag.age{color:var(--gold);border-color:#4a3a1d}
-  .item .out{position:absolute;inset:0;background:rgba(11,16,12,.72);border-radius:14px;display:flex;align-items:center;justify-content:center;font-weight:800;color:var(--muted);letter-spacing:1px;font-size:13px}
+
+  .face.rear .bt{font-weight:800;font-size:14px}
+  .face.rear .bth{color:var(--muted2);font-size:12px;margin-top:1px}
+  .face.rear h4{margin:11px 0 3px;font-size:10.5px;letter-spacing:1px;color:var(--green);font-weight:900}
+  .face.rear p{margin:0;font-size:12px;line-height:1.5;color:var(--muted)}
+  .face.rear .alg{color:#e6cf9a}
+  .face.rear .close{margin-top:auto;align-self:flex-start;font-size:12px;font-weight:800;color:var(--muted2);padding:7px 0 0}
+
+  .item .out{position:absolute;inset:0;background:rgba(11,16,12,.74);border-radius:16px;display:flex;align-items:center;justify-content:center;font-weight:800;color:var(--muted);letter-spacing:1px;font-size:13px;transform:translateZ(60px);z-index:3}
+
+  @media (prefers-reduced-motion:reduce){
+    .c3tilt{transform:none !important;transition:none}
+    .photo img{transform:none !important}
+    .c3in{transition:transform .2s}
+  }
 
   /* ---------- Bundle deals ---------- */
   .deals{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:12px}
@@ -105,6 +187,24 @@
     transform:skewX(-18deg);animation:dealshine 5.5s ease-in-out infinite;pointer-events:none;
   }
   @keyframes dealshine{0%{left:-55%}45%,100%{left:135%}}
+  /* The featured deals get a slow turn in 3D — enough to catch the eye across
+     a room, slow enough that nobody eating under it gets seasick. */
+  .deal{perspective:900px}
+  .deal .dphoto{
+    position:relative;flex:0 0 74px;width:74px;height:74px;border-radius:14px;overflow:hidden;
+    transform-style:preserve-3d;animation:dealspin 9s ease-in-out infinite;
+    box-shadow:0 8px 18px rgba(0,0,0,.5);
+  }
+  .deal .dphoto img{width:100%;height:100%;object-fit:cover;display:block}
+  .deal .dphoto .emofb{position:absolute;inset:0;display:none;align-items:center;justify-content:center;font-size:30px;background:radial-gradient(circle at 50% 35%,#22331f,#101a13)}
+  .deal .dphoto.noimg img{display:none}
+  .deal .dphoto.noimg .emofb{display:flex}
+  .deal .dphoto .g{position:absolute;inset:0;background:linear-gradient(150deg,rgba(255,255,255,.2),transparent 45%)}
+  @keyframes dealspin{
+    0%,100%{transform:rotateY(-16deg) rotateX(5deg)}
+    50%{transform:rotateY(16deg) rotateX(-4deg)}
+  }
+  @media (prefers-reduced-motion:reduce){ .deal .dphoto{animation:none} }
   .deal .ico{font-size:27px;line-height:1;flex:0 0 auto;margin-top:2px}
   .deal .nm{font-weight:800;font-size:15.5px;line-height:1.25}
   .deal .th{color:var(--muted2);font-size:12.5px;margin-top:2px}
@@ -119,6 +219,7 @@
   .deal .when{color:#e6cf9a;font-size:11.5px;margin-top:7px;font-weight:700}
 
   .qty{margin-left:auto;display:flex;align-items:center;gap:9px;flex:0 0 auto}
+  .body3 .qty{margin-top:11px;justify-content:flex-end;transform:translateZ(24px)}
   .rnd{width:34px;height:34px;border-radius:50%;border:1px solid var(--line2);background:var(--panel2);display:flex;align-items:center;justify-content:center;font-size:19px;font-weight:800;line-height:1;transition:.14s}
   .rnd:active{transform:scale(.88)}
   .rnd.add{background:linear-gradient(135deg,var(--green),var(--deep));color:#04180d;border-color:transparent}
@@ -200,7 +301,7 @@
       This menu includes beer and cannabis edibles.<br>
       เมนูนี้มีเบียร์และขนมกัญชา — สำหรับผู้ที่มีอายุ 20 ปีขึ้นไป
     </p>
-    <button class="btn btn-primary" style="margin-top:0" onclick="passGate()">✅ I am 20+ · เข้าสู่เมนู</button>
+    <button class="btn btn-primary" style="margin-top:0" onclick="askMotion();passGate()">✅ I am 20+ · เข้าสู่เมนู</button>
     <button class="btn btn-ghost" id="gateExit" onclick="location.href='index.html'">Exit</button>
   </div>
 </div>
@@ -360,8 +461,105 @@ function tagHtml(t){
   return '<span class="tag ' + v[0] + '">' + v[1] + "</span>";
 }
 
+/* ---------- photos & 3D ----------
+   The photo layer is deliberately forgiving: if a URL ever dies the card falls
+   back to its emoji tile instead of showing a broken-image icon, so a dead link
+   can never leave a customer staring at a blank square mid-order. */
+function photoHtml(it, cls){
+  var src = it.img || "";
+  return '<div class="' + cls + (src ? "" : " noimg") + '">' +
+    (src ? '<img loading="lazy" decoding="async" alt="' + esc(it.name) + '" src="' + esc(src) +
+           '" onerror="this.parentNode.classList.add(\'noimg\')">' : "") +
+    '<div class="emofb">' + esc(it.emoji || "🍽") + "</div>" +
+    (cls === "photo"
+      ? '<div class="gloss"></div><div class="pr">' + baht(it.price) + "</div>"
+      : '<div class="g"></div>') +
+  "</div>";
+}
+
+function flipCard(id){
+  var el = document.getElementById("it_" + id);
+  if (el) el.classList.toggle("flipped");
+}
+
+/* Tilt. Three inputs, all optional, all cheap:
+   · where the card sits in the viewport (works on every phone, no permission)
+   · the pointer, on a desktop
+   · the gyroscope, if the customer said yes to it
+   Only cards actually on screen are touched, and everything runs on one rAF. */
+var tiltCards = [], tiltQueued = false, gyro = { x: 0, y: 0 };
+function collectTilt(){
+  tiltCards = [];
+  var els = document.querySelectorAll(".item");
+  for (var i = 0; i < els.length; i++){
+    var t = els[i].querySelector(".c3tilt");
+    if (t) tiltCards.push({ box: els[i], t: t });
+  }
+  queueTilt();
+}
+function queueTilt(){
+  if (tiltQueued) return;
+  tiltQueued = true;
+  requestAnimationFrame(applyTilt);
+}
+function applyTilt(){
+  tiltQueued = false;
+  var h = window.innerHeight || 800;
+  for (var i = 0; i < tiltCards.length; i++){
+    var c = tiltCards[i], r = c.box.getBoundingClientRect();
+    if (r.bottom < -60 || r.top > h + 60) continue;
+    var mid = r.top + r.height / 2;
+    var p = (mid - h / 2) / (h / 2);          // -1 above centre … +1 below
+    if (p > 1) p = 1; if (p < -1) p = -1;
+    var rx = (-p * 7) + gyro.x;
+    var ry = gyro.y;
+    c.t.style.setProperty("--rx", rx.toFixed(2) + "deg");
+    c.t.style.setProperty("--ry", ry.toFixed(2) + "deg");
+  }
+}
+function bindTilt(){
+  window.addEventListener("scroll", queueTilt, { passive: true });
+  window.addEventListener("resize", queueTilt, { passive: true });
+  document.addEventListener("pointermove", function(e){
+    if (e.pointerType !== "mouse") return;
+    var w = window.innerWidth || 1;
+    gyro.y = ((e.clientX / w) - .5) * 9;
+    queueTilt();
+  }, { passive: true });
+}
+/* iOS will only hand over the gyroscope from inside a tap, so the age-gate
+   button is where we ask. Refusing it costs nothing — scroll tilt still runs. */
+function askMotion(){
+  try{
+    if (typeof DeviceOrientationEvent !== "undefined" &&
+        typeof DeviceOrientationEvent.requestPermission === "function"){
+      DeviceOrientationEvent.requestPermission().then(function(r){
+        if (r === "granted") startGyro();
+      }).catch(function(){});
+    } else { startGyro(); }
+  }catch(e){}
+}
+function startGyro(){
+  window.addEventListener("deviceorientation", function(e){
+    /* Desktops and headless browsers fire this event with null readings — take
+       them as "no gyroscope" rather than as "phone lying flat", which would
+       otherwise tilt every card hard over on a machine with no sensor. */
+    if (e.beta == null || e.gamma == null) return;
+    var b = Number(e.beta) || 0, g = Number(e.gamma) || 0;
+    gyro.x = Math.max(-6, Math.min(6, (b - 45) / 7));
+    gyro.y = Math.max(-9, Math.min(9, g / 3.5));
+    queueTilt();
+  }, true);
+}
+
 function render(){
   var body = document.getElementById("menuBody");
+  /* A re-render throws the DOM away, so remember which cards the customer had
+     turned over and put them back — otherwise reading the allergens and then
+     tapping + snaps the card shut in their face. */
+  var wasFlipped = [];
+  var fl = body.querySelectorAll(".item.flipped");
+  for (var z = 0; z < fl.length; z++) wasFlipped.push(fl[z].id);
   var cats = (MENU.categories || []).filter(function(c){ return cat === "all" || c.id === cat; });
   var html = (cat === "all" || cat === "deals") ? renderDeals() : "";
   if (cat === "deals") cats = [];
@@ -372,25 +570,40 @@ function render(){
             ' <small>' + esc(c.nameTh || "") + " · " + list.length + " items</small></h2><div class=\"grid\">";
     list.forEach(function(it){
       var q = cart[it.id] || 0;
-      html += '<div class="item' + (q ? " inCart" : "") + '" id="it_' + esc(it.id) + '">' +
-        '<div class="ico">' + esc(it.emoji || "🍽") + "</div>" +
-        "<div style=\"min-width:0\">" +
-          '<div class="nm">' + esc(it.name) + "</div>" +
-          (it.nameTh ? '<div class="th">' + esc(it.nameTh) + "</div>" : "") +
-          (it.desc ? '<div class="ds">' + esc(it.desc) + "</div>" : "") +
-          (it.tags || []).map(tagHtml).join("") +
-          '<div class="pr">' + baht(it.price) + "</div>" +
+      html += '<div class="item' + (q ? " inCart" : "") + '" id="it_' + esc(it.id) + '"><div class="c3tilt"><div class="c3in">' +
+        '<div class="face front">' +
+          photoHtml(it, "photo") +
+          '<button class="flipbtn" onclick="flipCard(\'' + esc(it.id) + '\')" aria-label="What is in it">i</button>' +
+          '<div class="body3">' +
+            '<div class="nm">' + esc(it.name) + "</div>" +
+            (it.nameTh ? '<div class="th">' + esc(it.nameTh) + "</div>" : "") +
+            (it.desc ? '<div class="ds">' + esc(it.desc) + "</div>" : "") +
+            (it.tags || []).map(tagHtml).join("") +
+            '<div class="qty">' +
+              (q ? '<button class="rnd" onclick="bump(\'' + esc(it.id) + '\',-1)">−</button><span class="qnum">' + q + "</span>" : "") +
+              '<button class="rnd add" onclick="bump(\'' + esc(it.id) + '\',1)">+</button>' +
+            "</div>" +
+          "</div>" +
         "</div>" +
-        '<div class="qty">' +
-          (q ? '<button class="rnd" onclick="bump(\'' + esc(it.id) + '\',-1)">−</button><span class="qnum">' + q + "</span>" : "") +
-          '<button class="rnd add" onclick="bump(\'' + esc(it.id) + '\',1)">+</button>' +
+        '<div class="face rear">' +
+          '<div class="bt">' + esc(it.name) + "</div>" +
+          (it.nameTh ? '<div class="bth">' + esc(it.nameTh) + "</div>" : "") +
+          "<h4>WHAT'S IN IT</h4><p>" + esc(it.ing || it.desc || "Ask our staff and they'll talk you through it.") + "</p>" +
+          (it.alg ? '<h4>ALLERGENS</h4><p class="alg">' + esc(it.alg) + "</p>" : "") +
+          '<div class="close" onclick="flipCard(\'' + esc(it.id) + '\')">← back to the photo</div>' +
         "</div>" +
+        "</div></div>" +
         (it.out ? '<div class="out">SOLD OUT</div>' : "") +
       "</div>";
     });
     html += "</div>";
   });
   body.innerHTML = html || '<div class="warn" style="margin-top:20px">Nothing in this section right now.</div>';
+  for (var z2 = 0; z2 < wasFlipped.length; z2++){
+    var fc = document.getElementById(wasFlipped[z2]);
+    if (fc) fc.classList.add("flipped");
+  }
+  collectTilt();
 }
 
 function itemById(id){
@@ -447,7 +660,7 @@ function renderDeals(){
     var was = bundleWas(bd), save = was - bd.price, open = bundleOpen(bd), q = cart[bd.id] || 0;
     html += '<div class="deal' + (q ? " inCart" : "") + (open ? "" : " closed") + '" id="it_' + esc(bd.id) + '">' +
       (bd.badge ? '<div class="badge2">' + esc(bd.badge) + "</div>" : "") +
-      '<div class="ico">' + esc(bd.emoji || "🎁") + "</div>" +
+      (bd.img ? photoHtml(bd, "dphoto") : '<div class="ico">' + esc(bd.emoji || "🎁") + "</div>") +
       '<div style="min-width:0;flex:1">' +
         '<div class="nm">' + esc(bd.name) + "</div>" +
         (bd.nameTh ? '<div class="th">' + esc(bd.nameTh) + "</div>" : "") +
@@ -731,6 +944,7 @@ function passGate(){
   var t = readTable();
   if (!t){ try { t = sessionStorage.getItem("dankTable"); } catch(e){} }
   saveTable(t && TABLES.indexOf(t) !== -1 ? t : null);
+  bindTilt();
   paintCart();
   loadMenu();
 })();
