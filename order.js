@@ -15,6 +15,7 @@ import crypto from "node:crypto";
 import { setJSON, indexAdd } from "./_store.js";
 import { getBalance } from "./_wallet.js";
 import { pushTransaction } from "./_storehub.js";
+import { boxesInOrder, issueGifts, giftAlertLines, getGiftConfig } from "./_boxgifts.js";
 import { getMenu } from "./_menu.js";
 import { notifyStaffLine } from "./_line.js";
 import { requireRate } from "./_ratelimit.js";
@@ -134,6 +135,50 @@ export default async function handler(req, res) {
   // collection" rather than the "paid from your wallet" it used to say.
   const walletInfo = o.walletReserved ? { walletPending: true, balance: o.walletBalance } : {};
 
+  /* --- Custom box: what rides along free, and taking it off the count ------
+     28 grams of flower earns a box, and every box costs the shop a tin of
+     hash, a brownie, a jelly, a pack of Backwoods, RAW papers, a tee and a
+     hat. The count comes from the order's own weight, not from anything the
+     browser claimed — see api/_boxgifts.js for why that matters.
+
+     Wrapped, because a gift ledger that cannot be written must not cost a
+     sale. If this throws the order goes through with no gift block attached
+     and the reason is in the Vercel log, which is the right trade when the
+     alternative is refusing several thousand baht of flower over a brownie. */
+  let giftLines = [];
+  try {
+    const { threshold } = await getGiftConfig();
+    const { grams, boxes } = boxesInOrder(o.items, threshold);
+    if (boxes >= 1) {
+      giftLines = await issueGifts(boxes);
+      o.box = {
+        boxes,
+        grams,
+        threshold,
+        gifts: giftLines.map((g) => ({
+          id: g.id, label: g.label, qty: g.qty, remaining: g.remaining, short: Boolean(g.short),
+        })),
+        short: giftLines.filter((g) => g.short).map((g) => g.id),
+      };
+    }
+  } catch (e) {
+    console.error("box gifts skipped:", e.message);
+  }
+  /* Staff read this on their phone before they pack it, so the shortfall has
+     to be in the same message as the order rather than somewhere they'd have
+     to go and look. */
+  const giftBlock = giftLines.length
+    ? `\n\n📦 CUSTOM BOX ×${o.box.boxes} (${o.box.grams}g) — set aside:\n${giftAlertLines(giftLines)}`
+    : "";
+  /* Same block for the owner's email. Escaped before the newlines become <br>,
+     because gift labels are staff-editable through /api/boxgifts and this lands
+     in a mail client that renders HTML. */
+  const giftHtml = giftLines.length
+    ? `<p><b>📦 Custom box ×${o.box.boxes} (${o.box.grams}g) — set aside:</b><br>${esc(
+        giftAlertLines(giftLines)
+      ).replace(/\n/g, "<br>")}</p>`
+    : "";
+
   const results = [];
 
   // 0) ALWAYS save the order so it shows in the staff console's Orders tab
@@ -156,7 +201,7 @@ export default async function handler(req, res) {
         ? `🚚 Delivery — ${o.delivery?.zone || ""}\n${o.delivery?.address || ""}`
         : `🏬 Pickup — ${o.pickup?.branch || ""} ${o.pickup?.time ? "at " + o.pickup.time : ""}`;
       const text =
-        `🛒 NEW ORDER ${orderId} — dankbkk.com\n\n${lines}\n\nTotal: ฿${o.total ?? o.subtotal}${o.member ? " (member ⭐)" : ""}\nPay: ${o.payment}\n${where}\n` +
+        `🛒 NEW ORDER ${orderId} — dankbkk.com\n\n${lines}${giftBlock}\n\nTotal: ฿${o.total ?? o.subtotal}${o.member ? " (member ⭐)" : ""}\nPay: ${o.payment}\n${where}\n` +
         `Customer: ${o.customer?.name || "-"} · ${o.customer?.phone}\n${o.notes ? "Notes: " + o.notes + "\n" : ""}` +
         `\n➡️ Open: https://${host}/staff.html#orders`;
       const r = await fetch(`https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/sendMessage`, {
@@ -178,13 +223,17 @@ export default async function handler(req, res) {
       ? `🚚 Delivery — ${o.delivery?.zone || ""} ${o.delivery?.address || ""}`
       : `🏬 Pickup — ${o.pickup?.branch || ""} ${o.pickup?.time || ""}`;
     const r = await notifyStaffLine(
-      `🛒 NEW ORDER ${orderId} — dankbkk.com\n\n${lines}\n\nTotal: ฿${o.total ?? o.subtotal}\nPay: ${o.payment}\n${where}\nCustomer: ${o.customer?.name || "-"} · ${o.customer?.phone}\n➡️ https://${host}/staff.html#orders`
+      `🛒 NEW ORDER ${orderId} — dankbkk.com\n\n${lines}${giftBlock}\n\nTotal: ฿${o.total ?? o.subtotal}\nPay: ${o.payment}\n${where}\nCustomer: ${o.customer?.name || "-"} · ${o.customer?.phone}\n➡️ https://${host}/staff.html#orders`
     );
     if (r.ok) results.push(true);
   } catch (e) { /* non-fatal */ }
 
-  // 0c) Push into StoreHub as an online transaction (optional; STOREHUB_PUSH_ORDERS=1)
-  try { const r = await pushTransaction(o, orderId); if (r && r.ok) results.push(true); } catch (e) { /* non-fatal */ }
+  /* 0c) Push into StoreHub as an online transaction (optional; STOREHUB_PUSH_ORDERS=1).
+     giftLines ride along as ฿0 lines so the POS takes the hash, brownie, tee and
+     hat off its own stock too — the connector's inventory endpoints are
+     read-only, so a zero-priced line on the transaction is the only write path
+     there is. Gifts with no StoreHub id mapped yet are skipped inside. */
+  try { const r = await pushTransaction(o, orderId, giftLines); if (r && r.ok) results.push(true); } catch (e) { /* non-fatal */ }
 
   // 1) Forward into the POS flow
   if (process.env.ORDER_FORWARD_URL) {
@@ -206,6 +255,7 @@ export default async function handler(req, res) {
         .join("<br>");
       const html = `<h2>🌿 New order ${orderId} — dankbkk.com</h2>
         <p>${lines}</p>
+        ${giftHtml}
         <p><b>Subtotal:</b> ฿${o.subtotal}${o.member ? " (member)" : ""}<br>
         <b>Payment:</b> ${o.payment}<br>
         <b>Fulfilment:</b> ${o.fulfilment}<br>

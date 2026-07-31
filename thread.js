@@ -1,119 +1,129 @@
-/* /api/thread — live customer ↔ staff chat threads.
+/* ============================================================
+   Thread storage adapter.
+   Production: Upstash Redis (free tier) — set
+     UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN
+   (upstash.com → create Redis DB → REST API section, 2 minutes).
+   Without them: in-memory store — fine for local testing, but on
+   Vercel serverless memory isn't shared between instances, so set
+   Upstash before going live with staff chat.
+   ============================================================ */
 
-   Customer (no auth; threadId is an unguessable token):
-     POST {action:"start", customer:{name,contact}, transcript, cart, subtotal}
-        → {threadId}
-     POST {action:"send", threadId, text}            (from customer)
-     GET  ?threadId=...&since=N                      → {status, messages:[...]}
+const URL_ = process.env.UPSTASH_REDIS_REST_URL || "";
+const TOK = process.env.UPSTASH_REDIS_REST_TOKEN || "";
+const mem = globalThis.__dankMem || (globalThis.__dankMem = new Map());
 
-   Staff (requires key = STAFF_KEY env; unset ⇒ the staff side is closed):
-     GET  ?list=1&key=...                            → {threads:[summary]}
-     GET  ?threadId=...&since=N&key=...              (same as customer)
-     POST {action:"send", threadId, text, key, staffName}
-     POST {action:"close", threadId, key}                                   */
+export const usingRedis = () => Boolean(URL_ && TOK);
 
-import { getJSON, setJSON, indexAdd, indexList, usingRedis } from "./_store.js";
-import { requireStaff, isStaffKey } from "./_auth.js";
+async function redis(cmd) {
+  const r = await fetch(URL_, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${TOK}`, "Content-Type": "application/json" },
+    body: JSON.stringify(cmd),
+  });
+  if (!r.ok) throw new Error(`redis ${r.status}`);
+  return (await r.json()).result;
+}
 
-const rid = () =>
-  "CH" + Date.now().toString(36).toUpperCase() + Math.random().toString(36).slice(2, 6).toUpperCase();
-
-export default async function handler(req, res) {
-  res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
-  if (req.method === "OPTIONS") return res.status(204).end();
-
-  try {
-    if (req.method === "GET") {
-      const { threadId, since, list, key } = req.query || {};
-      if (list) {
-        if (!requireStaff(req, res)) return;
-        const ids = await indexList();
-        const threads = [];
-        for (const id of ids.slice(0, 60)) {
-          const t = await getJSON("thread:" + id);
-          if (!t) continue;
-          const last = t.messages[t.messages.length - 1];
-          threads.push({
-            id: t.id, status: t.status, customer: t.customer,
-            subtotal: t.subtotal, cartCount: (t.cart || []).length,
-            createdAt: t.createdAt, lastAt: last?.at, lastText: last?.text?.slice(0, 80),
-            lastFrom: last?.from, count: t.messages.length,
-          });
-        }
-        return res.status(200).json({ threads, redis: usingRedis() });
-      }
-      if (!threadId) return res.status(400).json({ error: "threadId required" });
-      const t = await getJSON("thread:" + threadId);
-      if (!t) return res.status(404).json({ error: "not found" });
-      const n = Number(since || 0);
-      // The customer polls this too, with no key — they get the messages only.
-      const staff = isStaffKey(key);
-      return res.status(200).json({
-        status: t.status,
-        customer: staff ? t.customer : undefined,
-        transcript: staff ? t.transcript : undefined,
-        cart: staff ? t.cart : undefined,
-        subtotal: staff ? t.subtotal : undefined,
-        messages: t.messages.filter((m) => m.seq > n),
-      });
-    }
-
-    if (req.method !== "POST") return res.status(405).json({ error: "method" });
-    const b = req.body || {};
-
-    if (b.action === "start") {
-      const id = rid();
-      const t = {
-        id, status: "open",
-        customer: { name: b.customer?.name || "", contact: b.customer?.contact || "" },
-        transcript: (b.transcript || []).slice(-14),
-        cart: b.cart || [], subtotal: b.subtotal || 0,
-        createdAt: Date.now(),
-        messages: [
-          { seq: 1, from: "system", text: "Chat transferred to staff — customer is waiting.", at: Date.now() },
-        ],
-      };
-      await setJSON("thread:" + id, t);
-      await indexAdd(id);
-      return res.status(200).json({ threadId: id });
-    }
-
-    if (b.action === "send") {
-      const t = await getJSON("thread:" + b.threadId);
-      if (!t) return res.status(404).json({ error: "not found" });
-      const isStaff = isStaffKey(b.key);
-      if (!isStaff && b.key) return res.status(401).json({ error: "bad key" });
-      const text = String(b.text || "").slice(0, 1000).trim();
-      if (!text) return res.status(400).json({ error: "empty" });
-      const seq = (t.messages[t.messages.length - 1]?.seq || 0) + 1;
-      t.messages.push({
-        seq, from: isStaff ? "staff" : "customer",
-        name: isStaff ? b.staffName || "Staff" : undefined,
-        text, at: Date.now(),
-      });
-      if (t.messages.length > 300) t.messages = t.messages.slice(-300);
-      if (isStaff) t.status = "open";
-      await setJSON("thread:" + b.threadId, t);
-      return res.status(200).json({ ok: true, seq });
-    }
-
-    if (b.action === "close") {
-      if (!requireStaff(req, res)) return;
-      const t = await getJSON("thread:" + b.threadId);
-      if (!t) return res.status(404).json({ error: "not found" });
-      t.status = "closed";
-      t.messages.push({
-        seq: (t.messages[t.messages.length - 1]?.seq || 0) + 1,
-        from: "system", text: "Conversation closed by staff.", at: Date.now(),
-      });
-      await setJSON("thread:" + b.threadId, t);
-      return res.status(200).json({ ok: true });
-    }
-
-    return res.status(400).json({ error: "unknown action" });
-  } catch (e) {
-    console.error("thread error:", e.message);
-    return res.status(500).json({ error: "server" });
+export async function getJSON(key) {
+  if (usingRedis()) {
+    const v = await redis(["GET", key]);
+    return v ? JSON.parse(v) : null;
   }
+  return mem.has(key) ? JSON.parse(mem.get(key)) : null;
+}
+
+export async function setJSON(key, val, ttlSeconds = 60 * 60 * 24 * 14) {
+  const s = JSON.stringify(val);
+  if (usingRedis()) return redis(["SET", key, s, "EX", String(ttlSeconds)]);
+  mem.set(key, s);
+}
+
+/* Counter used by the rate limiters. Redis INCR is atomic, which is what makes
+   the limit hold when two requests from the same address land on different
+   serverless instances at the same moment; the in-memory fallback is
+   per-instance and best-effort, like everything else here without Upstash.
+   Kept in its own map so a counter can never be mistaken for a JSON value. */
+const counts = globalThis.__dankCounts || (globalThis.__dankCounts = new Map());
+
+export async function bump(key, ttlSeconds) {
+  if (usingRedis()) {
+    const n = Number(await redis(["INCR", key]));
+    if (n === 1) await redis(["EXPIRE", key, String(Math.max(1, Math.round(ttlSeconds)))]);
+    return n;
+  }
+  const now = Date.now();
+  if (counts.size > 5000) for (const [k, v] of counts) if (v.exp <= now) counts.delete(k);
+  const rec = counts.get(key);
+  if (!rec || rec.exp <= now) {
+    counts.set(key, { n: 1, exp: now + ttlSeconds * 1000 });
+    return 1;
+  }
+  rec.n += 1;
+  return rec.n;
+}
+
+/* The same atomic increment for a counter that moves by more than one at a
+   time — an order for two boxes consumes two of every gift — and that other
+   code has to be able to READ and RESET.
+
+   That last part is why this one does not use the `counts` map above. The gift
+   ledger is displayed by giftStatus() with getJSON() and zeroed by a restock
+   with setJSON(key, 0), so the increment has to land in the same keyspace as
+   those two or the counter reads back as 0 forever on a deployment without
+   Upstash. Under Redis there is no distinction to reconcile: INCRBY leaves the
+   key holding "12", and JSON.parse("12") is 12.
+
+   Ledger keys are long-lived, so EXPIRE is set only when the key was created
+   by this call — otherwise every order would push the year-long window out by
+   another year and the key would never be collected. */
+export async function bumpBy(key, n = 1, ttlSeconds = 60 * 60 * 24 * 365) {
+  const by = Math.round(Number(n) || 0);
+  if (usingRedis()) {
+    const v = Number(await redis(["INCRBY", key, String(by)]));
+    if (v === by) await redis(["EXPIRE", key, String(Math.max(1, Math.round(ttlSeconds)))]);
+    return v;
+  }
+  let cur = 0;
+  try {
+    cur = Number(mem.has(key) ? JSON.parse(mem.get(key)) : 0) || 0;
+  } catch (_) {
+    cur = 0;
+  }
+  const next = cur + by;
+  mem.set(key, JSON.stringify(next));
+  return next;
+}
+
+/* How many ids stay in the live index, and how many are kept behind it.
+   These used to be one number, 200, and anything past it was dropped on the
+   floor by `idx.slice(0, 200)` on every single add. The staff console's Orders
+   tab reads this index and nothing else, so the 201st order silently deleted
+   the oldest one from the only place staff could see it — and since POST
+   /api/order needs no key, a few hundred junk orders were enough to erase a
+   real day's work. Now the overflow is moved to a companion archive index
+   instead of being discarded, so an id can fall off the first page but never
+   out of the system. */
+const INDEX_LIVE_MAX = 2000;
+const INDEX_ARCHIVE_MAX = 20000;
+const archiveKey = (key) => key + ":archive";
+
+export async function indexAdd(id, key = "threads:index") {
+  const idx = (await getJSON(key)) || [];
+  if (idx.includes(id)) return;
+  idx.unshift(id);
+  if (idx.length > INDEX_LIVE_MAX) {
+    const overflow = idx.splice(INDEX_LIVE_MAX); // the oldest ids on the live page
+    const ak = archiveKey(key);
+    const archived = (await getJSON(ak)) || [];
+    // Both lists are newest-first and everything overflowing is newer than
+    // anything already archived, so concatenating in this order keeps the sort.
+    await setJSON(ak, overflow.concat(archived).slice(0, INDEX_ARCHIVE_MAX));
+  }
+  await setJSON(key, idx);
+}
+
+export async function indexList(key = "threads:index", { includeArchive = false } = {}) {
+  const live = (await getJSON(key)) || [];
+  if (!includeArchive) return live;
+  return live.concat((await getJSON(archiveKey(key))) || []);
 }

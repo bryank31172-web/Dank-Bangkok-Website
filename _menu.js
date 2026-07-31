@@ -157,6 +157,172 @@ async function fetchUpstream() {
   }
 }
 
+/* ---- Photo backfill -------------------------------------------------------
+   The POS pushes names, prices and stock but no photographs, so every card
+   from a POS feed would otherwise fall back to the leaf placeholder — the
+   whole menu going grey overnight. product-images.json keeps the pictures
+   alive independently of wherever the catalog comes from: an exact name match
+   first, then a category-style photo, then nothing (leaf placeholder).
+   Set GENERIC_PRODUCT_IMAGES=0 to skip the category photos and show the
+   placeholder for anything without a real photo of its own.                  */
+let imgMapCache = null;
+const GENERIC_ON = String(process.env.GENERIC_PRODUCT_IMAGES ?? "1") !== "0";
+
+function flatName(s) {
+  return String(s || "")
+    .toLowerCase()
+    .replace(/\([^)]*\)/g, " ")   // "( weed ) Ztupid" -> " Ztupid"
+    .replace(/[^a-z0-9]+/g, "");
+}
+
+async function imgMap() {
+  if (imgMapCache) return imgMapCache;
+  try {
+    const raw = await readFile(join(process.cwd(), "product-images.json"), "utf8");
+    const j = JSON.parse(raw);
+    const byKeyword = j.byKeyword || {};
+    /* Longest keyword first, so "chickenkaraage" wins over "chicken" and
+       "weissbier" over "weiss" — otherwise a short generic word claims every
+       product before the specific one gets a look in. Keywords that point at
+       the shop's own Shopify photos scan before generic stock keywords of any
+       length: "Zooties pre-roll" must find the shop's Zooties picture, not a
+       stock photo of somebody's joint that "preroll" would otherwise serve. */
+    const all = Object.keys(byKeyword).sort((a, b) => b.length - a.length);
+    const own = all.filter((k) => /cdn\.shopify\.com/.test(byKeyword[k]));
+    const gen = all.filter((k) => !/cdn\.shopify\.com/.test(byKeyword[k]));
+    imgMapCache = { byName: j.byName || {}, byKeyword, keys: own.concat(gen), keysOwn: own, generic: j.generic || {} };
+  } catch (e) {
+    imgMapCache = { byName: {}, byKeyword: {}, keys: [], keysOwn: [], generic: {} };
+  }
+  return imgMapCache;
+}
+
+/* A drawn tile of its own for anything with no photograph — see api/tile.js. */
+function tileUrl(p) {
+  const qs =
+    "n=" + encodeURIComponent(String(p.name || "").slice(0, 80)) +
+    (p.category ? "&c=" + encodeURIComponent(String(p.category).slice(0, 40)) : "") +
+    (p.type ? "&t=" + encodeURIComponent(String(p.type).slice(0, 24)) : "");
+  return "/api/tile?" + qs;
+}
+
+/* Which category-style photo suits a product we have no real picture for.
+   Reads the name and category together, because a POS category is often just
+   "Specials" while the name is what actually says "pre-roll" or "grinder". */
+function genericKey(p) {
+  const s = (String(p.name || "") + " " + String(p.category || "")).toLowerCase();
+  if (/\b(joint|pre-?roll|preroll|blunt|cone)\b/.test(s)) return "joints";
+  if (/\b(vape|cart|cartridge|pod|disposable|510)\b/.test(s)) return "vapes";
+  if (/\b(edible|gummy|gummies|cookie|brownie|chocolate|candy|snack|cake)\b/.test(s)) return "edibles";
+  if (/\b(beer|lager|drink|soda|cola|tea|coffee|juice|water|shake|seltzer|can)\b/.test(s)) return "drinks";
+  if (/\b(grinder|lighter|paper|rolling|bong|pipe|rig|tray|filter|tip|storage|accessor)/.test(s)) return "accessories";
+  if (/\b(shirt|tee|hoodie|cap|hat|merch|sticker|tote|sock)/.test(s)) return "merch";
+  /* Deliberately no catch-all here. Five hundred strains sharing one stock
+     photo of somebody else's bud looks like a broken menu, not a stocked one —
+     those fall through to a tile drawn from their own name instead, so every
+     card is different and none of them tells the customer a lie. */
+  return "";
+}
+
+/* Flower is the one category where a lookalike stock photo is a lie the
+   customer can taste: strains are named after food ("Chocolate Crip", "Tea
+   Time", "Durian Pop"), and the food keywords would happily hang a chocolate
+   bar on a flower card. So weed-category products may only match the shop's
+   own photos or an exact name entry — never generic stock, never a category
+   photo. Anything left over gets its tile. */
+const WEEDISH = /\bweed\b|\bflowers?\b|\bexotics?\b|\btop\s*shelf\b|\bmid\s*grade\b|\bindica\b|\bsativa\b|\bstrains?\b/i;
+/* …but a joint photo on a product NAMED "pre-roll" tells the truth about the
+   format, so rolled goods keep their generic pictures. */
+const ROLLED = /joint|pre-?roll|blunt|cone/i;
+
+export async function fillImages(data) {
+  if (!Array.isArray(data) || !data.length) return data;
+  const m = await imgMap();
+  return data.map((p) => {
+    if (!p || typeof p !== "object") return p;
+    if (p.image && String(p.image).trim()) return p;
+    /* 1. an exact photo of this very product */
+    const flat = flatName(p.name);
+    const hit = m.byName[flat];
+    if (hit) return { ...p, image: hit, _imgFrom: "name" };
+    const nameCat = String(p.name || "") + " " + String(p.category || "");
+    const weedish = WEEDISH.test(nameCat) && !ROLLED.test(nameCat);
+    if (GENERIC_ON) {
+      /* 2. a real photo of what it plainly is — "(Beer) Wila weizen" is a
+         wheat beer, "(Food) Chicken Karaage" is fried chicken. The shop's own
+         photos scan first; strains scan ONLY those. */
+      for (const k of (weedish ? m.keysOwn : m.keys)) {
+        if (flat.includes(k)) return { ...p, image: m.byKeyword[k], _imgFrom: "keyword:" + k };
+      }
+      /* 3. a photo of its category — never for flower */
+      if (!weedish) {
+        const g = m.generic[genericKey(p)];
+        if (g) return { ...p, image: g, _imgFrom: "generic" };
+      }
+    }
+    /* 4. a tile drawn from its own name — never a blank card */
+    return { ...p, image: tileUrl(p), _imgFrom: "tile" };
+  });
+}
+
+/* ---- Strain database backfill --------------------------------------------
+   The POS sends a name, a price and a stock count; a customer tapping a strain
+   expects a Leafly-style page — type, THC, effects, flavours, lineage, a line
+   or two of description. strain-db.json carries that for every strain we know,
+   keyed by the same flattened name the photo backfill uses, so "(weed) Cookiez
+   Monster" finds "Cookie Monster" without anyone typing a mapping. Only EMPTY
+   fields are filled — anything the POS or the owner editor set stays theirs. */
+let strainDbCache = null;
+async function strainDb() {
+  if (strainDbCache) return strainDbCache;
+  try {
+    const j = JSON.parse(await readFile(join(process.cwd(), "strain-db.json"), "utf8"));
+    const strains = j.strains || {};
+    const alias = j.alias || {};
+    const keys = Object.keys(strains).concat(Object.keys(alias)).sort((a, b) => b.length - a.length);
+    strainDbCache = { strains, alias, keys };
+  } catch (e) {
+    strainDbCache = { strains: {}, alias: {}, keys: [] };
+  }
+  return strainDbCache;
+}
+function findStrain(db, flat) {
+  if (!flat) return null;
+  const direct = db.strains[flat] || db.strains[db.alias[flat]];
+  if (direct) return direct;
+  for (const k of db.keys) {
+    if (flat.includes(k)) return db.strains[k] || db.strains[db.alias[k]];
+  }
+  return null;
+}
+export async function fillStrainInfo(data) {
+  if (!Array.isArray(data) || !data.length) return data;
+  const db = await strainDb();
+  if (!db.keys.length) return data;
+  return data.map((p) => {
+    if (!p || typeof p !== "object") return p;
+    const nameCat = String(p.name || "") + " " + String(p.category || "");
+    if (!WEEDISH.test(nameCat) && !ROLLED.test(nameCat)) return p;
+    const s = findStrain(db, flatName(p.name));
+    if (!s) return p;
+    const q = { ...p };
+    if (!String(q.description || "").trim() && s.desc) q.description = s.desc;
+    if (!(Array.isArray(q.effects) && q.effects.length) && s.effects && s.effects.length) q.effects = s.effects;
+    if (!(Array.isArray(q.flavors) && q.flavors.length) && s.flavors && s.flavors.length) q.flavors = s.flavors;
+    if (!(Number(q.thc) > 0) && s.thc) {
+      const mnum = String(s.thc).match(/[\d.]+/g);
+      if (mnum) q.thc = Number(mnum[mnum.length - 1]);
+      if (!String(q.thcLabel || "").trim()) q.thcLabel = s.thc;
+    }
+    /* "Hybrid" is the POS default, not information — a researched
+       "Indica-dominant Hybrid" is allowed to replace it, an explicit POS
+       "Sativa" is not touched. */
+    if (s.type && (!q.type || /^hybrid$/i.test(String(q.type).trim()))) q.type = s.type;
+    q.strain = { name: s.name || "", terpene: s.terpene || "", lineage: s.lineage || "" };
+    return q;
+  });
+}
+
 /* Owner edits from /api/admin — merged over every source so manual price/stock/
    product/promo changes stick regardless of where the menu comes from.
    Hidden products are only FLAGGED (_hidden) — the storefront hides them from
@@ -180,6 +346,8 @@ export async function getMenu(force = false) {
   if (!force && cached && now - cached.at < TTL) return cached;
 
   let { data, source } = await fetchUpstream();
+  data = await fillImages(data);
+  data = await fillStrainInfo(data);
   data = await applyOverrides(data);
   const rev = revOf(data);
   const changedAt = cached && cached.rev === rev ? cached.changedAt : now;

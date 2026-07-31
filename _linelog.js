@@ -1,76 +1,202 @@
-/* LINE group message log + summarizer — the "Bryan AI monitor", folded into
-   the website deployment. Instead of SQLite it uses the shared store (Upstash
-   when configured); instead of node-cron it's driven by Vercel Cron hitting
-   /api/line-summary. Logging happens inside /api/line-webhook.                */
-import { getJSON, setJSON, indexAdd, indexList } from "./_store.js";
+/* DANK Custom Box — what comes free with it, and how many are left.
 
-const KEEP = 1000;              // max messages kept per source
-const MAX_AGE = 7 * 24 * 3600 * 1000; // prune anything older than 7 days
-const IDX = "linelog:index";
+   A box is 28 grams of flower. Everything in the gift list below rides along
+   free, so every box that goes out consumes one of each: a tin of hash, a
+   brownie, a jelly, a pack of Backwoods, RAW papers, a tee and a hat. None of
+   that was ever coming off a stock count, which is fine right up until the
+   afternoon somebody promises a hat that isn't in the shop.
 
-export function monitoredIds() {
-  return (process.env.MONITORED_GROUP_IDS || "")
-    .split(",").map((s) => s.trim()).filter(Boolean);
+   Two rules shape this file.
+
+   1. THE SALE NEVER BLOCKS. A box is several thousand baht of flower; refusing
+      it because the free brownie ran out would be an expensive kind of tidy.
+      Counters are allowed to go past their stock and the shortfall is reported
+      to staff instead — on the stored order and in the Telegram/LINE ping — so
+      somebody can substitute or apologise before the customer arrives.
+
+   2. THE CUSTOMER DOESN'T DECIDE HOW MANY BOXES THEY BOUGHT. The count is
+      recomputed here from the order's own flower weight. A browser that posts
+      {boxes: 99} gets whatever 28-gram multiples it actually paid for, because
+      otherwise the gift ledger is drainable by anyone with a text editor.
+
+   Stock is held as an issued-counter rather than a decrementing number: Redis
+   INCR is atomic across serverless instances, a "read 12, write 11" pair is
+   not, and two boxes ordered in the same second on different instances is
+   exactly the case that would otherwise lose a decrement. remaining = stock -
+   issued, and restocking resets the counter.                                */
+
+import { getJSON, setJSON, bumpBy } from "./_store.js";
+
+export const CONFIG_KEY = "boxgifts:config";
+export const issuedKey = (id) => "boxgift:issued:" + id;
+const YEAR = 60 * 60 * 24 * 365;
+
+/** Grams of flower that earn one box. */
+export const DEFAULT_THRESHOLD = 28;
+
+/* A customer can legitimately buy two boxes; ten is past any real order and
+   stops a malformed or hostile payload from burning the whole ledger. */
+export const MAX_BOXES = 10;
+
+/* stock:null means "not tracked" — never short, never counted. That is the
+   right default until Bryan has entered real numbers, because a made-up count
+   would start reporting shortfalls that aren't real. */
+export const DEFAULT_GIFTS = [
+  { id: "hash",      emoji: "🎁", label: "1g premium hash",           sku: "", shId: "", stock: null },
+  { id: "brownie",   emoji: "🍫", label: "Premium brownie",           sku: "", shId: "", stock: null },
+  { id: "jelly",     emoji: "🍬", label: "Premium gummy jelly",       sku: "", shId: "", stock: null },
+  { id: "backwoods", emoji: "🚬", label: "Backwoods 1 pack",          sku: "", shId: "", stock: null },
+  { id: "papers",    emoji: "📜", label: "RAW Classic papers + tips", sku: "", shId: "", stock: null },
+  { id: "tshirt",    emoji: "👕", label: "DANK premium T-shirt",      sku: "", shId: "", stock: null },
+  { id: "hat",       emoji: "🧢", label: "DANK premium hat",          sku: "", shId: "", stock: null },
+];
+
+const num = (v, d) => (Number.isFinite(Number(v)) ? Number(v) : d);
+
+function cleanGift(g, fallback = {}) {
+  const id = String(g?.id ?? fallback.id ?? "").trim().slice(0, 32);
+  if (!id) return null;
+  return {
+    id,
+    emoji: String(g?.emoji ?? fallback.emoji ?? "🎁").slice(0, 8),
+    label: String(g?.label ?? fallback.label ?? id).slice(0, 80),
+    sku:   String(g?.sku   ?? fallback.sku   ?? "").slice(0, 64),
+    shId:  String(g?.shId  ?? fallback.shId  ?? "").slice(0, 64),
+    // null and "" both mean untracked; 0 means genuinely out of stock
+    stock: g?.stock === null || g?.stock === "" || g?.stock === undefined
+      ? (fallback.stock ?? null)
+      : num(g.stock, null),
+  };
 }
-/** Is this source one we should log? (all, unless MONITORED_GROUP_IDS restricts groups) */
-export function isMonitored(sourceType, sourceId) {
-  const m = monitoredIds();
-  if (!m.length) return true;
-  if (sourceType === "group" || sourceType === "room") return m.includes(sourceId);
-  return true; // 1:1 user chats always allowed
+
+/** Stored config if there is one, otherwise the defaults above. A saved list is
+    authoritative — if Bryan deleted a gift it must not reappear on next deploy. */
+export async function getGiftConfig() {
+  const stored = await getJSON(CONFIG_KEY);
+  const byId = Object.fromEntries(DEFAULT_GIFTS.map((g) => [g.id, g]));
+  const gifts = Array.isArray(stored?.gifts) && stored.gifts.length
+    ? stored.gifts.map((g) => cleanGift(g, byId[String(g?.id ?? "")] || {})).filter(Boolean)
+    : DEFAULT_GIFTS.map((g) => ({ ...g }));
+  const threshold = Math.max(1, num(stored?.threshold, DEFAULT_THRESHOLD));
+  return { gifts, threshold, updatedAt: num(stored?.updatedAt, 0) };
 }
 
-export async function logMessage({ sourceType, sourceId, userId, displayName, type, text, at }) {
-  if (!sourceId) return;
-  const key = "linelog:" + sourceId;
-  const now = at || Date.now();
-  const list = (await getJSON(key)) || [];
-  list.push({ userId, displayName, type, text: text || null, at: now });
-  const pruned = list.filter((m) => now - m.at < MAX_AGE).slice(-KEEP);
-  await setJSON(key, pruned, 60 * 60 * 24 * 8);
-  await indexAdd(sourceId, IDX);
+export async function saveGiftConfig(gifts, threshold) {
+  const byId = Object.fromEntries(DEFAULT_GIFTS.map((g) => [g.id, g]));
+  const clean = (Array.isArray(gifts) ? gifts : [])
+    .slice(0, 30)
+    .map((g) => cleanGift(g, byId[String(g?.id ?? "")] || {}))
+    .filter(Boolean);
+  const cfg = {
+    gifts: clean,
+    threshold: Math.max(1, num(threshold, DEFAULT_THRESHOLD)),
+    updatedAt: Date.now(),
+  };
+  await setJSON(CONFIG_KEY, cfg, YEAR);
+  return cfg;
 }
 
-export async function getMessagesSince(sourceId, sinceMs) {
-  const list = (await getJSON("linelog:" + sourceId)) || [];
-  return list.filter((m) => m.at >= sinceMs);
+/** Config plus live issued/remaining for each gift. */
+export async function giftStatus() {
+  const cfg = await getGiftConfig();
+  const gifts = await Promise.all(
+    cfg.gifts.map(async (g) => {
+      const issued = num(await getJSON(issuedKey(g.id)), 0);
+      const tracked = g.stock !== null && g.stock !== undefined;
+      return {
+        ...g,
+        issued,
+        tracked,
+        remaining: tracked ? g.stock - issued : null,
+        short: tracked ? g.stock - issued <= 0 : false,
+      };
+    })
+  );
+  return { ...cfg, gifts };
 }
 
-export async function listSources() {
-  const m = monitoredIds();
-  return m.length ? m : await indexList(IDX);
+/* ---- how many boxes an order actually contains -------------------------- */
+
+/* Mirror of the storefront's gramsOf(). Deliberately a copy rather than an
+   import: the storefront is a single HTML file with no module boundary, and a
+   server that trusts the client's arithmetic is the bug this whole file exists
+   to avoid. Kept textually close so the two stay easy to compare. */
+const FLOWER_CATS = ["Exotics", "Topshelf", "Midgrade", "Premium", "Flowers", "Flower"];
+
+export function gramsOfItem(it) {
+  if (!it || it.bonus) return 0; // ladder/first-order freebies don't earn a box
+  // Older cached pages post no category at all, and the storefront sends
+  // `category: c.category || ""` — so an empty string means "unknown", not
+  // "not flower". Treating "" as a real category would zero out genuine
+  // flower. Falling back to "does the option read as a weight" keeps those
+  // orders working; edibles and merch carry piece options, so they don't
+  // slip in.
+  const cat = it.category == null ? "" : String(it.category).trim();
+  if (cat && !FLOWER_CATS.includes(cat)) return 0;
+  const L = String(it.option ?? it.tierLabel ?? "").toLowerCase().replace(/½/g, "0.5");
+  const m = L.match(/([\d.]+)\s*g/);
+  const g = m ? parseFloat(m[1]) : L.includes("joint") ? 1 : 0;
+  const qty = num(it.qty, 1);
+  return (g || 0) * (qty > 0 ? qty : 1);
 }
 
-/** Summarize a batch of logged messages. Uses Grok when XAI_API_KEY is set,
-    else returns a simple activity digest so it still works without AI. */
-export async function summarize(messages, { sourceLabel = "กลุ่มนี้" } = {}) {
-  const texts = (messages || []).filter((m) => m.type === "text" && m.text);
-  if (!texts.length) return `ไม่มีข้อความใหม่ใน${sourceLabel}ในช่วงเวลานี้ค่ะ`;
+export function flowerGrams(items) {
+  return (Array.isArray(items) ? items : []).reduce((s, it) => s + gramsOfItem(it), 0);
+}
 
-  if (!process.env.XAI_API_KEY) {
-    const people = new Set(texts.map((m) => m.displayName || m.userId)).size;
-    const preview = texts.slice(-8).map((m) => `• ${m.displayName || "?"}: ${m.text}`).join("\n");
-    return `สรุปแบบย่อ (ยังไม่ได้ตั้งค่า AI):\n${texts.length} ข้อความ จาก ${people} คน\n\nล่าสุด:\n${preview}`;
-  }
+/** Boxes earned by an order, from its own weight. The client's opinion is not consulted. */
+export function boxesInOrder(items, threshold = DEFAULT_THRESHOLD) {
+  const g = flowerGrams(items);
+  const t = Math.max(1, num(threshold, DEFAULT_THRESHOLD));
+  return { grams: Math.round(g * 100) / 100, boxes: Math.min(MAX_BOXES, Math.floor(g / t)) };
+}
 
-  const transcript = texts.slice(-400)
-    .map((m) => `${m.displayName || "ไม่ทราบชื่อ"}: ${m.text}`).join("\n").slice(0, 12000);
-  const system = `คุณคือผู้ช่วยสรุปแชทกลุ่ม LINE ของธุรกิจ DANK. สรุปบทสนทนาต่อไปนี้ให้เป็นภาษาไทย กระชับ เป็นหัวข้อ (bullet) เน้นสิ่งที่ต้องทำ/ตัดสินใจ, ปัญหา, และคำถามที่ยังไม่ได้ตอบ. อย่าแต่งเรื่องเพิ่ม.`;
-  try {
-    const r = await fetch("https://api.x.ai/v1/chat/completions", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${process.env.XAI_API_KEY}`, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        model: process.env.GROK_MODEL || "grok-4",
-        messages: [{ role: "system", content: system }, { role: "user", content: transcript }],
-        max_tokens: 700, temperature: 0.4,
-      }),
-    });
-    if (!r.ok) throw new Error("xAI " + r.status);
-    const j = await r.json();
-    return j.choices?.[0]?.message?.content?.trim() || "สรุปไม่สำเร็จ ลองใหม่อีกครั้งค่ะ";
-  } catch (e) {
-    console.error("LINE summarize fail:", e.message);
-    return "ขอโทษค่ะ สรุปไม่สำเร็จ ลองใหม่อีกครั้ง";
-  }
+/* ---- issuing ------------------------------------------------------------ */
+
+/** Atomically consume `boxes` of every gift. Never refuses; reports shortfalls.
+    Returns [] when boxes < 1 so callers can use the length as "is this a box order". */
+export async function issueGifts(boxes) {
+  const n = Math.max(0, Math.min(MAX_BOXES, Math.floor(num(boxes, 0))));
+  if (n < 1) return [];
+  const cfg = await getGiftConfig();
+  return Promise.all(
+    cfg.gifts.map(async (g) => {
+      let issued;
+      try {
+        issued = await bumpBy(issuedKey(g.id), n, YEAR);
+      } catch (e) {
+        // A ledger that can't be written must not lose the order. Report it as
+        // unknown rather than silently claiming the gift was set aside.
+        console.error("gift counter failed for", g.id, e.message);
+        return { ...g, qty: n, remaining: null, short: false, error: true };
+      }
+      const tracked = g.stock !== null && g.stock !== undefined;
+      const remaining = tracked ? g.stock - issued : null;
+      return { ...g, qty: n, remaining, short: tracked && remaining < 0 };
+    })
+  );
+}
+
+/** Set a gift's stock to an absolute number and zero its issued counter. */
+export async function restock(id, stock) {
+  const cfg = await getGiftConfig();
+  const i = cfg.gifts.findIndex((g) => g.id === id);
+  if (i < 0) return null;
+  cfg.gifts[i] = { ...cfg.gifts[i], stock: stock === null ? null : Math.max(0, num(stock, 0)) };
+  await saveGiftConfig(cfg.gifts, cfg.threshold);
+  await setJSON(issuedKey(id), 0, YEAR);
+  return cfg.gifts[i];
+}
+
+/** One line per gift for a staff-facing alert, with the short ones called out. */
+export function giftAlertLines(lines) {
+  return (lines || [])
+    .map((g) => {
+      const qty = g.qty > 1 ? ` ×${g.qty}` : "";
+      if (g.error) return `${g.emoji} ${g.label}${qty} (count unavailable)`;
+      if (g.short) return `⚠️ ${g.emoji} ${g.label}${qty} — SHORT by ${Math.abs(g.remaining)}`;
+      if (g.remaining === null) return `${g.emoji} ${g.label}${qty}`;
+      return `${g.emoji} ${g.label}${qty} — ${g.remaining} left`;
+    })
+    .join("\n");
 }

@@ -1,120 +1,137 @@
-/* Shared auth helpers for the /api endpoints.
+/* Delivery ETA with automatic NEAREST-BRANCH selection.
+   Products go out from several shops; when a customer shares a location we
+   check drive time from every branch (Google Routes API) and quote the closest.
 
-   Every staff endpoint used to carry its own copy of
-   `process.env.STAFF_KEY || "<some literal>"`. That literal ships inside the
-   repo, so any deployment that forgot to set STAFF_KEY in Vercel could be
-   opened by anybody who had read the source: the orders list, the member list,
-   the live chat threads, the billable LINE pushes. Ten hand-written copies of
-   the same comparison also meant ten chances to get it subtly wrong, and one of
-   them (count.js) only guarded the GET.
+   Env:
+     GOOGLE_MAPS_API_KEY  — key with the Routes API enabled
+     DELIVERY_MODE        — "TWO_WHEELER" (motorbike, default) or "DRIVE"
+     DELIVERY_PREP_MIN    — minutes added for prep/packing (default 15)
+     SHOP_BRANCHES        — OPTIONAL JSON array to override branches.json, e.g.
+                            [{"id":"pattanakarn","name":"...","origin":"13.70,100.65"}]
+     SHOP_ORIGIN          — OPTIONAL single origin fallback if no branches file
+     ROUTE_API_URL        — OPTIONAL your own endpoint (skips Google entirely)
 
-   There is no fallback here any more. When STAFF_KEY is missing the endpoints
-   answer 503 "not configured" and authenticate nobody. The check is a function
-   call rather than a throw at module load on purpose — a throw during import on
-   Vercel becomes an opaque 500 for that route, which makes a missing
-   environment variable look like a broken deployment instead of a missing
-   environment variable, and takes the route down even for the parts of it that
-   need no key at all.                                                       */
-import crypto from "node:crypto";
+   Each branch `origin` may be "lat,lng" (most accurate) or a plain address
+   (Google geocodes it). branches.json ships with all four DANK shops.        */
+import { readFile } from "node:fs/promises";
+import { join } from "node:path";
 
-export function staffKey() {
-  return process.env.STAFF_KEY || "";
+const PREP = () => Number(process.env.DELIVERY_PREP_MIN || 15);
+
+function parseLoc(s) {
+  const m = String(s || "").match(/^\s*(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)\s*$/);
+  return m ? { latLng: { latitude: +m[1], longitude: +m[2] } } : null;
+}
+function originField(origin) {
+  const loc = parseLoc(origin);
+  return loc ? { location: loc } : { address: String(origin || "") };
 }
 
-export function staffConfigured() {
-  return Boolean(staffKey());
+export function routeConfigured() {
+  return Boolean(process.env.ROUTE_API_URL || process.env.GOOGLE_MAPS_API_KEY);
 }
 
-/* Constant-time compare, so the key can't be rebuilt one character at a time by
-   timing the 401s. timingSafeEqual throws on a length mismatch, hence the
-   length test first — that leaks the length only, which is not the secret. */
-export function safeEq(a, b) {
-  const A = Buffer.from(String(a ?? "")), B = Buffer.from(String(b ?? ""));
-  return A.length > 0 && A.length === B.length && crypto.timingSafeEqual(A, B);
-}
-
-/** True only when `given` matches a configured staff key. Unset key ⇒ always false. */
-export function isStaffKey(given) {
-  const k = staffKey();
-  return Boolean(k) && safeEq(given, k);
-}
-
-/** Where the callers put the key: ?key= on GETs, body.key on POSTs, or a header. */
-export function keyFrom(req) {
-  return req?.query?.key ?? req?.body?.key ?? req?.headers?.["x-staff-key"] ?? "";
-}
-
-/** Soft check for the endpoints that merely show staff extras (e.g. /api/thread). */
-export function isStaff(req) {
-  return isStaffKey(keyFrom(req));
-}
-
-/* Guard for a staff-only branch. Returns true when the caller may proceed;
-   otherwise it has ALREADY written the response, so use it as:
-       if (!requireStaff(req, res)) return;                                   */
-export function requireStaff(req, res, given) {
-  if (!staffConfigured()) return notConfigured(res, ["STAFF_KEY"]);
-  if (!isStaffKey(given === undefined ? keyFrom(req) : given)) {
-    res.status(401).json({ error: "bad key" });
-    return false;
+let _branchCache = null;
+export async function getBranches() {
+  if (_branchCache) return _branchCache;
+  // 1) env override
+  if (process.env.SHOP_BRANCHES) {
+    try { const a = JSON.parse(process.env.SHOP_BRANCHES); if (Array.isArray(a) && a.length) return (_branchCache = a); } catch {}
   }
-  return true;
-}
-
-/* Same fail-closed shape for the other single-purpose secrets (POS_SYNC_KEY,
-   WEBHOOK_SECRET, the admin credentials): if the deployment never set them, the
-   endpoint refuses everyone rather than falling back to a value from the repo. */
-export function requireEnv(res, names) {
-  const missing = names.filter((n) => !process.env[n]);
-  return missing.length ? notConfigured(res, missing) : true;
-}
-
-export function notConfigured(res, missing) {
-  res.status(503).json({
-    error: "not configured",
-    detail: `${missing.join(", ")} is not set on this deployment — see .env.example`,
-  });
-  return false;
-}
-
-function hostOf(v) {
-  const s = String(v ?? "").trim();
-  if (!s) return "";
+  // 2) bundled branches.json
   try {
-    return new URL(s.includes("://") ? s : "https://" + s).host.toLowerCase();
-  } catch {
-    return "";
-  }
+    const raw = await readFile(join(process.cwd(), "branches.json"), "utf8");
+    const a = JSON.parse(raw);
+    if (Array.isArray(a) && a.length) return (_branchCache = a);
+  } catch {}
+  // 3) single origin fallback
+  if (process.env.SHOP_ORIGIN) return (_branchCache = [{ id: "main", name: "DANK", origin: process.env.SHOP_ORIGIN }]);
+  return (_branchCache = []);
 }
 
-/* Gate for the endpoints a shopper's browser must be able to call but a
-   stranger's curl must not — the Grok relay, the staff handoff fan-out, the
-   payment-slip upload. They cannot take the staff key (customers don't have
-   one), so instead we insist the request was made by a page served from this
-   same deployment. A browser sends Origin on every cross-site POST and a
-   Referer on page-initiated fetches; a script hitting the URL directly sends
-   neither, which is the case we want to turn away. It is not a hard
-   authentication boundary — headers can be forged outside a browser — it is the
-   cheap half of the fix that stops the URL being usable by anyone who finds it.
-   ALLOWED_ORIGIN (comma-separated) adds extra hosts, e.g. a preview domain. */
-export function sameOrigin(req) {
-  const allowed = new Set();
-  const self = hostOf(req?.headers?.["x-forwarded-host"] || req?.headers?.host);
-  if (self) allowed.add(self);
-  for (const extra of String(process.env.ALLOWED_ORIGIN || "").split(",")) {
-    const h = hostOf(extra);
-    if (h) allowed.add(h);
-  }
-  const origin = hostOf(req?.headers?.origin);
-  const referer = hostOf(req?.headers?.referer);
-  if (!origin && !referer) return false;
-  if (origin) return allowed.has(origin);
-  return allowed.has(referer);
+// one Google Routes call: branch origin → customer destination
+async function routeOne(origin, destination, key, mode) {
+  try {
+    const r = await fetch("https://routes.googleapis.com/directions/v2:computeRoutes", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Goog-Api-Key": key,
+        "X-Goog-FieldMask": "routes.duration,routes.distanceMeters",
+      },
+      body: JSON.stringify({
+        origin: originField(origin),
+        destination,
+        travelMode: mode,
+        routingPreference: "TRAFFIC_AWARE",
+        languageCode: "th-TH",
+        units: "METRIC",
+      }),
+    });
+    if (!r.ok) return null;
+    const route = (await r.json()).routes?.[0];
+    if (!route) return null;
+    const sec = parseInt(String(route.duration || "0").replace("s", ""), 10) || 0;
+    return { sec, meters: route.distanceMeters ?? null };
+  } catch { return null; }
 }
 
-/** As above, but writes the 403 for you: `if (!requireSameOrigin(req,res)) return;` */
-export function requireSameOrigin(req, res) {
-  if (sameOrigin(req)) return true;
-  res.status(403).json({ error: "forbidden" });
-  return false;
+/**
+ * @returns {ok, minutes, travelMin, km, prep, branch:{id,name}, error?}
+ * Picks the branch with the shortest travel time to the customer.
+ */
+export async function computeEta({ destLat, destLng, address } = {}) {
+  const prep = PREP();
+
+  // Your own endpoint takes over completely, if set
+  if (process.env.ROUTE_API_URL) {
+    try {
+      const r = await fetch(process.env.ROUTE_API_URL, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ destLat, destLng, address }),
+      });
+      if (r.ok) {
+        const j = await r.json();
+        const travelMin = j.minutes ?? j.durationMin ?? (j.durationSec ? j.durationSec / 60 : null);
+        const km = j.km ?? (j.distanceMeters ? j.distanceMeters / 1000 : null);
+        if (travelMin != null) return { ok: true, travelMin: Math.round(travelMin), minutes: Math.round(travelMin) + prep, km: km != null ? +km.toFixed(1) : null, prep, branch: j.branch || null };
+      }
+    } catch {}
+  }
+
+  const key = process.env.GOOGLE_MAPS_API_KEY;
+  if (!key) return { ok: false, error: "no route provider configured" };
+
+  const destination =
+    destLat != null && destLng != null
+      ? { location: { latLng: { latitude: +destLat, longitude: +destLng } } }
+      : { address: String(address || "") };
+  const mode = process.env.DELIVERY_MODE || "TWO_WHEELER";
+
+  const branches = await getBranches();
+  if (!branches.length) return { ok: false, error: "no branches configured" };
+
+  // check every branch in parallel, keep the fastest
+  const results = await Promise.all(
+    branches.map(async (b) => ({ b, r: await routeOne(b.origin, destination, key, mode) }))
+  );
+  const viable = results.filter((x) => x.r).sort((a, b) => a.r.sec - b.r.sec);
+  if (!viable.length) return { ok: false, error: "no route from any branch" };
+
+  const best = viable[0];
+  const travelMin = Math.round(best.r.sec / 60);
+  const km = best.r.meters != null ? +(best.r.meters / 1000).toFixed(1) : null;
+  return { ok: true, travelMin, minutes: travelMin + prep, km, prep, branch: { id: best.b.id, name: best.b.name } };
+}
+
+/** Friendly Thai + English ETA text (names the branch it ships from). */
+export function etaText(eta) {
+  if (!eta.ok) return "ขอโทษค่ะ ตอนนี้คำนวณเวลาจัดส่งอัตโนมัติไม่ได้ เดี๋ยวทีมงานแจ้งเวลาให้นะคะ 🙏";
+  const from = eta.branch?.name ? `จากสาขา ${eta.branch.name} ` : "";
+  const dist = eta.km != null ? ` (${eta.km} กม.)` : "";
+  return (
+    `🛵 ${from}ถึงคุณประมาณ ~${eta.minutes} นาที${dist}\n` +
+    `รวมเวลาเตรียมของ ~${eta.prep} นาที + เดินทาง ~${eta.travelMin} นาที แล้วค่ะ 🌿\n` +
+    `(Est. delivery ~${eta.minutes} min${eta.km != null ? `, ${eta.km} km` : ""}${eta.branch?.name ? ` from ${eta.branch.name}` : ""})`
+  );
 }

@@ -23,8 +23,8 @@ main{flex:1;display:flex;min-height:0}
 #login input{width:100%;background:var(--bg2);border:1px solid var(--line2);color:var(--txt);padding:12px;border-radius:10px;font-size:15px;outline:none;margin:14px 0;text-align:center}
 .btn{background:linear-gradient(135deg,var(--green),var(--deep));color:#04180d;font-weight:800;padding:12px 18px;border-radius:11px;width:100%;font-size:15px}
 /* tabs */
-#tabs{display:flex;gap:6px;padding:10px 12px;border-bottom:1px solid var(--line);background:var(--bg2)}
-#tabs button{flex:1;padding:9px;border-radius:10px;border:1px solid var(--line2);color:var(--muted);font-weight:800;font-size:13px;position:relative}
+#tabs{display:flex;flex-wrap:wrap;gap:6px;padding:10px 12px;border-bottom:1px solid var(--line);background:var(--bg2)}
+#tabs button{flex:1 1 92px;min-width:92px;padding:9px;border-radius:10px;border:1px solid var(--line2);color:var(--muted);font-weight:800;font-size:13px;position:relative}
 #tabs button.active{border-color:var(--green);color:var(--green2);background:rgba(61,220,132,.1)}
 #tabs .cnt{position:absolute;top:-7px;right:-4px;background:var(--gold);color:#20100a;font-size:10px;font-weight:900;min-width:18px;height:18px;border-radius:9px;display:flex;align-items:center;justify-content:center;padding:0 4px}
 /* orders */
@@ -84,7 +84,12 @@ main{flex:1;display:flex;min-height:0}
 .quicks{display:flex;gap:6px;padding:0 16px 10px;flex-wrap:wrap}
 .quicks button{font-size:12px;padding:6px 11px;border-radius:99px;background:var(--panel);border:1px solid var(--line2);color:var(--green2)}
 .emptyc{margin:auto;color:var(--muted2);text-align:center;font-size:14px}
-@media(max-width:760px){ #listWrap{width:100%} #chatWrap{display:none} body.chatting #listWrap{display:none} body.chatting #chatWrap{display:flex} }
+/* login() sets display on these two inline, and an inline style beats a
+   stylesheet — so without !important the chat pane stayed visible on a phone
+   after logging in and its "Select a conversation" placeholder hung 90px past
+   the right edge of every tab, leaving the whole console swipeable sideways
+   into empty space. The media query has to win. */
+@media(max-width:760px){ #listWrap{width:100%} #chatWrap{display:none!important} body.chatting #listWrap{display:none!important} body.chatting #chatWrap{display:flex!important} }
 </style>
 </head>
 <body>
@@ -108,6 +113,7 @@ main{flex:1;display:flex;min-height:0}
       <button id="tabOrders" onclick="setTab('orders')">🛒 Orders<span class="cnt" id="ordCnt" style="display:none">0</span></button>
       <button id="tabGifts" onclick="setTab('gifts')">🎁 Free gram</button>
       <button id="tabCount" onclick="setTab('count')">📦 Count</button>
+      <button id="tabBox" onclick="setTab('box')">🧢 Box gifts</button>
     </div>
     <div id="list"></div>
   </div>
@@ -203,15 +209,16 @@ async function login(){
      the `chatting` class it sets hid the order list behind an empty chat pane.
      Exactly one branch runs now. */
   const hash=decodeURIComponent(location.hash.slice(1));
-  if(hash==='orders'||hash==='count'||hash==='gifts'||hash==='chats') setTab(hash);
+  if(hash==='orders'||hash==='count'||hash==='gifts'||hash==='box'||hash==='chats') setTab(hash);
   else if(hash.length>2) openThread(hash);
 }
 function logout(){ localStorage.removeItem('dankStaffKey'); LIVE=false; location.reload(); }
 
-function setTab(t){ if(typeof stopCamScan==='function') stopCamScan(); TAB=t; $('#tabChats').classList.toggle('active',t==='chats'); $('#tabOrders').classList.toggle('active',t==='orders'); $('#tabGifts').classList.toggle('active',t==='gifts'); $('#tabCount').classList.toggle('active',t==='count');
+function setTab(t){ if(typeof stopCamScan==='function') stopCamScan(); TAB=t; $('#tabChats').classList.toggle('active',t==='chats'); $('#tabOrders').classList.toggle('active',t==='orders'); $('#tabGifts').classList.toggle('active',t==='gifts'); $('#tabCount').classList.toggle('active',t==='count'); $('#tabBox').classList.toggle('active',t==='box');
   if(t==='orders'){ renderOrders(); $('#ordCnt').style.display='none'; knownOrders=new Set(ORDERS.map(o=>o.orderId)); }
   else if(t==='gifts'){ loadGifts(); }
   else if(t==='count'){ loadCount(); }
+  else if(t==='box'){ loadBoxGifts(); }
   else refreshChats(); }
 let GIFT_MENU=[], GIFT_SEL=new Set();
 async function loadGifts(){
@@ -236,6 +243,158 @@ async function toggleGift(id){
   renderGifts();
   try{ await authPost('/api/freegifts',{skus:[...GIFT_SEL]}); }catch(e){}
 }
+/* ---- Box gifts: stock for the things that ride along free ---------------
+   Every 28 grams of flower in an order earns a DANK Custom Box, and the box
+   brings the hash, the brownie, the jelly, the Backwoods, the papers, the tee
+   and the hat with it. api/order.js takes them off the ledger the moment the
+   order lands. This tab is where the numbers behind that ledger come from —
+   and without it they never arrive: a gift whose stock is still blank is never
+   counted and can never report short, and a gift with no POS product linked is
+   skipped when the order is pushed to StoreHub, so its shop stock never moves.
+
+   Two different saves, on purpose. Linking a gift to a POS product edits the
+   list and leaves the counter alone. Setting a stock number is a restock: it
+   zeroes the issued count, because "there are forty hats in the shop" means
+   counting starts again from now, not that forty is a running total. */
+let BOX=null, BOXPROD=[], boxBusy=false;
+
+function boxToast(msg){
+  let t=$('#boxToast');
+  if(!t){ t=document.createElement('div'); t.id='boxToast';
+    t.style.cssText='position:fixed;left:50%;bottom:22px;transform:translateX(-50%);z-index:99;'
+      +'background:var(--panel2);border:1px solid var(--line2);color:var(--txt);padding:10px 16px;'
+      +'border-radius:11px;font-size:13px;font-weight:700;box-shadow:0 8px 24px rgba(0,0,0,.5);'
+      +'max-width:90vw;text-align:center;pointer-events:none;transition:opacity .2s';
+    document.body.appendChild(t); }
+  t.textContent=msg; t.style.opacity='1';
+  clearTimeout(boxToast._t); boxToast._t=setTimeout(()=>{ t.style.opacity='0'; },2600);
+}
+
+async function loadBoxGifts(){
+  const el=$('#list'); el.innerHTML='<div class="ghdr">Loading…</div>';
+  try{
+    /* The product list is a convenience, not a requirement — it turns the POS
+       field from "type a 24-character id" into a picker. If it fails the row
+       falls back to a text input rather than the tab failing with it. */
+    const [gr,pr]=await Promise.all([ authGet('/api/boxgifts'), fetch('/api/products').catch(()=>null) ]);
+    if(!gr.ok){ el.innerHTML='<div class="ghdr">Could not load the box gifts.</div>'; return; }
+    BOX=await gr.json();
+    if(!BOX||!BOX.staff){ el.innerHTML='<div class="ghdr">The server did not accept the staff key for this tab. Log out and back in.</div>'; return; }
+    BOXPROD=[];
+    if(pr&&pr.ok){ try{ const j=await pr.json(); if(Array.isArray(j)) BOXPROD=j; }catch(e){} }
+    renderBoxGifts();
+  }catch(e){ el.innerHTML='<div class="ghdr">Could not load the box gifts.</div>'; }
+}
+
+function posOptions(sel){
+  const by={};
+  BOXPROD.forEach(p=>{ if(!p||!p.shId) return; const c=p.category||'Other'; (by[c]=by[c]||[]).push(p); });
+  const cats=Object.keys(by).sort();
+  const known=cats.some(c=>by[c].some(p=>p.shId===sel));
+  return '<option value="">— not linked, POS stock will not move —</option>'
+    + (sel&&!known?`<option value="${esc(sel)}" selected>currently ${esc(sel)}</option>`:'')
+    + cats.map(c=>`<optgroup label="${esc(c)}">`
+        + by[c].map(x=>`<option value="${esc(x.shId)}"${x.shId===sel?' selected':''}>${esc(x.name)}</option>`).join('')
+        + '</optgroup>').join('');
+}
+
+const BOXINP='background:var(--bg2);border:1px solid var(--line2);color:var(--txt);padding:7px;border-radius:8px;outline:none';
+
+function boxRow(g){
+  const tracked=g.stock!==null&&g.stock!==undefined;
+  const rem=tracked?g.remaining:null;
+  const col=!tracked?'var(--muted2)':rem<0?'var(--danger)':rem<=3?'var(--gold)':'var(--green2)';
+  const state=!tracked?'not tracked':rem<0?('SHORT by '+Math.abs(rem)):(rem+' left');
+  return `<div class="ocard" style="padding:11px 12px;margin:8px 12px">
+    <div style="display:flex;align-items:center;gap:10px">
+      <div style="font-size:20px;flex-shrink:0">${esc(g.emoji||'\u{1F381}')}</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-weight:700;font-size:13.5px">${esc(g.label||g.id)}</div>
+        <div style="font-size:11.5px;color:var(--muted2)">given out ${esc(g.issued??0)} · <b style="color:${col}">${esc(state)}</b></div>
+      </div>
+      <input inputmode="numeric" placeholder="—" value="${esc(tracked?g.stock:'')}"
+        data-act="box-stock-in" data-id="${esc(g.id)}"
+        style="${BOXINP};width:62px;text-align:center;font-size:14px;flex-shrink:0">
+      <button class="undo-btn" data-act="box-stock" data-id="${esc(g.id)}" style="padding:7px 10px;flex-shrink:0">Set</button>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;margin-top:8px">
+      <div style="font-size:11.5px;color:var(--muted2);white-space:nowrap">POS product</div>
+      ${BOXPROD.length
+        ? `<select data-act="box-sh" data-id="${esc(g.id)}" style="${BOXINP};flex:1;min-width:0;font-size:12.5px">${posOptions(g.shId||'')}</select>`
+        : `<input placeholder="StoreHub product id" value="${esc(g.shId||'')}" data-act="box-sh" data-id="${esc(g.id)}" style="${BOXINP};flex:1;min-width:0;font-size:12.5px">`}
+    </div>
+  </div>`;
+}
+
+function renderBoxGifts(){
+  const gifts=BOX.gifts||[];
+  const nolink=gifts.filter(g=>!g.shId).length;
+  const short=gifts.filter(g=>g.short).length;
+  $('#list').innerHTML=
+    `<div class="ghdr">Every <b>${esc(BOX.threshold)}g</b> of flower in an order sends one of each of these out free and takes one off the count.
+      Type a number and press Set to start tracking a gift — leave it blank and it is never counted.
+      Orders are never blocked: if a gift runs out the sale still goes through and the alert says what is missing.</div>`
+    + `<div class="ocard" style="display:flex;align-items:center;gap:10px;margin:8px 12px">
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:800;font-size:13.5px">Grams per box</div>
+          <div style="color:var(--muted2);font-size:11.5px">How much flower earns one box</div>
+        </div>
+        <input id="boxThresh" inputmode="decimal" value="${esc(BOX.threshold)}" style="${BOXINP};width:62px;text-align:center;font-size:14px">
+        <button class="undo-btn" data-act="box-thresh" style="padding:7px 10px">Save</button>
+      </div>`
+    + gifts.map(boxRow).join('')
+    + (nolink?`<div class="ghdr" style="color:var(--gold)">⚠️ ${nolink} gift${nolink>1?'s are':' is'} not linked to a POS product, so ${nolink>1?'they':'it'} will not come off StoreHub stock when an order goes out. Pick the matching product on each row.</div>`:'')
+    + (short?`<div class="ghdr" style="color:var(--danger)">⚠️ ${short} gift${short>1?'s have':' has'} run out. Restock in the shop, then type the new number here and press Set.</div>`:'');
+}
+
+async function boxSetStock(id){
+  if(boxBusy) return;
+  const inp=$(`[data-act="box-stock-in"][data-id="${CSS.escape(id)}"]`);
+  if(!inp) return;
+  const raw=String(inp.value||'').trim();
+  /* Blank is not zero. null stops tracking the gift altogether; 0 says the
+     shop genuinely has none of it left and every box should report short. */
+  const stock = raw==='' ? null : Number(raw);
+  if(stock!==null && !Number.isFinite(stock)){ boxToast('Enter a number, or leave it blank to stop tracking'); return; }
+  boxBusy=true;
+  try{
+    const r=await authPost('/api/boxgifts',{action:'restock',id,stock});
+    if(!r.ok){ boxToast('Could not save — check the connection'); return; }
+    BOX={...(await r.json()),staff:true}; renderBoxGifts();
+    boxToast(stock===null?'No longer tracked':'Set to '+stock+' — counting starts from now');
+  }catch(e){ boxToast('Could not save — check the connection'); }
+  finally{ boxBusy=false; }
+}
+
+async function boxSetPos(id,shId){
+  if(boxBusy) return;
+  /* A save rewrites the list but not the counters, so linking a product here
+     does not lose how many have already gone out. */
+  const gifts=(BOX.gifts||[]).map(g=>g.id===id?{...g,shId:String(shId||'')}:g);
+  boxBusy=true;
+  try{
+    const r=await authPost('/api/boxgifts',{action:'save',gifts,threshold:BOX.threshold});
+    if(!r.ok){ boxToast('Could not save — check the connection'); return; }
+    BOX={...(await r.json()),staff:true}; renderBoxGifts();
+    boxToast(shId?'Linked — POS stock moves with the order':'Unlinked from the POS');
+  }catch(e){ boxToast('Could not save — check the connection'); }
+  finally{ boxBusy=false; }
+}
+
+async function boxSetThresh(){
+  if(boxBusy) return;
+  const el=$('#boxThresh'); const v=Number(String(el&&el.value||'').trim());
+  if(!Number.isFinite(v)||v<1){ boxToast('Enter how many grams earn one box'); return; }
+  boxBusy=true;
+  try{
+    const r=await authPost('/api/boxgifts',{action:'save',gifts:BOX.gifts||[],threshold:v});
+    if(!r.ok){ boxToast('Could not save — check the connection'); return; }
+    BOX={...(await r.json()),staff:true}; renderBoxGifts();
+    boxToast('One box per '+v+'g of flower');
+  }catch(e){ boxToast('Could not save — check the connection'); }
+  finally{ boxBusy=false; }
+}
+
 async function refreshChats(){ try{ const r=await authGet(`${API}?list=1`); if(r.ok) renderList((await r.json()).threads); }catch(e){} }
 async function pollOrders(){
   try{ const r=await authGet('/api/orders'); if(!r.ok) return;
@@ -711,10 +870,18 @@ $('#list').addEventListener('click',e=>{
     case 'count-view': viewCount(d.id); break;
     case 'scale':      applyScale(d.code); break;
     case 'proof-del':  COUNT_PROOFS.splice(Number(d.i),1); renderProofGrid(); break;
+    case 'box-stock':  boxSetStock(d.id); break;
+    case 'box-thresh': boxSetThresh(); break;
   }
 });
 $('#list').addEventListener('input',e=>{
   const el=e.target.closest('[data-act="count"]'); if(el) setCount(el.dataset.code,el.value);
+});
+/* A <select> fires change, not click — and the POS picker is the one control
+   on this page that saves the moment it is touched, so it needs its own
+   listener on #list rather than an inline handler. */
+$('#list').addEventListener('change',e=>{
+  const el=e.target.closest('[data-act="box-sh"]'); if(el) boxSetPos(el.dataset.id,el.value);
 });
 
 if(KEY){ $('#keyInput').value=KEY; login(); }
