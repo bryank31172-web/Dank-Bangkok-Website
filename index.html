@@ -2,20 +2,6 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
-<!-- Table QR guard: a code scanned at a table must open the food & drinks page,
-     never the shop. If a ?table= (or ?t=/?tb=) lands here it is forwarded on
-     before anything else renders. -->
-<script>
-(function(){
-  try{
-    var q = new URLSearchParams(location.search);
-    var raw = q.get("table") || q.get("t") || q.get("tb");
-    if (raw && String(raw).trim()){
-      location.replace("food.html?table=" + encodeURIComponent(String(raw).trim()));
-    }
-  }catch(e){}
-})();
-</script>
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
 <meta name="theme-color" content="#060a07" />
 <meta name="description" content="DANK BKK — premium cannabis in Bangkok. Live menu, member prices, PromptPay & card checkout, delivery & pickup across Pattanakarn, Sathorn & Bars. Ask DANK AI 24/7." />
@@ -54,47 +40,7 @@
   .btn-primary:hover{filter:brightness(1.08)}
   .btn-ghost{background:transparent;border:1px solid var(--line2);color:var(--muted)}
   .btn-ghost:hover{border-color:var(--green);color:var(--green)}
-  .btn-gold{background:linear-gradient(135deg,var(--gold),#b8923f);color:#20100a;font-weight:800}
-  .btn-gold:hover{filter:brightness(1.08)}
-  /* Order food & drinks — the animated one. Two things move: the gradient
-     slides across the fill, and the whole pill breathes every few seconds so
-     it reads as "tap me" next to the two static buttons. Both are paused for
-     anyone who has asked their phone to reduce motion. */
-  .btn-food{
-    position:relative;overflow:hidden;font-weight:800;color:#2a1206;border:none;
-    background:linear-gradient(110deg,#ffb347,#ff7a45 22%,#4ade80 52%,#ffb347 78%,#ff7a45);
-    background-size:300% 100%;
-    animation:foodslide 7s linear infinite, foodbreathe 3.4s ease-in-out infinite;
-    box-shadow:0 6px 20px rgba(255,140,60,.28);
-  }
-  .btn-food::after{
-    content:"";position:absolute;top:0;left:-60%;width:45%;height:100%;
-    background:linear-gradient(100deg,transparent,rgba(255,255,255,.55),transparent);
-    transform:skewX(-18deg);animation:foodshine 3.6s ease-in-out infinite;
-  }
-  .btn-food:hover{filter:brightness(1.06)}
-  .btn-food .fk{animation:foodwiggle 2.6s ease-in-out infinite;display:inline-block}
-  .btn-food .newdot{
-    background:#2a1206;color:#ffd9a8;font-size:10px;font-weight:900;letter-spacing:.6px;
-    border-radius:999px;padding:2px 7px;margin-left:2px;
-  }
-  @keyframes foodslide{to{background-position:-300% 0}}
-  @keyframes foodbreathe{0%,100%{transform:scale(1)}50%{transform:scale(1.045)}}
-  @keyframes foodshine{0%{left:-60%}55%,100%{left:130%}}
-  @keyframes foodwiggle{0%,100%{transform:rotate(0) translateY(0)}30%{transform:rotate(-11deg) translateY(-2px)}60%{transform:rotate(9deg) translateY(0)}}
-  @media (prefers-reduced-motion:reduce){
-    .btn-food,.btn-food::after,.btn-food .fk{animation:none}
-    .btn-food::after{display:none}
-  }
   .btn-block{width:100%}
-  /* Build-Your-Joint feature card in the grid */
-  .byj-card{grid-column:1/-1;display:flex;align-items:center;gap:18px;background:linear-gradient(120deg,#14251a,#0d1a12 60%),radial-gradient(circle at 88% 30%,rgba(207,168,90,.25),transparent 55%);border:1px solid var(--line2);border-radius:var(--radius);padding:18px 22px;cursor:pointer;transition:.15s}
-  .byj-card:hover{border-color:var(--gold)}
-  .byj-card .ic{font-size:44px;line-height:1;filter:drop-shadow(0 4px 10px rgba(0,0,0,.5))}
-  .byj-card h3{font-size:18.5px;margin:0 0 3px}
-  .byj-card p{color:var(--muted);font-size:13px;margin:0}
-  .byj-card .go{margin-left:auto;white-space:nowrap}
-  @media(max-width:560px){ .byj-card{flex-wrap:wrap;padding:16px} .byj-card .go{margin-left:0;width:100%} }
 
   /* ---------- Age gate ---------- */
   #ageGate{position:fixed;inset:0;z-index:120;display:flex;align-items:center;justify-content:center;background:radial-gradient(circle at 50% 30%,#0c1a11,#040705 70%);padding:24px}
@@ -233,18 +179,6 @@
   .promo-row input:focus{border-color:var(--green)}
   .promo-btn{background:var(--panel2);border:1px solid var(--line2);color:var(--green2);font-weight:700;font-size:13px;padding:0 15px;border-radius:10px}
   .minorder{color:var(--gold);font-size:12.5px;text-align:center;margin-top:8px}
-  /* Auto-recommended top-up — the cheapest way to reach the next free-gram rung. */
-  .upsell{margin-top:10px;display:flex;gap:10px;align-items:center;padding:10px 11px;border-radius:13px;
-    border:1px solid rgba(217,178,91,.40);background:linear-gradient(135deg,rgba(217,178,91,.12),rgba(29,185,96,.08))}
-  .upsell .u-img{width:46px;height:46px;border-radius:10px;object-fit:cover;flex:none;background:var(--panel2)}
-  .upsell .u-t{flex:1;min-width:0}
-  .upsell .u-h{font-size:11.5px;font-weight:800;letter-spacing:.6px;color:var(--gold);text-transform:uppercase}
-  .upsell .u-s{font-size:11.5px;color:var(--muted);line-height:1.4;margin-top:3px}
-  .upsell .u-s b{color:var(--green2);font-weight:700}
-  .upsell .u-go{flex:none;border:none;cursor:pointer;border-radius:10px;padding:9px 12px;line-height:1.25;
-    font-size:12px;font-weight:800;color:#04180d;background:linear-gradient(135deg,var(--green),var(--deep))}
-  .upsell .u-go small{display:block;font-size:10.5px;font-weight:700;opacity:.85}
-  @media(max-width:420px){.upsell .u-img{display:none}}
   .track-card{background:var(--panel);border:1px solid var(--line2);border-radius:12px;padding:12px 14px;margin-bottom:10px}
   .track-card .oh{display:flex;align-items:center}
   .track-bar{display:flex;justify-content:space-between;margin-top:10px;position:relative}
@@ -295,14 +229,6 @@
   .stat .k{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
   .stat .v{font-size:19px;font-weight:800;margin-top:2px}
   .pd-desc{color:var(--muted);font-size:14px;margin:12px 0}
-.pd-kv{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:7px 0;border-bottom:1px solid rgba(255,255,255,.07);font-size:13px}
-.pd-kv span{color:var(--muted2);white-space:nowrap}
-.pd-kv b{text-align:right;color:#eaf4ee;font-weight:600}
-.effs{display:flex;flex-direction:column;gap:8px}
-.eff-row{display:flex;align-items:center;gap:10px}
-.eff-n{width:92px;flex:none;font-size:13px;color:var(--muted)}
-.eff-bar{flex:1;height:8px;border-radius:6px;background:rgba(255,255,255,.09);overflow:hidden}
-.eff-bar i{display:block;height:100%;border-radius:6px;background:linear-gradient(90deg,var(--green2,#35c97e),#9defc0)}
   .pd-section-t{font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--muted2);margin:14px 0 7px}
   .tier-opts{display:flex;gap:8px;flex-wrap:wrap}
   .tier{padding:9px 13px;border-radius:11px;border:1px solid var(--line2);background:var(--panel);font-size:13.5px;font-weight:700;display:flex;flex-direction:column;align-items:center;gap:2px;min-width:74px}
@@ -467,8 +393,6 @@
         <span class="switch"></span><span class="mt-label">Member</span>
       </button>
       <button class="wallet-chip" id="walletChip" onclick="openWallet()" title="Wallet">💚 <span id="walletBal">฿0</span></button>
-      <button class="icon-btn" title="Member login" onclick="openCRM(isMember()?undefined:'login')">👤</button>
-      <button class="icon-btn" title="Order food & drinks" onclick="location.href='food.html'">🍽️</button>
       <button class="icon-btn" title="My orders" onclick="openOrders()">📦</button>
       <button class="icon-btn" title="Cart" onclick="openCart()">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.7 13.4a2 2 0 0 0 2 1.6h9.7a2 2 0 0 0 2-1.6L23 6H6"/></svg>
@@ -491,8 +415,6 @@
     <p id="heroSub">Browse our live menu, unlock member prices, and order in seconds — delivery or pickup at Pattanakarn, Sathorn & Bars. Or just ask DANK AI, 24/7.</p>
     <div class="hero-cta">
       <a class="btn btn-primary" href="#menu" onclick="document.getElementById('menu').scrollIntoView({behavior:'smooth'});return false;">Shop the menu</a>
-      <a class="btn btn-gold" href="build-your-joint.html">🚬 Build your joint</a>
-      <a class="btn btn-food" href="food.html"><span class="fk">🍜</span> Order food &amp; drinks <span class="newdot">NEW</span></a>
       <a class="btn btn-ghost" onclick="openQuiz()">🧭 Take the quiz</a>
       <a class="btn btn-ghost" onclick="openAI()">💬 Chat น้องแดงค์</a>
     </div>
@@ -543,10 +465,8 @@
       <div>
         <h4>Shop</h4>
         <a href="#menu">Full menu</a>
-        <a href="build-your-joint.html">Build your joint 🚬</a>
         <a href="#" onclick="openCart();return false;">Your cart</a>
         <a href="#" onclick="openAI('Hi! What are you looking for today?');return false;">Ask DANK AI</a>
-        <a href="#" onclick="openCRM(isMember()?undefined:'login');return false;">Member login · 10% off 👤</a>
         <a href="#" onclick="openWallet();return false;">My wallet · top up +10%</a>
         <a href="#" onclick="openOrders();return false;">Track my order</a>
         <a href="#" onclick="openInfo();return false;">Help & info</a>
@@ -762,48 +682,10 @@ const PRODUCTS=[
 /* ============================================================
    3) STATE + HELPERS
    ============================================================ */
-/* Every product id that reaches this page is forced into [A-Za-z0-9_-] here, at the one
-   place menu data arrives. Ids are pasted into inline handlers — onclick="openPD('<id>')",
-   addTier('<id>',2), toggleFav('<id>',event) — and HTML-escaping cannot protect those: the
-   browser decodes the attribute before the JS parser reads it, so &#39; turns back into a
-   quote and closes the string. A product named or keyed by hand in the admin editor, in
-   /api/products, or in the BRYAN POS feed is not something to trust with executable
-   syntax. Ids are internal keys and never shown to anyone, so rewriting a bad one costs
-   nothing; the cart, favourites and overrides all key off the same rewritten value because
-   they only ever see the sanitised list. */
-function safeId(v,i){
-  const s=String(v==null?"":v).replace(/[^A-Za-z0-9_-]/g,"");
-  return s||("p"+i);
-}
-function sanitizeMenu(list){
-  if(!Array.isArray(list)) return list;
-  const seen=Object.create(null);
-  return list.map((p,i)=>{
-    if(!p||typeof p!=="object") return p;
-    let id=safeId(p.id,i);
-    while(seen[id]) id=id+"_"+i;          // a rewrite must not collide with a real id
-    seen[id]=1;
-    return id===p.id?p:Object.assign({},p,{id});
-  });
-}
-let DATA = sanitizeMenu(PRODUCTS.slice());
-/* The menu a customer is allowed to be shown, recommended or sold. _hidden is the owner's
-   "keep this off the menu" switch in the edit bar — the card grid, the quiz, the free-gift
-   picker and the related-products strip all honour it. The AI budtender was the one surface
-   that read DATA raw, so anything the owner pulled (sold out at the branch, not for sale
-   online, half-finished) was still being described, recommended, priced and added to the
-   cart from chat. Owner mode keeps seeing everything, exactly as the grid does. */
-function shopData(){ return adminMode?DATA:DATA.filter(p=>!p._hidden); }
+let DATA = PRODUCTS.slice();
 let activeCat="All", memberMode=false, branch="All branches";
 let cart=[], pdCurrent=null, pdTierIdx=0, coFulfill="delivery", coPay="Cash";
 let favs=[], appliedPromo=null, pdQty=1;
-/* What the customer has typed into the checkout. renderCheckout() replaces the whole form
-   every time it runs, so anything not held here is lost — and it runs on every fulfilment
-   switch and every reopen. setFulfill() carried its own local copy of this; the checkout's
-   own bail-outs ("cart is empty", "under the minimum", "just sold out") did not, and each
-   one closed the modal, so a customer who was ฿40 short retyped their name, phone and
-   address from scratch after topping the cart up. */
-let coDraft={};
 /* ---- owner / admin edit mode ---- */
 let adminMode=false, adminTok=null, ADMIN_OV={products:{},added:[],promos:{}}, adminDirty=false, BASE_PROMOS=null;
 let crmTimer=null;   // drives the always-on members pop-up (keeps re-inviting until they join)
@@ -811,12 +693,7 @@ let crmTimer=null;   // drives the always-on members pop-up (keeps re-inviting u
 const LS={ get(k,d){ try{ const v=localStorage.getItem("dank_"+k); return v?JSON.parse(v):d; }catch(e){ return d; } },
            set(k,v){ try{ localStorage.setItem("dank_"+k,JSON.stringify(v)); }catch(e){} } };
 function saveCart(){ LS.set("cart",cart); }
-/* memberOn is only ever honoured for an actual member. Membership can end (or the
-   flag can be left behind by an older build), and without this check the shop
-   would go on charging member prices to someone who is no longer one. */
-function loadPersisted(){ cart=LS.get("cart",[])||[]; favs=LS.get("favs",[])||[];
-  memberMode=!!LS.get("memberOn",false) && isMember();
-  LS.set("memberOn",memberMode); reflectMember(); updateCartCount(); }
+function loadPersisted(){ cart=LS.get("cart",[])||[]; favs=LS.get("favs",[])||[]; memberMode=!!LS.get("memberOn",false); reflectMember(); updateCartCount(); }
 function reflectMember(){ const t=$("#memberToggle"); if(t) t.classList.toggle("on",memberMode); }
 function isMember(){ return !!LS.get("member",false); }
 function toggleFav(id,ev){ if(ev)ev.stopPropagation(); const i=favs.indexOf(id);
@@ -824,7 +701,6 @@ function toggleFav(id,ev){ if(ev)ev.stopPropagation(); const i=favs.indexOf(id);
   LS.set("favs",favs); buildChips(); render(); }
 function isFav(id){ return favs.includes(id); }
 function myOrders(){ return LS.get("orders",[])||[]; }
-let trackMissing=new Set();   // ids /api/track has positively answered {found:false} for, this session
 function rememberOrder(id){ const a=myOrders(); if(id&&!a.includes(id)){ a.unshift(id); LS.set("orders",a.slice(0,30)); } }
 /* ---- first-order (register) promo: Buy 1G get 1G FREE ---- */
 function isRegistered(){ return !!LS.get("reg",null); }
@@ -845,12 +721,7 @@ function showBannerMaybe(){ const el=$("#promoBanner"); if(!el)return;
   el.style.display=show?"flex":"none";
   const t=$("#pbTitle"); if(t) t.textContent="Join DANK Members — 10% off every order 💚"; }
 function dismissBanner(){ LS.set("bannerX",true); $("#promoBanner").style.display="none"; }
-/* "Is the customer in the middle of something?" — asked by the members pop-up before it
-   interrupts. It only looked at the modal overlay, and the AI chat panel is not backed by
-   the overlay, so a customer deep in conversation with the budtender counted as idle and
-   got the join-us popup thrown at them every minute. */
-function anyModalOpen(){ const o=$("#overlay"); if(o&&o.classList.contains("show")) return true;
-  const ai=$("#aiPanel"); return !!ai&&ai.classList.contains("show"); }
+function anyModalOpen(){ const o=$("#overlay"); return !!o&&o.classList.contains("show"); }
 /* ---- CRM membership pop-up: always shown to non-members. It appears shortly
    after entry and keeps re-inviting (every crm.repeatMs) until they join, so
    the 10%-off offer is always in front of anyone who isn't a member yet. ---- */
@@ -865,117 +736,33 @@ function scheduleCRM(delay){ const c=CONFIG.crm||{};
   }, delay);
 }
 function maybeShowCRM(){ scheduleCRM((CONFIG.crm&&CONFIG.crm.firstDelayMs)||1200); }
-function openCRM(tab){
+function openCRM(){
   const c=CONFIG.crm||{};
-  if(isMember()){ openMemberCard(); return; }
   showModal("#infoModal");
-  const t=tab==="login"?"login":"join";
-  $("#infoCard").innerHTML=`<div class="drawer-head" style="border:none;padding:18px 20px 4px"><h2>${esc(c.title||"Join DANK Members — 10% OFF 💚")}</h2><button class="close-x" onclick="dismissCRM()">×</button></div>
+  $("#infoCard").innerHTML=`<div class="drawer-head" style="border:none;padding:18px 20px 4px"><h2>${c.title||"Join DANK Members — 10% OFF 💚"}</h2><button class="close-x" onclick="dismissCRM()">×</button></div>
     <div style="padding:6px 20px 22px">
       <div style="background:linear-gradient(135deg,#0e3a24,#0a2417);border:1px solid var(--line2);border-radius:14px;padding:15px 16px;margin:2px 0 14px;text-align:center">
         <div style="font-size:34px;font-weight:900;color:var(--green2);line-height:1;letter-spacing:.5px">10% OFF</div>
         <div style="font-size:12.5px;color:var(--gold);margin-top:3px;font-weight:700">every order · free to join · members-only drops</div>
       </div>
-      <div class="seg" style="margin-bottom:14px">
-        <button class="${t==='join'?'active':''}" onclick="openCRM('join')">💚 Join free</button>
-        <button class="${t==='login'?'active':''}" onclick="openCRM('login')">👤 Member log in</button>
-      </div>
-      ${t==="join"?`
       <p style="color:var(--muted);font-size:13.5px;margin:0 0 14px">${c.sub||"Sign up free and save 10% on every order."}</p>
       <div class="field"><label>Name</label><input id="regName" placeholder="Your name"></div>
       <div class="field"><label>Phone or LINE</label><input id="regPhone" placeholder="+66…" inputmode="tel"></div>
       <label style="display:flex;gap:8px;align-items:flex-start;font-size:12.5px;color:var(--muted);margin:4px 0 14px"><input type="checkbox" id="regAge" style="width:auto;margin-top:2px"> I confirm I'm 20+ and agree to receive offers.</label>
       <button class="btn btn-primary btn-block" onclick="joinMember()">💚 Join & unlock 10% off</button>
-      <button class="btn btn-ghost btn-block" style="margin-top:8px" onclick="dismissCRM()">Maybe later</button>`
-      :`
-      <p style="color:var(--muted);font-size:13.5px;margin:0 0 14px">Already a DANK member? Enter the phone number you joined with — your 10% switches on right away.</p>
-      <div class="field"><label>Phone number</label><input id="loginPhone" placeholder="+66…" inputmode="tel" onkeydown="if(event.key==='Enter')loginMember()"></div>
-      <button class="btn btn-primary btn-block" id="loginBtn" onclick="loginMember()">👤 Log in</button>
-      <button class="btn btn-ghost btn-block" style="margin-top:8px" onclick="openCRM('join')">New here? Join free →</button>`}
+      <button class="btn btn-ghost btn-block" style="margin-top:8px" onclick="dismissCRM()">Maybe later</button>
     </div>`;
-  setTimeout(()=>{ const e=$(t==="join"?"#regName":"#loginPhone"); if(e) e.focus(); },80);
-}
-/* ---- one definition of "we can actually reach this person" ----
-   The join form, the login form and the checkout each had their own idea of a valid
-   contact and they disagreed. Join accepted anything 6+ characters long, and the field is
-   labelled "Phone or LINE", so "@dankbkk" and "line: dank_bkk" are real stored members.
-   The checkout then stripped every non-digit and refused those same strings: a member who
-   joined the way the form invited them to could not place an order. Thai numerals had the
-   same problem — ๐๘๑๒๓๔๕๖๗๘ is a phone number and was counted as zero digits. */
-function digitsOnly(s){ return String(s==null?"":s).replace(/[๐-๙]/g,c=>"๐๑๒๓๔๕๖๗๘๙".indexOf(c)).replace(/\D/g,""); }
-function validContact(s){
-  const v=String(s==null?"":s).trim();
-  if(digitsOnly(v).length>=6) return true;                     // a phone number, in either numeral set
-  if(/^@[A-Za-z0-9._-]{3,}$/.test(v)) return true;             // @lineid
-  if(/^(line|ไลน์)\s*[:：]?\s*\S{3,}/i.test(v)) return true;    // "line: dank_bkk"
-  return false;
-}
-async function loginMember(){
-  const phone=($("#loginPhone").value||"").trim();
-  if(!validContact(phone)){ toast("Enter your phone number"); return; }
-  const btn=$("#loginBtn"); if(btn){ btn.textContent="Checking…"; btn.style.pointerEvents="none"; }
-  let found=false, points=0, visits=0;
-  if(location.protocol!=="file:"){
-    try{ const r=await fetch("/api/member",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"login",phone})});
-      if(r.ok){ const j=await r.json(); found=!!j.found; points=j.points||0; visits=j.visits||0; } }catch(e){}
-  }
-  /* The name comes from what we already stored, NOT from the response. /api/member used to
-     hand a customer's name back to anyone who guessed their phone number, so it now answers
-     with found/points/visits only. This code still read j.name and fell back to the literal
-     string "Member" — which meant logging in RENAMED you: the member card that said "Bryan"
-     said "Member" afterwards, and every order placed after that reached the shop under that
-     name. Only reuse the stored name if it belongs to the number being logged in with. */
-  const prev=LS.get("reg",{})||{};
-  const same=digitsOnly(prev.phone)&&digitsOnly(prev.phone)===digitsOnly(phone);
-  const name=(same&&prev.name&&prev.name!=="Member")?prev.name:"";
-  if(found){
-    LS.set("reg",{name:name||"Member",phone,points,visits,at:Date.now()});
-    dropStackedMemberCode();   // logging in IS the 10% — the code can't also be taken
-    LS.set("member",true); LS.set("memberOn",true); memberMode=true; reflectMember(); clearTimeout(crmTimer);
-    repriceCart(); render(); showBannerMaybe(); refreshWallet();
-    if($("#cartDrawer")?.classList.contains("show")) renderCart();
-    closeAll(); toast("💚 Welcome back"+(name?", "+name:"")+(points>0?" — "+points.toLocaleString()+" points ⭐":" — 10% off is on!"));
-  } else {
-    if(btn){ btn.textContent="👤 Log in"; btn.style.pointerEvents="auto"; }
-    toast("Number not found — join free below 💚");
-    setTimeout(()=>openCRM("join"),900);
-  }
-}
-function openMemberCard(){
-  const r=LS.get("reg",{})||{};
-  showModal("#infoModal");
-  $("#infoCard").innerHTML=`<div class="drawer-head" style="border:none;padding:18px 20px 4px"><h2>💚 DANK Member</h2><button class="close-x" onclick="closeAll()">×</button></div>
-    <div style="padding:6px 20px 22px">
-      <div style="background:linear-gradient(135deg,#0e3a24,#0a2417);border:1px solid var(--gold);border-radius:14px;padding:18px;margin:2px 0 14px;text-align:center">
-        <div style="font-size:15px;font-weight:800">${esc(r.name||"DANK Member")}</div>
-        <div style="color:var(--muted);font-size:12.5px;margin-top:2px">${esc(r.phone||"")}</div>
-        <div style="font-size:22px;font-weight:900;color:var(--green2);margin-top:8px">10% OFF active ⭐</div>
-        <div style="font-size:11.5px;color:var(--gold);margin-top:2px">member prices are showing across the menu</div>
-        ${r.points>0?`<div style="display:flex;gap:10px;justify-content:center;margin-top:12px">
-          <div style="background:rgba(0,0,0,.3);border:1px solid var(--line2);border-radius:10px;padding:8px 16px"><div style="font-size:17px;font-weight:900;color:var(--gold)">${(+r.points).toLocaleString()}</div><div style="font-size:10px;color:var(--muted)">points</div></div>
-          ${r.visits>0?`<div style="background:rgba(0,0,0,.3);border:1px solid var(--line2);border-radius:10px;padding:8px 16px"><div style="font-size:17px;font-weight:900;color:var(--green2)">${r.visits}</div><div style="font-size:10px;color:var(--muted)">visits</div></div>`:""}
-        </div><div style="font-size:10.5px;color:var(--muted);margin-top:6px">synced from the shop CRM</div>`:""}
-      </div>
-      <button class="btn btn-ghost btn-block" onclick="openWallet()">💚 My wallet</button>
-      <button class="btn btn-ghost btn-block" style="margin-top:8px" onclick="openOrders()">📦 My orders</button>
-      <button class="btn btn-ghost btn-block" style="margin-top:8px;color:#ff9db0" onclick="memberLogout()">Log out</button>
-    </div>`;
-}
-function memberLogout(){
-  LS.set("member",false); LS.set("memberOn",false); LS.set("reg",null);
-  memberMode=false; reflectMember(); repriceCart(); buildChips(); render();
-  closeAll(); toast("Logged out — see you soon 🌿"); maybeShowCRM();
+  setTimeout(()=>{ const e=$("#regName"); if(e) e.focus(); },80);
 }
 function openRegister(){ openCRM(); }          // back-compat alias
 function dismissCRM(){ if(memberMode&&!isMember()){ memberMode=false; LS.set("memberOn",false); reflectMember(); repriceCart(); render(); } closeAll();
   scheduleCRM((CONFIG.crm&&CONFIG.crm.repeatMs)||60000); }   // "Maybe later" → invite again shortly, until they join
 function joinMember(){
   const name=($("#regName").value||"").trim(), phone=($("#regPhone").value||"").trim(), age=$("#regAge")?$("#regAge").checked:true;
-  if(!name||!validContact(phone)){ toast("Please add your name and phone"); return; }
+  if(!name||phone.replace(/\s/g,"").length<6){ toast("Please add your name and phone"); return; }
   if(!age){ toast("Please confirm you're 20+"); return; }
   LS.set("reg",{name,phone,at:Date.now()});
   LS.set("member",true); LS.set("memberOn",true); memberMode=true; reflectMember(); clearTimeout(crmTimer);
-  dropStackedMemberCode();   // they may have typed CRM10 before joining; joining IS the 10%
   repriceCart(); render(); showBannerMaybe(); refreshWallet();
   if($("#cartDrawer")?.classList.contains("show")) renderCart();
   closeAll(); toast("💚 You're a member — 10% off is on!");
@@ -1001,32 +788,21 @@ function cartFlowerGrams(){ return cart.reduce((s,c)=>s+gramsOf(c),0); }
 function ladderFree(G){ let free=0; (CONFIG.gramLadder||[]).forEach(([buy,f])=>{ if(G>=buy&&f>free) free=f; }); return free; }
 function nextLadder(G){ const L=(CONFIG.gramLadder||[]).slice().sort((a,b)=>a[0]-b[0]);
   for(const [buy,f] of L){ if(G<buy) return {need:+(buy-G).toFixed(1),buy,free:f}; } return null; }
-/* `extra` lets a caller ask which strain the deal WOULD hand over if a given
-   amount of a given strain were added — the upsell card needs that, because the
-   winner is recomputed after the add and can be the strain it just suggested. */
-function freeGramStrain(extra){
+function freeGramStrain(){
   if(chosenBonusId){ const p=DATA.find(x=>x.id===chosenBonusId&&isFlower(x)&&!x._hidden); if(p) return p; }
   const g={}; cart.forEach(c=>{ const q=gramsOf(c); if(q>0) g[c.id]=(g[c.id]||0)+q; });
-  if(extra&&extra.id&&extra.grams>0) g[extra.id]=(g[extra.id]||0)+extra.grams;
   let id=null,best=-1; for(const k in g){ if(g[k]>best){ best=g[k]; id=k; } }
   return id?DATA.find(p=>p.id===id):null;
 }
 function ensureBonus(){
-  const before=cart.map(c=>c.key).join(" ");
   cart=cart.filter(c=>!c.bonus);
   const G=cartFlowerGrams();
   const free=ladderFree(G);
-  const strain=free>0?freeGramStrain():null;
-  if(strain) for(let i=0;i<free;i++){
+  if(free<=0) return;
+  const strain=freeGramStrain(); if(!strain) return;
+  for(let i=0;i<free;i++){
     cart.push({key:"BONUS|"+strain.id+"|"+i,id:strain.id,name:strain.name,tierLabel:"1g · FREE 🌿",price:0,qty:1,image:strain.image,type:strain.type,category:strain.category,bonus:true});
   }
-  /* This function rewrites the cart — it strips the old free lines and grants a
-     fresh set — so it has to persist and re-badge like any other cart mutation.
-     It used to do neither. The header badge went on counting lines the drawer had
-     already thrown away, and free grams whose paid items had been removed stayed
-     in storage: enough of them and the checkout opened on "0 items · ฿0" and
-     posted an order the API rejected, behind a success screen. */
-  if(cart.map(c=>c.key).join(" ")!==before){ saveCart(); updateCartCount(); }
 }
 function openFreePicker(){
   const opts=freeGiftOptions();
@@ -1036,100 +812,13 @@ function openFreePicker(){
     <div style="padding:6px 20px 22px"><p style="color:var(--muted);font-size:13px;margin:0 0 12px">Your volume-deal free grams — pick which strain you'd like them in.</p>
     <div class="grid" style="grid-template-columns:repeat(2,1fr);gap:12px;padding:0">${opts.map(p=>`
       <article class="card" onclick="pickFree('${p.id}')" style="cursor:pointer">
-        <div class="thumb">${imgTag(p,true)}<span class="type-tag" style="background:${typeColor(p.type)}">${esc(p.type)}</span></div>
-        <div class="body" style="padding:11px 12px 13px"><h3 style="font-size:14.5px">${esc(p.name)}</h3>
+        <div class="thumb">${imgTag(p,true)}<span class="type-tag" style="background:${typeColor(p.type)}">${p.type}</span></div>
+        <div class="body" style="padding:11px 12px 13px"><h3 style="font-size:14.5px">${p.name}</h3>
         <div class="potency">THC <b>${thcTxt(p)}</b></div>
         <button class="add-btn" style="margin-top:8px;width:100%">Pick this 🌿</button></div>
       </article>`).join("")}</div></div>`;
 }
 function pickFree(id){ chosenBonusId=id; LS.set("bonusPick",id); ensureBonus(); updateCartCount(); closeAll(); toast("🌿 Free grams updated!"); openCart(); }
-
-/* ---- Auto-recommended top-up ------------------------------------------------
-   Customers shouldn't have to do the arithmetic on the volume deal themselves.
-   This finds the cheapest single thing on the menu that carries the cart over
-   the next free-gram rung, and offers it as one tap.
-
-   It stays quiet unless the free flower comes to at least half the top-up.
-   "Spend ฿400, get ฿800 free" is worth interrupting someone for; "spend
-   ฿1,200 to get ฿400 free" is an upsell wearing a deal's clothes, and pushing
-   it costs more trust than it earns in baht. Either way the card prints the
-   real cost and the real value, so the customer can do the sum themselves.  */
-const UPSELL_MIN_RATIO=0.5;   // free flower must be worth ≥ half the top-up
-const UPSELL_MAX_QTY=4;       // never suggest "add five joints"
-function tierGrams(label){
-  const L=String(label||"").toLowerCase().replace(/½/g,"0.5");
-  const m=L.match(/([\d.]+)\s*g/);
-  return m?parseFloat(m[1]):(L.includes("joint")?1:0);   // a pre-roll counts as ~1g, same as gramsOf()
-}
-function tierPrice(t){ return memberMode?(t.member||t.price):t.price; }
-/* What one free gram is actually worth: the 1g price of the strain the deal
-   would hand over — not an average, because the customer gets that strain. */
-function oneGramPrice(s){
-  if(!s||!s.priceTiers) return 0;
-  const one=s.priceTiers.find(t=>!/joint/i.test(t.label)&&tierGrams(t.label)===1);
-  return one?tierPrice(one):0;
-}
-function freeGramValue(){ return oneGramPrice(freeGramStrain()); }
-function bestTopUp(){
-  try{
-    const G=cartFlowerGrams(), nx=nextLadder(G);
-    if(!nx||G<=0) return null;                     // nothing in the cart yet, or already at the top rung
-    const have=ladderFree(G);
-    const inCart=new Set(cart.map(c=>c.id));
-    let best=null;
-    DATA.forEach(p=>{
-      if(p._hidden||!isFlower(p)||!isFlowerCat(p)||!(p.stock>0)) return;
-      p.priceTiers.forEach((t,idx)=>{
-        const tg=tierGrams(t.label);
-        if(tg<=0) return;
-        /* Two 1g jars are often cheaper than the one 3.5g bulk that clears the
-           same rung, so cost the whole route, not just a single unit. */
-        const qty=Math.ceil((nx.need-1e-9)/tg);
-        if(qty>UPSELL_MAX_QTY||qty>(p.stock||0)) return;
-        const gained=ladderFree(G+qty*tg)-have;
-        if(gained<=0) return;
-        /* Which strain the deal hands over is recomputed AFTER the add — and adding
-           3.5g of something can make THAT the biggest line in the cart, so the winner
-           is often the very strain being suggested. Pricing the card off the current
-           winner is how it came to promise "1g of Crunch Berrie free — ฿800" and then
-           hand over ฿400 of Superboof. Ask for the post-add winner instead, and carry
-           it on the candidate so the card names the strain it actually priced. */
-        const fs=freeGramStrain({id:p.id,grams:qty*tg});
-        const per=oneGramPrice(fs);
-        if(per<=0) return;
-        const cost=qty*tierPrice(t);
-        const cand={p,t,idx,qty,tg,cost,gained,worth:gained*per,free:fs,mine:inCart.has(p.id)};
-        if(!best) { best=cand; return; }
-        // cheapest route first; then something they're already buying; then the stronger flower
-        if(cost<best.cost) best=cand;
-        else if(cost===best.cost&&!best.mine&&cand.mine) best=cand;
-        else if(cost===best.cost&&best.mine===cand.mine&&(p.thc||0)>(best.p.thc||0)) best=cand;
-      });
-    });
-    return (best&&best.worth>=best.cost*UPSELL_MIN_RATIO)?best:null;
-  }catch(e){ return null; }                        // a broken suggestion must never break the cart
-}
-function upsellHTML(){
-  const b=bestTopUp(); if(!b) return "";
-  const s=b.free||freeGramStrain();   // the strain the card was PRICED against, not the pre-add one
-  return `<div class="upsell">
-    ${b.p.image?`<img class="u-img" src="${esc(b.p.image)}" alt="" loading="lazy">`:''}
-    <div class="u-t">
-      <div class="u-h">🌿 Unlock ${b.gained}g free</div>
-      <div class="u-s">Add <b>${b.qty>1?b.qty+' × ':''}${esc(b.p.name)} · ${esc(b.t.label)}</b> and the volume deal gives you
-        <b>${b.gained}g of ${s?esc(s.name):'flower'} free</b> — ${money(b.worth)} of flower, on us.</div>
-    </div>
-    <button class="u-go" onclick="takeTopUp('${b.p.id}',${b.idx},${b.qty})">Add<small>${money(b.cost)}</small></button>
-  </div>`;
-}
-/* Reads the address out of CONFIG rather than taking it interpolated into the handler —
-   a wallet label or address with an apostrophe in it used to end the JS string. */
-function copyWalletAddr(){ const cc=CONFIG.crypto||{}; const w=(cc.wallets||[])[cryptoSel]||(cc.wallets||[])[0]||{};
-  if(!w.address) return; copyText(w.address).then(okc=>toast(okc?"Address copied":"Couldn't copy — select it and copy")); }
-function copyBankAcc(){ const bk=CONFIG.bank||{}; if(!bk.accNo) return;
-  copyText(bk.accNo).then(okc=>toast(okc?"Account no. copied":"Couldn't copy — select it and copy")); }
-function takeTopUp(id,idx,qty){ for(let i=0;i<(qty||1);i++) addTier(id,idx); renderCart(); }
-
 /* ---- Wallet / store credit (+bonus top-up) ---- */
 let walletBalance=0, topupAmt=0, walletCfg={configured:false,bonusPct:(CONFIG.wallet&&CONFIG.wallet.bonusPct)||10};
 let chosenBonusId=LS.get("bonusPick",null), freeGiftIds=null;
@@ -1138,7 +827,7 @@ async function refreshWallet(){
   const ph=walletPhone(); const chip=$("#walletChip"); if(!chip) return;
   if(!ph||location.protocol==="file:"||!(CONFIG.wallet&&CONFIG.wallet.enabled)){ chip.style.display="none"; return; }
   try{ const r=await fetch("/api/wallet?phone="+encodeURIComponent(ph)); if(r.ok){ const j=await r.json();
-    walletBalance=j.balance||0; walletCfg={configured:j.configured,bonusPct:j.bonusPct??10};
+    walletBalance=j.balance||0; walletCfg={configured:j.configured,bonusPct:j.bonusPct||10};
     $("#walletBal").textContent=money(walletBalance); chip.style.display="inline-flex"; } }
   catch(e){ chip.style.display="none"; }
 }
@@ -1146,15 +835,7 @@ function openWallet(){
   const ph=walletPhone();
   if(!ph){ openRegister(); toast("Register first to use your wallet"); return; }
   showModal("#infoModal");
-  /* walletCfg.bonusPct, NOT CONFIG.wallet.bonusPct. The server owns this number
-     (TOPUP_BONUS_PCT) and it is what refreshWallet() stores, what selTopup() prints on
-     the confirm button, and what actually gets credited. Reading the hard-coded 10 from
-     CONFIG here meant a shop running 20% showed tiles saying "+10% · get ฿550" above a
-     button saying "get ฿600". walletCfg is seeded from CONFIG, so this is still 10
-     before the first fetch — it just stops disagreeing with itself afterwards.
-     ?? and not ||, because 0% is a setting a shop is entitled to run and || turned it
-     silently back into 10, advertising a bonus that was never going to be credited. */
-  const bp=walletCfg.bonusPct??10;
+  const bp=(CONFIG.wallet&&CONFIG.wallet.bonusPct)||10;
   const amts=(CONFIG.wallet&&CONFIG.wallet.amounts)||[500,1000,2000,5000];
   $("#infoCard").innerHTML=`<div class="drawer-head" style="border:none;padding:18px 20px 4px"><h2>💚 My Wallet</h2><button class="close-x" onclick="closeAll()">×</button></div>
     <div style="padding:6px 20px 22px">
@@ -1170,11 +851,7 @@ function openWallet(){
 function selTopup(a,custom){ topupAmt=a;
   if(!custom) document.querySelectorAll("#topupGrid .topup-opt").forEach(el=>el.classList.toggle("active",Number(el.dataset.amt)===a));
   else document.querySelectorAll("#topupGrid .topup-opt").forEach(el=>el.classList.remove("active"));
-  /* ?? not || — a shop running a 0% top-up bonus is a legitimate setting (the server reads
-     Number(process.env.TOPUP_BONUS_PCT || 10), where the string "0" is truthy and survives),
-     and || quietly turned that 0 back into 10. The tiles then advertised a bonus the
-     server had no intention of crediting. */
-  const bp=walletCfg.bonusPct??10; const btn=$("#topupBtn");
+  const bp=walletCfg.bonusPct||10; const btn=$("#topupBtn");
   if(a>=100){ btn.textContent=`Top up ${money(a)} → get ${money(a+Math.round(a*bp/100))}`; btn.style.opacity="1"; btn.style.pointerEvents="auto"; }
   else { btn.textContent="Select an amount"; btn.style.opacity=".5"; btn.style.pointerEvents="none"; }
 }
@@ -1205,26 +882,12 @@ function showTopupQR(chargeId,qr,amount,willReceive,phone){
 }
 let menuRev="", menuSource="", menuSync=null, MENU_POLL_MS=30000;   // near-real-time menu sync
 const $=s=>document.querySelector(s);
-/* Real escaping, for text nodes and for quoted attribute values alike. The old
-   escapeHtml() covered & < > only and threw outright on anything that was not a string.
-   Product names, categories and chat text are interpolated straight into innerHTML, and a
-   name reaches this page from three places a human types into: /api/products, the admin
-   override editor and the BRYAN POS feed. Note this is NOT enough on its own inside an
-   inline handler — the browser HTML-decodes the attribute before JS ever sees it, so
-   &#39; turns back into a quote and closes the string. Those call sites moved to
-   data-* attributes and delegated listeners instead; nothing interpolates into onclick. */
-const esc=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-/* An order id reaches this page from /api/order and is then pasted into half a dozen
-   inline handlers — uploadSlip('<id>',this), renderPP('<id>',n), requestOtherCoin('<id>').
-   Escaping does not help inside a handler, so the id is forced into the alphabet the
-   server actually generates (DK + base36 + 4 symbols) at the one point it arrives. */
-const oid=s=>String(s==null?"":s).replace(/[^A-Za-z0-9_-]/g,"");
 const money=n=>CONFIG.currency+Number(n).toLocaleString("en-US");
-const typeColor=t=>/^indica/i.test(t||"")?"var(--indica)":/^sativa/i.test(t||"")?"var(--sativa)":"var(--hybrid)";
+const typeColor=t=>t==="Indica"?"var(--indica)":t==="Sativa"?"var(--sativa)":"var(--hybrid)";
 const catEmoji=c=>({Exotics:"🚀",Topshelf:"⭐",Midgrade:"💚",Premium:"💎",Joints:"🚬",Edibles:"🍬",Vapes:"💨",Beer:"🍺",Accessories:"🛠️",Merch:"👕",Flowers:"🌿",Edible:"🍬"}[c]||"🌿");
-const FLOWER_CATS=["Exotics","Topshelf","Midgrade","Premium","Flowers","Flower"];   // incl. BRYAN POS category names
+const FLOWER_CATS=["Exotics","Topshelf","Midgrade","Premium"];
 const isFlowerCat=p=>FLOWER_CATS.includes(p.category);
-const thcTxt=p=>esc(p.thcLabel||(p.thc?p.thc+"%":""));   // goes straight into innerHTML at four call sites
+const thcTxt=p=>p.thcLabel||(p.thc?p.thc+"%":"");
 const tiers=p=>p.priceTiers;
 const basePrice=p=>memberMode?(tiers(p)?tiers(p)[0].member:p.member):(tiers(p)?tiers(p)[0].price:p.price);
 const listPrice=p=>tiers(p)?tiers(p)[0].price:p.price;
@@ -1233,14 +896,13 @@ const isFlower=p=>!!p.priceTiers;
 function passGate(){ $("#ageGate").classList.add("hidden"); showBannerMaybe();
   if(!aiOpened) setTimeout(showNudge,6000);
   maybeShowCRM();   // invite non-members to join for 10% off, every visit
-  runDeepLink();    // someone came from Build Your Joint wanting the cart / checkout
 }
 
 /* ---- Data load + near-real-time sync ---- */
 async function loadData(){
   if(CONFIG.apiUrl && location.protocol!=="file:"){
     try{ const r=await fetch(CONFIG.apiUrl,{cache:"no-store"});
-      if(r.ok){ const j=await r.json(); if(Array.isArray(j)&&j.length) DATA=sanitizeMenu(j);
+      if(r.ok){ const j=await r.json(); if(Array.isArray(j)&&j.length) DATA=j;
         menuRev=r.headers.get("X-Menu-Rev")||""; menuSource=r.headers.get("X-Menu-Source")||""; } }
     catch(e){ console.warn("Live feed unavailable, using built-in menu.",e); }
   }
@@ -1269,7 +931,7 @@ async function refreshMenu(quiet){
     const r=await fetch(CONFIG.apiUrl,{cache:"no-store"});
     if(!r.ok) return;
     const j=await r.json(); if(!Array.isArray(j)||!j.length) return;
-    DATA=sanitizeMenu(j); menuRev=r.headers.get("X-Menu-Rev")||menuRev; menuSource=r.headers.get("X-Menu-Source")||menuSource;
+    DATA=j; menuRev=r.headers.get("X-Menu-Rev")||menuRev; menuSource=r.headers.get("X-Menu-Source")||menuSource;
     buildChips(); render();                       // preserves scroll, cart, open modals
     if(pdCurrent){ const f=DATA.find(x=>x.id===pdCurrent.id); if(f&&$("#pdModal").classList.contains("show")) openPD(f.id); }
     if(!quiet) toast("🔄 Menu updated — live from our shop");
@@ -1279,38 +941,18 @@ function setLiveDot(src){ const el=$("#liveDot"); if(!el) return;
   const live=src&&src!=="bundled"&&src!=="empty";
   el.style.display="inline-flex"; el.title=live?("Live menu · "+src):"Menu"; el.style.opacity=live?"1":".45"; }
 function buildBranches(){ $("#branchSel").innerHTML=CONFIG.branches.map(b=>`<option>${b}</option>`).join(""); }
-function toggleMember(){
-  /* Member prices belong to members. This used to set memberMode AND write
-     memberOn=true to storage BEFORE bailing out to the join popup, so a
-     non-member who tapped the star once — and then closed the popup with the
-     backdrop rather than its × — came back to a whole menu at −10%, for good.
-     Nothing ever cleared it. So: no join, no member price, and the toggle
-     springs back instead of persisting a discount nobody paid for. */
-  if(!isMember()){
-    memberMode=false; LS.set("memberOn",false); reflectMember();
-    openCRM("join");                                  // flipping it on invites you to actually join
-    return;
-  }
-  memberMode=!memberMode; LS.set("memberOn",memberMode); $("#memberToggle").classList.toggle("on",memberMode);
-  dropStackedMemberCode();   // switching member prices on retires the member code — same 10%, taken once
+function toggleMember(){ memberMode=!memberMode; LS.set("memberOn",memberMode); $("#memberToggle").classList.toggle("on",memberMode);
+  if(memberMode&&!isMember()){ openCRM(); return; }   // flipping it on invites you to actually join
   if(memberMode) toast("Member prices on ⭐"); repriceCart(); render(); if($("#cartDrawer")?.classList.contains("show")) renderCart(); }
 
 /* ---- Chips ---- */
 function buildChips(){
-  const VD=shopData();
+  const VD=adminMode?DATA:DATA.filter(p=>!p._hidden);
   const cats=["All",...Array.from(new Set(VD.map(p=>p.category)))];
   if(favs.length) cats.push("❤ Saved");
   const cnt=c=> c==="All"?VD.length : c==="❤ Saved"?VD.filter(p=>isFav(p.id)).length : VD.filter(p=>p.category===c).length;
-  /* A category name is free text out of the product feed, so it goes nowhere near an
-     inline handler — the chip carries its position in this list and setCatIdx() looks it
-     back up. Ids get sanitised at the boundary; a category is displayed as typed, so it
-     cannot be, and "Flowers') ;alert(1);('" as a category name is a one-line takeover of
-     every page view otherwise. */
-  CHIP_CATS=cats;
-  $("#catChips").innerHTML=cats.map((c,i)=>`<button class="chip ${c===activeCat?'active':''}" onclick="setCatIdx(${i})">${c==="All"?"🌿 All":c==="❤ Saved"?"❤ Saved":catEmoji(c)+" "+esc(c)}<span class="chip-n">${cnt(c)}</span></button>`).join("");
+  $("#catChips").innerHTML=cats.map(c=>`<button class="chip ${c===activeCat?'active':''}" onclick="setCat('${c}')">${c==="All"?"🌿 All":c==="❤ Saved"?"❤ Saved":catEmoji(c)+" "+c}<span class="chip-n">${cnt(c)}</span></button>`).join("");
 }
-var CHIP_CATS=[];
-function setCatIdx(i){ setCat(CHIP_CATS[i]); }
 function setCat(c){ activeCat=c; buildChips(); render(); }
 function ensureCat(){ if(activeCat==="❤ Saved" && !favs.length) activeCat="All"; }
 
@@ -1326,10 +968,9 @@ function genPhoto(p){
   const t=p.type||"Hybrid", cat=p.category||"";
   const pal=t==="Indica"?["#7d4fb0","#241338"]:t==="Sativa"?["#d69a34","#3f2c0d"]:cat==="Beer"?["#c79a3a","#33280e"]:cat==="Accessories"?["#4a6577","#18222c"]:cat==="Merch"?["#455","#1a2226"]:["#37c46f","#0b3320"];
   const leaf=t==="Indica"?"#54c98a":t==="Sativa"?"#e0b15a":"#43c47a";
-  // uses the page-wide esc(); the local copy that used to shadow it here left " and '
-  // unescaped, which is enough to break out of an SVG attribute
+  const esc=x=>String(x==null?"":x).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
   const nm=String(p.name||""); const name=esc(nm.length>20?nm.slice(0,19)+"…":nm);
-  const thc=thcTxt(p);   // already escaped
+  const thc=esc(thcTxt(p));
   const isProduce=!["Beer","Accessories","Merch"].includes(cat);
   let art="";
   if(isProduce){
@@ -1350,18 +991,10 @@ function genPhoto(p){
     "</svg>";
   return "data:image/svg+xml,"+encodeURIComponent(svg).replace(/'/g,"%27");
 }
-/* p.image is a URL out of /api/products, the admin editor or the POS feed, and it used to
-   be pasted raw into src="…" — one quote in it closed the attribute and everything after
-   became markup, on every page that lists a product. The generated fallback no longer sits
-   inside an onerror string either: it rides on data-fb and a real function reads it, so
-   nothing untrusted ends up inside an inline handler. */
 function imgTag(p,lazy){
   const gp=genPhoto(p);
-  const lz=lazy?' loading="lazy"':'';
-  if(!p.image) return '<img src="'+esc(gp)+'"'+lz+'>';
-  return '<img src="'+esc(p.image)+'"'+lz+' data-fb="'+esc(gp)+'" onerror="imgFallback(this)">';
+  return p.image?("<img src=\""+p.image+"\" "+(lazy?"loading=\"lazy\" ":"")+"onerror=\"this.onerror=null;this.src='"+gp+"'\">"):("<img src=\""+gp+"\">");
 }
-function imgFallback(el){ el.onerror=null; const fb=el.getAttribute("data-fb"); if(fb) el.src=fb; }
 
 /* ---- Render grid ---- */
 function render(){
@@ -1386,41 +1019,36 @@ function render(){
   });
   $("#resultCount").textContent=`${list.length} item${list.length!==1?"s":""}${branch!=="All branches"?" · "+branch:""}`;
   const g=$("#grid");
-  const byj=(activeCat==="All"&&!q)?`<div class="byj-card" onclick="location.href='build-your-joint.html'">
-      <span class="ic">🚬</span>
-      <div><h3>Build Your Joint 🌿</h3><p>Pick your weed · size · resin · hash · filter · paper — we hand-roll it exactly how you like it.</p></div>
-      <a class="btn btn-gold go" href="build-your-joint.html" onclick="event.stopPropagation()">Start building →</a>
-    </div>`:"";
-  if(!list.length){ g.innerHTML=byj+`<div class="empty" style="grid-column:1/-1">No products match.<br><br><button class="btn btn-ghost" onclick="resetFilters()">Clear filters</button></div>`; return; }
-  g.innerHTML=byj+list.map(cardHTML).join("");
+  if(!list.length){ g.innerHTML=`<div class="empty" style="grid-column:1/-1">No products match.<br><br><button class="btn btn-ghost" onclick="resetFilters()">Clear filters</button></div>`; return; }
+  g.innerHTML=list.map(cardHTML).join("");
 }
 function cardHTML(p){
   const out=p.stock<=0;
   const stockTag=out?`<span class="stock-tag out">Sold out</span>`:p.stock<=5?`<span class="stock-tag low">Only ${p.stock} left</span>`:`<span class="stock-tag">In stock</span>`;
   const thumb=imgTag(p,true);
   const potency=potencyHTML(p);
-  const fx=(p.effects||[]).slice(0,3).map(e=>`<span class="tag">${fxEmoji(e)} ${esc(e)}</span>`).join("");
+  const fx=(p.effects||[]).slice(0,3).map(e=>`<span class="tag">${fxEmoji(e)} ${e}</span>`).join("");
   let foot;
   if(out){ foot=`<div class="foot">${priceBlock(p)}<button class="add-btn" disabled style="opacity:.5">Sold out</button></div>`; }
   else if(isFlower(p)&&p.priceTiers.length>1){
     foot=`<div class="price-line">${priceBlock(p)}</div>
-      <div class="size-row">${p.priceTiers.map((t,i)=>`<button class="size-btn" onclick="addTier('${p.id}',${i})" title="Add ${esc(t.label)}"><span>${esc(t.label)}</span><b>${money(memberMode?(t.member||t.price):t.price)}</b></button>`).join("")}</div>`;
+      <div class="size-row">${p.priceTiers.map((t,i)=>`<button class="size-btn" onclick="addTier('${p.id}',${i})" title="Add ${t.label}"><span>${t.label}</span><b>${money(memberMode?(t.member||t.price):t.price)}</b></button>`).join("")}</div>`;
   } else {
     foot=`<div class="foot">${priceBlock(p)}<button class="add-btn" onclick="quickAdd('${p.id}')">Add +</button></div>`;
   }
   return `<article class="card${adminMode&&p._hidden?' adm-hidden':''}">
     <button class="fav-btn ${isFav(p.id)?'on':''}" onclick="toggleFav('${p.id}',event)" title="Save">${isFav(p.id)?'❤':'♡'}</button>
     ${adminMode?`<button class="adm-edit-btn" onclick="openEdit('${p.id}',event)" title="Edit product">✎ Edit</button>`:''}
-      <div class="thumb" onclick="openPD('${p.id}')"><span class="type-tag" style="background:${typeColor(p.type)}">${esc(["Beer","Accessories","Merch","Joints"].includes(p.category)?p.category:p.type)}</span>${p.isNew?'<span class="new-tag">🔥 NEW</span>':''}${adminMode&&p._hidden?'<span class="new-tag" style="background:#b23">🚫 HIDDEN</span>':''}${stockTag}${thumb}</div>
+      <div class="thumb" onclick="openPD('${p.id}')"><span class="type-tag" style="background:${typeColor(p.type)}">${["Beer","Accessories","Merch","Joints"].includes(p.category)?p.category:p.type}</span>${p.isNew?'<span class="new-tag">🔥 NEW</span>':''}${adminMode&&p._hidden?'<span class="new-tag" style="background:#b23">🚫 HIDDEN</span>':''}${stockTag}${thumb}</div>
     <div class="body">
-      <h3 onclick="openPD('${p.id}')">${esc(p.name)}</h3>
+      <h3 onclick="openPD('${p.id}')">${p.name}</h3>
       <div class="potency">${potency}</div>
       <div class="tags">${fx}</div>
       ${foot}
     </div></article>`;
 }
 function potencyHTML(p){
-  if(["Accessories","Merch"].includes(p.category)) return `<span>${esc(p.thcLabel||"")}</span>`;
+  if(["Accessories","Merch"].includes(p.category)) return `<span>${p.thcLabel||""}</span>`;
   if(p.category==="Beer") return `<span>${p.thc>0?'THC <b>'+thcTxt(p)+'</b>':'Non-infused'}</span>`;
   if(p.category==="Edibles") return `<span>THC <b>${thcTxt(p)}</b></span>`;
   return `<span>THC <b>${thcTxt(p)}</b></span>${p.cbd>0&&p.cbd<50?`<span>CBD <b>${p.cbd}%</b></span>`:''}`;
@@ -1433,59 +1061,26 @@ function priceBlock(p){
 }
 function resetFilters(){ activeCat="All"; $("#searchInput").value=""; $("#typeFilter").value=""; $("#sortBy").value="featured"; $("#branchSel").value="All branches"; buildChips(); render(); }
 
-/* ---- Leafly-style strain sections ----
-   Everything under the stats row of the product page: description, lineage,
-   dominant terpene, effect meters, flavour chips. Rendered from whatever the
-   menu already knows (POS fields, strain-db.json filled in by the server, or
-   the owner editor). For a brand-new strain none of them know yet,
-   hydrateStrain() asks /api/strain-info — which tries a live leafly lookup on
-   the server — and repaints just this block when an answer arrives. */
-function strainSectionsHTML(p){
-  const s=p.strain||{};
-  let kv="";
-  if(s.lineage) kv+=`<div class="pd-kv"><span>🧬 Lineage</span><b>${esc(s.lineage)}</b></div>`;
-  if(s.terpene) kv+=`<div class="pd-kv"><span>🌿 Dominant terpene</span><b>${esc(s.terpene)}</b></div>`;
-  const eff=(p.effects||[]).slice(0,4), fla=(p.flavors||[]).slice(0,4), W=[88,74,62,52];
-  return `${p.description?`<p class="pd-desc">${esc(p.description)}</p>`:""}${kv}`+
-    (eff.length?`<div class="pd-section-t">Effects</div><div class="effs">${eff.map((e,i)=>`<div class="eff-row"><span class="eff-n">${esc(e)}</span><span class="eff-bar"><i style="width:${W[i]||48}%"></i></span></div>`).join("")}</div>`:"")+
-    (fla.length?`<div class="pd-section-t">Flavours</div><div class="tags">${fla.map(e=>`<span class="tag">${esc(e)}</span>`).join("")}</div>`:"");
-}
-function hydrateStrain(p){
-  try{
-    const weedish=/weed|flower|exotic|top\s*shelf|mid\s*grade|indica|sativa/i.test((p.name||"")+" "+(p.category||""));
-    if(!weedish&&!isFlower(p)) return;
-    if((p.effects&&p.effects.length)||(p.description&&p.description.trim())) return;
-    fetch("/api/strain-info?name="+encodeURIComponent(p.name||"")).then(r=>r&&r.ok?r.json():null).then(j=>{
-      if(!j||!j.found||!j.strain||pdCurrent!==p) return;
-      const s=j.strain;
-      if(!(p.description&&p.description.trim())&&s.desc) p.description=s.desc;
-      if(!(p.effects&&p.effects.length)&&s.effects&&s.effects.length) p.effects=s.effects;
-      if(!(p.flavors&&p.flavors.length)&&s.flavors&&s.flavors.length) p.flavors=s.flavors;
-      p.strain={name:s.name||"",terpene:s.terpene||"",lineage:s.lineage||""};
-      if(s.type&&/^hybrid$/i.test(p.type||"")) p.type=s.type;
-      const el=$("#pdStrainX"); if(el) el.innerHTML=strainSectionsHTML(p);
-    }).catch(()=>{});
-  }catch(e){}
-}
-
 /* ---- Product detail ---- */
 function openPD(id){
   const p=DATA.find(x=>x.id===id); if(!p)return; pdCurrent=p; pdTierIdx=0; pdQty=1;
   const media=imgTag(p,false);
-  const tierBlock=isFlower(p)?`<div class="pd-section-t">Choose weight</div><div class="tier-opts" id="tierOpts">${p.priceTiers.map((t,i)=>`<button class="tier ${i===0?'active':''}" onclick="selTier(${i})">${esc(t.label)}<small>${money(memberMode?t.member:t.price)}</small></button>`).join("")}</div>`:"";
+  const tierBlock=isFlower(p)?`<div class="pd-section-t">Choose weight</div><div class="tier-opts" id="tierOpts">${p.priceTiers.map((t,i)=>`<button class="tier ${i===0?'active':''}" onclick="selTier(${i})">${t.label}<small>${money(memberMode?t.member:t.price)}</small></button>`).join("")}</div>`:"";
   let potStat;
-  if(["Beer","Accessories","Merch"].includes(p.category)) potStat=`<div class="stat"><div class="k">Category</div><div class="v" style="font-size:15px">${esc(p.category)}</div></div>`;
+  if(["Beer","Accessories","Merch"].includes(p.category)) potStat=`<div class="stat"><div class="k">Category</div><div class="v" style="font-size:15px">${p.category}</div></div>`;
   else potStat=`<div class="stat"><div class="k">THC</div><div class="v" style="font-size:${(p.thcLabel||'').length>6?'14px':'19px'}">${thcTxt(p)||'—'}</div></div>${p.cbd>0&&p.cbd<50?`<div class="stat"><div class="k">CBD</div><div class="v">${p.cbd}%</div></div>`:''}`;
   const out=p.stock<=0;
   const price=memberMode?(isFlower(p)?p.priceTiers[0].member:p.member):(isFlower(p)?p.priceTiers[0].price:p.price);
   $("#pdCard").innerHTML=`<div class="pd-grid">
-    <div class="pd-media"><span class="type-tag" style="background:${typeColor(p.type)}">${esc(["Beer","Accessories","Merch","Joints"].includes(p.category)?p.category:p.type)}</span>${media}</div>
+    <div class="pd-media"><span class="type-tag" style="background:${typeColor(p.type)}">${["Beer","Accessories","Merch","Joints"].includes(p.category)?p.category:p.type}</span>${media}</div>
     <div class="pd-info">
       <button class="close-x pd-close" onclick="closeAll()">×</button>
-      <div class="pd-sub">${catEmoji(p.category)} ${esc(p.category)} · ${esc(p.type)} · ${esc(branch)}</div>
-      <h2>${esc(p.name)}</h2>
+      <div class="pd-sub">${catEmoji(p.category)} ${p.category} · ${p.type} · ${branch}</div>
+      <h2>${p.name}</h2>
       <div class="pd-stats">${potStat}<div class="stat"><div class="k">Stock</div><div class="v" style="color:${out?'var(--danger)':p.stock<=5?'var(--gold)':'var(--green2)'}">${out?'0':p.stock}</div></div></div>
-      <div id="pdStrainX">${strainSectionsHTML(p)}</div>
+      <p class="pd-desc">${p.description}</p>
+      ${(p.effects||[]).length?`<div class="pd-section-t">Effects</div><div class="tags">${p.effects.map(e=>`<span class="tag">${e}</span>`).join("")}</div>`:""}
+      ${(p.flavors||[]).length?`<div class="pd-section-t">Flavours</div><div class="tags">${p.flavors.map(e=>`<span class="tag">${e}</span>`).join("")}</div>`:""}
       ${tierBlock}
       <div class="pd-add-row">
         <div class="price" id="pdPrice">${money(price)}</div>
@@ -1496,7 +1091,6 @@ function openPD(id){
     </div></div>`;
   showModal("#pdModal");
   renderRelated(p);
-  hydrateStrain(p);
 }
 function pdStep(d){ pdQty=Math.max(1,pdQty+d); const el=$("#pdQtyN"); if(el) el.textContent=pdQty; }
 function renderRelated(p){
@@ -1507,24 +1101,26 @@ function renderRelated(p){
     const pr=isFlower(r)?(memberMode?r.priceTiers[0].member:r.priceTiers[0].price):(memberMode?r.member:r.price);
     return `<div class="rel-card" onclick="openPD('${r.id}')">
       <div class="rel-thumb">${imgTag(r,true)}</div>
-      <div class="rel-name">${esc(r.name)}</div><div class="rel-price">${isFlower(r)?'from ':''}${money(pr)}</div></div>`;}).join("")}</div>`;
+      <div class="rel-name">${r.name}</div><div class="rel-price">${isFlower(r)?'from ':''}${money(pr)}</div></div>`;}).join("")}</div>`;
 }
 function selTier(i){ pdTierIdx=i; document.querySelectorAll("#tierOpts .tier").forEach((el,idx)=>el.classList.toggle("active",idx===i)); const t=pdCurrent.priceTiers[i]; $("#pdPrice").textContent=money(memberMode?t.member:t.price); }
-function addFromPD(){ const p=pdCurrent; for(let i=0;i<pdQty;i++) addToCart(p,isFlower(p)?p.priceTiers[pdTierIdx]:null); closeAll(); toast(`${pdQty}× ${p.name} added`); }
+function addFromPD(){ const p=pdCurrent; for(let i=0;i<pdQty;i++) addToCart(p,isFlower(p)?((p.priceTiers&&p.priceTiers[pdTierIdx])||(p.priceTiers&&p.priceTiers[0])||null):null); closeAll(); toast(`${pdQty}× ${p.name} added`); }
 
 /* ---- Cart ---- */
-function quickAdd(id){ const p=DATA.find(x=>x.id===id); if(!p)return; addToCart(p,isFlower(p)?p.priceTiers[0]:null); toast(`${p.name} added`); }
+function quickAdd(id){ const p=DATA.find(x=>x.id===id); if(!p)return; addToCart(p,isFlower(p)?((p.priceTiers&&p.priceTiers[0])||null):null); toast(`${p.name} added`); }
 const FXEMO={Relaxed:"😌",Calm:"😌",Relaxing:"😌",Happy:"😄",Euphoric:"🤩",Uplifted:"🚀",Energetic:"⚡",Energise:"⚡",Energizing:"⚡",Creative:"🎨",Social:"🥳",Focused:"🎯",Sleepy:"😴",Hungry:"🍽️",Giggly:"😆",Tingly:"✨",Aroused:"❤️"};
 function fxEmoji(e){ return FXEMO[e]||"🌿"; }
 function addTier(id,idx){ const p=DATA.find(x=>x.id===id); if(!p||!p.priceTiers)return; const t=p.priceTiers[idx]||p.priceTiers[0]; addToCart(p,t); toast(`${p.name} · ${t.label} added`); }
 function repriceCart(){
   cart.forEach(c=>{ if(c.bonus) return; const p=DATA.find(x=>x.id===c.id); if(!p) return;
-    if(isFlower(p)){ const t=p.priceTiers.find(t=>t.label===c.tierLabel); if(t) c.price=memberMode?(t.member||t.price):t.price; }
+    if(isFlower(p)){ const t=p.priceTiers&&p.priceTiers.find(t=>t.label===c.tierLabel); if(t) c.price=memberMode?(t.member||t.price):t.price; }
     else { c.price=memberMode?(p.member!=null?p.member:p.price):p.price; } });
 }
 function addToCart(p,tier){
+  if(!tier&&p&&p.priceTiers&&p.priceTiers.length&&!(+p.price>0)) tier=p.priceTiers[0];   // tier-only product — use first size so price is never NaN
   const key=p.id+(tier?("|"+tier.label):"");
   const price=memberMode?(tier?(tier.member||tier.price):(p.member!=null?p.member:p.price)):(tier?tier.price:p.price);
+  if(!(+price>0)){ toast((p&&p.name?p.name:"Item")+" — please pick a size / เลือกขนาดก่อน"); try{if(p&&typeof openPD==="function")openPD(p.id);}catch(e){} return; }
   const found=cart.find(c=>c.key===key);
   if(found){ found.qty++; }
   else cart.push({key,id:p.id,shId:(tier&&tier.shId)||p.shId||"",name:p.name,tierLabel:tier?tier.label:(p.unit||"each"),price,qty:1,image:p.image,type:p.type,category:p.category});
@@ -1532,20 +1128,7 @@ function addToCart(p,tier){
 }
 function updateCartCount(){ const n=cart.reduce((s,c)=>s+c.qty,0); const el=$("#cartCount"); el.textContent=n; el.classList.toggle("hidden",n===0); }
 function cartSubtotal(){ return cart.reduce((s,c)=>s+c.price*c.qty,0); }
-/* The member 10% arrives by one of two routes — member prices on the menu (memberMode,
-   i.e. tierPrice() reading t.member) or the CRM10 code in the cart. They are the same
-   benefit, so claiming both is 19% off, not 10%. Nothing stopped that: CRM10 is just a
-   plain pct promo and discountAmt() never looked at memberMode, so a member with the ⭐
-   lit who typed the code they were given on joining took the extra cut on every order,
-   permanently. The code still works for a member who has the star OFF — that is how
-   they claim their 10% — it simply no longer stacks on top of itself. */
-function memberCodeStacks(p){
-  const cc=String((CONFIG.crm&&CONFIG.crm.code)||"").toUpperCase();
-  return !!(memberMode&&cc&&p&&String(p.code||"").toUpperCase()===cc);
-}
-function dropStackedMemberCode(){ if(memberCodeStacks(appliedPromo)) appliedPromo=null; }
 function discountAmt(){ if(!appliedPromo) return 0; const sub=cartSubtotal(); const p=appliedPromo;
-  if(memberCodeStacks(p)) return 0;
   if(p.min&&sub<p.min) return 0;
   if(p.type==="pct") return Math.round(sub*p.value/100);
   if(p.type==="fixed") return Math.min(p.value,sub);
@@ -1560,33 +1143,25 @@ function applyPromo(){ const code=($("#promoInput")?.value||"").trim().toUpperCa
   const def=CONFIG.promos[code];
   if(!def){ appliedPromo=null; toast("Invalid code"); renderCart(); return; }
   if(def.min&&cartSubtotal()<def.min){ appliedPromo=null; toast(`Code needs a ฿${def.min}+ order`); renderCart(); return; }
-  if(memberCodeStacks({code})){ appliedPromo=null; toast("Member prices already include your 10% ⭐"); renderCart(); return; }
   appliedPromo={code,...def,manual:true}; toast("✅ "+ (def.desc||"Discount applied")); renderCart(); }
 function removePromo(){ appliedPromo=null; renderCart(); }
 function changeQty(key,d){ const it=cart.find(c=>c.key===key); if(!it)return; it.qty+=d; if(it.qty<=0) cart=cart.filter(c=>c.key!==key); updateCartCount(); saveCart(); renderCart(); }
 function removeLine(key){ cart=cart.filter(c=>c.key!==key); updateCartCount(); saveCart(); renderCart(); }
 function openCart(){ renderCart(); showDrawer(); }
-/* A line key is p.id + "|" + tier.label. Ids are sanitised where the menu arrives, but a
-   tier label is shown exactly as it was typed, so it can carry a quote — and it was being
-   pasted into onclick="changeQty('…')". Escaping cannot rescue an inline handler, because
-   the browser decodes the attribute before the JS parser reads it. The buttons now carry
-   the line's position in the cart and look the key back up. */
-function cartLineHTML(c,idx){
+function cartLineHTML(c){
   const thumb=imgTag(DATA.find(x=>x.id===c.id)||c,false);
   if(c.bonus) return `<div class="cart-line bonus">
     <div class="ci-thumb">${thumb}</div>
-    <div class="ci-main"><h4>${esc(c.name)} <span class="gift-badge">FREE</span></h4>
-      <div class="ci-opt">Volume deal · ${esc(c.tierLabel)}</div>
+    <div class="ci-main"><h4>${c.name} <span class="gift-badge">FREE</span></h4>
+      <div class="ci-opt">Volume deal · ${c.tierLabel}</div>
       <div class="ci-row"><span style="font-size:12px;color:var(--green2)">🌿 On the house</span>
       <div class="ci-price">฿0</div></div></div></div>`;
   return `<div class="cart-line">
     <div class="ci-thumb">${thumb}</div>
-    <div class="ci-main"><h4>${esc(c.name)}</h4><div class="ci-opt">${esc(c.tierLabel)} · ${money(c.price)}</div>
-      <div class="ci-row"><div class="qty"><button onclick="changeQtyAt(${idx},-1)">−</button><span>${c.qty}</span><button onclick="changeQtyAt(${idx},1)">+</button></div>
-      <div style="text-align:right"><div class="ci-price">${money(c.price*c.qty)}</div><button class="ci-remove" onclick="removeLineAt(${idx})">Remove</button></div></div></div></div>`;
+    <div class="ci-main"><h4>${c.name}</h4><div class="ci-opt">${c.tierLabel} · ${money(c.price)}</div>
+      <div class="ci-row"><div class="qty"><button onclick="changeQty('${c.key}',-1)">−</button><span>${c.qty}</span><button onclick="changeQty('${c.key}',1)">+</button></div>
+      <div style="text-align:right"><div class="ci-price">${money(c.price*c.qty)}</div><button class="ci-remove" onclick="removeLine('${c.key}')">Remove</button></div></div></div></div>`;
 }
-function changeQtyAt(i,d){ const c=cart[i]; if(c) changeQty(c.key,d); }
-function removeLineAt(i){ const c=cart[i]; if(c) removeLine(c.key); }
 function renderCart(){
   ensureBonus();
   const body=$("#cartBody"), foot=$("#cartFoot");
@@ -1596,20 +1171,16 @@ function renderCart(){
   const below=sub<CONFIG.minOrder;
   foot.innerHTML=`
     <div class="promo-row">
-      <input id="promoInput" placeholder="Promo code" value="${appliedPromo?esc(appliedPromo.code):''}">
+      <input id="promoInput" placeholder="Promo code" value="${appliedPromo?appliedPromo.code:''}">
       ${appliedPromo?`<button class="promo-btn" onclick="removePromo()">Remove</button>`:`<button class="promo-btn" onclick="applyPromo()">Apply</button>`}
     </div>
     <div class="cart-total-row"><span>Subtotal${memberMode?' (member ⭐)':''}</span><span>${money(sub)}</span></div>
-    ${disc>0?`<div class="cart-total-row" style="color:var(--gold)"><span>Discount (${esc(appliedPromo.code)})</span><span>−${money(disc)}</span></div>`:''}
+    ${disc>0?`<div class="cart-total-row" style="color:var(--gold)"><span>Discount (${appliedPromo.code})</span><span>−${money(disc)}</span></div>`:''}
     <div class="cart-total-row"><span>Delivery</span><span>${coFulfill==="pickup"?'Pickup':fee===0?'Free':money(fee)}</span></div>
     <div class="cart-total-row grand"><span>Total</span><span>${money(tot)}</span></div>
     ${below?`<div class="minorder">Minimum order ${money(CONFIG.minOrder)} — add ${money(CONFIG.minOrder-sub)} more</div>`:''}
     ${(function(){ const G=cartFlowerGrams(), got=cart.filter(c=>c.bonus).length, nx=nextLadder(G);
-      const up=upsellHTML();   // the one-tap "here is the cheapest way to the next rung" card
-      // Already earning free grams: keep the status line (it owns the change-strain link) and
-      // put the card underneath it, so the next rung is offered without hiding the current one.
-      if(got>0) return `<div class="minorder" style="color:var(--green2)">🌿 Volume deal: <b>${got}g FREE</b> added${nx?` · add ${nx.need}g more → ${nx.free}g free`:' · max deal reached 🎉'} — <button style="background:none;border:none;color:var(--green2);text-decoration:underline;cursor:pointer;font-size:12.5px" onclick="openFreePicker()">change strain</button></div>`+up;
-      if(up) return up;        // the card says everything the plain hint below would have
+      if(got>0) return `<div class="minorder" style="color:var(--green2)">🌿 Volume deal: <b>${got}g FREE</b> added${nx?` · add ${nx.need}g more → ${nx.free}g free`:' · max deal reached 🎉'} — <button style="background:none;border:none;color:var(--green2);text-decoration:underline;cursor:pointer;font-size:12.5px" onclick="openFreePicker()">change strain</button></div>`;
       if(nx&&G>0) return `<div class="minorder" style="color:var(--gold)">🌿 Add <b>${nx.need}g</b> more flower → get <b>${nx.free}g FREE</b></div>`;
       if(G===0) return `<div class="minorder" style="color:var(--muted)">🌿 Buy 3g flower get 1g free · up to 15g→5g free</div>`;
       return ''; })()}
@@ -1617,48 +1188,16 @@ function renderCart(){
 }
 
 /* ---- Checkout ---- */
-function openCheckout(){
-  /* Bonus lines are settled BEFORE the empty-cart test. Removing the last paid line
-     leaves its free grams behind, and testing cart.length first let a cart that is
-     really empty open the checkout on "0 items · ฿0" and POST an order the API then
-     rejected — while the customer was looking at a success screen.
-
-     coFulfill is no longer reset to "delivery" here either. It is whatever the drawer
-     just quoted a total against, so resetting it re-opened a Pickup cart at the
-     Delivery price: the button said ฿800 and the modal opened at ฿900.
-
-     And the ฿300 minimum is enforced here rather than only by the greyed-out button
-     in renderCart(): the builder's ?checkout=1 handoff and the AI assistant's
-     "Checkout now" both call this directly and never see that button. */
-  ensureBonus();
-  if(!cart.length){ toast("Your cart is empty"); closeAI(); return; }
-  const short=CONFIG.minOrder-cartSubtotal();
-  /* closeAI() before openCart(), on both bail-outs. #aiPanel sits at z-index 95 and the
-     drawer at 70, and on a phone the panel is full-screen — so when this fires on the AI's
-     own "🛒 Checkout now" button, the drawer opens UNDERNEATH the chat and cannot be
-     tapped. The success path below has always closed the AI; these two did not. */
-  if(short>0){ toast("Minimum order "+money(CONFIG.minOrder)+" — add "+money(short)+" more"); closeAI(); openCart(); return; }
-  coPay=paymentMethods()[0].p; renderCheckout(); closeDrawerOnly(); closeAI(); showModal("#coModal");
-}
-/* Read whatever is on screen into coDraft. Called before anything that will destroy the
-   form — a fulfilment switch, a bail-out that closes the modal — and never destructive
-   itself: a field that isn't on screen right now (there is no #coAddr in Pickup mode)
-   keeps its previous value rather than being blanked. */
-function snapCheckout(){
-  ["coName","coPhone","coNotes","coAddr","coZone","coBranch","coTime"].forEach(id=>{
-    const el=$("#"+id); if(el) coDraft[id]=el.value;
-  });
-}
-function fillCheckout(){
-  const reg=LS.get("reg",{})||{};
-  if(!coDraft.coName&&reg.name&&reg.name!=="Member") coDraft.coName=reg.name;   // members shouldn't retype what they joined with
-  if(!coDraft.coPhone&&reg.phone) coDraft.coPhone=reg.phone;
-  Object.keys(coDraft).forEach(id=>{
-    const el=$("#"+id); if(el&&coDraft[id]!=null&&coDraft[id]!=="") el.value=coDraft[id];
-  });
-}
+function openCheckout(){ if(!cart.length){ toast("Your cart is empty"); return; } ensureBonus(); coFulfill="delivery"; coPay=paymentMethods()[0].p; renderCheckout(); closeDrawerOnly(); closeAI(); showModal("#coModal"); }
 function setFulfill(f){
-  snapCheckout(); coFulfill=f; renderCheckout();
+  // keep already-typed details when the form re-renders
+  const keep={name:$("#coName")?.value,phone:$("#coPhone")?.value,notes:$("#coNotes")?.value,addr:$("#coAddr")?.value,zone:$("#coZone")?.value};
+  coFulfill=f; renderCheckout();
+  if($("#coName")) $("#coName").value=keep.name||"";
+  if($("#coPhone")) $("#coPhone").value=keep.phone||"";
+  if($("#coNotes")) $("#coNotes").value=keep.notes||"";
+  if($("#coAddr")&&keep.addr!=null) $("#coAddr").value=keep.addr;
+  if($("#coZone")&&keep.zone) $("#coZone").value=keep.zone;
 }
 function setPay(p){ coPay=p; document.querySelectorAll("#coCard .pay").forEach(el=>el.classList.toggle("active",el.dataset.p===p));
   const cf=$("#cardForm"); if(cf) cf.style.display=p==="Card"?"block":"none";
@@ -1677,11 +1216,7 @@ function paymentMethods(){
   if(!m.length) m.push({p:"Cash",label:"Pay on arrival",icon:"💵"});
   return m;
 }
-/* "Pay from wallet" is no longer what happens. The API checks the balance covers the order
-   and marks it wallet_pending; staff take the money off when the customer is in front of
-   them, because a phone number in an unauthenticated request body is not proof of who is
-   spending. The button has to say that, or the customer taps "Pay" and nothing is paid. */
-function payBtnLabel(p){ if(p==="Wallet") return "💚 Place order · "+money(cartTotal())+" from wallet";
+function payBtnLabel(p){ if(p==="Wallet") return "💚 Pay "+money(cartTotal())+" from wallet";
   if(["PromptPay","Card","2C2P","GBPrimePay","PromptPayQR"].includes(p)) return "💳 Pay "+money(cartTotal());
   if(p==="Transfer") return "🏦 Place order & show transfer details";
   if(p==="Crypto") return "₿ Place order & pay crypto";
@@ -1689,8 +1224,8 @@ function payBtnLabel(p){ if(p==="Wallet") return "💚 Place order · "+money(ca
 function renderCheckout(){
   const sub=cartSubtotal();
   const zoneField=coFulfill==="delivery"
-    ?`<div class="field"><label>Delivery area</label><select id="coZone">${CONFIG.deliveryZones.map(z=>`<option>${esc(z)}</option>`).join("")}</select></div><div class="field"><label>Delivery address</label><textarea id="coAddr" rows="2" placeholder="Condo / street / room no."></textarea></div>`
-    :`<div class="field"><label>Pickup branch</label><select id="coBranch">${CONFIG.branches.filter(b=>b!=="All branches").map(b=>`<option ${b===branch?'selected':''}>${esc(b)}</option>`).join("")}</select></div><div class="field"><label>Pickup time</label><input id="coTime" placeholder="e.g. today 7pm"></div>`;
+    ?`<div class="field"><label>Delivery area</label><select id="coZone">${CONFIG.deliveryZones.map(z=>`<option>${z}</option>`).join("")}</select></div><div class="field"><label>Delivery address</label><textarea id="coAddr" rows="2" placeholder="Condo / street / room no."></textarea></div>`
+    :`<div class="field"><label>Pickup branch</label><select id="coBranch">${CONFIG.branches.filter(b=>b!=="All branches").map(b=>`<option ${b===branch?'selected':''}>${b}</option>`).join("")}</select></div><div class="field"><label>Pickup time</label><input id="coTime" placeholder="e.g. today 7pm"></div>`;
   $("#coCard").innerHTML=`<div class="drawer-head" style="border:none;padding:18px 20px 4px"><h2>Checkout</h2><button class="close-x" onclick="closeAll()">×</button></div>
     <div style="padding:6px 20px 22px">
       <div class="seg"><button class="${coFulfill==='delivery'?'active':''}" onclick="setFulfill('delivery')">🚚 Delivery</button><button class="${coFulfill==='pickup'?'active':''}" onclick="setFulfill('pickup')">🏬 Pickup / Reserve</button></div>
@@ -1699,7 +1234,7 @@ function renderCheckout(){
       ${zoneField}
       <div class="field"><label>Notes (optional)</label><input id="coNotes" placeholder="Preferred time, gate code, etc."></div>
       <div class="pd-section-t" style="margin-top:4px">Payment</div>
-      <div class="pay-grid">${paymentMethods().map(x=>`<button class="pay ${x.p===coPay?'active':''}" data-p="${x.p}" onclick="setPay('${x.p}')"><span class="pi">${x.icon}</span>${esc(x.label)}</button>`).join("")}</div>
+      <div class="pay-grid">${paymentMethods().map(x=>`<button class="pay ${x.p===coPay?'active':''}" data-p="${x.p}" onclick="setPay('${x.p}')"><span class="pi">${x.icon}</span>${x.label}</button>`).join("")}</div>
       <div id="cardForm" style="display:${coPay==='Card'?'block':'none'};margin-top:8px">
         <div class="field"><label>Card number</label><input id="ccNum" placeholder="4242 4242 4242 4242" inputmode="numeric" autocomplete="cc-number"></div>
         <div style="display:grid;grid-template-columns:2fr 1fr 1fr;gap:8px">
@@ -1711,7 +1246,7 @@ function renderCheckout(){
       </div>
       <div id="ppNote" class="note" style="display:${(coPay==='PromptPay'||coPay==='PromptPayQR')?'block':'none'};margin:6px 0 0">📱 You'll get a PromptPay QR to scan right after confirming — order is marked paid automatically.</div>
       <div class="cart-total-row" style="margin-top:12px"><span>${cart.reduce((s,c)=>s+c.qty,0)} items · subtotal</span><span>${money(sub)}</span></div>
-      ${discountAmt()>0?`<div class="cart-total-row" style="color:var(--gold)"><span>Discount (${esc(appliedPromo.code)})</span><span>−${money(discountAmt())}</span></div>`:''}
+      ${discountAmt()>0?`<div class="cart-total-row" style="color:var(--gold)"><span>Discount (${appliedPromo.code})</span><span>−${money(discountAmt())}</span></div>`:''}
       <div class="cart-total-row"><span>Delivery</span><span>${coFulfill==="pickup"?'Pickup':deliveryFeeAmt()===0?'Free':money(deliveryFeeAmt())}</span></div>
       <div class="cart-total-row grand"><span>Total</span><span>${money(cartTotal())}</span></div>
       <div class="pd-section-t" style="margin-top:16px">Confirm your order</div>
@@ -1722,19 +1257,18 @@ function renderCheckout(){
       </div>
       <div class="note">${CONFIG.deliveryNote}<br>We confirm stock & total, then you pay by <b>${coPay}</b> on ${coFulfill==='delivery'?'delivery':'pickup'}. 20+ ID required.</div>
     </div>`;
-  fillCheckout();   // put back whatever was typed before this re-render, every time
 }
 function collectOrder(){
-  /* Read the form where it is on screen and the snapshot where it is not — the same rule
-     snapCheckout() follows in the other direction, for the same reason. A screen that has
-     replaced the checkout form must never be able to turn a filled-in order into a blank
-     one; submitOrder() takes the snapshot before anything can tear the form down. */
-  const F=id=>{ const el=$("#"+id); return el?el.value:(coDraft[id]||""); };
-  const name=F("coName").trim(), phone=F("coPhone").trim(), notes=F("coNotes").trim();
-  const zone=coFulfill==="delivery"?(F("coZone")||""):"";
-  const addr=coFulfill==="delivery"?F("coAddr").trim():"";
-  const pickBranch=coFulfill==="pickup"?(F("coBranch")||branch):"";
-  const pickTime=coFulfill==="pickup"?F("coTime").trim():"";
+  const name=($("#coName")?.value||"").trim(), phone=($("#coPhone")?.value||"").trim();
+  let notes=($("#coNotes")?.value||"").trim();
+  // Table-QR ordering: if the customer arrived by scanning a table QR (?table=T1),
+  // tag the order with the table so staff see it in the POS / staff console.
+  try{const _tb=new URLSearchParams(location.search).get("table")||sessionStorage.getItem("dank_table")||"";
+      if(_tb){sessionStorage.setItem("dank_table",_tb);notes=("🪑 โต๊ะ/Table "+_tb+(notes?" · "+notes:""));}}catch(e){}
+  const zone=coFulfill==="delivery"?($("#coZone")?.value||""):"";
+  const addr=coFulfill==="delivery"?($("#coAddr")?.value||"").trim():"";
+  const pickBranch=coFulfill==="pickup"?($("#coBranch")?.value||branch):"";
+  const pickTime=coFulfill==="pickup"?($("#coTime")?.value||"").trim():"";
   return {brand:CONFIG.brand,items:cart.map(c=>({name:c.name,shId:c.shId||"",option:c.tierLabel,qty:c.qty,price:c.price,lineTotal:c.price*c.qty})),
     subtotal:cartSubtotal(),discount:discountAmt(),promo:appliedPromo?appliedPromo.code:"",deliveryFee:deliveryFeeAmt(),total:cartTotal(),
     fulfilment:coFulfill,payment:coPay,member:memberMode,
@@ -1773,12 +1307,8 @@ async function tokenizeCard(pk,{num,name,exp,cvc}){
   return new Promise((ok,err)=>O.createToken("card",{name:name||"Customer",number:num,expiration_month:Number(parts[0]),expiration_year:Number(yy),security_code:cvc},
     (st,resp)=>{ if(st===200&&resp.id) ok(resp.id); else err(new Error(resp.message||"card declined")); }));
 }
-/* Everything that has to be forgotten once an order has genuinely left. Six screens each
-   carried their own copy of the first three lines and not one of them cleared coFulfill,
-   so the next order in the same session silently inherited Pickup from the last one. */
-function clearCartAfterOrder(){ cart=[]; appliedPromo=null; coFulfill="delivery"; saveCart(); updateCartCount(); }
 function showQRScreen(orderId,chargeId,qr,amount){
-  clearCartAfterOrder();
+  cart=[]; appliedPromo=null; saveCart(); updateCartCount();
   $("#coCard").innerHTML=`<div class="success">
     <h2>Scan to pay ${money(amount)}</h2>
     <p>Order <b>${orderId}</b> · PromptPay — open your bank app and scan.</p>
@@ -1795,25 +1325,7 @@ function showQRScreen(orderId,chargeId,qr,amount){
 async function submitOrder(method){
   lastOrderId="";  // reset so a LINE/WhatsApp/fallback success screen can't show a previous order's slip box
   const o=collectOrder();
-  /* One snapshot, taken before anything can tear the form down. Half a dozen paths from
-     here close the checkout — cart empty, under the minimum, sold out, wallet short, a
-     network failure — and renderCheckout() rebuilds the form from scratch when it reopens,
-     so without this the customer retypes their name, phone and address every time. */
-  snapCheckout();
   if(!o.customer.name||!o.customer.phone){ toast("Please add your name and phone"); return; }
-  /* Last line of defence, because everything above it is a screen the customer can be
-     carried past. The modal can have been opened before a cart edit emptied it, and the
-     ฿300 floor lives on the drawer's Checkout button — which the builder's ?checkout=1
-     handoff and the AI's "Checkout now" never touch. Without this an empty or ฿275 cart
-     POSTed an order the API answered 400 to, behind a success screen: the customer
-     believed it was placed and no one at the shop ever saw it.
-     The contact is checked with validContact(), the same test the join form uses — the
-     checkout only asked that the box be non-blank, so "5" was a deliverable order with no
-     way to call the customer back, while "@dankbkk" (which the join form invites, the
-     field being labelled "Phone or LINE") was refused here. */
-  if(!cart.length){ toast("Your cart is empty"); closeAll(); return; }
-  if(!validContact(o.customer.phone)){ toast("Please enter a valid phone number"); $("#coPhone")?.focus(); return; }
-  if(o.subtotal<CONFIG.minOrder){ toast("Minimum order "+money(CONFIG.minOrder)+" — add "+money(CONFIG.minOrder-o.subtotal)+" more"); closeAll(); openCart(); return; }
   // oversell guard — pull the freshest stock before charging/placing
   if((method==="place")&&location.protocol!=="file:"&&CONFIG.apiUrl){
     await checkMenu(true);
@@ -1840,22 +1352,9 @@ async function submitOrder(method){
       const r=await fetch(CONFIG.orderWebhook,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(o)});
       if(r.status===402){ const j=await r.json().catch(()=>({})); toast("Wallet balance "+money(j.balance||0)+" — not enough. Top up?"); closeAll(); openWallet(); return; }
       if(!r.ok) throw new Error("bad status");
-      const j=await r.json().catch(()=>({}));
-      orderId=oid(j.orderId); lastOrderId=orderId; rememberOrder(orderId);
-      /* Wallet orders are NOT charged here any more, so this can no longer say "Paid".
-         It said so for a while against a wallet that still had every baht in it: the
-         customer arrived believing the order was settled and the shop had to ask again. */
-      if(o.payment==="Wallet"||j.walletPending){ refreshWallet();
-        return showSuccess("order","Order "+orderId+" is in 🌿 "+money(o.total)+" is set aside from your wallet (balance "+money(j.balance!=null?j.balance:walletBalance)+") and comes off when you "+(o.fulfilment==="delivery"?"take delivery":"collect")+" — nothing has been deducted yet."); }
-    }catch(e){
-      /* This used to show the LINE success screen, and showSuccess() empties the cart in
-         memory AND in storage. Every step of that "fallback" can fail silently: copyText
-         swallows a clipboard rejection, window.open is popup-blocked as often as not. So
-         the customer was told the order was sent, had nothing on the clipboard, no LINE
-         window, no order at the shop — and no cart left to try again with. Keep the cart
-         and offer the retry. */
-      return showRetry(o,text,"We couldn't reach our order system.");
-    }
+      orderId=(await r.json()).orderId||""; lastOrderId=orderId; rememberOrder(orderId);
+      if(o.payment==="Wallet"){ refreshWallet(); return showSuccess("paid","Paid "+money(o.total)+" from your wallet — order "+orderId+" confirmed! 🌿"); }
+    }catch(e){ copyText(text); window.open(CONFIG.lineUrl,"_blank"); return showSuccess("LINE","We couldn't reach our order system, so we opened LINE with your order copied — just paste & send."); }
   } else {
     copyText(text); window.open(CONFIG.lineUrl,"_blank");
     return showSuccess("LINE","We've opened LINE and copied your order — just paste & send it to confirm.");
@@ -1909,17 +1408,17 @@ async function uploadSlip(orderId,input){ const f=input.files&&input.files[0]; i
   }catch(e){ if(inner) inner.textContent="⚠️ Upload failed — tap to retry"; }
 }
 var cryptoSel=0;
-function showCryptoPay(orderId,amount){ clearCartAfterOrder(); cryptoSel=0; renderCrypto(orderId,amount); }
+function showCryptoPay(orderId,amount){ cart=[]; appliedPromo=null; saveCart(); updateCartCount(); cryptoSel=0; renderCrypto(orderId,amount); }
 function renderCrypto(orderId,amount){
   const cc=CONFIG.crypto, w=cc.wallets[cryptoSel]||cc.wallets[0];
   $("#coCard").innerHTML=`<div class="drawer-head" style="border:none;padding:18px 20px 4px"><h2>₿ Pay with crypto</h2><button class="close-x" onclick="closeAll()">×</button></div>
     <div style="padding:6px 20px 22px">
-      <p style="color:var(--muted);font-size:13px;margin:0 0 10px">${esc(cc.note)}</p>
-      ${cc.wallets.length>1?`<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">${cc.wallets.map((x,i)=>`<button class="chip ${i===cryptoSel?'active':''}" onclick="cryptoSel=${i};renderCrypto('${orderId}',${amount})">${esc(x.label)}</button>`).join("")}</div>`:''}
+      <p style="color:var(--muted);font-size:13px;margin:0 0 10px">${cc.note}</p>
+      ${cc.wallets.length>1?`<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">${cc.wallets.map((x,i)=>`<button class="chip ${i===cryptoSel?'active':''}" onclick="cryptoSel=${i};renderCrypto('${orderId}',${amount})">${x.label}</button>`).join("")}</div>`:''}
       <div style="text-align:center">
-        <img src="${esc(w.qr)}" alt="${esc(w.label)}" style="width:220px;height:220px;object-fit:contain;background:#fff;border-radius:14px;padding:8px" onerror="this.style.display='none'">
-        <div style="color:var(--muted);font-size:12.5px;margin-top:6px">${esc(w.label)}${w.network?" · "+esc(w.network):""}</div>
-        ${w.address?`<div style="display:flex;gap:6px;margin-top:8px"><input readonly value="${esc(w.address)}" style="flex:1;background:var(--panel);border:1px solid var(--line2);color:var(--txt);padding:9px;border-radius:9px;font-size:11.5px"><button class="promo-btn" onclick="copyWalletAddr()">Copy</button></div>`:''}
+        <img src="${w.qr}" alt="${w.label}" style="width:220px;height:220px;object-fit:contain;background:#fff;border-radius:14px;padding:8px" onerror="this.style.display='none'">
+        <div style="color:var(--muted);font-size:12.5px;margin-top:6px">${w.label}${w.network?" · "+w.network:""}</div>
+        ${w.address?`<div style="display:flex;gap:6px;margin-top:8px"><input readonly value="${w.address}" style="flex:1;background:var(--panel);border:1px solid var(--line2);color:var(--txt);padding:9px;border-radius:9px;font-size:11.5px"><button class="promo-btn" onclick="copyText('${w.address}');toast('Address copied')">Copy</button></div>`:''}
       </div>
       <div class="cart-total-row grand" style="justify-content:center;gap:10px;margin-top:10px"><span>Amount</span><span>${money(amount)}</span></div>
       <p style="color:var(--muted2);font-size:11.5px;text-align:center;margin:2px 0 12px">Order <b>${orderId}</b> · send the crypto equivalent of ${money(amount)} at current rates.</p>
@@ -1950,22 +1449,22 @@ function ppPayload(target,amount){
   p=p+"6304"; return p+ppCRC(p);
 }
 var ppSel=0;
-function showPromptPayQR(orderId,amount){ clearCartAfterOrder(); ppSel=0; renderPP(orderId,amount); }
+function showPromptPayQR(orderId,amount){ cart=[]; appliedPromo=null; saveCart(); updateCartCount(); ppSel=0; renderPP(orderId,amount); }
 function renderPP(orderId,amount){
   const pp=CONFIG.promptpay;
   const accs=(pp.accounts&&pp.accounts.length)?pp.accounts:[{label:"PromptPay",name:pp.name,accNo:pp.accNo,image:pp.image}];
   const a=accs[ppSel]||accs[0];
   const qrHTML = a.image
-    ? `<img src="${esc(a.image)}" alt="PromptPay QR" style="width:230px;height:230px;object-fit:contain;background:#fff;border-radius:14px;padding:8px">`
+    ? `<img src="${a.image}" alt="PromptPay QR" style="width:230px;height:230px;object-fit:contain;background:#fff;border-radius:14px;padding:8px">`
     : `<div id="ppQR" style="width:230px;height:230px;margin:0 auto;background:#fff;border-radius:14px;padding:10px;display:flex;align-items:center;justify-content:center"></div>`;
   $("#coCard").innerHTML=`<div class="drawer-head" style="border:none;padding:18px 20px 4px"><h2>📱 PromptPay · ${money(amount)}</h2><button class="close-x" onclick="closeAll()">×</button></div>
     <div style="padding:6px 20px 22px;text-align:center">
       <div style="font-weight:800;color:var(--green2);font-size:13px;margin-bottom:8px">🇹🇭 Thai QR Payment · PromptPay</div>
       ${accs.length>1?`<div style="display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin-bottom:10px">${accs.map((x,i)=>`<button class="chip ${i===ppSel?'active':''}" onclick="ppSel=${i};renderPP('${orderId}',${amount})">${i===0?'QR '+(i+1):'Backup QR'}</button>`).join("")}</div>`:''}
       ${qrHTML}
-      <div style="font-size:13px;margin-top:8px">${a.name?("ชื่อ: "+esc(a.name)):""}${a.accNo?("<br>บัญชี: "+esc(a.accNo)):""}</div>
+      <div style="font-size:13px;margin-top:8px">${a.name?("ชื่อ: "+a.name):""}${a.accNo?("<br>บัญชี: "+a.accNo):""}</div>
       ${accs.length>1?`<p style="color:var(--gold);font-size:12px;margin:6px 0 0">ถ้า QR แรกใช้ไม่ได้ กดปุ่ม "Backup QR" ด้านบน · If the first QR doesn't work, tap Backup QR.</p>`:''}
-      <p style="color:var(--muted);font-size:12.5px;margin:6px 0 2px">${esc(pp.note||"")}</p>
+      <p style="color:var(--muted);font-size:12.5px;margin:6px 0 2px">${pp.note||""}</p>
       <div class="cart-total-row grand" style="justify-content:center;gap:10px;margin-top:6px"><span>Amount</span><span>${money(amount)}</span></div>
       <p style="color:var(--muted2);font-size:11.5px;margin:2px 0 12px">Order <b>${orderId}</b> — pay ${money(amount)}, then upload your slip. We confirm & prepare it.</p>
       <div style="text-align:left">${slipBoxHTML(orderId)}</div>
@@ -1974,9 +1473,9 @@ function renderPP(orderId,amount){
   if(!a.image){ const payload=ppPayload(a.id||pp.id,amount); loadQRlib().then(()=>{ const el=$("#ppQR"); if(!el)return; if(window.QRCode){ el.innerHTML=""; new QRCode(el,{text:payload,width:210,height:210,correctLevel:QRCode.CorrectLevel.M}); } else { el.innerHTML="<div style='color:#333;font-size:11px;word-break:break-all;padding:6px'>"+payload+"</div>"; } }); }
 }
 function showGatewayQR(orderId,qr,amount,who){
-  clearCartAfterOrder();
+  cart=[]; appliedPromo=null; saveCart(); updateCartCount();
   $("#coCard").innerHTML=`<div class="success"><h2>Scan to pay ${money(amount)}</h2>
-    <p>${esc(who)} · PromptPay</p><img src="${esc(qr)}" style="width:220px;height:220px;object-fit:contain;background:#fff;border-radius:14px;padding:10px;margin:12px auto;display:block">
+    <p>${who} · PromptPay</p><img src="${qr}" style="width:220px;height:220px;object-fit:contain;background:#fff;border-radius:14px;padding:10px;margin:12px auto;display:block">
     <p id="gwWait" style="color:var(--gold)">⏳ Waiting for payment…</p>
     <button class="btn btn-ghost btn-block" onclick="closeAll()">Close</button></div>`;
   clearInterval(window._gwPoll);
@@ -1984,111 +1483,29 @@ function showGatewayQR(orderId,qr,amount,who){
     if(j.found&&j.payStatus==="paid"){ clearInterval(window._gwPoll); showSuccess("paid",`Payment received — order ${orderId} confirmed! 🌿`); } }catch(e){} },3000);
 }
 function showBankTransfer(orderId,amount){
-  const bk=CONFIG.bank; clearCartAfterOrder();
+  const bk=CONFIG.bank; cart=[]; appliedPromo=null; saveCart(); updateCartCount();
   $("#coCard").innerHTML=`<div class="success" style="text-align:left"><h2 style="text-align:center">Bank transfer · ${money(amount)}</h2>
     <div style="background:var(--panel);border:1px solid var(--line2);border-radius:12px;padding:14px;margin:12px 0;font-size:14px">
-      <div style="display:flex;justify-content:space-between;margin:4px 0"><span style="color:var(--muted)">Bank</span><b>${esc(bk.name)}</b></div>
-      <div style="display:flex;justify-content:space-between;margin:4px 0"><span style="color:var(--muted)">Account</span><b>${esc(bk.accName)}</b></div>
-      <div style="display:flex;justify-content:space-between;margin:4px 0"><span style="color:var(--muted)">No.</span><b>${esc(bk.accNo)}</b></div>
+      <div style="display:flex;justify-content:space-between;margin:4px 0"><span style="color:var(--muted)">Bank</span><b>${bk.name}</b></div>
+      <div style="display:flex;justify-content:space-between;margin:4px 0"><span style="color:var(--muted)">Account</span><b>${bk.accName}</b></div>
+      <div style="display:flex;justify-content:space-between;margin:4px 0"><span style="color:var(--muted)">No.</span><b>${bk.accNo}</b></div>
       <div style="display:flex;justify-content:space-between;margin:4px 0"><span style="color:var(--muted)">Amount</span><b style="color:var(--green2)">${money(amount)}</b></div>
     </div>
-    <p style="color:var(--muted);font-size:13px;text-align:center">Order <b>${orderId}</b> · transfer then send your slip on <a style="color:var(--green2)" href="${esc(CONFIG.lineUrl)}" target="_blank">LINE</a>. We confirm & prepare it.</p>
-    <button class="btn btn-primary btn-block" style="margin-top:8px" onclick="copyBankAcc()">Copy account no.</button>
+    <p style="color:var(--muted);font-size:13px;text-align:center">Order <b>${orderId}</b> · transfer then send your slip on <a style="color:var(--green2)" href="${CONFIG.lineUrl}" target="_blank">LINE</a>. We confirm & prepare it.</p>
+    <button class="btn btn-primary btn-block" style="margin-top:8px" onclick="copyText('${bk.accNo}');toast('Account no. copied')">Copy account no.</button>
     <div style="margin-top:12px">${slipBoxHTML(orderId)}</div>
     <button class="btn btn-ghost btn-block" style="margin-top:10px" onclick="closeAll()">Done</button></div>`;
 }
-function showSuccess(via,msg){
-  if(bonusEligible()) LS.set("firstUsed",true);
-  clearCartAfterOrder(); showBannerMaybe();
-  setAvatar("celebrate");
-  const cm=av("celebrate"); if(cm){ $("#fabImg").src=cm; clearTimeout(window._fabT); window._fabT=setTimeout(()=>{ $("#fabImg").src=av("cool"); },3500); }
-  /* No slip box on a wallet order. There is no bank slip to upload, and putting one under
-     "nothing has been deducted yet" reads as a second demand for money. */
-  const slip=(lastOrderId&&via!=="paid"&&coPay!=="Cash"&&coPay!=="Wallet")?`<div style="text-align:left;margin-top:16px">${slipBoxHTML(lastOrderId)}</div>`:"";
-  const head=via==="paid"?"Payment received! 🎉":via==="order"?"Order placed! 🎉":`Order sent via ${esc(via)}`;
-  $("#coCard").innerHTML=`<div class="success"><img src="${av("celebrate")}" style="width:96px;height:96px;object-fit:contain;margin:0 auto;animation:floaty 3s ease-in-out infinite"><h2>${head}</h2><p>${msg}</p>${slip}<button class="btn btn-primary btn-block" style="margin-top:16px" onclick="closeAll()">Done</button></div>`;
-}
-/* Shown when the order did NOT reach us. It deliberately does none of what showSuccess()
-   does — the cart stays exactly as it was, in memory and in storage, because the customer
-   still has to place this order. The LINE button is a real anchor rather than
-   window.open() so a popup blocker cannot swallow it, and the order text sits in a
-   selectable box so it is recoverable even where the clipboard API is refused. */
-var retryText="";
-function showRetry(o,text,why){
-  retryText=text;
-  setAvatar("neutral");
-  $("#coCard").innerHTML=`<div class="success" style="text-align:left">
-    <div style="text-align:center"><div class="big" style="font-size:44px">📡</div>
-    <h2 style="color:var(--gold)">Not sent yet</h2>
-    <p style="text-align:center">${esc(why)} Your cart is safe — nothing was ordered and nothing was charged.</p></div>
-    <div class="cart-total-row grand" style="margin:10px 0"><span>Your order</span><span>${money(o.total)}</span></div>
-    <button class="btn btn-primary btn-block" onclick="retrySubmit()">🔁 Try again</button>
-    <div style="text-align:center;color:var(--muted);font-size:12px;margin:10px 0 6px">or send it to us yourself</div>
-    <a class="btn btn-ghost btn-block" href="${esc(CONFIG.lineUrl)}" target="_blank" rel="noopener" style="text-align:center;text-decoration:none">💬 Open LINE</a>
-    <button class="btn btn-ghost btn-block" style="margin-top:8px" onclick="copyOrderText()">📋 Copy my order</button>
-    <textarea id="retryText" readonly rows="6" onclick="this.select()" style="width:100%;margin-top:10px;background:var(--panel);border:1px solid var(--line2);color:var(--txt);border-radius:10px;padding:10px;font-size:11.5px;font-family:inherit">${esc(text)}</textarea>
-    <button class="btn btn-ghost btn-block" style="margin-top:10px" onclick="closeAll();openCart()">← Back to my cart</button></div>`;
-}
-/* "🔁 Try again" never once worked. showRetry() replaces the whole of #coCard, so by the
-   time this runs there is no #coName, #coPhone, #coAddr or card form left on the page — and
-   submitOrder() reads all of them straight from the DOM. Every retry therefore bounced off
-   the very first check with "Please add your name and phone", toasted over a screen holding
-   neither box, and the request was never even attempted: the one button on the one screen a
-   customer reaches only after their order has already failed. Put the form back first
-   (renderCheckout() ends in fillCheckout(), which restores everything that was typed) so the
-   resubmit has real fields to read, and so a Card retry lands on a card form the customer
-   can actually complete instead of a toast about fields that are not there. */
-function retrySubmit(){ renderCheckout(); submitOrder("place"); }
-async function copyOrderText(){
-  const okc=await copyText(retryText);
-  if(okc){ toast("Order copied — paste it to us on LINE"); return; }
-  const ta=$("#retryText"); if(ta){ ta.focus(); ta.select(); }
-  toast("Couldn't copy automatically — the text is selected, copy it");
-}
-/* Reports whether the copy actually happened. It used to swallow the rejection, which is
-   how "we copied your order — just paste & send" got shown to people with an empty
-   clipboard. Falls back to the old execCommand path where the async API is refused. */
-function copyText(t){
-  try{
-    if(navigator.clipboard&&navigator.clipboard.writeText)
-      return navigator.clipboard.writeText(t).then(()=>true,()=>legacyCopy(t));
-  }catch(e){}
-  return Promise.resolve(legacyCopy(t));
-}
-function legacyCopy(t){
-  try{
-    const ta=document.createElement("textarea");
-    ta.value=t; ta.setAttribute("readonly","");
-    ta.style.cssText="position:fixed;top:-1000px;left:-1000px;opacity:0";
-    document.body.appendChild(ta); ta.select(); ta.setSelectionRange(0,String(t).length);
-    const okc=document.execCommand("copy"); document.body.removeChild(ta); return !!okc;
-  }catch(e){ return false; }
-}
+function showSuccess(via,msg){ if(bonusEligible()) LS.set("firstUsed",true); cart=[]; appliedPromo=null; saveCart(); updateCartCount(); showBannerMaybe(); setAvatar("celebrate"); const cm=av("celebrate"); if(cm){ $("#fabImg").src=cm; clearTimeout(window._fabT); window._fabT=setTimeout(()=>{ $("#fabImg").src=av("cool"); },3500);} const slip=(lastOrderId&&via!=="paid"&&coPay!=="Cash")?`<div style="text-align:left;margin-top:16px">${slipBoxHTML(lastOrderId)}</div>`:""; $("#coCard").innerHTML=`<div class="success"><img src="${av("celebrate")}" style="width:96px;height:96px;object-fit:contain;margin:0 auto;animation:floaty 3s ease-in-out infinite"><h2>${via==="paid"?"Payment received! 🎉":via==="order"?"Order placed! 🎉":`Order sent via ${via}`}</h2><p>${msg}</p>${slip}<button class="btn btn-primary btn-block" style="margin-top:16px" onclick="closeAll()">Done</button></div>`; }
+function copyText(t){ try{ navigator.clipboard.writeText(t); }catch(e){} }
 
 /* ---- Overlay/modal helpers ---- */
 function admBarHide(){ const ab=document.getElementById("adminBar"); if(ab) ab.style.display="none"; }
 function admBarShow(){ const ab=document.getElementById("adminBar"); if(ab&&adminMode) ab.style.display="flex"; }
-/* The floating budtender bubble is fixed to the bottom-right corner at z-index 85, above the
-   cart drawer (70) and the modals (80). On a 390px phone that put it exactly on top of the
-   drawer's "Checkout · ฿900" button: the hit test at the middle of that button returned the
-   FAB, so the tap opened the chat instead of starting the order. It hides with the admin bar
-   and comes back with it, which also keeps it off the checkout, product and wallet screens. */
-function aiFabHide(){ const f=document.getElementById("aiFab"); if(f) f.style.display="none"; }
-function aiFabShow(){ const f=document.getElementById("aiFab"); if(f) f.style.display=""; }
-/* Every screen that lives in #infoModal — wallet, top-up QR, members, quiz, help, my orders,
-   the owner editors — paints over the same #infoCard, and the payment/top-up pollers were
-   only stopped by closeAll(). Opening any of the others straight from one of them therefore
-   left a 3-second timer running that would later write "✅ Top-up complete!" over whatever
-   the customer had moved on to. A new screen now stops the previous screen's pollers; every
-   poller is started after its own showModal() call, so this can never cancel a live one.
-   closeAI() is here for the reason openCheckout() already did it by hand: #aiPanel sits at
-   z-index 95 against a modal's 80 and goes full-screen on a phone, so a modal opened from
-   chat — a product card, "top up your wallet", the members popup on its timer — opened
-   invisibly behind the conversation. */
-function showModal(sel){ clearInterval(window._payPoll); clearInterval(window._gwPoll); clearInterval(window._topupPoll); closeAI(); $("#overlay").classList.add("show"); $(sel).classList.add("show"); document.body.style.overflow="hidden"; admBarHide(); aiFabHide(); }
-function showDrawer(){ $("#overlay").classList.add("show"); $("#cartDrawer").classList.add("show"); document.body.style.overflow="hidden"; admBarHide(); aiFabHide(); }
+function showModal(sel){ $("#overlay").classList.add("show"); $(sel).classList.add("show"); document.body.style.overflow="hidden"; admBarHide(); }
+function showDrawer(){ $("#overlay").classList.add("show"); $("#cartDrawer").classList.add("show"); document.body.style.overflow="hidden"; admBarHide(); }
 function closeDrawerOnly(){ $("#cartDrawer").classList.remove("show"); }
-function closeAll(){ clearInterval(window._payPoll); clearInterval(window._gwPoll); clearInterval(window._topupPoll); $("#overlay").classList.remove("show"); $("#cartDrawer").classList.remove("show"); $("#pdModal").classList.remove("show"); $("#coModal").classList.remove("show"); $("#infoModal").classList.remove("show"); document.body.style.overflow=""; admBarShow(); aiFabShow(); }
+function closeAll(){ clearInterval(window._payPoll); clearInterval(window._gwPoll); clearInterval(window._topupPoll); $("#overlay").classList.remove("show"); $("#cartDrawer").classList.remove("show"); $("#pdModal").classList.remove("show"); $("#coModal").classList.remove("show"); $("#infoModal").classList.remove("show"); document.body.style.overflow=""; admBarShow(); }
 function toast(m){ const t=$("#toast"); t.textContent=m; t.classList.add("show"); clearTimeout(t._t); t._t=setTimeout(()=>t.classList.remove("show"),1800); }
 
 /* ============================================================
@@ -2118,7 +1535,7 @@ function openAI(seed){
 function closeAI(){ $("#aiPanel").classList.remove("show"); }
 function aiPush(role,html){ aiHistory.push({role,html}); const b=$("#aiBody"); const d=document.createElement("div"); d.className="msg "+role; d.innerHTML=html; b.appendChild(d); b.scrollTop=b.scrollHeight; }
 function aiTyping(on){ const b=$("#aiBody"); if(on){ const t=document.createElement("div"); t.className="typing"; t.id="aiTyping"; t.innerHTML="<i></i><i></i><i></i>"; b.appendChild(t); b.scrollTop=b.scrollHeight; } else $("#aiTyping")?.remove(); }
-function renderQuick(arr){ $("#aiQuick").innerHTML=arr.map(q=>`<button class="ai-q" onclick="aiQuick(this)">${esc(q)}</button>`).join(""); }
+function renderQuick(arr){ $("#aiQuick").innerHTML=arr.map(q=>`<button class="ai-q" onclick="aiQuick(this)">${q}</button>`).join(""); }
 function aiQuick(el){ $("#aiInput").value=el.textContent; aiSend(); }
 function aiSend(){
   const v=($("#aiInput").value||"").trim(); if(!v)return;
@@ -2215,10 +1632,7 @@ async function sendHandoff(contact){
     renderQuick(th?["ดูเมนูต่อ","สั่งของต่อ"]:["Keep browsing","Back to my order"]);
   }
 }
-/* Kept only as a name the live-chat code already calls. It used to cover & < > and nothing
-   else — which leaves " and ' free inside an attribute — and it threw outright on anything
-   that was not a string, so one staff message with no text killed the chat poller. */
-function escapeHtml(s){ return esc(s); }
+function escapeHtml(s){ return s.replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
 
 async function respond(q){
   // If a real AI endpoint is configured, use it for the freeform brain; else built-in.
@@ -2254,14 +1668,14 @@ function afterRespond(){ if(aiMsgCount===2 && cart.length===0) renderQuick(["Add
 function defaultQuick(){ return cart.length?["Checkout now","Something else","Delivery info","Talk to a human"]:["Something for sleep","For energy","Most potent","Cheapest","Do you deliver?"]; }
 
 function aiContext(){
-  const menu=shopData().map(p=>`${p.name} | ${p.category} | ${p.type} | THC ${p.thcLabel||p.thc} | ${money(listPrice(p))}${!isFlower(p)&&p.member?` (member ${money(p.member)})`:''} | ${(p.effects||[]).join(", ")}`).join("\n");
+  const menu=DATA.map(p=>`${p.name} | ${p.category} | ${p.type} | THC ${p.thcLabel||p.thc} | ${money(listPrice(p))}${!isFlower(p)&&p.member?` (member ${money(p.member)})`:''} | ${(p.effects||[]).join(", ")}`).join("\n");
   return `You are DANK AI, a friendly cannabis budtender for ${CONFIG.brand} in Bangkok. Help customers pick products and place an order (delivery or pickup). Hours: ${CONFIG.hours}. Branches: ${CONFIG.branches.filter(b=>b!=='All branches').join(", ")}. Delivery: ${CONFIG.deliveryNote}. Payments: ${CONFIG.payments.join(", ")}. Reply in the customer's language. MENU:\n${menu}`;
 }
 function fallbackText(q){
   const th=TH(q);
   return th
-    ?`ขอโทษค่ะ ยังไม่แน่ใจคำถามนี้ 🙏 ลองถามเรื่อง ราคา / สายพันธุ์ / ส่ง / เวลาเปิด / วิธีสั่ง ได้เลย — หรือทักแอดมินที่ <a style="color:var(--green2)" href="${esc(CONFIG.lineUrl)}" target="_blank">LINE ${esc(CONFIG.lineId)}</a> ได้ตลอด 24 ชม.`
-    :`I'm not totally sure on that one 🙏 — try asking about prices, strains, effects, delivery, hours or how to order. Or chat a human anytime on <a style="color:var(--green2)" href="${esc(CONFIG.lineUrl)}" target="_blank">LINE ${esc(CONFIG.lineId)}</a>.`;
+    ?`ขอโทษค่ะ ยังไม่แน่ใจคำถามนี้ 🙏 ลองถามเรื่อง ราคา / สายพันธุ์ / ส่ง / เวลาเปิด / วิธีสั่ง ได้เลย — หรือทักแอดมินที่ <a style="color:var(--green2)" href="${CONFIG.lineUrl}" target="_blank">LINE ${CONFIG.lineId}</a> ได้ตลอด 24 ชม.`
+    :`I'm not totally sure on that one 🙏 — try asking about prices, strains, effects, delivery, hours or how to order. Or chat a human anytime on <a style="color:var(--green2)" href="${CONFIG.lineUrl}" target="_blank">LINE ${CONFIG.lineId}</a>.`;
 }
 
 /* ---- Built-in intent engine ---- */
@@ -2271,8 +1685,8 @@ function builtinRespond(q){
 
   // buying intent / close the deal
   if(has("add","buy","order it","i'll take","get it","checkout","สั่ง","ซื้อ","เอาเลย","เอาอันนี้","จ่าย")){
-    if(aiLastProduct){ addToCart(aiLastProduct,isFlower(aiLastProduct)?aiLastProduct.priceTiers[0]:null); updateCartCount(); aiNextAvatar="love";
-      aiPush("ai",th?`เพิ่ม <b>${esc(aiLastProduct.name)}</b> ลงตะกร้าแล้ว ✅ กด "สั่งเลย" เพื่อเลือกส่ง/รับเองและชำระเงินได้เลยค่ะ`:`Added <b>${esc(aiLastProduct.name)}</b> to your cart ✅ Tap below to set up delivery or pickup and check out.`);
+    if(aiLastProduct){ addToCart(aiLastProduct,isFlower(aiLastProduct)?((aiLastProduct.priceTiers&&aiLastProduct.priceTiers[0])||null):null); updateCartCount(); aiNextAvatar="love";
+      aiPush("ai",th?`เพิ่ม <b>${aiLastProduct.name}</b> ลงตะกร้าแล้ว ✅ กด "สั่งเลย" เพื่อเลือกส่ง/รับเองและชำระเงินได้เลยค่ะ`:`Added <b>${aiLastProduct.name}</b> to your cart ✅ Tap below to set up delivery or pickup and check out.`);
       aiCTA(th?"🛒 สั่งเลย":"🛒 Checkout now","openCheckout"); return true; }
     if(cart.length){ aiPush("ai",th?"ตะกร้ามีของแล้ว ✅ กดสั่งเลยได้เลยค่ะ":"Your cart's ready ✅ Let's check out."); aiCTA(th?"🛒 สั่งเลย":"🛒 Checkout now","openCheckout"); return true; }
     aiPush("ai",th?"ได้เลยค่ะ! อยากได้แนวไหนดี — ผ่อนคลาย/นอนหลับ, ตื่นตัว, หรือดูเมนูทั้งหมด?":"Happy to help! What vibe are you after — relaxed/sleep, energised, or want to see the full menu?");
@@ -2297,14 +1711,14 @@ function builtinRespond(q){
   if(has("cheap","cheapest","affordable","lowest","ถูก","ประหยัด","ราคาถูก")) return recommendSorted((a,b)=>basePrice(a)-basePrice(b),p=>isFlowerCat(p),th?"ตัวคุ้มสุดค่ะ 💚 Midgrade เริ่ม ฿200":"Best value picks 💚 Midgrade from ฿200");
 
   // named product / price
-  const named=shopData().find(p=>s.includes(p.name.toLowerCase())||p.name.toLowerCase().split(" ").some(w=>w.length>3&&s.includes(w)));
+  const named=DATA.find(p=>s.includes(p.name.toLowerCase())||p.name.toLowerCase().split(" ").some(w=>w.length>3&&s.includes(w)));
   if(named && has("price","how much","cost","ราคา","เท่าไห","กี่บาท")){ aiLastProduct=named; return productReply(named,th); }
   if(named){ aiLastProduct=named; return productReply(named,th); }
   if(has("price","how much","cost","ราคา","เท่าไห","กี่บาท")){ aiPush("ai",th?"บอกชื่อสินค้าหรือหมวด (ดอก/กินได้/เครื่องดื่ม) เดี๋ยวบอกราคาให้ค่ะ 💚 หรือดูเมนูด้านล่าง":"Tell me the product or category (flower / edible / drink) and I'll give you the price 💚"); renderQuick(["Cheapest flower","Edibles","Most potent"]); return true; }
 
   // categories / menu
   if(has("menu","what do you have","selection","products","list","เมนู","มีอะไร","สินค้า","ขายอะไร")){
-    const cats=Array.from(new Set(shopData().map(p=>p.category)));
+    const cats=Array.from(new Set(DATA.map(p=>p.category)));
     aiPush("ai",(th?"เรามี: ":"We've got: ")+cats.join(" · ")+(th?" — สนใจหมวดไหนคะ? หรือกดดูเมนูเต็มได้เลย":" — which are you into? Or open the full menu below."));
     aiCTA(th?"📋 ดูเมนูทั้งหมด":"📋 Open full menu","scrollMenu"); renderQuick(cats); return true;
   }
@@ -2343,12 +1757,12 @@ function builtinRespond(q){
   return false; // let LLM / fallback handle
 }
 function recommend(filter,intro,typeTag){
-  let list=shopData().filter(filter).filter(p=>p.stock>0);
+  let list=DATA.filter(filter).filter(p=>p.stock>0);
   list.sort((a,b)=>(b.featured?1:0)-(a.featured?1:0)||b.thc-a.thc);
   return emitRecs(list.slice(0,3),intro);
 }
 function recommendSorted(sortfn,filter,intro){
-  let list=shopData().filter(filter).filter(p=>p.stock>0).sort(sortfn);
+  let list=DATA.filter(filter).filter(p=>p.stock>0).sort(sortfn);
   return emitRecs(list.slice(0,3),intro);
 }
 function emitRecs(list,intro){
@@ -2358,22 +1772,22 @@ function emitRecs(list,intro){
   const b=$("#aiBody"); const wrap=document.createElement("div"); wrap.className="ai-cards";
   wrap.innerHTML=list.map(p=>{
     const pr=isFlower(p)?(memberMode?p.priceTiers[0].member:p.priceTiers[0].price):(memberMode?p.member:p.price);
-    const meta=isFlowerCat(p)?`${esc(p.type)} · THC ${thcTxt(p)} · from ${money(pr)}`:`${esc(p.category)} · ${money(pr)}`;
+    const meta=isFlowerCat(p)?`${p.type} · THC ${thcTxt(p)} · from ${money(pr)}`:`${p.category} · ${money(pr)}`;
     return `<div class="ai-pcard"><div class="ci-thumb">${imgTag(p,true)}</div>
-      <div class="pc-main"><h5>${esc(p.name)}</h5><div class="pc-meta">${meta}</div></div>
+      <div class="pc-main"><h5>${p.name}</h5><div class="pc-meta">${meta}</div></div>
       <button class="pc-add" onclick="aiAdd('${p.id}')">Add +</button></div>`;
   }).join("");
   b.appendChild(wrap); b.scrollTop=b.scrollHeight;
   aiPush("ai",TH(intro)?"อยากให้เพิ่มลงตะกร้าตัวไหน บอกได้เลยค่ะ 👆 หรือกด Add":"Tap Add on any, or tell me which and I'll pop it in your cart 👆");
   return true;
 }
-function aiAdd(id){ const p=shopData().find(x=>x.id===id); if(!p)return; aiLastProduct=p; addToCart(p,isFlower(p)?p.priceTiers[0]:null); updateCartCount(); setAvatar("love"); clearTimeout(window._avT); window._avT=setTimeout(()=>setAvatar("neutral"),2400); aiPush("ai",`✅ Added <b>${esc(p.name)}</b>. Anything else, or ready to check out?`); aiCTA("🛒 Checkout now","openCheckout"); renderQuick(["Add something else","Delivery info","Checkout now"]); }
+function aiAdd(id){ const p=DATA.find(x=>x.id===id); if(!p)return; aiLastProduct=p; addToCart(p,isFlower(p)?p.priceTiers[0]:null); updateCartCount(); setAvatar("love"); clearTimeout(window._avT); window._avT=setTimeout(()=>setAvatar("neutral"),2400); aiPush("ai",`✅ Added <b>${p.name}</b>. Anything else, or ready to check out?`); aiCTA("🛒 Checkout now","openCheckout"); renderQuick(["Add something else","Delivery info","Checkout now"]); }
 function productReply(p,th){
   const pr=isFlower(p)?(memberMode?p.priceTiers[0].member:p.priceTiers[0].price):(memberMode?p.member:p.price);
   const mem=isFlower(p)?p.priceTiers[0].member:p.member;
   const priceLine=isFlower(p)?`from ${money(p.priceTiers[0].price)}${mem?` (⭐ ${money(mem)} member)`:''}`:`${money(p.price)}${mem?` (⭐ ${money(mem)} member)`:''}`;
-  const pot=isFlowerCat(p)?`THC ${thcTxt(p)}`:p.category==="Edibles"?`THC ${thcTxt(p)}`:esc(p.category);
-  aiPush("ai",`<b>${esc(p.name)}</b> — ${esc(p.type)}${p.category==="Flowers"?"":" · "+esc(p.category)}\n${pot}\n${esc(p.description)}\n\n${th?"ราคา":"Price"}: <b>${priceLine}</b>${p.stock<=5&&p.stock>0?(th?`\n⚠️ เหลือ ${p.stock} เท่านั้น`:`\n⚠️ Only ${p.stock} left`):""}`);
+  const pot=isFlowerCat(p)?`THC ${thcTxt(p)}`:p.category==="Edibles"?`THC ${thcTxt(p)}`:p.category;
+  aiPush("ai",`<b>${p.name}</b> — ${p.type}${p.category==="Flowers"?"":" · "+p.category}\n${pot}\n${p.description}\n\n${th?"ราคา":"Price"}: <b>${priceLine}</b>${p.stock<=5&&p.stock>0?(th?`\n⚠️ เหลือ ${p.stock} เท่านั้น`:`\n⚠️ Only ${p.stock} left`):""}`);
   aiCTA(th?`➕ ใส่ตะกร้า ${p.name}`:`➕ Add ${p.name}`,"aiAdd:"+p.id); return true;
 }
 function aiCTA(label,action){
@@ -2432,56 +1846,29 @@ async function openOrders(){
         <button class="btn btn-primary" style="padding:11px 16px" onclick="trackOne()">Track</button></div></div>
       <div id="ordersList">${ids.length?'<p style="color:var(--muted);font-size:13px">Loading your recent orders…</p>':'<p style="color:var(--muted);font-size:13.5px">No orders yet on this device. Place an order or track by number above.</p>'}</div>
     </div>`;
-  if(!ids.length) return;
-  /* This panel only ever asks about the first ten saved ids, and every number typed into
-     the box above was saved whether or not it existed — each one jumping to the front of
-     the list. Ten typos pushed every real order out of the window and the panel then read
-     "couldn't load your orders" for good. Typos are no longer saved (see trackOne), and an
-     id the server positively does not have is dropped here so a list poisoned before this
-     fix heals itself on the next look. Only a definite {found:false} prunes — a network
-     failure must never delete somebody's order history. */
-  let html=await ordersHTML(ids);
-  if(!html && pruneMissingOrders()) html=await ordersHTML(myOrders());
-  $("#ordersList").innerHTML=html||'<p style="color:var(--muted);font-size:13.5px">Couldn\'t load your orders right now.</p>';
+  if(ids.length){ const cards=await Promise.all(ids.slice(0,10).map(trackCard)); const html=cards.filter(Boolean).join(""); $("#ordersList").innerHTML=html||'<p style="color:var(--muted);font-size:13.5px">Couldn\'t load your orders right now.</p>'; }
 }
-async function ordersHTML(ids){ const cards=await Promise.all(ids.slice(0,10).map(trackCard)); return cards.filter(Boolean).join(""); }
-function pruneMissingOrders(){ if(!trackMissing.size) return false;
-  const a=myOrders(), keep=a.filter(x=>!trackMissing.has(x));
-  if(keep.length===a.length) return false; LS.set("orders",keep); return true; }
 async function trackCard(id){
   try{ if(location.protocol==="file:") return "";
     const r=await fetch("/api/track?id="+encodeURIComponent(id)); const j=await r.json();
-    if(!j.found){ trackMissing.add(id); return ""; }
+    if(!j.found) return "";
     const paid=j.payStatus==="paid", onarr=j.payStatus==="on_arrival", done=j.status==="done";
     const steps=["Placed", (paid||onarr)?"Confirmed":"Payment", done?"Completed":"Preparing"];
     const stage=done?3:((paid||onarr)?2:1);
     return `<div class="track-card">
-      <div class="oh"><b style="color:var(--green2)">${esc(j.orderId)}</b>
+      <div class="oh"><b style="color:var(--green2)">${j.orderId}</b>
       <span class="badge ${done?'closed':'open'}" style="margin-left:auto">${done?'completed':'in progress'}</span></div>
-      <div style="font-size:12.5px;color:var(--muted);margin:4px 0">${(j.items||[]).map(i=>`${esc(i.name)} ×${esc(i.qty)}`).join(" · ")}</div>
+      <div style="font-size:12.5px;color:var(--muted);margin:4px 0">${j.items.map(i=>`${i.name} ×${i.qty}`).join(" · ")}</div>
       <div class="track-bar">${steps.map((st,i)=>`<div class="tstep ${i<stage?'on':''}"><i></i><span>${st}</span></div>`).join("")}</div>
-      <div style="font-size:12.5px;margin-top:6px">${money(j.total)} · ${j.fulfilment==="delivery"?"🚚 "+esc(j.zone||"Delivery"):"🏬 "+esc(j.branch||"Pickup")} · ${paid?'<span style="color:var(--green2)">PAID ✅</span>':j.payStatus==="unpaid"?'<span style="color:var(--gold)">awaiting payment</span>':'pay on arrival'}</div>
+      <div style="font-size:12.5px;margin-top:6px">${money(j.total)} · ${j.fulfilment==="delivery"?"🚚 "+(j.zone||"Delivery"):"🏬 "+(j.branch||"Pickup")} · ${paid?'<span style="color:var(--green2)">PAID ✅</span>':j.payStatus==="unpaid"?'<span style="color:var(--gold)">awaiting payment</span>':'pay on arrival'}</div>
     </div>`;
   }catch(e){ return ""; }
 }
 async function trackOne(){
-  const id=($("#trackId")?.value||"").trim().toUpperCase();
-  /* An empty box used to return in silence — the button was simply dead, and nothing on the
-     screen said what it wanted. */
-  if(!id){ toast("Enter your order number first"); $("#trackId")?.focus(); return; }
+  const id=($("#trackId").value||"").trim().toUpperCase(); if(!id) return;
+  rememberOrder(id);
   const c=await trackCard(id);
-  /* Only after the server confirms it exists. Saving on sight meant every mistyped number
-     was kept forever at the top of a list that only shows its first ten entries. */
-  if(c) rememberOrder(id);
-  /* trackCard() returns "" for two very different things: the server answered {found:false},
-     or we never got an answer at all — offline, a 500, or a copy of the page opened from a
-     file. Only the first is the customer's typo. This screen called both of them "Order not
-     found", so a real order number on a flaky connection came back as though the order did
-     not exist; trackMissing only ever records a definite no from the server. */
-  $("#ordersList").innerHTML = c ? c
-    : trackMissing.has(id)
-      ? '<p style="color:var(--danger);font-size:13.5px">Order not found — check the number.</p>'
-      : '<p style="color:var(--muted);font-size:13.5px">Couldn\'t check that just now — please try again in a moment.</p>';
+  $("#ordersList").innerHTML=c||'<p style="color:var(--danger);font-size:13.5px">Order not found — check the number.</p>';
 }
 /* ---- Info / FAQ ---- */
 function openInfo(){
@@ -2489,7 +1876,7 @@ function openInfo(){
   $("#infoCard").innerHTML=`<div class="drawer-head" style="border:none;padding:18px 20px 4px"><h2>ℹ️ Help & Info</h2><button class="close-x" onclick="closeAll()">×</button></div>
     <div style="padding:6px 20px 24px;font-size:14px;line-height:1.6">
       <div class="pd-section-t">Delivery & pickup</div>
-      <p style="color:var(--muted);margin:0 0 10px">${esc(CONFIG.deliveryNote)} Minimum order ${money(CONFIG.minOrder)}. Pickup at ${esc(CONFIG.branches.filter(b=>b!=="All branches").join(", "))}.</p>
+      <p style="color:var(--muted);margin:0 0 10px">${CONFIG.deliveryNote} Minimum order ${money(CONFIG.minOrder)}. Pickup at ${CONFIG.branches.filter(b=>b!=="All branches").join(", ")}.</p>
       <div class="pd-section-t">Payment</div>
       <p style="color:var(--muted);margin:0 0 10px">PromptPay QR & card online (secured by Omise), or cash / transfer on delivery/pickup. Members save ~10%.</p>
       <div class="pd-section-t">Promo codes</div>
@@ -2497,7 +1884,7 @@ function openInfo(){
       <div class="pd-section-t">Age & responsibility</div>
       <p style="color:var(--muted);margin:0 0 10px">Strictly 20+ with ID. Please consume responsibly.</p>
       <div class="pd-section-t">Contact</div>
-      <p style="color:var(--muted);margin:0">📞 ${esc(CONFIG.phone)} · <a style="color:var(--green2)" href="${esc(CONFIG.lineUrl)}" target="_blank">LINE</a> · or ask DANK AI anytime.</p>
+      <p style="color:var(--muted);margin:0">📞 ${CONFIG.phone} · <a style="color:var(--green2)" href="${CONFIG.lineUrl}" target="_blank">LINE</a> · or ask DANK AI anytime.</p>
     </div>`;
 }
 /* ---- Product-finder quiz (น้องแดงค์) ---- */
@@ -2549,8 +1936,8 @@ function quizResults(){
     <div style="padding:6px 20px 22px"><p style="color:var(--muted);font-size:13px;margin:0 0 12px">ตรงกับที่คุณเลือกที่สุดค่ะ · Your best matches:</p>
     <div class="grid" style="grid-template-columns:repeat(2,1fr);gap:12px;padding:0">${list.map(p=>{
       const pr=isFlower(p)?(memberMode?p.priceTiers[0].member:p.priceTiers[0].price):(memberMode?p.member:p.price);
-      return `<article class="card"><div class="thumb" onclick="closeAll();openPD('${p.id}')">${imgTag(p,true)}<span class="type-tag" style="background:${typeColor(p.type)}">${esc(p.type)}</span></div>
-        <div class="body" style="padding:11px 12px 13px"><h3 style="font-size:14px" onclick="closeAll();openPD('${p.id}')">${esc(p.name)}</h3>
+      return `<article class="card"><div class="thumb" onclick="closeAll();openPD('${p.id}')">${imgTag(p,true)}<span class="type-tag" style="background:${typeColor(p.type)}">${p.type}</span></div>
+        <div class="body" style="padding:11px 12px 13px"><h3 style="font-size:14px" onclick="closeAll();openPD('${p.id}')">${p.name}</h3>
         <div class="potency">THC <b>${thcTxt(p)}</b></div>
         <div class="foot"><div class="price" style="font-size:15px">${isFlower(p)?'<small>from </small>':''}${money(pr)}</div>
         <button class="add-btn" onclick="quickAdd('${p.id}')">Add +</button></div></div></article>`;}).join("")}</div>
@@ -2560,50 +1947,6 @@ function quizResults(){
 }
 document.addEventListener("keydown",e=>{ if(e.key==="Escape"){ closeAll(); } });
 applyConfig(); loadPersisted(); loadData(); refreshWallet(); refreshFreeGifts(); refreshPayGW(); handlePayReturn(); loadAdmin();
-
-/* ---- arriving from Build Your Joint ----
-   build-your-joint.html writes the custom joint straight into the shared cart
-   and sends the customer here with ?checkout=1 (pay now) or ?cart=1 (review).
-   The age gate may still be up, so the request is parked until the gate clears. */
-var pendingDeepLink=null;
-/* Named destinations the other pages can link to. The builder's header has no
-   shop of its own to show, so its nav points back here with ?open=… — one real
-   place per link instead of the href="#" stubs that used to just sit there and
-   do nothing when tapped. */
-const DEEPLINK={
-  deals:  ()=>{ LS.set("bannerX",false); showBannerMaybe();
-                const m=document.getElementById("menu"); if(m) m.scrollIntoView({behavior:"smooth",block:"start"}); },
-  info:   ()=>openInfo(),
-  member: ()=>openCRM(isMember()?undefined:"login"),
-  orders: ()=>openOrders(),
-  events: ()=>openAI("What's on at DANK this week — any events or deals running?"),
-};
-function handleBuilderReturn(){
-  const q=new URLSearchParams(location.search);
-  const open=(q.get("open")||"").toLowerCase();
-  const want = q.get("checkout")==="1" ? "checkout"
-             : q.get("cart")==="1"     ? "cart"
-             : (DEEPLINK[open] ? open : null);
-  if(!want) return;
-  history.replaceState({},"",location.pathname+location.hash);   // keep the URL clean so a refresh doesn't re-open it
-  pendingDeepLink=want;
-  runDeepLink();
-}
-function runDeepLink(){
-  if(!pendingDeepLink) return;
-  const gate=document.getElementById("ageGate");
-  if(gate && !gate.classList.contains("hidden")) return;   // still gated — passGate() calls us back
-  const want=pendingDeepLink;
-  setTimeout(()=>{
-    if(DEEPLINK[want]){ try{ DEEPLINK[want](); }catch(e){} pendingDeepLink=null; return; }
-    // the joint was written to the shared cart by the builder — make sure it is loaded
-    if(!cart.length){ cart=LS.get("cart",[])||[]; updateCartCount(); }
-    if(!cart.length){ pendingDeepLink=null; toast("Your cart is empty"); return; }
-    if(want==="checkout") openCheckout(); else openCart();
-    pendingDeepLink=null;   // only clear once we have actually opened it
-  },450);
-}
-handleBuilderReturn();   // must run AFTER pendingDeepLink is initialised, or the parked request is wiped
 async function refreshPayGW(){ if(location.protocol==="file:") return; try{ const r=await fetch("/api/pay-config"); if(r.ok) payGW=await r.json(); }catch(e){} }
 function handlePayReturn(){ const q=new URLSearchParams(location.search); const paid=q.get("paid"), ord=q.get("order");
   if(paid&&ord){ setTimeout(()=>{ toast("Payment received — order "+ord+" 🌿"); openOrders&&openOrders(); },600);
@@ -2624,12 +1967,9 @@ function applyPromos(){ CONFIG.promos=Object.assign({},BASE_PROMOS||{});
   Object.keys(ADMIN_OV.promos||{}).forEach(k=>{ if(ADMIN_OV.promos[k]) CONFIG.promos[k]=ADMIN_OV.promos[k]; }); }
 function applyProductOverridesLocal(){
   const P=ADMIN_OV.products||{};
-  // The override blob is stored, fetched and hand-edited, so it goes through the same id
-  // sanitiser as the live feed — an override must not be able to smuggle in an id the
-  // menu itself could not.
-  DATA=sanitizeMenu(DATA.map(p=>P[p.id]?Object.assign({},p,P[p.id],{id:p.id}):p));
+  DATA=DATA.map(p=>P[p.id]?Object.assign({},p,P[p.id]):p);
   const have=new Set(DATA.map(p=>p.id));
-  sanitizeMenu(ADMIN_OV.added||[]).forEach(a=>{ if(a&&a.id&&!have.has(a.id)){ DATA.push(a); have.add(a.id); } });
+  (ADMIN_OV.added||[]).forEach(a=>{ if(a&&a.id&&!have.has(a.id)){ DATA.push(a); have.add(a.id); } });
 }
 async function loadAdmin(silent){
   if(BASE_PROMOS===null) BASE_PROMOS=Object.assign({},CONFIG.promos);
@@ -2643,25 +1983,9 @@ async function loadAdmin(silent){
                  promos:(ov.promos&&typeof ov.promos==="object")?ov.promos:{} };
       ADMIN_OV.added.forEach(a=>{ if(a) a._added=true; });
       applyPromos(); applyProductOverridesLocal();
-      if(!silent){ buildChips(); render(); if(await verifyAdminTok()) enterAdmin(); }
+      if(!silent){ buildChips(); render(); if(adminTok) enterAdmin(); }
     }
   }catch(e){}
-}
-/* The owner token used to be believed on sight: whatever sat in localStorage under
-   dank_admintok put the page into owner mode before anyone asked the server. A token
-   that had expired, or one typed in by hand, showed the editing bar and the hidden
-   products over the customer's shop — and every edit made in that state died at Save,
-   because the server does check. Ask first; a 401 clears the dead token so the prompt
-   is a login rather than a silent failure. A network problem or an unconfigured
-   deployment (503) leaves the token alone and simply stays a customer. */
-async function verifyAdminTok(){
-  if(!adminTok) return false;
-  try{
-    const r=await fetch("/api/admin",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"verify",token:adminTok})});
-    if(r.status===401){ adminTok=null; LS.set("admintok",null); return false; }
-    if(!r.ok) return false;
-    const j=await r.json(); return !!(j&&j.ok);
-  }catch(e){ return false; }
 }
 function adminInjectCSS(){ if(document.getElementById("admCss")) return;
   const s=document.createElement("style"); s.id="admCss"; s.textContent=
@@ -2850,10 +2174,218 @@ async function pushOverrides(){
   }catch(e){ toast("Save failed — check connection"); if(btn){ btn.disabled=false; } }
 }
 </script>
-<!-- The language picker lived here as a second, hand-kept copy of i18n.js — byte-identical
-     to the file every other page already loads, which is exactly the arrangement that drifts:
-     one dictionary gets a new phrase and the other does not, and the shop starts speaking two
-     languages at once. One file now, shared by every page. -->
-<script src="i18n.js"></script>
+<script>
+/* ============================================================
+   DANK BKK — site-wide language picker (i18n.js)
+   English is the site's base language. The floating 🌐 button opens
+   a picker: English · ไทย · 中文 · Русский · 日本語 · Español.
+   Choice persists in localStorage("dankLang"). JS-rendered screens
+   are re-translated live via a MutationObserver; switching language
+   always restores the English originals first, so text never drifts.
+   Phrases not in a dictionary (product names etc.) stay in English.
+   ============================================================ */
+(function () {
+  "use strict";
+  if (window.__dankI18n) return; window.__dankI18n = 1;
+
+  var LANGS = [
+    { id: "en", flag: "🇬🇧", name: "English", short: "EN" },
+    { id: "th", flag: "🇹🇭", name: "ไทย", short: "ไทย" },
+    { id: "zh", flag: "🇨🇳", name: "中文", short: "中文" },
+    { id: "ru", flag: "🇷🇺", name: "Русский", short: "РУ" },
+    { id: "ja", flag: "🇯🇵", name: "日本語", short: "日本語" },
+    { id: "es", flag: "🇪🇸", name: "Español", short: "ES" }
+  ];
+
+  /* keys are the site's English strings */
+  var K = ["Search strains, edibles, drinks…","All branches","Member","member","Shop the menu","Take the quiz","Register free","All types","Featured","Price: low → high","Price: high → low","THC: high → low","Name A→Z","All","Saved","In stock","Sold out","NEW","Add +","Add","from","Relaxed","Happy","Euphoric","Uplifted","Energetic","Creative","Sleepy","Social","Focused","Calm","Hungry","Giggly","Your Cart","Your cart","Your cart is empty.","Browse the menu","Promo code","Apply","Remove","Subtotal","Subtotal (member ⭐)","Delivery","Pickup","Free","Total","Checkout","change","Choose your free 1G","Add any 1g flower to claim your free gram","1st-order gift","On the house","Pickup / Reserve","Your name","Name","Phone","Delivery area","Delivery address","Condo / street / room no.","Pickup branch","Pickup time","e.g. today 7pm","Notes (optional)","Preferred time, gate code, etc.","Payment","Bank transfer","Cash / COD","Card / e-wallet","Card","Crypto","Pay on arrival","Place order & show transfer details","Place order & pay crypto","Card number","Name on card","Order placed!","Payment received!","Done","Upload your payment slip","Tap to upload slip / screenshot","Slip received — we'll confirm","Uploading…","Shop","Full menu","Ask DANK AI","My wallet · top up +10%","Track my order","Help & info","Order on LINE","Visit & Contact","Get directions","Stay in the loop","Be first to know about new strains & exclusive offers.","Your email","Join","For adults 20+. Please consume responsibly.","Free Delivery","On orders over ฿1,500","Earn Points","With every purchase","24/7 Support","We're here for you","Choose Your Weed","How Much Weed?","Add Resin?","Add Hash?","Filter Options","Select Paper","Your Joint Preview","Order Summary","ADD TO CART","Add to Cart","TOTAL","Browse all flowers","Hide flowers","Included","Hand Rolled","By our experts","Custom Made","Just for you","Fresh & Top Shelf","Premium flower","Discreet Packaging","100% discreet","Important Info","Staff login","Enter the staff key to see live customer chats.","Staff key","Enter console","Log out","Chats","Orders","Free gram","Count","Mark done","Reopen","View slip","Upload proof","Recent counts","Backend Connection Status","Re-check","Products","Data source","Print / Save PDF","Category:","Columns:"];
+
+  var V = {
+  th: ["ค้นหาสายพันธุ์ ขนม เครื่องดื่ม…","ทุกสาขา","สมาชิก","สมาชิก","ดูเมนู","ทำควิซ","สมัครฟรี","ทุกประเภท","แนะนำ","ราคา: ต่ำ → สูง","ราคา: สูง → ต่ำ","THC: สูง → ต่ำ","ชื่อ A→Z","ทั้งหมด","ที่บันทึก","มีของ","หมด","ใหม่","หยิบ +","เพิ่ม","เริ่ม","ผ่อนคลาย","มีความสุข","เคลิบเคลิ้ม","สดชื่น","กระปรี้กระเปร่า","ครีเอทีฟ","ง่วงสบาย","เข้าสังคม","โฟกัส","ใจสงบ","เจริญอาหาร","ขำง่าย","ตะกร้าของคุณ","ตะกร้าของคุณ","ตะกร้ายังว่างอยู่","ดูเมนูก่อน","โค้ดส่วนลด","ใช้โค้ด","ลบ","ยอดสินค้า","ยอดสินค้า (สมาชิก ⭐)","จัดส่ง","รับที่ร้าน","ฟรี","รวมทั้งหมด","ชำระเงิน","เปลี่ยน","เลือกกรัมฟรีของคุณ","เพิ่มดอก 1g เพื่อรับกรัมฟรี","ของขวัญออเดอร์แรก","ทางร้านเลี้ยง","รับที่ร้าน / จอง","ชื่อของคุณ","ชื่อ","เบอร์โทร","พื้นที่จัดส่ง","ที่อยู่จัดส่ง","คอนโด / ถนน / เลขห้อง","สาขาที่รับ","เวลารับของ","เช่น วันนี้ 1 ทุ่ม","หมายเหตุ (ถ้ามี)","เวลาที่สะดวก, รหัสประตู ฯลฯ","วิธีชำระเงิน","โอนธนาคาร","เงินสด / เก็บปลายทาง","บัตร / e-wallet","บัตรเครดิต","คริปโต","จ่ายตอนรับของ","สั่งซื้อ & ดูบัญชีโอน","สั่งซื้อ & จ่ายคริปโต","เลขบัตร","ชื่อบนบัตร","สั่งซื้อสำเร็จ!","ได้รับเงินแล้ว!","เสร็จสิ้น","อัปโหลดสลิปโอนเงิน","แตะเพื่ออัปโหลดสลิป / ภาพหน้าจอ","ได้รับสลิปแล้ว — รอทีมงานยืนยัน","กำลังอัปโหลด…","ร้านค้า","เมนูทั้งหมด","ถาม DANK AI","วอลเล็ต · เติมเงิน +10%","ติดตามออเดอร์","ช่วยเหลือ & ข้อมูล","สั่งทาง LINE","ที่ตั้ง & ติดต่อ","นำทาง","รับข่าวสาร","รู้ก่อนใครเมื่อมีสายพันธุ์ใหม่และโปรพิเศษ","อีเมลของคุณ","สมัคร","สำหรับผู้ใหญ่ 20+ โปรดใช้อย่างรับผิดชอบ","ส่งฟรี","เมื่อสั่งครบ ฿1,500","สะสมแต้ม","ทุกยอดซื้อ","ดูแล 24 ชม.","พร้อมช่วยเสมอ","เลือกดอก","เลือกปริมาณ","เพิ่มเรซิน?","เพิ่มแฮช?","เลือกฟิลเตอร์","เลือกกระดาษ","พรีวิวจอยท์ของคุณ","สรุปคำสั่งซื้อ","ใส่ตะกร้า","ใส่ตะกร้า","ยอดรวม","ดูดอกทั้งหมด","ซ่อนรายการดอก","รวมแล้ว","มวนด้วยมือ","โดยมืออาชีพ","ทำตามสั่ง","เพื่อคุณโดยเฉพาะ","สดใหม่เกรดท็อป","ดอกพรีเมียม","แพ็คมิดชิด","มิดชิด 100%","ข้อมูลสำคัญ","เข้าสู่ระบบพนักงาน","ใส่รหัสพนักงานเพื่อดูแชทลูกค้าแบบสด","รหัสพนักงาน","เข้าคอนโซล","ออกจากระบบ","แชท","ออเดอร์","กรัมฟรี","นับสต๊อก","เสร็จแล้ว","เปิดใหม่","ดูสลิป","อัปโหลดสลิป","ประวัติการนับ","สถานะการเชื่อมต่อหลังบ้าน","เช็คอีกครั้ง","สินค้า","แหล่งข้อมูล","พิมพ์ / บันทึก PDF","หมวด:","คอลัมน์:"],
+  zh: ["搜索品种、食品、饮品…","所有分店","会员","会员","浏览菜单","做测验","免费注册","全部类型","推荐","价格：低 → 高","价格：高 → 低","THC：高 → 低","名称 A→Z","全部","收藏","有货","售罄","新品","加入 +","加入","起","放松","快乐","欣快","振奋","活力","创意","助眠","社交","专注","平静","开胃","傻笑","购物车","购物车","购物车是空的","去逛菜单","优惠码","使用","移除","小计","小计（会员 ⭐）","配送","自取","免费","总计","结账","更换","选择你的免费1克","加购任意1克花即可领取免费一克","首单礼物","本店赠送","自取 / 预订","姓名","姓名","电话","配送区域","配送地址","公寓 / 街道 / 房号","自取分店","自取时间","例如 今晚7点","备注（可选）","方便的时间、门禁密码等","支付方式","银行转账","现金 / 货到付款","银行卡 / 电子钱包","银行卡","加密货币","到付","下单并查看转账信息","下单并用加密货币支付","卡号","持卡人姓名","下单成功！","已收到付款！","完成","上传付款凭证","点击上传凭证 / 截图","已收到凭证 — 我们会尽快确认","上传中…","商店","完整菜单","问 DANK AI","我的钱包 · 充值 +10%","查询订单","帮助与信息","通过 LINE 下单","到店与联系","导航","订阅资讯","新品与专属优惠第一时间知道","你的邮箱","订阅","仅限20岁以上，请理性消费","免费配送","订单满 ฿1,500","积分奖励","每次消费都有","全天候客服","随时为你服务","选择花材","选择克数","加树脂?","加哈希?","选择过滤嘴","选择卷纸","你的卷烟预览","订单摘要","加入购物车","加入购物车","总计","浏览所有花材","收起花材","已包含","手工卷制","由专业师傅","个性定制","专属于你","新鲜顶级","优质花材","隐私包装","100% 保密","重要信息","员工登录","输入员工密钥查看实时客户聊天","员工密钥","进入控制台","退出","聊天","订单","免费克","盘点","完成","重开","查看凭证","上传凭证","盘点记录","后台连接状态","重新检查","商品","数据来源","打印 / 保存PDF","分类：","列数："],
+  ru: ["Поиск сортов, еды, напитков…","Все филиалы","Участник","участник","Смотреть меню","Пройти тест","Регистрация бесплатно","Все типы","Рекомендуем","Цена: по возрастанию","Цена: по убыванию","THC: по убыванию","Название A→Z","Все","Избранное","В наличии","Распродано","НОВИНКА","В корзину +","Добавить","от","Расслабление","Радость","Эйфория","Подъём","Энергия","Креатив","Сонливость","Общительность","Фокус","Спокойствие","Аппетит","Смешливость","Ваша корзина","Ваша корзина","Корзина пуста","Смотреть меню","Промокод","Применить","Убрать","Подытог","Подытог (участник ⭐)","Доставка","Самовывоз","Бесплатно","Итого","Оформить","изменить","Выберите бесплатный 1G","Добавьте любой цветок 1g и получите грамм бесплатно","Подарок за первый заказ","За счёт заведения","Самовывоз / Бронь","Ваше имя","Имя","Телефон","Район доставки","Адрес доставки","Дом / улица / квартира","Филиал самовывоза","Время самовывоза","напр. сегодня в 19:00","Комментарий (необязательно)","Удобное время, код домофона и т.д.","Оплата","Банковский перевод","Наличные / при получении","Карта / кошелёк","Карта","Крипто","Оплата при получении","Заказать и показать реквизиты","Заказать и оплатить криптой","Номер карты","Имя на карте","Заказ оформлен!","Оплата получена!","Готово","Загрузите чек об оплате","Нажмите, чтобы загрузить чек","Чек получен — скоро подтвердим","Загрузка…","Магазин","Всё меню","Спросить DANK AI","Кошелёк · пополнение +10%","Отследить заказ","Помощь и инфо","Заказ в LINE","Адрес и контакты","Маршрут","Будьте в курсе","Узнавайте первыми о новых сортах и акциях","Ваш email","Подписаться","Только для взрослых 20+. Употребляйте ответственно","Бесплатная доставка","при заказе от ฿1,500","Бонусные баллы","с каждой покупки","Поддержка 24/7","Мы всегда на связи","Выберите цветок","Сколько грамм?","Добавить смолу?","Добавить гашиш?","Выбор фильтра","Выбор бумаги","Предпросмотр джоинта","Сводка заказа","В КОРЗИНУ","В корзину","ИТОГО","Все цветы","Скрыть цветы","Включено","Ручная крутка","От наших мастеров","Индивидуально","Только для вас","Свежее и топовое","Премиум цветок","Незаметная упаковка","100% конфиденциально","Важная информация","Вход для персонала","Введите ключ персонала, чтобы видеть чаты клиентов","Ключ персонала","Войти","Выйти","Чаты","Заказы","Бесплатный грамм","Учёт","Готово","Открыть снова","Чек","Загрузить чек","История учёта","Статус подключения","Проверить снова","Товары","Источник данных","Печать / PDF","Категория:","Колонки:"],
+  ja: ["品種・エディブル・ドリンクを検索…","全店舗","メンバー","メンバー","メニューを見る","クイズで探す","無料登録","全タイプ","おすすめ","価格：安い順","価格：高い順","THC：高い順","名前 A→Z","すべて","お気に入り","在庫あり","売切れ","新着","追加 +","追加","最安","リラックス","ハッピー","多幸感","気分アップ","エナジー","クリエイティブ","眠気","ソーシャル","集中","落ち着き","食欲増進","笑い上戸","カート","カート","カートは空です","メニューを見る","クーポンコード","適用","削除","小計","小計（メンバー ⭐）","配達","店頭受取","無料","合計","レジへ","変更","無料1Gを選ぶ","1gの花を追加で無料1gプレゼント","初回特典","サービス","受取 / 予約","お名前","名前","電話番号","配達エリア","配達先住所","マンション / 通り / 部屋番号","受取店舗","受取時間","例：今日19時","備考（任意）","希望時間・ゲートコード等","お支払い","銀行振込","現金 / 代引き","カード / 電子マネー","カード","仮想通貨","受取時に支払い","注文して振込先を見る","注文して仮想通貨で支払う","カード番号","カード名義","ご注文完了！","お支払い確認！","完了","振込明細をアップロード","タップして明細をアップ","明細を受領 — 確認します","アップロード中…","ショップ","全メニュー","DANK AIに質問","ウォレット · チャージ+10%","注文を追跡","ヘルプ","LINEで注文","店舗・連絡先","道順","最新情報を受取る","新入荷と限定オファーをいち早く","メールアドレス","登録","20歳以上限定。適量でお楽しみください","送料無料","฿1,500以上のご注文で","ポイント獲得","毎回のお買い物で","24時間サポート","いつでもどうぞ","花を選ぶ","グラム数を選ぶ","レジン追加?","ハッシュ追加?","フィルター選択","ペーパー選択","ジョイントプレビュー","注文内容","カートに入れる","カートに入れる","合計","全ての花を見る","花を隠す","込み","ハンドロール","職人による","カスタムメイド","あなただけに","新鮮・最高級","プレミアムフラワー","目立たない梱包","100%プライバシー","重要情報","スタッフログイン","スタッフキーを入力してチャットを表示","スタッフキー","コンソールへ","ログアウト","チャット","注文","無料グラム","棚卸し","完了","再開","明細を見る","証明をアップ","棚卸し履歴","バックエンド接続状況","再チェック","商品","データソース","印刷 / PDF保存","カテゴリ：","列数："],
+  es: ["Buscar cepas, comestibles, bebidas…","Todas las sucursales","Miembro","miembro","Ver el menú","Haz el quiz","Regístrate gratis","Todos los tipos","Destacados","Precio: menor → mayor","Precio: mayor → menor","THC: mayor → menor","Nombre A→Z","Todo","Guardados","Disponible","Agotado","NUEVO","Añadir +","Añadir","desde","Relajado","Feliz","Eufórico","Animado","Energético","Creativo","Somnoliento","Social","Concentrado","Tranquilo","Hambriento","Risueño","Tu carrito","Tu carrito","Tu carrito está vacío","Ver el menú","Código promo","Aplicar","Quitar","Subtotal","Subtotal (miembro ⭐)","Envío","Recogida","Gratis","Total","Pagar","cambiar","Elige tu 1G gratis","Añade cualquier flor de 1g y llévate un gramo gratis","Regalo del primer pedido","Invita la casa","Recoger / Reservar","Tu nombre","Nombre","Teléfono","Zona de envío","Dirección de envío","Edificio / calle / n.º","Sucursal de recogida","Hora de recogida","ej. hoy 19:00","Notas (opcional)","Hora preferida, código de puerta, etc.","Pago","Transferencia bancaria","Efectivo / contra entrega","Tarjeta / e-wallet","Tarjeta","Cripto","Pagar al recibir","Pedir y ver datos de transferencia","Pedir y pagar con cripto","Número de tarjeta","Nombre en la tarjeta","¡Pedido realizado!","¡Pago recibido!","Listo","Sube tu comprobante de pago","Toca para subir el comprobante","Comprobante recibido — lo confirmaremos","Subiendo…","Tienda","Menú completo","Pregunta a DANK AI","Mi cartera · recarga +10%","Seguir mi pedido","Ayuda e info","Pedir por LINE","Visítanos y contacto","Cómo llegar","Mantente al día","Sé el primero en saber de nuevas cepas y ofertas","Tu email","Unirme","Solo adultos 20+. Consume responsablemente","Envío gratis","En pedidos de más de ฿1,500","Gana puntos","Con cada compra","Soporte 24/7","Estamos para ti","Elige tu flor","¿Cuánta flor?","¿Añadir resina?","¿Añadir hash?","Opciones de filtro","Elige el papel","Vista previa del porro","Resumen del pedido","AÑADIR AL CARRITO","Añadir al carrito","TOTAL","Ver todas las flores","Ocultar flores","Incluido","Liado a mano","Por expertos","Hecho a medida","Solo para ti","Fresco y de primera","Flor premium","Empaque discreto","100% discreto","Información importante","Acceso del personal","Introduce la clave del personal para ver los chats","Clave del personal","Entrar","Salir","Chats","Pedidos","Gramo gratis","Inventario","Hecho","Reabrir","Ver comprobante","Subir comprobante","Recuentos recientes","Estado de conexión","Verificar de nuevo","Productos","Fuente de datos","Imprimir / Guardar PDF","Categoría:","Columnas:"]
+  };
+
+  /* build DICTS[lang] = {english: translated} */
+  var DICTS = {};
+  for (var lg in V) { var d = {}; for (var i = 0; i < K.length; i++) d[K[i]] = V[lg][i]; DICTS[lg] = d; }
+
+  /* dynamic strings with numbers/amounts — per language */
+  var PATTERNS = [
+    /^(\d+) items?( · .+)?$/, /^Only (\d+) left$/, /^Discount \((.+)\)$/,
+    /^Minimum order (.+) — add (.+) more$/, /^Checkout · (.+)$/, /^Place order · (.+)$/,
+    /^Pay (฿[\d,\.]+) from wallet$/, /^Pay (฿[\d,\.]+)$/, /^Wallet (฿[\d,\.]+)$/,
+    /^Free gram added: (.+?) — ?$/
+  ];
+  var REPL = {
+    th: ["$1 รายการ$2","เหลือ $1 ชิ้นสุดท้าย","ส่วนลด ($1)","สั่งขั้นต่ำ $1 — เพิ่มอีก $2","ชำระเงิน · $1","สั่งซื้อ · $1","จ่าย $1 จากวอลเล็ต","จ่าย $1","วอลเล็ต $1","ได้กรัมฟรี: $1 — "],
+    zh: ["$1 件$2","仅剩 $1 件","折扣（$1）","最低消费 $1 — 还差 $2","结账 · $1","下单 · $1","用钱包支付 $1","支付 $1","钱包 $1","已加免费克：$1 — "],
+    ru: ["$1 поз.$2","Осталось $1","Скидка ($1)","Мин. заказ $1 — добавьте ещё $2","Оформить · $1","Заказать · $1","Оплатить $1 из кошелька","Оплатить $1","Кошелёк $1","Бесплатный грамм: $1 — "],
+    ja: ["$1 件$2","残り$1点","割引（$1）","最低注文 $1 — あと $2","レジへ · $1","注文する · $1","ウォレットで $1 支払う","$1 を支払う","ウォレット $1","無料1g追加：$1 — "],
+    es: ["$1 artículos$2","Solo quedan $1","Descuento ($1)","Pedido mínimo $1 — añade $2 más","Pagar · $1","Pedir · $1","Pagar $1 con la cartera","Pagar $1","Cartera $1","Gramo gratis: $1 — "]
+  };
+
+  var LKEY = "dankLang";
+  var lang = "en";
+  try { lang = localStorage.getItem(LKEY) || "en"; } catch (e) {}
+  if (!DICTS[lang] && lang !== "en") lang = "en";
+  var savedText = new Map(), savedAttr = new Map();
+  var observer = null, busy = false;
+  var ATTRS = ["placeholder", "title"];
+  var SKIP = { SCRIPT: 1, STYLE: 1, TEXTAREA: 1, NOSCRIPT: 1 };
+
+  function trStr(s) {
+    if (lang === "en") return null;
+    var DICT = DICTS[lang], RULES = REPL[lang];
+    var t = s.trim(); if (!t) return null;
+    if (DICT[t]) return s.replace(t, DICT[t]);
+    var p = "", x = "", core = t;
+    var pre = core.match(/^[^A-Za-z]+/);
+    if (pre) { p = pre[0]; core = core.slice(p.length); }
+    var suf = core.match(/[^A-Za-z!?.%)]+$/);
+    if (suf) { x = suf[0]; core = core.slice(0, core.length - x.length); }
+    if (core && DICT[core]) return s.replace(t, p + DICT[core] + x);
+    for (var i = 0; i < PATTERNS.length; i++) {
+      if (PATTERNS[i].test(t)) return s.replace(t, t.replace(PATTERNS[i], RULES[i]));
+    }
+    return null;
+  }
+
+  function walk(root, fn) {
+    var w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+      acceptNode: function (n) {
+        var el = n.parentNode;
+        if (!el || SKIP[el.nodeName]) return NodeFilter.FILTER_REJECT;
+        if (el.closest && el.closest("#langBtn,#langMenu")) return NodeFilter.FILTER_REJECT;
+        return NodeFilter.FILTER_ACCEPT;
+      }
+    });
+    var n; while ((n = w.nextNode())) fn(n);
+  }
+
+  function translate(root) {
+    walk(root, function (n) {
+      var out = trStr(n.nodeValue);
+      if (out !== null) { if (!savedText.has(n)) savedText.set(n, n.nodeValue); n.nodeValue = out; }
+    });
+    var els = root.querySelectorAll ? root.querySelectorAll("[placeholder],[title]") : [];
+    for (var i = 0; i < els.length; i++) {
+      var el = els[i];
+      for (var a = 0; a < ATTRS.length; a++) {
+        var at = ATTRS[a], v = el.getAttribute(at); if (!v) continue;
+        var out = trStr(v);
+        if (out !== null) {
+          var rec = savedAttr.get(el) || {}; if (!(at in rec)) { rec[at] = v; savedAttr.set(el, rec); }
+          el.setAttribute(at, out);
+        }
+      }
+    }
+  }
+
+  function restoreAll() {
+    savedText.forEach(function (orig, n) { try { n.nodeValue = orig; } catch (e) {} });
+    savedAttr.forEach(function (rec, el) { for (var a in rec) { try { el.setAttribute(a, rec[a]); } catch (e) {} } });
+    savedText = new Map(); savedAttr = new Map();
+  }
+
+  function startObserver() {
+    if (observer) return;
+    observer = new MutationObserver(function () {
+      if (busy || lang === "en") return;
+      busy = true;
+      try { translate(document.body); } finally { observer.takeRecords(); busy = false; }
+    });
+    observer.observe(document.body, { childList: true, subtree: true, characterData: true });
+  }
+  function stopObserver() { if (observer) { observer.disconnect(); observer = null; } }
+
+  function applyLang(next) {
+    busy = true;
+    try {
+      if (lang !== "en") { stopObserver(); restoreAll(); }   // back to English originals first
+      lang = next;
+      try { localStorage.setItem(LKEY, lang); } catch (e) {}
+      document.documentElement.lang = lang;
+      if (lang !== "en") { translate(document.body); startObserver(); }
+    } finally { if (observer) observer.takeRecords(); busy = false; }
+    var btn = document.getElementById("langBtn");
+    if (btn) {
+      var cur = LANGS.filter(function (l) { return l.id === lang; })[0] || LANGS[0];
+      btn.textContent = "🌐 " + cur.short;
+    }
+    closeMenu();
+  }
+
+  /* ---- picker UI ---- */
+  function closeMenu() { var m = document.getElementById("langMenu"); if (m) m.remove(); }
+  function openMenu() {
+    if (document.getElementById("langMenu")) { closeMenu(); return; }
+    var btn = document.getElementById("langBtn");
+    var m = document.createElement("div");
+    m.id = "langMenu";
+    m.style.cssText = "position:fixed;left:14px;bottom:" + (parseInt(btn.style.bottom, 10) + 46) + "px;" +
+      "z-index:2147483001;background:#0e1a11;border:1px solid #2f8a33;border-radius:14px;overflow:hidden;" +
+      "box-shadow:0 14px 44px rgba(0,0,0,.55);min-width:170px;font:600 14px/1 'Segoe UI',system-ui,sans-serif";
+    LANGS.forEach(function (l) {
+      var r = document.createElement("button");
+      r.type = "button";
+      r.textContent = l.flag + "  " + l.name + (l.id === lang ? "  ✓" : "");
+      r.style.cssText = "display:block;width:100%;text-align:left;padding:12px 16px;border:none;cursor:pointer;" +
+        "background:" + (l.id === lang ? "rgba(61,220,132,.16)" : "transparent") + ";color:" + (l.id === lang ? "#7be389" : "#e8f5ec");
+      r.onmouseover = function () { r.style.background = "rgba(61,220,132,.12)"; };
+      r.onmouseout = function () { r.style.background = l.id === lang ? "rgba(61,220,132,.16)" : "transparent"; };
+      r.onclick = function (ev) { ev.stopPropagation(); applyLang(l.id); };
+      m.appendChild(r);
+    });
+    document.body.appendChild(m);
+    setTimeout(function () {
+      document.addEventListener("click", function h(ev) {
+        if (!m.contains(ev.target) && ev.target.id !== "langBtn") { closeMenu(); document.removeEventListener("click", h); }
+      });
+    }, 0);
+  }
+
+  function makeButton() {
+    if (document.getElementById("langBtn")) return;
+    var b = document.createElement("button");
+    b.id = "langBtn"; b.type = "button";
+    var cur = LANGS.filter(function (l) { return l.id === lang; })[0] || LANGS[0];
+    b.textContent = "🌐 " + cur.short;
+    var lift = document.querySelector(".mcart") ? "96" : "14";
+    b.style.cssText = "position:fixed;left:14px;bottom:" + lift + "px;z-index:2147483000;" +
+      "background:#0e1a11;color:#7be389;border:1px solid #2f8a33;border-radius:999px;" +
+      "padding:9px 14px;font:700 13px/1 'Segoe UI',system-ui,sans-serif;cursor:pointer;" +
+      "box-shadow:0 6px 20px rgba(0,0,0,.45)";
+    b.onclick = function (ev) { ev.stopPropagation(); openMenu(); };
+    document.body.appendChild(b);
+  }
+
+  function boot() {
+    makeButton();
+    if (lang !== "en") { var keep = lang; lang = "en"; applyLang(keep); }
+  }
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot);
+  else boot();
+})();
+
+</script>
+<script>
+/* Table-QR: remember the table across pages and show a small badge */
+try{
+  var _tq=new URLSearchParams(location.search).get("table");
+  if(_tq){sessionStorage.setItem("dank_table",_tq);}
+  var _tbl=sessionStorage.getItem("dank_table");
+  if(_tbl){
+    var b=document.createElement("div");
+    b.textContent="🪑 โต๊ะ / Table "+_tbl+" — ออเดอร์จะส่งถึงโต๊ะคุณ / your order comes to this table";
+    b.style.cssText="position:fixed;bottom:10px;left:50%;transform:translateX(-50%);background:#123c22;color:#7ef0a6;border:1px solid #2c7a4b;border-radius:20px;padding:7px 16px;font-size:12px;font-family:sans-serif;z-index:9999;box-shadow:0 4px 16px rgba(0,0,0,.5)";
+    document.body.appendChild(b);
+    setTimeout(function(){try{b.style.transition="opacity 1s";b.style.opacity="0.25";}catch(e){}},8000);
+    b.onclick=function(){b.remove();};
+  }
+}catch(e){}
+</script>
 </body>
 </html>
