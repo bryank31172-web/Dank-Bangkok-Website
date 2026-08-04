@@ -1,0 +1,359 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>DANK · SKU Photo Audit</title>
+<style>
+  :root{ --bg:#0F0F0F; --em:#2E7D32; --gold:#C9A227; --ink:#EDEAE3; --dim:#8b8781; --line:#232323; --card:#141414; }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1100px;margin:0 auto;padding:22px 16px 90px}
+  header{border-bottom:1px solid var(--line);padding-bottom:16px;margin-bottom:18px}
+  h1{margin:0 0 4px;font-size:20px;letter-spacing:.14em;text-transform:uppercase;font-weight:800}
+  h1 span{color:var(--gold)}
+  .sub{color:var(--dim);font-size:13px;margin:0}
+  .bar{display:flex;flex-wrap:wrap;gap:8px;margin:16px 0 6px;align-items:center}
+  button{appearance:none;border:1px solid var(--line);background:#181818;color:var(--ink);padding:10px 14px;border-radius:10px;font:inherit;font-size:13px;font-weight:700;cursor:pointer;min-height:44px}
+  button:hover{border-color:var(--gold)}
+  button:disabled{opacity:.45;cursor:default}
+  button.p{background:linear-gradient(180deg,#2E7D32,#1f5c24);border-color:#2E7D32;color:#fff}
+  button.no{background:linear-gradient(180deg,#7d2e2e,#5c1f1f);border-color:#7d2e2e;color:#fff}
+  button.g{background:transparent;border-color:#3a3a3a}
+  input[type=text]{flex:1;min-width:230px;background:#181818;border:1px solid var(--line);color:var(--ink);padding:10px 12px;border-radius:10px;font:inherit;font-size:13px}
+  .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(132px,1fr));gap:10px;margin:16px 0}
+  .stat{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+  .stat b{display:block;font-size:24px;line-height:1.1;font-weight:800}
+  .stat i{font-style:normal;color:var(--dim);font-size:11px;letter-spacing:.09em;text-transform:uppercase}
+  .stat.ok b{color:#5cc46a} .stat.warn b{color:var(--gold)} .stat.bad b{color:#e0603f}
+  .prog{height:4px;background:#1c1c1c;border-radius:3px;overflow:hidden;margin:10px 0 4px}
+  .prog i{display:block;height:100%;width:0;background:linear-gradient(90deg,#2E7D32,#C9A227);transition:width .2s}
+  h2{font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--dim);margin:26px 0 10px;font-weight:800}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+  .card .ph{aspect-ratio:1/1;background:#0b0b0b;display:flex;align-items:center;justify-content:center;position:relative}
+  .card .ph img{width:100%;height:100%;object-fit:cover;display:block}
+  .card .ph em{font-style:normal;color:#4a4a4a;font-size:11px;letter-spacing:.1em}
+  .card .m{padding:8px 10px 10px}
+  .card .n{font-size:12px;font-weight:700;line-height:1.35;max-height:3.2em;overflow:hidden}
+  .card .c{font-size:10px;color:var(--dim);letter-spacing:.08em;text-transform:uppercase;margin-top:3px}
+  .tag{position:absolute;top:6px;left:6px;font-size:9px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;padding:3px 7px;border-radius:20px;background:rgba(0,0,0,.72);border:1px solid}
+  .t-bad{color:#e0603f;border-color:#e0603f} .t-tile{color:var(--gold);border-color:var(--gold)}
+  .t-dup{color:#d08bd0;border-color:#d08bd0} .t-stock{color:#7aa7d0;border-color:#7aa7d0}
+  .t-wrong{color:#e0603f;border-color:#e0603f}
+  pre{white-space:pre-wrap;word-break:break-word;background:#101010;border:1px solid var(--line);border-radius:12px;padding:14px;font:12px/1.6 ui-monospace,SFMono-Regular,Menlo,monospace;color:#cfcabf;max-height:60vh;overflow:auto}
+  .note{color:var(--dim);font-size:12px;margin:8px 0 0}
+  footer{margin-top:34px;padding-top:14px;border-top:1px solid var(--line);color:#5c5851;font-size:11px;letter-spacing:.12em;text-transform:uppercase}
+
+  /* ---- review mode ---- */
+  #review{display:none;position:fixed;inset:0;background:#0b0b0b;z-index:99;overflow:auto;-webkit-overflow-scrolling:touch}
+  #review .rw{max-width:560px;margin:0 auto;padding:14px 16px 26px;display:flex;flex-direction:column;min-height:100%}
+  .rtop{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}
+  .rtop .cnt{font-size:12px;color:var(--dim);letter-spacing:.1em}
+  .rshot{width:100%;aspect-ratio:1/1;background:#000;border:1px solid var(--line);border-radius:14px;overflow:hidden;display:flex;align-items:center;justify-content:center}
+  .rshot img{width:100%;height:100%;object-fit:contain;display:block}
+  .rshot em{font-style:normal;color:#4a4a4a;font-size:12px;letter-spacing:.1em}
+  .rname{font-size:19px;font-weight:800;margin:14px 0 2px;line-height:1.25}
+  .rmeta{color:var(--dim);font-size:12px;letter-spacing:.05em}
+  .rwhy{margin-top:10px;font-size:12px;color:#b8b2a8;background:#141414;border:1px solid var(--line);border-left:3px solid var(--gold);border-radius:8px;padding:9px 11px}
+  .rbtns{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px}
+  .rbtns button{font-size:15px;padding:14px 10px;min-height:54px}
+  .rskip{margin-top:9px;display:flex;gap:10px}
+  .rskip button{flex:1}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>DANK <span>·</span> SKU Photo Audit</h1>
+    <p class="sub">Loads every product photo from the live menu in <em>your</em> browser, reports which are missing, broken, duplicated or on a placeholder — then walks you through them one at a time so you can say whether the picture actually matches the product, and writes the image prompts for the ones that don't.</p>
+  </header>
+
+  <div class="bar">
+    <input type="text" id="src" value="https://dankbkk-site.vercel.app/api/products">
+    <button class="p" id="run">Run the audit</button>
+    <button class="g" id="review-start" disabled>Check each picture →</button>
+  </div>
+  <div class="prog"><i id="pbar"></i></div>
+  <p class="note" id="status">Tap “Run the audit”. Nothing is uploaded anywhere — every check happens on this device.</p>
+
+  <div class="stats" id="stats" style="display:none">
+    <div class="stat"><b id="s-total">0</b><i>SKUs</i></div>
+    <div class="stat ok"><b id="s-ok">0</b><i>Own photo, loads fine</i></div>
+    <div class="stat bad"><b id="s-bad">0</b><i>Broken / 404</i></div>
+    <div class="stat warn"><b id="s-tile">0</b><i>Drawn placeholder</i></div>
+    <div class="stat warn"><b id="s-dup">0</b><i>Another SKU's photo</i></div>
+    <div class="stat"><b id="s-stock">0</b><i>Generic stock photo</i></div>
+    <div class="stat bad"><b id="s-wrong">0</b><i>You marked wrong</i></div>
+  </div>
+
+  <div id="sections"></div>
+
+  <h2>Image prompts for everything that needs a real picture</h2>
+  <div class="bar">
+    <button class="p" id="copy">Copy all prompts</button>
+    <button class="g" id="dl">Download as .txt</button>
+  </div>
+  <pre id="prompts">Run the audit first.</pre>
+
+  <footer>DANK CUSTOMS · Crafted for Connoisseurs</footer>
+</div>
+
+<!-- one product at a time, biggest picture the screen will give it -->
+<div id="review" role="dialog" aria-label="Check each picture">
+  <div class="rw">
+    <div class="rtop">
+      <button class="g" id="r-close">✕ Done</button>
+      <span class="cnt" id="r-count">1 / 1</span>
+    </div>
+    <div class="rshot" id="r-shot"><em>loading…</em></div>
+    <div class="rname" id="r-name">—</div>
+    <div class="rmeta" id="r-meta">—</div>
+    <div class="rwhy" id="r-why">—</div>
+    <div class="rbtns">
+      <button class="no" id="r-no">✕ Wrong picture</button>
+      <button class="p" id="r-yes">✓ That's right</button>
+    </div>
+    <div class="rskip">
+      <button class="g" id="r-back">← Back</button>
+      <button class="g" id="r-skip">Skip</button>
+    </div>
+    <p class="note">Riskiest first: placeholders, then generic stock photos, then keyword-matched ones, then the photos the shop set by hand. Keyboard: ← → to move, Y / N to answer.</p>
+  </div>
+</div>
+
+<script>
+/* ---------------------------------------------------------------------------
+   Everything below runs on the phone or laptop looking at this page. The point
+   is that the shop's photo CDN can be reached from there and could not be
+   reached from where the audit was written, so this is the only honest way to
+   prove a URL resolves — and a human eye is the only thing that can say whether
+   the photograph on a card is actually a photograph of THAT product.
+--------------------------------------------------------------------------- */
+var $ = function(id){ return document.getElementById(id); };
+var RESULTS = [], ORDER = [], POS = 0;
+
+var PALETTE = "Colour palette strictly: matte black #0F0F0F background, deep emerald green #2E7D32 and antique gold #C9A227 accents, dark walnut wood. No bright colours, no neon, no cartoon elements, no text, no logos, no discount badges, no watermarks.";
+var LIGHT = "Cinematic low-key studio product photography, single soft key light from upper left, subtle gold rim light, gentle reflection on a dark polished surface, shallow depth of field, 8K, ultra photorealistic 3D product render, square 1:1 composition, product centred with generous negative space.";
+
+function kindOf(name, cat){
+  var s = ((name||"") + " " + (cat||"")).toLowerCase();
+  if(/\b(joint|pre-?roll|preroll|blunt|cone|backwood)/.test(s)) return "joint";
+  if(/\b(vape|cart|cartridge|pod|disposable|510)/.test(s)) return "vape";
+  if(/\b(hash|rosin|resin|wax|shatter|budder|concentrate)/.test(s)) return "hash";
+  if(/\b(edible|gummy|gummies|jelly|cookie|brownie|chocolate|candy|cake|snack)/.test(s)) return "edible";
+  if(/\b(beer|lager|drink|soda|cola|tea|coffee|juice|water|shake|seltzer|can|bottle)/.test(s)) return "drink";
+  if(/\b(grinder|lighter|paper|rolling|bong|pipe|rig|tray|filter|tip|storage|ashtray|accessor)/.test(s)) return "accessory";
+  if(/\b(shirt|tee|hoodie|cap|hat|merch|sticker|tote|sock)/.test(s)) return "merch";
+  if(/\b(food|rice|chicken|pork|fries|ring|burger|noodle|salad|soup|wing)/.test(s)) return "food";
+  return "flower";
+}
+var BODY = {
+  flower: function(n){ return "Extreme macro hero shot of a single premium cannabis flower bud of the strain \"" + n + "\", resting on dark walnut wood. Dense trichome frost catching the light like crushed glass, vivid orange pistils, deep green and purple leaf tones, crisp resin detail."; },
+  joint:  function(n){ return "A single perfectly rolled premium pre-roll joint named \"" + n + "\", laid on dark walnut wood beside a scatter of ground flower. Clean paper, tight crutch tip, one thin curl of smoke."; },
+  hash:   function(n){ return "A small pressed puck of premium hash / concentrate named \"" + n + "\", glossy amber-brown, sitting on dark walnut wood with a fine dusting of kief."; },
+  vape:   function(n){ return "A sleek matte-black cannabis vape cartridge / disposable pen named \"" + n + "\", standing upright on dark walnut, golden oil visible in the glass window, brushed metal detail."; },
+  edible: function(n){ return "An appetising premium cannabis edible named \"" + n + "\", plated on dark slate over walnut wood, rich texture, one piece broken open to show the inside."; },
+  drink:  function(n){ return "A chilled beverage named \"" + n + "\" — unbranded blank can or bottle with condensation beading on it, on dark walnut wood, ice-cold, one drop running down the side."; },
+  accessory: function(n){ return "A premium smoking accessory named \"" + n + "\", photographed as a luxury object on dark walnut wood, precise machined detail, matte and brushed finishes."; },
+  merch:  function(n){ return "Premium branded merchandise item named \"" + n + "\" — folded neatly / presented on dark walnut wood, heavyweight fabric texture, subtle tonal embroidery, no readable text."; },
+  food:   function(n){ return "An appetising plated dish named \"" + n + "\", overhead-to-45-degree food photography on dark slate over walnut wood, steam, fresh garnish, restaurant plating."; }
+};
+function promptFor(p, why){
+  var k = kindOf(p.name, p.category);
+  return "### " + p.name + "  [" + (p.category||"—") + "]" +
+    "\nReason: " + why +
+    "\n\n" + BODY[k](p.name) + " " + LIGHT + " " + PALETTE + "\n";
+}
+
+/* Why does this product have the photo it has? The menu feed tells us, and it
+   is the single most useful thing on the review screen: a photo the shop set by
+   hand is rarely wrong, one matched on a keyword often is. */
+function provenance(p){
+  var f = String(p._imgFrom || "");
+  if(!f) return { risk: 5, label: "Set on the product itself", text: "This photo was uploaded to this product in Shopify or the POS. Usually right — but it is worth a look." };
+  if(f === "name") return { risk: 4, label: "Matched by exact name", text: "Matched to a photo filed under this exact product name." };
+  if(f.indexOf("keyword:") === 0){
+    var k = f.slice(8);
+    return { risk: 2, label: "Guessed from the word “" + k + "”", text: "No photo of its own, so the menu found one by spotting “" + k + "” in the name. This is where wrong pictures come from — check it properly." };
+  }
+  if(f === "generic") return { risk: 1, label: "Category stock photo", text: "No photo of its own, so it is showing a generic photo of its category. It is honest about the category but it is not this product." };
+  if(f === "tile") return { risk: 0, label: "Drawn placeholder", text: "No photograph at all — the card draws a DANK tile from the product's own name. Needs a real picture." };
+  return { risk: 3, label: f, text: "" };
+}
+
+function loadImage(url, timeout){
+  return new Promise(function(res){
+    if(!url) return res("blank");
+    var im = new Image(), done = false;
+    var t = setTimeout(function(){ if(!done){ done = true; res("timeout"); } }, timeout || 12000);
+    im.onload  = function(){ if(!done){ done = true; clearTimeout(t); res(im.naturalWidth > 1 ? "ok" : "broken"); } };
+    im.onerror = function(){ if(!done){ done = true; clearTimeout(t); res("broken"); } };
+    im.referrerPolicy = "no-referrer";
+    im.src = url;
+  });
+}
+function abs(u, base){
+  if(!u) return "";
+  if(/^https?:|^data:/.test(u)) return u;
+  try { return new URL(u, base).href; } catch(e){ return u; }
+}
+
+async function run(){
+  var url = $("src").value.trim();
+  var origin = url.replace(/\/api\/.*$/, "");
+  $("status").textContent = "Fetching the live menu…";
+  $("run").disabled = true;
+  var list;
+  try {
+    var r = await fetch(url, { cache: "no-store" });
+    list = await r.json();
+    if(!Array.isArray(list) && list && Array.isArray(list.data)) list = list.data;
+  } catch(e){
+    $("status").textContent = "Could not reach " + url + " (" + e.message + "). If you are offline or the site is mid-deploy, try again in a minute.";
+    $("run").disabled = false; return;
+  }
+  if(!Array.isArray(list) || !list.length){
+    $("status").textContent = "That URL did not return a product list.";
+    $("run").disabled = false; return;
+  }
+
+  var by = {};
+  list.forEach(function(p){
+    var u = String(p.image||"").trim();
+    if(u && !/\/api\/tile/.test(u)) (by[u] = by[u] || []).push(p);
+  });
+
+  RESULTS = []; var done = 0;
+  $("stats").style.display = "";
+  for(var i = 0; i < list.length; i++){
+    var p = list[i];
+    var raw = String(p.image||"").trim();
+    var full = abs(raw, origin + "/");
+    var shared = (by[raw] && by[raw].length > 1) ? by[raw].map(function(x){ return x.name; }) : null;
+    var state = await loadImage(full);
+    RESULTS.push({
+      p: p, url: full, state: state,
+      isTile: /\/api\/tile/.test(raw),
+      isStock: /images\.unsplash\.com|pexels|pixabay/.test(raw),
+      shared: shared, prov: provenance(p), verdict: null
+    });
+    done++;
+    $("pbar").style.width = Math.round(done * 100 / list.length) + "%";
+    $("status").textContent = "Checking photos… " + done + " / " + list.length;
+    if(done % 8 === 0) render();
+  }
+  // riskiest first, and anything already known-bad ahead of everything
+  ORDER = RESULTS.slice().sort(function(a, b){
+    var ab = (a.state !== "ok" ? -3 : 0) + (a.shared ? -2 : 0) + a.prov.risk;
+    var bb = (b.state !== "ok" ? -3 : 0) + (b.shared ? -2 : 0) + b.prov.risk;
+    return ab - bb;
+  });
+  POS = 0;
+  render();
+  $("review-start").disabled = false;
+  $("status").textContent = "Done — " + list.length + " SKUs checked. Now tap “Check each picture” to confirm each photo is of the right product.";
+  $("run").disabled = false;
+}
+
+function render(){
+  var bad   = RESULTS.filter(function(r){ return r.state !== "ok"; });
+  var tile  = RESULTS.filter(function(r){ return r.isTile; });
+  var dup   = RESULTS.filter(function(r){ return r.shared; });
+  var stock = RESULTS.filter(function(r){ return r.isStock || r.prov.label === "Category stock photo"; });
+  var wrong = RESULTS.filter(function(r){ return r.verdict === "no"; });
+  var good  = RESULTS.filter(function(r){ return r.state === "ok" && !r.isTile && !r.shared && !r.isStock && r.verdict !== "no"; });
+  $("s-total").textContent = RESULTS.length;
+  $("s-ok").textContent    = good.length;
+  $("s-bad").textContent   = bad.length;
+  $("s-tile").textContent  = tile.length;
+  $("s-dup").textContent   = dup.length;
+  $("s-stock").textContent = stock.length;
+  $("s-wrong").textContent = wrong.length;
+
+  $("sections").innerHTML =
+      section("You marked these as the wrong picture", wrong, "t-wrong", "WRONG")
+    + section("Broken — the photo URL does not load", bad, "t-bad", "BROKEN")
+    + section("On a drawn placeholder — no photograph of its own", tile, "t-tile", "TILE")
+    + section("Wearing another SKU's photograph", dup, "t-dup", "DUPLICATE")
+    + section("Generic stock photo rather than the real product", stock, "t-stock", "STOCK");
+
+  var needs = [];
+  wrong.forEach(function(r){ needs.push([r, "you checked it and the picture is not this product"]); });
+  bad.forEach(function(r){ needs.push([r, "the photo URL on this SKU does not load"]); });
+  tile.forEach(function(r){ needs.push([r, "no photograph of its own — currently a drawn placeholder tile"]); });
+  dup.forEach(function(r){ needs.push([r, "shares its photo with " + r.shared.filter(function(n){ return n !== r.p.name; }).join(", ")]); });
+  stock.forEach(function(r){ needs.push([r, "generic stock photo, not the real product"]); });
+  var seen = {}, txt = "";
+  needs.forEach(function(pair){
+    var k = pair[0].p.id || pair[0].p.name;
+    if(seen[k]) return; seen[k] = 1;
+    txt += promptFor(pair[0].p, pair[1]) + "\n";
+  });
+  $("prompts").textContent = txt
+    ? ("DANK — image prompts (" + Object.keys(seen).length + " SKUs)\nGenerate each at 1:1, then upload it to the product in Shopify / the POS.\n\n" + txt)
+    : "Nothing needs a new picture — every SKU loads a real photograph of its own.";
+}
+
+function section(title, rows, cls, tag){
+  if(!rows.length) return "";
+  var h = '<h2>' + title + ' — ' + rows.length + '</h2><div class="grid">';
+  rows.forEach(function(r){
+    var img = r.state === "ok" ? '<img src="' + esc(r.url) + '" referrerpolicy="no-referrer" alt="">' : '<em>no image</em>';
+    h += '<div class="card"><div class="ph"><span class="tag ' + cls + '">' + tag + '</span>' + img + '</div>' +
+         '<div class="m"><div class="n">' + esc(r.p.name || r.p.id || "—") + '</div>' +
+         '<div class="c">' + esc(r.p.category || "—") + '</div></div></div>';
+  });
+  return h + '</div>';
+}
+function esc(s){ return String(s == null ? "" : s).replace(/[&<>"']/g, function(c){ return ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" })[c]; }); }
+
+/* ---- review mode -------------------------------------------------------- */
+function openReview(){ if(!ORDER.length) return; $("review").style.display = "block"; document.body.style.overflow = "hidden"; paint(); }
+function closeReview(){ $("review").style.display = "none"; document.body.style.overflow = ""; render(); }
+function paint(){
+  if(POS >= ORDER.length){ closeReview(); return; }
+  var r = ORDER[POS];
+  $("r-count").textContent = (POS + 1) + " / " + ORDER.length + (r.verdict ? "  ·  " + (r.verdict === "no" ? "marked wrong" : "confirmed") : "");
+  $("r-shot").innerHTML = r.state === "ok"
+    ? '<img src="' + esc(r.url) + '" referrerpolicy="no-referrer" alt="">'
+    : '<em>this photo does not load</em>';
+  $("r-name").textContent = r.p.name || r.p.id || "—";
+  var bits = [r.p.category, r.p.type, r.p.thcLabel || (r.p.thc ? r.p.thc + "% THC" : ""), (r.p.flavors || []).join(" · ")].filter(Boolean);
+  $("r-meta").textContent = bits.join("  ·  ");
+  var why = r.prov.label + " — " + r.prov.text;
+  if(r.shared) why += "  ⚠︎ This exact photo is also on: " + r.shared.filter(function(n){ return n !== r.p.name; }).join(", ") + ".";
+  $("r-why").textContent = why;
+}
+function answer(v){ if(POS < ORDER.length){ ORDER[POS].verdict = v; POS++; paint(); } }
+
+$("run").addEventListener("click", run);
+$("review-start").addEventListener("click", openReview);
+$("r-close").addEventListener("click", closeReview);
+$("r-yes").addEventListener("click", function(){ answer("yes"); });
+$("r-no").addEventListener("click", function(){ answer("no"); });
+$("r-skip").addEventListener("click", function(){ POS++; paint(); });
+$("r-back").addEventListener("click", function(){ if(POS > 0){ POS--; paint(); } });
+document.addEventListener("keydown", function(e){
+  if($("review").style.display !== "block") return;
+  if(e.key === "ArrowRight"){ POS++; paint(); }
+  else if(e.key === "ArrowLeft"){ if(POS > 0){ POS--; paint(); } }
+  else if(/^y$/i.test(e.key)) answer("yes");
+  else if(/^n$/i.test(e.key)) answer("no");
+  else if(e.key === "Escape") closeReview();
+});
+
+$("copy").addEventListener("click", function(){
+  var t = $("prompts").textContent;
+  navigator.clipboard.writeText(t).then(function(){ $("copy").textContent = "Copied ✓"; setTimeout(function(){ $("copy").textContent = "Copy all prompts"; }, 1600); },
+    function(){ var r = document.createRange(); r.selectNodeContents($("prompts")); var s = getSelection(); s.removeAllRanges(); s.addRange(r); });
+});
+$("dl").addEventListener("click", function(){
+  var b = new Blob([$("prompts").textContent], { type: "text/plain" });
+  var a = document.createElement("a");
+  a.href = URL.createObjectURL(b); a.download = "dank-image-prompts.txt"; a.click();
+  setTimeout(function(){ URL.revokeObjectURL(a.href); }, 4000);
+});
+</script>
+</body>
+</html>
