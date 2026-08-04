@@ -1,67 +1,76 @@
-/* /api/paygbp — GB Prime Pay (v3). Docs: https://doc.gbprimepay.com
-   Env:
-     GBP_SECRET_KEY   secret key (server; Basic auth username, blank password)
-     GBP_PUBLIC_KEY   public key (browser card tokenisation; optional)
-   Actions:
-     POST {orderId, action:"qr"}            → PromptPay QR (data URL) to scan
-     POST {orderId, action:"card", token}   → charge a tokenised card
-   Amounts are read from the saved order (server-side). GBP notifies
-   /api/gbp-webhook (set as backgroundUrl) to confirm payment.               */
+/* /api/lab — certificates of analysis for the storefront lab card.
 
-import { getJSON } from "./_store.js";
+     GET                                    → { reports: { <key>: {...} } }
+     POST { key, action:"save", product, report }   → store one certificate
+     POST { key, action:"delete", product }         → drop it back to estimated
 
-const SECRET = process.env.GBP_SECRET_KEY || "";
-const BASE = "https://api.gbprimepay.com";
-const AUTH = () => "Basic " + Buffer.from(SECRET + ":").toString("base64");
+   The GET is public and unauthenticated, which is the point: the card is
+   customer-facing, and a lab result is something a shop publishes rather than
+   guards. There is nothing here a walk-in could not read off the printed
+   certificate on the counter.
+
+   The POST is staff-only, because it is the difference between the card saying
+   "estimated from strain data" and the card saying "we measured this". Only
+   somebody holding the certificate should be able to make the site say the
+   second thing.
+
+   `product` is a product id from products.json, or the flattened product name
+   the rest of the site keys on — index.html looks up both, in that order.    */
+
+import { getReports, saveReport, deleteReport, labKeyOf } from "./_lab.js";
+import { requireStaff } from "./_auth.js";
+import { requireRate } from "./_ratelimit.js";
 
 export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, X-Staff-Key");
+  res.setHeader("Cache-Control", "no-store");
   if (req.method === "OPTIONS") return res.status(204).end();
-  if (req.method !== "POST") return res.status(405).json({ error: "POST only" });
-  if (!SECRET) return res.status(200).json({ ok: false, error: "not_configured" });
-
-  const b = req.body || {};
-  const order = await getJSON("order:" + b.orderId);
-  if (!order) return res.status(404).json({ error: "order not found" });
-  const amount = Number((order.total ?? order.subtotal)).toFixed(2);
-  const host = req.headers?.["x-forwarded-host"] || req.headers?.host || "dankbkk.com";
-  const bg = `https://${host}/api/gbp-webhook`;
-  const referenceNo = String(b.orderId);
 
   try {
-    if (b.action === "qr") {
-      const r = await fetch(`${BASE}/v3/qrcode`, {
-        method: "POST",
-        headers: { Authorization: AUTH(), "Content-Type": "application/json", Accept: "application/json" },
-        body: JSON.stringify({ amount, referenceNo, backgroundUrl: bg, detail: "dankbkk.com order" }),
-      });
-      const ct = r.headers.get("content-type") || "";
-      if (ct.includes("image")) {
-        const buf = Buffer.from(await r.arrayBuffer());
-        return res.status(200).json({ ok: true, qr: "data:image/png;base64," + buf.toString("base64"), referenceNo });
+    if (req.method === "GET") {
+      if (!(await requireRate(req, res, "lab", 180, 600))) return;
+      const reports = await getReports();
+      return res.status(200).json({ reports, count: Object.keys(reports).length });
+    }
+
+    if (req.method === "POST") {
+      if (!requireStaff(req, res)) return;
+      if (!(await requireRate(req, res, "lab-write", 120, 600))) return;
+      const b = req.body || {};
+      const action = String(b.action || "save").toLowerCase();
+      const product = labKeyOf(b.product || b.id);
+      if (!product) return res.status(400).json({ error: "product required" });
+
+      if (action === "save") {
+        let saved;
+        try {
+          saved = await saveReport(product, b.report);
+        } catch (e) {
+          return res.status(409).json({ error: e.message || "could not save" });
+        }
+        /* A rejected payload is nearly always the same mistake — the
+           cannabinoid boxes were left empty — so say that rather than
+           "invalid", which sends somebody hunting through every field. */
+        if (!saved) {
+          return res.status(400).json({
+            error: "a certificate needs at least one cannabinoid percentage",
+          });
+        }
+        return res.status(200).json({ ok: true, ...saved, reports: await getReports() });
       }
-      const j = await r.json();
-      const qr = j.qrcode || j.qrCode || j.resultUrl || (j.data && (j.data.qrcode || j.data.qrImage)) || null;
-      return res.status(200).json({ ok: Boolean(qr), qr, referenceNo, raw: j });
+
+      if (action === "delete") {
+        const gone = await deleteReport(product);
+        return res.status(200).json({ ok: true, deleted: gone, product, reports: await getReports() });
+      }
+
+      return res.status(400).json({ error: "unknown action", action });
     }
-    if (b.action === "card") {
-      if (!b.token) return res.status(400).json({ error: "card token required" });
-      const r = await fetch(`${BASE}/v3/charge`, {
-        method: "POST",
-        headers: { Authorization: AUTH(), "Content-Type": "application/json" },
-        body: JSON.stringify({
-          token: b.token, amount, referenceNo, detail: "dankbkk.com order",
-          customerName: order.customer?.name || "", responseUrl: `https://${host}/?paid=gbp&order=${b.orderId}`,
-          backgroundUrl: bg,
-        }),
-      });
-      const j = await r.json();
-      const paid = j.resultCode === "00" || /success/i.test(j.resultMessage || "");
-      return res.status(200).json({ ok: paid, paid, redirect: j.gbpReferenceNo ? j.data : (j.redirectUrl || null), raw: j });
-    }
-    return res.status(400).json({ error: "unknown action" });
+
+    return res.status(405).json({ error: "method" });
   } catch (e) {
-    return res.status(502).json({ ok: false, error: e.message });
+    console.error("lab:", e?.message || e);
+    return res.status(500).json({ error: "server" });
   }
 }

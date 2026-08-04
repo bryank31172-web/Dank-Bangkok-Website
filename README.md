@@ -1,264 +1,354 @@
-/* qr.js - DANK
-   A QR encoder small enough to ship with the page, so the table cards and the
-   product labels stop depending on an outside service being reachable. Every
-   step is the published specification rather than an approximation: byte mode,
-   GF(256) with the standard 0x11D polynomial, Reed-Solomon over interleaved
-   blocks, all eight data masks scored by the four penalty rules, and BCH format
-   and version information. Verified module-for-module against a reference
-   encoder across 96 payload/version/level combinations, and every code it
-   produces was read back by an independent decoder.
+# DANK BKK — deploy-ready site + backend
 
-   window.DankQR.svg(text, opts) -> an <svg> string
-   window.DankQR.dataUrl(text, opts) -> a data: URL suitable for an <img src>
-   opts: { ecl:"L"|"M"|"Q"|"H", size:px, quiet:modules, dark:css, light:css }
-*/
-(function (root) {
-  /* A QR encoder small enough to paste into a page.
-     Byte mode, error correction level Q, versions 1-10 - which covers any site
-     address that will ever be printed on a table card - and every step of it is
-     the published specification rather than a guess: GF(256) with the standard
-     0x11D polynomial, Reed-Solomon over interleaved blocks, all eight data masks
-     scored by the four penalty rules, BCH format and version information. */
-  function qrMatrix(text, ecl, forceMask) {
-    ecl = ecl || "Q";
+**✅ StoreHub is wired up.** The connector calls `api.storehubhq.com` with your
+Basic-auth credentials (username `dankclub`) to pull the live menu, stock and
+prices — the same StoreHub backend behind your POS app
+(`dank-medical-pos-app.vercel.app`), so the website and POS stay in sync.
+Because StoreHub products have no photos or THC, the site parses THC/type/weight
+from product names and auto-draws a branded photo when there's no image.
+Credentials live in `.env.local` (local) and Vercel env vars (production) — keep
+them private; rotate the token if it leaks.
 
-    /* ---- the byte stream ---- */
-    var bytes = [], i, j, k, v;
-    for (i = 0; i < text.length; i++) {
-      var c = text.charCodeAt(i);
-      if (c < 0x80) bytes.push(c);
-      else if (c < 0x800) bytes.push(0xc0 | (c >> 6), 0x80 | (c & 63));
-      else if (c >= 0xd800 && c <= 0xdbff && i + 1 < text.length) {
-        var cp = 0x10000 + ((c - 0xd800) << 10) + (text.charCodeAt(++i) - 0xdc00);
-        bytes.push(0xf0 | (cp >> 18), 0x80 | ((cp >> 12) & 63), 0x80 | ((cp >> 6) & 63), 0x80 | (cp & 63));
-      } else bytes.push(0xe0 | (c >> 12), 0x80 | ((c >> 6) & 63), 0x80 | (c & 63));
-    }
+---
 
-    /* ---- version and block layout ---- */
-    /* [ecPerBlock, blocks1, data1, blocks2, data2] per version, per level. */
-    var LAY = {
-      L: [[7,1,19,0,0],[10,1,34,0,0],[15,1,55,0,0],[20,1,80,0,0],[26,1,108,0,0],[18,2,68,0,0],[20,2,78,0,0],[24,2,97,0,0],[30,2,116,0,0],[18,2,68,2,69]],
-      M: [[10,1,16,0,0],[16,1,28,0,0],[26,1,44,0,0],[18,2,32,0,0],[24,2,43,0,0],[16,4,27,0,0],[18,4,31,0,0],[22,2,38,2,39],[22,3,36,2,37],[26,4,43,1,44]],
-      Q: [[13,1,13,0,0],[22,1,22,0,0],[18,2,17,0,0],[26,2,24,0,0],[18,2,15,2,16],[24,4,19,0,0],[18,2,14,4,15],[22,4,18,2,19],[20,4,16,4,17],[24,6,19,2,20]],
-      H: [[17,1,9,0,0],[28,1,16,0,0],[22,2,13,0,0],[16,4,9,0,0],[22,2,11,2,12],[28,4,15,0,0],[26,4,13,1,14],[26,4,14,2,15],[24,4,12,4,13],[28,6,15,2,16]]
-    };
-    var lay = LAY[ecl], ver = 0, L;
-    for (v = 1; v <= 10; v++) {
-      L = lay[v - 1];
-      var dataCw = L[1] * L[2] + L[3] * L[4];
-      var lenBits = v < 10 ? 8 : 16;
-      if (bytes.length <= Math.floor((dataCw * 8 - 4 - lenBits) / 8)) { ver = v; break; }
-    }
-    if (!ver) throw new Error("too long for a version-10 code");
-    L = lay[ver - 1];
-    var lenBits = ver < 10 ? 8 : 16;
-    var totalData = L[1] * L[2] + L[3] * L[4];
+## 🚀 GO LIVE — publish in ~10 minutes
 
-    /* ---- bit stream: mode, length, payload, terminator, pad ---- */
-    var bits = [];
-    var put = function (val, n) { for (var b = n - 1; b >= 0; b--) bits.push((val >> b) & 1); };
-    put(4, 4);
-    put(bytes.length, lenBits);
-    for (i = 0; i < bytes.length; i++) put(bytes[i], 8);
-    for (i = 0; i < 4 && bits.length < totalData * 8; i++) bits.push(0);
-    while (bits.length % 8) bits.push(0);
-    var data = [];
-    for (i = 0; i < bits.length; i += 8) {
-      var byte = 0;
-      for (j = 0; j < 8; j++) byte = (byte << 1) | bits[i + j];
-      data.push(byte);
-    }
-    var PAD = [0xec, 0x11], p = 0;
-    while (data.length < totalData) data.push(PAD[p++ % 2]);
+1. **Create a Vercel account** at vercel.com (free), verify email.
+2. **Upload the project:** New → Project → drag this whole folder in (or push to
+   GitHub and Import). Vercel auto-detects the `api/` functions.
+3. **Add environment variables** (Project → Settings → Environment Variables).
+   Minimum to go live with the real menu:
+   - `STOREHUB_STORE` = `dankclub`
+   - `STOREHUB_TOKEN` = *(your StoreHub API token — already set in Vercel)*
+   - `STAFF_KEY` = *(your staff password — already set in Vercel)*
 
-    /* ---- GF(256) ---- */
-    var EXP = new Array(512), LOG = new Array(256), x = 1;
-    for (i = 0; i < 255; i++) { EXP[i] = x; LOG[x] = i; x <<= 1; if (x & 0x100) x ^= 0x11d; }
-    for (i = 255; i < 512; i++) EXP[i] = EXP[i - 255];
-    var mul = function (a, b) { return a && b ? EXP[LOG[a] + LOG[b]] : 0; };
-    var genPoly = function (n) {
-      var g = [1], gi, gj;
-      for (gi = 0; gi < n; gi++) {
-        var ng = new Array(g.length + 1).fill(0);
-        for (gj = 0; gj < g.length; gj++) { ng[gj] ^= g[gj]; ng[gj + 1] ^= mul(g[gj], EXP[gi]); }
-        g = ng;
-      }
-      return g;
-    };
-    var rs = function (block, n) {
-      var g = genPoly(n), rem = block.concat(new Array(n).fill(0)), ri, rj;
-      for (ri = 0; ri < block.length; ri++) {
-        var f = rem[ri]; if (!f) continue;
-        for (rj = 0; rj < g.length; rj++) rem[ri + rj] ^= mul(g[rj], f);
-      }
-      return rem.slice(block.length);
-    };
+   Real values are deliberately not written into this repo, because these files
+   get committed to GitHub. Read them back any time from Vercel → Project →
+   Settings → Environment Variables.
 
-    /* ---- split into blocks, compute ECC, interleave ---- */
-    var dBlocks = [], eBlocks = [], off = 0, ecN = L[0];
-    for (i = 0; i < L[1]; i++) { var blk = data.slice(off, off + L[2]); off += L[2]; dBlocks.push(blk); eBlocks.push(rs(blk, ecN)); }
-    for (i = 0; i < L[3]; i++) { var blk2 = data.slice(off, off + L[4]); off += L[4]; dBlocks.push(blk2); eBlocks.push(rs(blk2, ecN)); }
-    var final = [], maxD = Math.max(L[2], L[4] || 0);
-    for (i = 0; i < maxD; i++) for (j = 0; j < dBlocks.length; j++) if (i < dBlocks[j].length) final.push(dBlocks[j][i]);
-    for (i = 0; i < ecN; i++) for (j = 0; j < eBlocks.length; j++) final.push(eBlocks[j][i]);
+   Then add the rest as you get them (Omise, xAI/Grok, Resend, Telegram, Upstash — table below).
+4. **Deploy.** Open the preview URL; confirm the menu loads. Check
+   `your-url/api/storehub-raw?key=YOUR_STAFF_KEY` to see the raw StoreHub data
+   (send me that output and I'll fine-tune the product mapping to your catalogue).
+5. **Point your domain:** Settings → Domains → add `dankbkk.com` and
+   `www.dankbkk.com`, then at your registrar set the DNS record Vercel shows.
+   Live in minutes.
+6. **Staff:** open `dankbkk.com/staff.html`, log in with `STAFF_KEY`. Keep it open
+   on the shop tablet for orders + chats. Pick the free-gram SKUs in the 🎁 tab.
 
-    /* ---- the grid: function patterns first, so the data knows where not to go ---- */
-    var size = ver * 4 + 17;
-    var m = [], reserved = [];
-    for (i = 0; i < size; i++) { m.push(new Array(size).fill(0)); reserved.push(new Array(size).fill(0)); }
-    var set = function (r, c, v) { m[r][c] = v; reserved[r][c] = 1; };
+> Prefer no-code hosting? Netlify and Cloudflare Pages work the same way (drag
+> the folder, set the same env vars).
 
-    var finder = function (r0, c0) {
-      for (var r = -1; r <= 7; r++) for (var c = -1; c <= 7; c++) {
-        var rr = r0 + r, cc = c0 + c;
-        if (rr < 0 || cc < 0 || rr >= size || cc >= size) continue;
-        var on = (r >= 0 && r <= 6 && (c === 0 || c === 6)) || (c >= 0 && c <= 6 && (r === 0 || r === 6)) ||
-                 (r >= 2 && r <= 4 && c >= 2 && c <= 4);
-        set(rr, cc, on ? 1 : 0);
-      }
-    };
-    finder(0, 0); finder(0, size - 7); finder(size - 7, 0);
+---
 
-    for (i = 8; i < size - 8; i++) { set(6, i, i % 2 === 0 ? 1 : 0); set(i, 6, i % 2 === 0 ? 1 : 0); }
+## Environment variables
 
-    var ALIGN = [[], [], [6,18], [6,22], [6,26], [6,30], [6,34], [6,22,38], [6,24,42], [6,26,46], [6,28,50]][ver];
-    for (i = 0; i < ALIGN.length; i++) for (j = 0; j < ALIGN.length; j++) {
-      var ar = ALIGN[i], ac = ALIGN[j];
-      if ((ar <= 8 && ac <= 8) || (ar <= 8 && ac >= size - 9) || (ar >= size - 9 && ac <= 8)) continue;
-      for (var dr = -2; dr <= 2; dr++) for (var dc = -2; dc <= 2; dc++)
-        set(ar + dr, ac + dc, Math.max(Math.abs(dr), Math.abs(dc)) !== 1 ? 1 : 0);
-    }
+| Key | What it does | Where to get it |
+|---|---|---|
+| `STOREHUB_STORE` | Your StoreHub subdomain (e.g. `dankbkk` from `dankbkk.storehubhq.com`) | You already have this |
+| `STOREHUB_TOKEN` | StoreHub API token → turns on the **live menu + photos + stock** | Ask StoreHub Care to enable API access for your account; they issue the token |
+| `XAI_API_KEY` | Grok key → DANK AI answers **any** open-ended question | console.x.ai → API keys |
+| `GROK_MODEL` | Optional, default `grok-4` | — |
+| `RESEND_API_KEY` | Emails each order to you | resend.com (free) → API key; verify your domain or use their test sender |
+| `ORDER_EMAIL_TO` | Where orders go. Default `dankclubbkk@gmail.com` | — |
+| `ORDER_FORWARD_URL` | Optional: also POST each order into BRYAN POS's own order-intake endpoint (Orders tab) | From your POS developer |
+| `TELEGRAM_BOT_TOKEN` | **Staff handoff pings** — instant push to your staff Telegram group when DANK AI transfers a chat | Message @BotFather on Telegram → /newbot → copy token |
+| `TELEGRAM_CHAT_ID` | The staff group's chat id | Add the bot to your staff group, send a message, open `api.telegram.org/bot<TOKEN>/getUpdates`, copy `chat.id` (negative number) |
+| `HANDOFF_EMAIL_TO` | Optional: handoff emails go here (default = ORDER_EMAIL_TO) | — |
+| `HANDOFF_FORWARD_URL` | Optional: also POST handoffs into BRYAN POS (Alerts) | From your POS developer |
+| `STAFF_KEY` | Password for the staff console (`/staff.html`). Default is `dankstaff` — **change it before going live** | Pick any secret |
+| `UPSTASH_REDIS_REST_URL` + `UPSTASH_REDIS_REST_TOKEN` | Chat + order storage. Without it, things work but may reset between serverless instances — set this before going live | upstash.com → create free Redis DB → REST API tab (2 min) |
+| `OMISE_PUBLIC_KEY` | Omise (Opn Payments) public key `pkey_...` — enables **online payment** (PromptPay QR + cards) at checkout | Omise dashboard → Keys |
+| `OMISE_SECRET_KEY` | Omise secret key `skey_...` — used server-side only to create charges | Omise dashboard → Keys |
+| `MENU_FEED_URL` | Optional: a URL from your **BackStore / BackOffice web app** that returns the product JSON array. Takes priority over StoreHub — point it at any backend that can output the menu | Your backend |
+| `MENU_TTL_SECONDS` | How fresh the menu is (default `30`). Lower = closer to real-time, more upstream calls | — |
+| `WEBHOOK_SECRET` | Optional shared secret for `/api/storehub-webhook` | Pick any secret |
 
-    set(size - 8, 8, 1);                                   /* the always-dark module */
-    for (i = 0; i < 9; i++) { if (!reserved[8][i]) set(8, i, 0); if (!reserved[i][8]) set(i, 8, 0); }
-    for (i = 0; i < 8; i++) { if (!reserved[8][size - 1 - i]) set(8, size - 1 - i, 0); if (!reserved[size - 1 - i][8]) set(size - 1 - i, 8, 0); }
+## How each piece works
 
-    var VER_INFO = { 7: 0x07c94, 8: 0x085bc, 9: 0x09a99, 10: 0x0a4d3 };
-    if (ver >= 7) {
-      var vi = VER_INFO[ver];
-      for (i = 0; i < 18; i++) {
-        var bit = (vi >> i) & 1, r1 = Math.floor(i / 3), c1 = size - 11 + (i % 3);
-        set(r1, c1, bit); set(c1, r1, bit);
-      }
-    }
+**Near-real-time menu (`/api/products` + `/api/menu-version` + `/api/storehub-webhook`).**
+All menu reads go through one shared cache (`api/_menu.js`). Data source
+priority: `MENU_FEED_URL` (your BackStore/BackOffice web-app feed) → StoreHub
+API → bundled `products.json`. The response header `X-Menu-Source` tells you
+which is live (`feed` / `storehub` / `bundled`).
 
-    /* ---- lay the data in, then try every mask and keep the least ugly ---- */
-    var place = function (mask) {
-      var g = m.map(function (row) { return row.slice(); });
-      var bi = 0, up = true, col = size - 1;
-      while (col > 0) {
-        if (col === 6) col--;
-        for (var n = 0; n < size; n++) {
-          var row = up ? size - 1 - n : n;
-          for (var s = 0; s < 2; s++) {
-            var cc2 = col - s;
-            if (reserved[row][cc2]) continue;
-            var bit2 = bi < final.length * 8 ? (final[bi >> 3] >> (7 - (bi & 7))) & 1 : 0;
-            bi++;
-            var inv;
-            switch (mask) {
-              case 0: inv = (row + cc2) % 2 === 0; break;
-              case 1: inv = row % 2 === 0; break;
-              case 2: inv = cc2 % 3 === 0; break;
-              case 3: inv = (row + cc2) % 3 === 0; break;
-              case 4: inv = (Math.floor(row / 2) + Math.floor(cc2 / 3)) % 2 === 0; break;
-              case 5: inv = ((row * cc2) % 2) + ((row * cc2) % 3) === 0; break;
-              case 6: inv = ((((row * cc2) % 2) + ((row * cc2) % 3)) % 2) === 0; break;
-              default: inv = ((((row + cc2) % 2) + ((row * cc2) % 3)) % 2) === 0; break;
-            }
-            g[row][cc2] = inv ? bit2 ^ 1 : bit2;
-          }
-        }
-        up = !up; col -= 2;
-      }
-      /* format information, which depends on the mask */
-      var ECBITS = { L: 1, M: 0, Q: 3, H: 2 };
-      var fmt = (ECBITS[ecl] << 3) | mask, rem2 = fmt << 10;
-      for (var b2 = 14; b2 >= 10; b2--) if ((rem2 >> b2) & 1) rem2 ^= 0x537 << (b2 - 10);
-      var bitsF = ((fmt << 10) | rem2) ^ 0x5412;
-      for (var q = 0; q < 15; q++) {
-        var v2 = (bitsF >> (14 - q)) & 1;
-        if (q < 6) g[8][q] = v2; else if (q < 8) g[8][q + 1] = v2; else if (q === 8) g[7][8] = v2; else g[14 - q][8] = v2;
-        if (q < 7) g[size - 1 - q][8] = v2; else g[8][size - 15 + q] = v2;
-      }
-      g[size - 8][8] = 1;
-      return g;
-    };
+How the storefront stays live: on load it reads the menu plus a change-`rev`.
+Every ~30s (and whenever the tab regains focus, and again right before an
+order is placed) it polls the tiny `/api/menu-version` endpoint; if the `rev`
+changed — because stock sold or a price moved in your BackOffice — it pulls a
+fresh menu and re-renders **without losing the customer's cart or scroll
+position**, showing a "🔄 Menu updated" toast and a pulsing **LIVE** badge.
+Because every visitor shares the server cache, your BackOffice/StoreHub is
+queried at most about once per `MENU_TTL_SECONDS` no matter how many people
+are browsing.
 
-    var penalty = function (g) {
-      var s = 0, r, c, run, dark = 0;
-      for (r = 0; r < size; r++) {
-        run = 1;
-        for (c = 1; c < size; c++) {
-          if (g[r][c] === g[r][c - 1]) { run++; if (run === 5) s += 3; else if (run > 5) s++; }
-          else run = 1;
-        }
-      }
-      for (c = 0; c < size; c++) {
-        run = 1;
-        for (r = 1; r < size; r++) {
-          if (g[r][c] === g[r - 1][c]) { run++; if (run === 5) s += 3; else if (run > 5) s++; }
-          else run = 1;
-        }
-      }
-      for (r = 0; r < size - 1; r++) for (c = 0; c < size - 1; c++)
-        if (g[r][c] === g[r][c + 1] && g[r][c] === g[r + 1][c] && g[r][c] === g[r + 1][c + 1]) s += 3;
-      var P1 = [1,0,1,1,1,0,1,0,0,0,0], P2 = [0,0,0,0,1,0,1,1,1,0,1];
-      var hit = function (arr, pat) {
-        for (var q2 = 0; q2 < 11; q2++) if (arr[q2] !== pat[q2]) return false;
-        return true;
-      };
-      for (r = 0; r < size; r++) for (c = 0; c <= size - 11; c++) {
-        var win = g[r].slice(c, c + 11);
-        if (hit(win, P1) || hit(win, P2)) s += 40;
-      }
-      for (c = 0; c < size; c++) for (r = 0; r <= size - 11; r++) {
-        var win2 = []; for (var q3 = 0; q3 < 11; q3++) win2.push(g[r + q3][c]);
-        if (hit(win2, P1) || hit(win2, P2)) s += 40;
-      }
-      for (r = 0; r < size; r++) for (c = 0; c < size; c++) if (g[r][c]) dark++;
-      s += Math.floor(Math.abs(dark * 100 / (size * size) - 50) / 5) * 10;
-      return s;
-    };
+Want it *instant* instead of ~30s? Have your BackOffice (or a middleware like
+Zapier/Make/storehub.io) POST to `/api/storehub-webhook` on any stock/price
+change — it clears the cache so the next poll picks up the change immediately.
+An **oversell guard** also re-checks stock at the moment an order is placed,
+so a customer can't buy something that just went out of stock.
+All StoreHub-specific field mapping lives in `api/_storehub.js` — send me one
+sample product JSON from StoreHub and I'll match it exactly.
 
-    if (forceMask != null) return place(forceMask);
-    var best = null, bestScore = Infinity;
-    for (var mk = 0; mk < 8; mk++) {
-      var g2 = place(mk), sc = penalty(g2);
-      if (sc < bestScore) { bestScore = sc; best = g2; }
-    }
-    return best;
-  }
+**`/api/order`** — checkout posts orders here. Every order is **always saved
+and shown in the staff console's 🛒 Orders tab** (with a badge, sound ping,
+customer phone tap-to-call, and a Mark-done button). On top of that it can
+notify through: **Telegram** group ping with the full order + a console link
+(same bot as chat handoffs — phones buzz instantly), **email** via Resend,
+and/or `ORDER_FORWARD_URL` into BRYAN POS. The storefront also keeps its
+LINE/WhatsApp path as backup so no sale is ever lost.
 
-  function render(text, opts) {
-    opts = opts || {};
-    var m = qrMatrix(String(text), opts.ecl || "M");
-    var n = m.length, quiet = opts.quiet == null ? 4 : opts.quiet;
-    var span = n + quiet * 2;
-    var dark = opts.dark || "#000", light = opts.light || "#fff";
-    /* One path for every dark module keeps the markup small enough to sit in a
-       data: URL even for a full sheet of labels. */
-    var d = "", r, c, run;
-    for (r = 0; r < n; r++) {
-      c = 0;
-      while (c < n) {
-        if (!m[r][c]) { c++; continue; }
-        run = 0;
-        while (c + run < n && m[r][c + run]) run++;
-        d += "M" + (c + quiet) + " " + (r + quiet) + "h" + run + "v1h-" + run + "z";
-        c += run;
-      }
-    }
-    var px = opts.size ? ' width="' + opts.size + '" height="' + opts.size + '"' : "";
-    return '<svg xmlns="http://www.w3.org/2000/svg"' + px +
-      ' viewBox="0 0 ' + span + " " + span + '" shape-rendering="crispEdges" role="img">' +
-      '<rect width="' + span + '" height="' + span + '" fill="' + light + '"/>' +
-      '<path fill="' + dark + '" d="' + d + '"/></svg>';
-  }
+**`/api/chat`** — DANK AI's open-ended brain. The built-in engine answers
+common questions instantly (price, effects, delivery, hours, Thai/English);
+anything else goes to Grok with your live menu injected as context, so answers
+quote real products and real ฿ prices. No `XAI_API_KEY` yet? It quietly falls
+back to the polite built-in reply.
 
-  function dataUrl(text, opts) {
-    return "data:image/svg+xml;charset=utf-8," + encodeURIComponent(render(text, opts));
-  }
+**`/api/handoff`** — human takeover. DANK AI transfers the chat when the
+customer asks for staff (any phrasing, Thai or English, or the "Talk to a
+human" chip) or after it fails to answer twice in a row. It collects the
+customer's phone/LINE ID, then pushes the **full conversation + cart +
+contact** to staff instantly: Telegram group ping (best — phones buzz),
+email, and/or your POS. The customer gets a ticket number and a one-tap
+"Continue on LINE" button, so staff answer on LINE/phone within minutes.
+With no channels configured yet, handoffs are logged in Vercel → Logs and
+the customer is routed straight to LINE.
 
-  root.DankQR = { matrix: qrMatrix, svg: render, dataUrl: dataUrl };
-})(typeof window !== "undefined" ? window : this);
+**`/api/orders`** — powers the console's Orders tab (staff key required).
+
+**`/api/pay` + `/api/omise-webhook`** — online payment via Omise (Opn).
+With both Omise keys set, checkout offers **PromptPay** (customer gets a QR,
+the page detects payment automatically, order flips to **PAID ✅** in the
+console) and **Card** (tokenized in the browser by Omise.js — card numbers
+never touch your server; 3-D Secure supported via redirect). Charge amounts
+are always read from the saved order on the server, never from the client.
+Also add the webhook in your Omise dashboard → Webhooks:
+`https://dankbkk.com/api/omise-webhook` — it marks orders paid even if the
+customer closes the page right after scanning. Without Omise keys, checkout
+simply behaves as before (pay on delivery/pickup).
+Start with Omise **test keys** (`pkey_test_...`/`skey_test_...`) and card
+4242 4242 4242 4242 to try it safely, then switch to live keys.
+⚠️ Note: cannabis is a restricted business category for many acquirers —
+make sure your Omise account is approved for your business type.
+
+**`/api/thread` + `staff.html`** — live two-way staff chat, in the widget.
+When DANK AI transfers a chat, it opens a live thread: the customer keeps
+typing in the same widget (header shows **● LIVE — connected to our team**),
+and your staff answer from the **staff console** at `dankbkk.com/staff.html`
+(log in with `STAFF_KEY`). The console shows every conversation with unread
+dots, the customer's cart + the AI transcript for instant context, quick-reply
+buttons (EN/TH), a sound ping on new messages, and a Close-ticket button.
+The Telegram handoff ping includes a direct link that opens the exact
+conversation. Staff replies appear in the customer's widget within ~3 seconds;
+if the customer closed the page, you still have their phone/LINE as backup.
+
+## Updating the menu without StoreHub
+
+Edit `products.json` and redeploy (or edit the `PRODUCTS` list inside
+`index.html` for the offline copy). Photo fields accept any image URL.
+
+## Testing locally
+
+`npx vercel dev` in this folder runs the site + all three functions locally.
+Opening `index.html` directly as a file also works — it just uses the built-in
+menu and engine.
+
+## Full storefront feature set (front-end)
+
+The customer site is a complete shop, not just a menu:
+- **Browse**: grade categories (Exotics/Topshelf/Midgrade/Premium), Joints,
+  Edibles, Vapes, Beer, Accessories, Merch; search; filter by type; sort by
+  price/THC/name; NEW badges; near-real-time stock (see above).
+- **Product pages**: THC, effects, flavours, weight tiers, quantity stepper,
+  and a "You may also like" upsell row.
+- **Favorites** (❤) saved on the device, with a Saved filter.
+- **Cart**: persists across refreshes; promo codes (`DANK10`, `WELCOME50`,
+  `FREEDEL` — edit in `CONFIG.promos`); delivery fee with free-over-฿1,500 and
+  a minimum-order guard.
+- **Checkout**: delivery or pickup/reserve; PromptPay + card (Omise) or
+  cash/transfer/crypto; discount + delivery + total shown; oversell guard.
+- **My Orders / Track**: `📦` in the header — customers see live status
+  (Placed → Confirmed → Preparing → Completed) and PAID state, on this device
+  or by typing an order number. Backed by `/api/track`.
+- **Help & Info** modal (delivery, payment, promos, age, contact) + SEO/Open-
+  Graph tags for nice link previews.
+All of it works standalone; the backend keys just make menu, payment, chat and
+notifications live.
+
+## First-order promo — Register: Buy 1G get 1G FREE
+
+New visitors see a banner and a one-time register popup. After they register
+(name + phone + 20+), the deal auto-applies on their **first order only**:
+add any 1g flower and a matching **free 1g** drops into the cart at ฿0 (shown
+as a "FREE 🎁 On the house" line). The free gram appears in the order sent to
+staff, so they know to include it. Enforced once per device via localStorage;
+DANK AI can also trigger the sign-up ("register", "first order", "free gram",
+Thai included). Edit or disable in `CONFIG.firstOrder`.
+
+## Wallet — top up with +10% bonus
+
+Registered customers get a **wallet** (balance chip in the header). They top up
+by PromptPay (Omise) and instantly receive **+10% bonus credit** — e.g. pay
+฿1,000, get ฿1,100 — then choose **Wallet** as the payment method at checkout
+to pay from balance (verified & deducted server-side). Bonus % is set by
+`TOPUP_BONUS_PCT` (default 10) and amounts/toggle in `CONFIG.wallet`. Balances
+are keyed by phone in shared storage; `/api/wallet` handles top-ups and the
+omise-webhook credits them even if the customer closes the page. DANK AI can
+pitch and open top-up too. Needs Omise keys for online top-up; staff can also
+credit manually.
+
+## Free gram — manager picks the SKU(s) + auto-generated photos
+
+The first-order "Buy 1G get 1G FREE" gift now lets the **manager choose which
+SKUs** are given free: in the staff console's **🎁 Free gram** tab, tick the 1g
+flowers to offer. The storefront reads that list from `/api/freegifts`; on a
+qualifying first order the customer taps **Choose your free 1G** and picks one
+of the manager's SKUs (auto-added at ฿0). If the manager picks exactly one, it's
+auto-applied; if none, it falls back to the same strain. Defaults come from
+products flagged `freeGift` (a StoreHub `freegift` tag or products.json).
+
+**Auto-generated SKU photos:** if a StoreHub image is missing or fails to load,
+the storefront draws a branded product image on the fly (leaf motif, strain
+name, THC, DANK BKK) via `genPhoto()` — so cards, detail, cart and AI never show
+a broken image. Real photos always win when present.
+
+## 💳 Payment gateways — how to connect each
+
+The checkout shows exactly the methods you've configured. All are optional; with
+none set, customers pay by PromptPay QR / bank transfer / cash on arrival.
+
+### 1) Omise / Opn  (built-in — recommended)
+Turns on **PromptPay QR + cards** with automatic paid-detection.
+1. dashboard.omise.co → Keys. Copy the **public** (`pkey_...`) and **secret** (`skey_...`).
+2. Vercel → Env Vars: `OMISE_PUBLIC_KEY`, `OMISE_SECRET_KEY`.
+3. Omise dashboard → Webhooks → add `https://dankbkk.com/api/omise-webhook`.
+4. Test with `pkey_test_/skey_test_` and card 4242 4242 4242 4242, then switch to live keys.
+
+### 2) 2C2P
+Cards, PromptPay, e-wallets — redirect flow.
+1. Get a 2C2P merchant account → **Merchant ID** + **Secret Key**.
+2. Vercel → Env Vars: `TWOC2P_MERCHANT_ID`, `TWOC2P_SECRET`, `TWOC2P_ENV=sandbox` (then `production`).
+3. In the 2C2P portal set the backend/notification URL to `https://dankbkk.com/api/2c2p-webhook`.
+   The app builds the JWT-signed paymentToken and redirects the customer to 2C2P's page (`api/pay2c2p.js`).
+   *Send me your sandbox creds and I'll run a live test to confirm the field mapping.*
+
+### 3) GB Prime Pay
+PromptPay QR + cards; easy approval for smaller Thai merchants.
+1. Get GB Prime Pay → **Secret key** (and public key for cards).
+2. Vercel → Env Vars: `GBP_SECRET_KEY` (and `GBP_PUBLIC_KEY`).
+3. Confirmation posts to `https://dankbkk.com/api/gbp-webhook` (set automatically as backgroundUrl).
+   `api/paygbp.js` creates a PromptPay QR (and can charge cards). *Sandbox creds → I'll verify live.*
+
+### 4) PromptPay QR + bank transfer + COD  (no gateway, never declined)
+Best fallback for cannabis. Edit in `CONFIG`:
+- `promptpay:{ id:"08xxxxxxxx" }` — your PromptPay phone or 13-digit tax id. The site
+  generates a **dynamic PromptPay QR for the exact amount** at checkout (renders via a small
+  QR library from cdnjs).
+- `bank:{ name, accName, accNo }` — shown on the transfer screen with a copy button.
+- `cod:true` — Cash on delivery / pickup.
+Customer pays, sends the slip on LINE, staff confirm & mark the order.
+
+> ⚠️ Cannabis is "high-risk" for most card processors — Omise/2C2P/GBP may or may not approve
+> your account for this business type. PromptPay + bank + COD always work; lead with those.
+
+## ₿ Manual crypto transfer + slip upload
+
+Checkout now has a **Crypto** option. It shows your wallet QR code(s) for the
+customer to scan and pay, the order's THB amount (to send the crypto equivalent),
+and a **slip-upload box** where they attach a screenshot of the transfer. The slip
+is stored server-side and flagged on the order; staff open it from the Orders tab
+via **🧾 View payment slip** (and get a Telegram ping when one arrives). The same
+slip box also appears on the bank-transfer screen.
+
+**Five wallets are configured** in `CONFIG.crypto.wallets`, each with its QR
+(`assets/crypto-<coin>.png`), coin label, network, and address (with a Copy button):
+
+| Coin | Network | Address |
+|------|---------|---------|
+| BTC  | Bitcoin | `bc1q5wq73ll5jymmw7ptr7ev59sanj7mu7rhg68e2x` |
+| ETH  | Ethereum (ERC20) | `0x1C936eAc6dCF2B0E797c38110267C35F38D3753c` |
+| SOL  | Solana (no memo) | `Ugtx4nMg84tnXBQiyeHj3eLvvZ4Ak1RpbShsnrjbUQ4` |
+| TWT  | BNB Smart Chain (BEP20) | `0x1C936eAc6dCF2B0E797c38110267C35F38D3753c` |
+| BNB  | BNB Smart Chain (BEP20) | `0x1C936eAc6dCF2B0E797c38110267C35F38D3753c` |
+| USDT | Ethereum (ERC20) | `0x1C936eAc6dCF2B0E797c38110267C35F38D3753c` |
+| USDC | Ethereum (ERC20) | `0x1C936eAc6dCF2B0E797c38110267C35F38D3753c` |
+| USDT | Tron (TRC20, no memo) | `TXpBQgExSDYdvrCd1ggz6ptDTQqvqMxzPo` |
+
+At checkout the customer taps a coin chip (BTC / ETH / SOL / TWT / BNB / USDT-ERC20 /
+USDC / USDT-TRC20), scans that QR or copies the address, sends the crypto equivalent
+of the THB total, and uploads the slip. All the EVM coins (ETH, TWT, BNB, USDT-ERC20,
+USDC) share one `0x…` address — that's normal; the network label tells the customer
+which chain to send on, and the note reminds them to **use the matching network
+only**. The USDT-TRC20 and SOL wallets are separate addresses.
+
+**Request another coin.** The crypto screen has a **"🪙 Request another coin · chat
+with us"** button. It opens the Nong Dank chat pre-filled with the customer's request,
+so the AI can answer or hand off to staff who then send a wallet for the coin they
+want. Edit the prompt/labels in `CONFIG.crypto` (`requestNote`) and the
+`requestOtherCoin()` helper.
+
+To swap a wallet later, replace the PNG in `assets/` or edit the entry in
+`CONFIG.crypto.wallets`. `/api/slip` stores slips; keep `UPSTASH_REDIS_*` set so they
+persist in production.
+
+## 📱 Manual PromptPay (your bank QR) + slip
+
+The **PromptPay** checkout option shows your real KBank/Thai-QR-Payment QR, the
+account name, the order amount to enter, and a **slip-upload box**. There are now
+**two QR codes** — a primary (`assets/promptpay.png`, KBank ···1146) and a
+**backup** (`assets/promptpay-2.png`, KBank ···7256). If the first QR won't scan or
+gets flagged, the customer taps **"Backup QR"** to switch to the second one (a Thai +
+English hint tells them to do this). Edit the list in `CONFIG.promptpay.accounts` to
+add/rename/reorder QRs. Customer scans with any banking app, pays, uploads the slip →
+staff confirm from the Orders tab (🧾 View slip) and get a Telegram ping. If you ever
+want an amount-embedded dynamic QR instead, drop `image` from an account and set
+`CONFIG.promptpay.id` to your PromptPay phone/tax-id.
+
+**Bank transfer** now shows your real account — **Kasikorn (KBank) 664-2-17256-3,
+Mr. Arkaporn Kongtoranin** (`CONFIG.bank`) — with a copy button and its own slip box.
+
+**Proof-of-payment everywhere.** Every payment path — PromptPay QR, backup QR, bank
+transfer, crypto, and the order-placed / Cash-COD success screen — now carries a
+slip-upload box, so a customer can always attach proof. Staff can *also* attach proof
+against any order from the **staff console**: each order card has a **📎 Upload
+proof** button (for slips a customer sent over LINE/WhatsApp), alongside **🧾 View
+slip**. Both routes post to `/api/slip`; keep `UPSTASH_REDIS_*` set so slips persist.
+
+
+## 📦 Inventory: product codes, QR labels & shift count
+
+**Every product now has a unique code** (e.g. `EXO-01`, `EDB-03`) generated
+automatically from its category. The full mapping is in `product-codes.json`
+(machine-readable) and `inventory-codes.csv` (open in Excel/Sheets).
+
+**QR labels — `labels.html`.** Open it and every product shows a printable label
+with its code, a scannable QR (the QR encodes the code), name, THC and price.
+Filter by category, pick 2/3/4 columns, then **Print / Save PDF** onto sticker
+sheets. The QR is read by any USB QR/barcode scanner *and* by the staff app's Count
+tab. The product data is embedded, so the sheet also opens standalone.
+
+**Shift count — staff console `📦 Count` tab.** To close a shift the staff:
+
+1. Open `/staff.html` → **Count**. Every product loads with its expected quantity
+   (pulled live from `/api/products` when available, else the built-in stock).
+2. **Scan** each product — either with a USB scanner or phone (the scan box accepts
+   a scanner's keyboard input; **📷 Camera scan** uses the phone camera via jsQR).
+   Scanning a code jumps to that product and focuses its count field.
+3. Enter the counted quantity, or press **⚖️** on a row to drop in a live reading
+   from a connected scale (see below). Variances (counted − expected) show per row.
+4. **Proof of existence:** the **📎 Add proof photo(s)** box is required — staff
+   photograph the counted stock (up to 12 photos) before the shift can be closed.
+5. **Submit & Close shift** → posts to `/api/count`, which stores the session +
+   photos and sends a Telegram summary with all variances. Past counts (with photos
+   and variances) are viewable under **Recent counts**.
+
+**Scale integration (pull from scale).** The **⚖️ Connect scale** button uses the
+**Web Serial API** to read a USB/serial bench scale. Click it, pick the scale's
+serial port, and live weights stream into `scale: … g`; the per-row **⚖️** button
+applies the latest reading as that product's count. Works in **Chrome/Edge on
+desktop or Android** (browsers without Web Serial — e.g. iOS Safari — fall back to
+manual entry; a Bluetooth scale can be added the same way with Web Bluetooth).
+
+Files: `api/count.js` (storage + Telegram + history), `labels.html`,
+`product-codes.json`, `inventory-codes.csv`. No new env vars — it reuses
+`STAFF_KEY`, `UPSTASH_REDIS_*` and the Telegram vars you already set.

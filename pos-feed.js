@@ -1,120 +1,131 @@
-/* /api/pos-feed — live menu receiver for BRYAN POS (dank-medical-pos-app).
+/* /api/member — CRM member sign-ups + member login for the website.
 
-   The POS runs in the staff device's browser (its data lives there), so it
-   PUSHES the catalog here whenever products/stock/prices change (~45s watch):
+     POST {name, phone}                    → {ok}          join (de-dupes by phone)
+     POST {action:"login", phone}          → {ok, found, points, visits}  returning member
+     POST {action:"card", phone}           → {ok, found, id, code, url}   their member card
+     GET  ?key=STAFF_KEY                   → {ok, count, members}  (owner/staff only)
 
-     POST {key, products:[{id,name,category,type,thc,cbd,unit,stock,price,member,img,sku}]}
-          → {ok, count}       (stores normalized feed, busts the menu cache)
-     GET  → {ok, at, ageSeconds, count}   (check the connection is alive)
+   Members are stored in the shared store (Upstash Redis when configured).
+   Set CRM_WEBHOOK_URL to also forward each new member to your POS/CRM.
 
-   api/_menu.js reads this feed FIRST (source "pos"), so the website mirrors
-   the POS within ~30s of any change. A feed older than POS_FEED_MAX_AGE_H
-   (default 72h) is ignored and the site falls back to StoreHub/bundled.
-
-   Auth: shared link key, POS_SYNC_KEY, which must be set on this deployment
-   and pasted into POS Settings → Website connection. There used to be a
-   default baked into both sides "so it works with zero setup" — which also
-   meant anyone holding a copy of the source could replace the entire shop
-   catalogue, prices included, on any deployment that never set the variable.
-   With it unset the endpoint now rejects every push instead.
-
-   Flower mapping: POS sells flowers per-gram (unit "g", price = 1g). The
-   website shows weight tiers, derived exactly from DANK's price card:
-   ½g = price/2 · 1g = price · 3.5g bulk = 3×price (the 3+1 deal), with
-   member prices from the POS mPrice (≈10% off).                             */
+   The login lookup deliberately does NOT return the member's name. It takes no
+   credential — a phone number is not a secret — so answering with a name turned
+   it into a directory anyone could walk: feed it numbers, collect names. It now
+   confirms only that the number is known, plus the loyalty figures the
+   storefront shows; the storefront already keeps the customer's own name in
+   localStorage (dank_reg) from when they joined on that device.            */
 import { getJSON, setJSON } from "./_store.js";
-import { bustMenu } from "./_menu.js";
-import { requireEnv, safeEq } from "./_auth.js";
+import { requireStaff } from "./_auth.js";
+import { requireRate } from "./_ratelimit.js";
 import { normPhone as digits } from "./_phone.js";
+import { memberIdConfigured, memberCode, prettyCode, cardUrl, rememberCode } from "./_memberid.js";
 
-const MAX_ITEMS = 1000;
-
-const num = (v) => { const n = Number(v); return isFinite(n) ? n : 0; };
-const looksLikeImg = (s) => /^(https?:|data:image)/.test(String(s || ""));
-
-function normalize(list) {
-  const out = [];
-  for (let i = 0; i < Math.min(list.length, MAX_ITEMS); i++) {
-    const p = list[i];
-    if (!p || typeof p !== "object" || !p.name) continue;
-    const price = num(p.price);
-    const member = num(p.member) || Math.round(price * 0.9);
-    const item = {
-      id: String(p.id ?? p.sku ?? "pos-" + i),
-      name: String(p.name),
-      category: String(p.category || "Other"),
-      type: ["Indica", "Sativa", "Hybrid"].includes(p.type) ? p.type : "Hybrid",
-      thc: num(p.thc),
-      thcLabel: num(p.thc) > 0 ? num(p.thc) + "%" : "",
-      cbd: num(p.cbd),
-      stock: p.stock === undefined ? 99 : num(p.stock),
-      unit: String(p.unit || "pc"),
-      image: looksLikeImg(p.img) ? String(p.img) : "",
-      description: "",
-      effects: [],
-      flavors: [],
-    };
-    if (item.unit === "g" && price > 0) {
-      // POS price is per 1g — derive DANK's standard weight tiers
-      item.priceTiers = [
-        { label: "½g", price: Math.round(price / 2), member: Math.round(member / 2) },
-        { label: "1g", price, member },
-        { label: "3.5g bulk", price: price * 3, member: member * 3 },
-      ];
-    } else {
-      item.price = price;
-      item.member = member;
-    }
-    out.push(item);
-  }
-  return out;
-}
+const KEY = "crm:members";
 
 export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type, x-api-key");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
   if (req.method === "OPTIONS") return res.status(204).end();
 
   if (req.method === "GET") {
-    const rec = (await getJSON("pos:feed")) || null;
-    const crm = (await getJSON("pos:customers")) || null;
-    if (!rec) return res.status(200).json({ ok: true, connected: false, count: 0, crmCount: crm ? crm.list.length : 0 });
-    return res.status(200).json({
-      ok: true, connected: true, at: rec.at,
-      ageSeconds: Math.round((Date.now() - rec.at) / 1000),
-      count: (rec.products || []).length,
-      crmCount: crm ? crm.list.length : 0,
-    });
+    // member list is staff-only — same key as the staff console
+    if (!requireStaff(req, res)) return;
+    const list = (await getJSON(KEY)) || [];
+    return res.status(200).json({ ok: true, count: list.length, members: list.slice(0, 1000) });
   }
   if (req.method !== "POST") return res.status(405).json({ error: "method" });
 
-  if (!requireEnv(res, ["POS_SYNC_KEY"])) return;
+  // Both branches below are open to the internet and both take a phone number,
+  // so cap how fast one address can try numbers. A real customer logs in or
+  // joins once; a script wants thousands of attempts.
+  if (!(await requireRate(req, res, "member", 20, 300))) return;
+
   const b = req.body || {};
-  const key = b.key || req.headers["x-api-key"] || "";
-  if (!safeEq(key, process.env.POS_SYNC_KEY)) return res.status(401).json({ error: "bad key" });
 
-  if (!Array.isArray(b.products) || !b.products.length) {
-    return res.status(400).json({ error: "products must be a non-empty array" });
-  }
-  const products = normalize(b.products);
-  if (!products.length) return res.status(400).json({ error: "no valid products" });
+  /* The customer's own card: the ID number they read off it, the scan code
+     that goes in the QR, and the link that code encodes.
 
-  await setJSON("pos:feed", { at: Date.now(), products }, 60 * 60 * 24 * 30);
-
-  // optional CRM slice from the POS — lets shop members log in on the website
-  let crmCount = 0;
-  if (Array.isArray(b.customers) && b.customers.length) {
-    // Same normaliser as the wallet and the member list — the `d` field written
-    // here is what /api/member matches a login against, so it has to agree.
-    const list = b.customers.slice(0, 2000)
-      .map((c) => ({ id: c.id, name: String(c.name || ""), phone: String(c.phone || ""), d: digits(c.phone), points: Number(c.points) || 0, visits: Number(c.visits) || 0 }))
-      .filter((c) => c.d.length >= 6);
-    if (list.length) {
-      await setJSON("pos:customers", { at: Date.now(), list }, 60 * 60 * 24 * 90);
-      crmCount = list.length;
+     No credential is asked for, and none can be — the storefront calls this
+     from the customer's own browser, and there is no login to check against.
+     That is only acceptable because the answer tells a caller nothing they did
+     not already have to know: the ID number IS the phone number they typed in,
+     and the code is useless without the staff key, which the staff lookup
+     demands separately. Someone who feeds it other people's numbers learns
+     whether that number is a member — the same thing action:"login" already
+     tells them, behind the same rate limit. */
+  if (b.action === "card") {
+    if (!memberIdConfigured()) {
+      return res.status(503).json({ error: "not configured", detail: "ADMIN_SECRET (or MEMBER_QR_SECRET) is not set on this deployment — see .env.example" });
     }
+    const ph = digits(b.phone);
+    if (ph.length < 6) return res.status(400).json({ error: "phone required" });
+
+    const list = (await getJSON(KEY)) || [];
+    const web = list.find((x) => digits(x.phone) === ph) || null;
+    const crm = (await getJSON("pos:customers")) || null;
+    const pc = (crm && crm.list.find((x) => x.d === ph)) || null;
+    const found = Boolean(web || pc);
+
+    /* Written to the reverse index only for someone the shop actually knows,
+       so a stranger poking at this can't fill the store with junk keys. An
+       unknown number still gets its code back — it is a pure function of the
+       number, and the staff screen handles "not in the CRM yet" — it simply
+       does not get indexed until they are really a member. */
+    const code = found ? await rememberCode(ph) : memberCode(ph);
+    const host = req.headers["x-forwarded-host"] || req.headers.host || "";
+
+    return res.status(200).json({
+      ok: true, found,
+      id: ph,                       // the number on the card, normalised
+      code, pretty: prettyCode(code),
+      url: cardUrl(host, code),
+      points: pc ? pc.points || 0 : 0,
+      visits: pc ? pc.visits || 0 : 0,
+      since: web && web.at ? web.at : null,
+    });
   }
 
-  try { await bustMenu(); } catch (e) {}
-  return res.status(200).json({ ok: true, count: products.length, crmCount });
+  if (b.action === "login") {
+    const ph = digits(b.phone);
+    if (ph.length < 6) return res.status(400).json({ error: "phone required" });
+    // 1) members who joined on the website
+    const list = (await getJSON(KEY)) || [];
+    const m = list.find((x) => digits(x.phone) === ph);
+    if (m) {
+      // enrich with POS CRM points if the same person exists there
+      const crm = (await getJSON("pos:customers")) || null;
+      const pc = crm && crm.list.find((x) => x.d === ph);
+      return res.status(200).json({ ok: true, found: true, points: pc ? pc.points : 0, visits: pc ? pc.visits : 0, source: "web" });
+    }
+    // 2) customers from the BRYAN POS CRM (joined in the shop)
+    const crm = (await getJSON("pos:customers")) || null;
+    const pc = crm && crm.list.find((x) => x.d === ph);
+    if (pc) {
+      // remember them in the website member list too (unified CRM)
+      if (!list.some((x) => digits(x.phone) === ph)) {
+        list.unshift({ name: pc.name || "Member", phone: b.phone, at: Date.now(), source: "pos-login" });
+        try { await setJSON(KEY, list.slice(0, 5000), 60 * 60 * 24 * 3650); } catch (e) {}
+      }
+      return res.status(200).json({ ok: true, found: true, points: pc.points || 0, visits: pc.visits || 0, source: "pos" });
+    }
+    return res.status(200).json({ ok: true, found: false });
+  }
+
+  const name = String(b.name || "").trim();
+  const phone = String(b.phone || "").trim();
+  if (!name || phone.replace(/\s/g, "").length < 6) return res.status(400).json({ error: "name and phone required" });
+
+  const list = (await getJSON(KEY)) || [];
+  if (!list.some((m) => digits(m.phone) === digits(phone))) {
+    list.unshift({ name, phone, at: b.at || Date.now(), source: String(b.source || "web") });
+    try { await setJSON(KEY, list.slice(0, 5000), 60 * 60 * 24 * 3650); } catch (e) {}
+  }
+
+  const HOOK = process.env.CRM_WEBHOOK_URL || "";
+  if (HOOK) {
+    try {
+      await fetch(HOOK, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name, phone, at: Date.now(), source: "dankbkk-web" }) });
+    } catch (e) {}
+  }
+  return res.status(200).json({ ok: true });
 }
