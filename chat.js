@@ -1,120 +1,83 @@
-/* /api/pos-feed — live menu receiver for BRYAN POS (dank-medical-pos-app).
+/* POST /api/chat — the open-ended brain for DANK AI, powered by Grok
+   (xAI) — the same model family behind Bryan AI in your POS.
+   The storefront's built-in engine handles common intents instantly;
+   anything it can't answer lands here with the live menu as context.
 
-   The POS runs in the staff device's browser (its data lives there), so it
-   PUSHES the catalog here whenever products/stock/prices change (~45s watch):
+   Every call spends money on the xAI account, and shoppers use this without
+   logging in, so there is no key to ask for. What there is instead: the request
+   has to come from a page served by this deployment, one address only gets so
+   many calls, and the prompt pieces are length-capped. Before that this was an
+   open relay — anybody who found the URL had a free Grok endpoint billed to the
+   shop, for as long as they cared to use it.
 
-     POST {key, products:[{id,name,category,type,thc,cbd,unit,stock,price,member,img,sku}]}
-          → {ok, count}       (stores normalized feed, busts the menu cache)
-     GET  → {ok, at, ageSeconds, count}   (check the connection is alive)
+   Env vars:
+     XAI_API_KEY     your xAI API key  (console.x.ai)
+     GROK_MODEL      optional, default "grok-4"
+     ALLOWED_ORIGIN  optional, comma-separated extra hosts allowed to call this */
+import { requireSameOrigin } from "./_auth.js";
+import { requireRate } from "./_ratelimit.js";
 
-   api/_menu.js reads this feed FIRST (source "pos"), so the website mirrors
-   the POS within ~30s of any change. A feed older than POS_FEED_MAX_AGE_H
-   (default 72h) is ignored and the site falls back to StoreHub/bundled.
-
-   Auth: shared link key, POS_SYNC_KEY, which must be set on this deployment
-   and pasted into POS Settings → Website connection. There used to be a
-   default baked into both sides "so it works with zero setup" — which also
-   meant anyone holding a copy of the source could replace the entire shop
-   catalogue, prices included, on any deployment that never set the variable.
-   With it unset the endpoint now rejects every push instead.
-
-   Flower mapping: POS sells flowers per-gram (unit "g", price = 1g). The
-   website shows weight tiers, derived exactly from DANK's price card:
-   ½g = price/2 · 1g = price · 3.5g bulk = 3×price (the 3+1 deal), with
-   member prices from the POS mPrice (≈10% off).                             */
-import { getJSON, setJSON } from "./_store.js";
-import { bustMenu } from "./_menu.js";
-import { requireEnv, safeEq } from "./_auth.js";
-import { normPhone as digits } from "./_phone.js";
-
-const MAX_ITEMS = 1000;
-
-const num = (v) => { const n = Number(v); return isFinite(n) ? n : 0; };
-const looksLikeImg = (s) => /^(https?:|data:image)/.test(String(s || ""));
-
-function normalize(list) {
-  const out = [];
-  for (let i = 0; i < Math.min(list.length, MAX_ITEMS); i++) {
-    const p = list[i];
-    if (!p || typeof p !== "object" || !p.name) continue;
-    const price = num(p.price);
-    const member = num(p.member) || Math.round(price * 0.9);
-    const item = {
-      id: String(p.id ?? p.sku ?? "pos-" + i),
-      name: String(p.name),
-      category: String(p.category || "Other"),
-      type: ["Indica", "Sativa", "Hybrid"].includes(p.type) ? p.type : "Hybrid",
-      thc: num(p.thc),
-      thcLabel: num(p.thc) > 0 ? num(p.thc) + "%" : "",
-      cbd: num(p.cbd),
-      stock: p.stock === undefined ? 99 : num(p.stock),
-      unit: String(p.unit || "pc"),
-      image: looksLikeImg(p.img) ? String(p.img) : "",
-      description: "",
-      effects: [],
-      flavors: [],
-    };
-    if (item.unit === "g" && price > 0) {
-      // POS price is per 1g — derive DANK's standard weight tiers
-      item.priceTiers = [
-        { label: "½g", price: Math.round(price / 2), member: Math.round(member / 2) },
-        { label: "1g", price, member },
-        { label: "3.5g bulk", price: price * 3, member: member * 3 },
-      ];
-    } else {
-      item.price = price;
-      item.member = member;
-    }
-    out.push(item);
-  }
-  return out;
-}
+const MAX_BODY = 20000;    // whole request; a real chat turn is a few hundred bytes
+const MAX_MESSAGE = 1000;  // what we forward, and the point past which we stop reading
+const MAX_CONTEXT = 4000;  // the menu blob the storefront sends as system context
 
 export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type, x-api-key");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
   if (req.method === "OPTIONS") return res.status(204).end();
+  if (req.method !== "POST") return res.status(405).json({ error: "POST only" });
+  if (!requireSameOrigin(req, res)) return;
+  if (!(await requireRate(req, res, "chat", 20, 300))) return;
+  if (!process.env.XAI_API_KEY) {
+    return res.status(200).json({ reply: "" }); // storefront shows its polite fallback
+  }
 
-  if (req.method === "GET") {
-    const rec = (await getJSON("pos:feed")) || null;
-    const crm = (await getJSON("pos:customers")) || null;
-    if (!rec) return res.status(200).json({ ok: true, connected: false, count: 0, crmCount: crm ? crm.list.length : 0 });
-    return res.status(200).json({
-      ok: true, connected: true, at: rec.at,
-      ageSeconds: Math.round((Date.now() - rec.at) / 1000),
-      count: (rec.products || []).length,
-      crmCount: crm ? crm.list.length : 0,
+  let size = 0;
+  try { size = JSON.stringify(req.body || {}).length; } catch (e) { size = MAX_BODY + 1; }
+  if (size > MAX_BODY) return res.status(413).json({ error: "message too large" });
+
+  const { message, context, history } = req.body || {};
+  if (!message || typeof message !== "string") return res.status(400).json({ error: "message required" });
+  if (message.length > MAX_MESSAGE * 2) return res.status(413).json({ error: "message too long" });
+
+  const system = `${String(context || "You are DANK AI, a friendly budtender for DANK BKK in Bangkok.").slice(0, MAX_CONTEXT)}
+
+Rules:
+- Be warm, concise (2-4 sentences), and salesy-but-honest. Goal: help the customer choose and order.
+- Answer in the customer's language (Thai or English).
+- Only recommend items from the MENU above; quote real prices in ฿.
+- Never give medical claims; remind 20+ only if age comes up.
+- If the customer seems ready, tell them to tap Add / Checkout in this chat.`;
+
+  const messages = [
+    { role: "system", content: system },
+    ...(Array.isArray(history) ? history.slice(-8) : []).map((h) => ({
+      role: h.role === "user" ? "user" : "assistant",
+      content: String(h.text || "").slice(0, 500),
+    })),
+    { role: "user", content: message.slice(0, MAX_MESSAGE) },
+  ];
+
+  try {
+    const r = await fetch("https://api.x.ai/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${process.env.XAI_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: process.env.GROK_MODEL || "grok-4",
+        messages,
+        max_tokens: 300,
+        temperature: 0.6,
+      }),
     });
+    if (!r.ok) throw new Error(`xAI ${r.status}`);
+    const j = await r.json();
+    const reply = j.choices?.[0]?.message?.content?.trim() || "";
+    return res.status(200).json({ reply });
+  } catch (e) {
+    console.error("Grok call failed:", e.message);
+    return res.status(200).json({ reply: "" }); // graceful fallback client-side
   }
-  if (req.method !== "POST") return res.status(405).json({ error: "method" });
-
-  if (!requireEnv(res, ["POS_SYNC_KEY"])) return;
-  const b = req.body || {};
-  const key = b.key || req.headers["x-api-key"] || "";
-  if (!safeEq(key, process.env.POS_SYNC_KEY)) return res.status(401).json({ error: "bad key" });
-
-  if (!Array.isArray(b.products) || !b.products.length) {
-    return res.status(400).json({ error: "products must be a non-empty array" });
-  }
-  const products = normalize(b.products);
-  if (!products.length) return res.status(400).json({ error: "no valid products" });
-
-  await setJSON("pos:feed", { at: Date.now(), products }, 60 * 60 * 24 * 30);
-
-  // optional CRM slice from the POS — lets shop members log in on the website
-  let crmCount = 0;
-  if (Array.isArray(b.customers) && b.customers.length) {
-    // Same normaliser as the wallet and the member list — the `d` field written
-    // here is what /api/member matches a login against, so it has to agree.
-    const list = b.customers.slice(0, 2000)
-      .map((c) => ({ id: c.id, name: String(c.name || ""), phone: String(c.phone || ""), d: digits(c.phone), points: Number(c.points) || 0, visits: Number(c.visits) || 0 }))
-      .filter((c) => c.d.length >= 6);
-    if (list.length) {
-      await setJSON("pos:customers", { at: Date.now(), list }, 60 * 60 * 24 * 90);
-      crmCount = list.length;
-    }
-  }
-
-  try { await bustMenu(); } catch (e) {}
-  return res.status(200).json({ ok: true, count: products.length, crmCount });
 }

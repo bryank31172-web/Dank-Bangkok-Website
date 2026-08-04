@@ -1,89 +1,1797 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="robots" content="noindex,nofollow">
-<title>Connection Status · DANK BKK</title>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<meta name="robots" content="noindex,nofollow"/>
+<title>🌿 DANK BKK — Staff Console</title>
 <style>
-  :root{--bg:#060a07;--panel:#101a12;--line:#294634;--txt:#e8f5ec;--muted:#8fae9a;--green:#3ddc84;--gold:#d9b25b;--danger:#ff6b6b}
-  *{box-sizing:border-box;margin:0;padding:0;font-family:'Segoe UI',system-ui,sans-serif}
-  body{background:var(--bg);color:var(--txt);min-height:100vh;display:flex;align-items:flex-start;justify-content:center;padding:22px}
-  .wrap{width:100%;max-width:560px}
-  h1{font-size:20px;margin-bottom:4px}
-  .sub{color:var(--muted);font-size:13px;margin-bottom:18px}
-  .card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:22px;margin-bottom:14px}
-  .badge{display:inline-flex;align-items:center;gap:8px;font-weight:800;font-size:15px;padding:9px 16px;border-radius:999px;margin-bottom:12px}
-  .ok{background:rgba(61,220,132,.15);color:var(--green);border:1px solid var(--green)}
-  .warn{background:rgba(217,178,91,.15);color:var(--gold);border:1px solid var(--gold)}
-  .bad{background:rgba(255,107,107,.15);color:var(--danger);border:1px solid var(--danger)}
-  .detail{font-size:14px;line-height:1.55}
-  .grid{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
-  .stat{flex:1;min-width:130px;background:#0b120d;border:1px solid var(--line);border-radius:12px;padding:12px}
-  .stat b{display:block;font-size:22px;color:var(--green)}
-  .stat span{color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:1px}
-  table{width:100%;border-collapse:collapse;margin-top:8px;font-size:13px}
-  th,td{text-align:left;padding:7px 6px;border-bottom:1px solid var(--line)}
-  th{color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.5px}
-  code{background:#0b120d;border:1px solid var(--line);border-radius:6px;padding:2px 6px;font-size:12px;color:var(--gold)}
-  button{background:var(--green);color:#04180d;font-weight:800;border:none;border-radius:10px;padding:11px 18px;font-size:14px;cursor:pointer}
-  .muted{color:var(--muted);font-size:12.5px;margin-top:10px;line-height:1.5}
-  a{color:var(--green)}
+:root{--bg:#060a07;--bg2:#0b120d;--panel:#101a12;--panel2:#16241a;--line:#1f3325;--line2:#294634;
+--txt:#e8f5ec;--muted:#8fae9a;--muted2:#6d8a78;--green:#3ddc84;--green2:#7be389;--deep:#1db960;
+--gold:#d9b25b;--danger:#ff6b6b;--font:'Segoe UI',system-ui,sans-serif}
+*{box-sizing:border-box}html,body{margin:0;height:100%}
+body{background:var(--bg);color:var(--txt);font-family:var(--font);display:flex;flex-direction:column}
+button{font-family:inherit;cursor:pointer;border:none;color:inherit;background:none}
+header{display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--line);background:var(--bg2)}
+header h1{font-size:17px;margin:0}
+header .st{margin-left:auto;font-size:12px;color:var(--muted2)}
+.pill{font-size:11px;font-weight:800;padding:3px 9px;border-radius:999px;border:1px solid var(--line2);color:var(--green2)}
+.pill.warn{color:var(--gold);border-color:var(--gold)}
+main{flex:1;display:flex;min-height:0}
+/* login */
+#login{margin:auto;background:var(--panel);border:1px solid var(--line2);border-radius:18px;padding:30px;max-width:340px;width:92%;text-align:center}
+#login input{width:100%;background:var(--bg2);border:1px solid var(--line2);color:var(--txt);padding:12px;border-radius:10px;font-size:15px;outline:none;margin:14px 0;text-align:center}
+.btn{background:linear-gradient(135deg,var(--green),var(--deep));color:#04180d;font-weight:800;padding:12px 18px;border-radius:11px;width:100%;font-size:15px}
+/* tabs */
+#tabs{display:flex;flex-wrap:wrap;gap:6px;padding:10px 12px;border-bottom:1px solid var(--line);background:var(--bg2)}
+#tabs button{flex:1 1 92px;min-width:92px;padding:9px;border-radius:10px;border:1px solid var(--line2);color:var(--muted);font-weight:800;font-size:13px;position:relative}
+#tabs button.active{border-color:var(--green);color:var(--green2);background:rgba(61,220,132,.1)}
+#tabs .cnt{position:absolute;top:-7px;right:-4px;background:var(--gold);color:#20100a;font-size:10px;font-weight:900;min-width:18px;height:18px;border-radius:9px;display:flex;align-items:center;justify-content:center;padding:0 4px}
+/* orders */
+.ocard{margin:10px 12px;background:var(--panel);border:1px solid var(--line2);border-radius:14px;padding:13px 14px}
+.ocard.done{opacity:.55}
+.ocard .oh{display:flex;align-items:center;gap:8px}
+.ocard .oid{font-weight:800;font-size:13.5px;color:var(--green2)}
+.ocard .ot{margin-left:auto;font-size:11px;color:var(--muted2)}
+.ocard .items{font-size:12.5px;color:var(--muted);margin:7px 0;line-height:1.55}
+.ocard .tot{font-weight:800;font-size:15px}
+.ocard .meta{font-size:12px;color:var(--gold);margin-top:3px;line-height:1.5}
+.ocard .orow{display:flex;align-items:center;gap:8px;margin-top:9px}
+.done-btn{background:linear-gradient(135deg,var(--green),var(--deep));color:#04180d;font-weight:800;font-size:12px;padding:8px 13px;border-radius:9px}
+.grow{display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--line);cursor:pointer}
+.grow:hover{background:var(--panel)}
+.grow .chk{width:20px;height:20px;border-radius:6px;border:2px solid var(--line2);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:13px}
+.grow.on .chk{background:var(--green);border-color:var(--green);color:#04180d}
+.grow .gn{font-weight:700;font-size:13.5px}.grow .gm{font-size:11.5px;color:var(--muted)}
+.ghdr{padding:12px 14px;font-size:12.5px;color:var(--muted);border-bottom:1px solid var(--line)}
+.undo-btn{border:1px solid var(--line2);color:var(--muted);font-size:12px;padding:8px 13px;border-radius:9px}
+/* list */
+#listWrap{width:340px;border-right:1px solid var(--line);background:var(--bg2);flex-shrink:0;display:flex;flex-direction:column;min-height:0}
+#list{flex:1;overflow-y:auto}
+.trow{display:block;width:100%;text-align:left;padding:13px 14px;border-bottom:1px solid var(--line);position:relative}
+.trow:hover,.trow.sel{background:var(--panel)}
+.trow .top{display:flex;gap:8px;align-items:center}
+.trow .who{font-weight:800;font-size:14px}
+.trow .when{margin-left:auto;font-size:11px;color:var(--muted2)}
+.trow .prev{font-size:12.5px;color:var(--muted);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.trow .meta{font-size:11px;color:var(--gold);margin-top:3px}
+.trow.unread::before{content:"";position:absolute;left:5px;top:50%;transform:translateY(-50%);width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 8px var(--green)}
+.badge{font-size:10px;font-weight:800;padding:2px 7px;border-radius:99px;border:1px solid var(--line2);color:var(--muted)}
+.badge.open{color:var(--green2);border-color:var(--green2)}
+.badge.closed{color:var(--muted2)}
+/* chat */
+#chatWrap{flex:1;display:flex;flex-direction:column;min-width:0}
+#chatHead{padding:11px 16px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:12px;background:var(--bg2)}
+#chatHead .c-info{min-width:0}
+#chatHead .c-name{font-weight:800;font-size:15px}
+#chatHead .c-sub{font-size:12px;color:var(--muted)}
+#chatHead .actions{margin-left:auto;display:flex;gap:8px}
+.ghost{border:1px solid var(--line2);color:var(--muted);padding:8px 13px;border-radius:10px;font-size:12.5px;font-weight:700}
+.ghost:hover{border-color:var(--green);color:var(--green2)}
+.ghost.danger:hover{border-color:var(--danger);color:var(--danger)}
+#msgs{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px}
+.m{max-width:70%;padding:10px 13px;border-radius:14px;font-size:14px;line-height:1.45;white-space:pre-wrap;word-wrap:break-word}
+.m.customer{background:var(--panel);border:1px solid var(--line);align-self:flex-start;border-bottom-left-radius:4px}
+.m.staff{background:linear-gradient(135deg,var(--green),var(--deep));color:#04180d;align-self:flex-end;border-bottom-right-radius:4px;font-weight:500}
+.m.system{align-self:center;background:none;color:var(--muted2);font-size:12px;padding:2px}
+.m .t{display:block;font-size:10.5px;opacity:.65;margin-top:4px}
+#ctxBox{margin:0 16px 8px;background:var(--panel);border:1px solid var(--line2);border-radius:12px;padding:10px 14px;font-size:12.5px;color:var(--muted);max-height:130px;overflow-y:auto}
+#ctxBox b{color:var(--gold)}
+#replyBar{display:flex;gap:8px;padding:12px 16px;border-top:1px solid var(--line);background:var(--bg2)}
+#replyBar input{flex:1;background:var(--panel);border:1px solid var(--line2);color:var(--txt);padding:12px 14px;border-radius:11px;font-size:14px;outline:none}
+#replyBar input:focus{border-color:var(--green)}
+#sendBtn{background:linear-gradient(135deg,var(--green),var(--deep));color:#04180d;font-weight:800;padding:0 20px;border-radius:11px;font-size:14px}
+.quicks{display:flex;gap:6px;padding:0 16px 10px;flex-wrap:wrap}
+.quicks button{font-size:12px;padding:6px 11px;border-radius:99px;background:var(--panel);border:1px solid var(--line2);color:var(--green2)}
+.emptyc{margin:auto;color:var(--muted2);text-align:center;font-size:14px}
+/* login() sets display on these two inline, and an inline style beats a
+   stylesheet — so without !important the chat pane stayed visible on a phone
+   after logging in and its "Select a conversation" placeholder hung 90px past
+   the right edge of every tab, leaving the whole console swipeable sideways
+   into empty space. The media query has to win. */
+@media(max-width:760px){ #listWrap{width:100%} #chatWrap{display:none!important} body.chatting #listWrap{display:none!important} body.chatting #chatWrap{display:flex!important} }
 </style>
 </head>
 <body>
-  <div class="wrap">
-    <h1>🌿 Backend Connection Status</h1>
-    <div class="sub">Live check of whether this site is pulling from your StoreHub / POS backend.</div>
-    <div class="card" id="card"><div class="detail">Checking…</div></div>
-    <button id="recheck" onclick="check()">↻ Re-check</button>
-    <div class="muted" id="foot"></div>
+<header>
+  <span style="font-size:22px">🌿</span><h1>DANK BKK · Staff Console</h1>
+  <span class="st" id="storeStat"></span>
+  <button class="ghost" id="logoutBtn" style="display:none" onclick="logout()">Log out</button>
+</header>
+<main id="main">
+  <div id="login">
+    <div style="font-size:40px">👨‍💼</div>
+    <h2 style="margin:8px 0 2px">Staff login</h2>
+    <p style="color:var(--muted);font-size:13px;margin:4px 0 0">Enter the staff key to see live customer chats.</p>
+    <input id="keyInput" type="password" placeholder="Staff key" onkeydown="if(event.key==='Enter')login()">
+    <button class="btn" onclick="login()">Enter console</button>
+    <p id="loginErr" style="color:var(--danger);font-size:12.5px;height:14px;margin:10px 0 0"></p>
   </div>
+  <div id="listWrap" style="display:none">
+    <div id="tabs">
+      <button id="tabChats" class="active" onclick="setTab('chats')">💬 Chats</button>
+      <button id="tabOrders" onclick="setTab('orders')">🛒 Orders<span class="cnt" id="ordCnt" style="display:none">0</span></button>
+      <button id="tabSales" onclick="setTab('sales')">💰 Sales</button>
+      <button id="tabGifts" onclick="setTab('gifts')">🎁 Free gram</button>
+      <button id="tabCount" onclick="setTab('count')">📦 Count</button>
+      <button id="tabBox" onclick="setTab('box')">🧢 Box gifts</button>
+      <button id="tabLab" onclick="setTab('lab')">🧪 Lab</button>
+      <button id="tabMember" onclick="setTab('member')">👤 Member</button>
+    </div>
+    <div id="list"></div>
+  </div>
+  <div id="chatWrap" style="display:none">
+    <div class="emptyc" id="emptyc">Select a conversation ←</div>
+  </div>
+</main>
 <script>
-/* Re-check has to LOOK like it did something even when the answer is identical:
-   the button locks while the request is in flight and the footer always stamps
-   the time, so a second press is never mistaken for a dead button. */
-let checking=false;
-async function check(){
-  if(checking) return;
-  checking=true;
-  const card=document.getElementById('card');
-  const btn=document.getElementById('recheck');
-  if(btn){ btn.disabled=true; if(!btn.dataset.label) btn.dataset.label=btn.textContent; btn.textContent='⏳ Checking…'; }
-  card.innerHTML='<div class="detail">Checking…</div>';
-  try{
-    const r=await fetch('/api/health',{cache:'no-store'});
-    if(!r.ok) throw new Error('HTTP '+r.status);
-    const j=await r.json();
-    const cls=j.status==='connected'?'ok':(j.status==='configured-but-not-loading'?'warn':'bad');
-    const icon=j.status==='connected'?'●':'▲';
-    let rows='';
-    if(j.sample&&j.sample.length){
-      rows='<table><tr><th>Code</th><th>Product</th><th>Stock</th><th>Price</th></tr>'+
-        j.sample.map(s=>`<tr><td><code>${s.code||'—'}</code></td><td>${s.name||''}</td><td>${s.stock??''}</td><td>${s.price!=null?('฿'+s.price):''}</td></tr>`).join('')+'</table>';
-    }
-    card.innerHTML=`
-      <span class="badge ${cls}">${icon} ${j.connected?'CONNECTED':(j.status==='configured-but-not-loading'?'CREDENTIALS SET · NOT LOADING':'NOT CONNECTED')}</span>
-      <div class="detail">${j.detail||''}</div>
-      <div class="grid">
-        <div class="stat"><b>${j.products??'—'}</b><span>Products</span></div>
-        <div class="stat"><b style="font-size:15px;padding-top:4px">${j.source||'—'}</b><span>Data source</span></div>
-        <div class="stat"><b style="font-size:15px;padding-top:4px">${j.storehubConfigured?'yes':'no'}</b><span>StoreHub keys set</span></div>
-      </div>
-      ${rows}`;
-    document.getElementById('foot').innerHTML =
-      'Sources: <code>storehub</code> = live from your POS backend · <code>bundled</code> = built-in demo catalog. '+
-      'Last checked '+ new Date().toLocaleTimeString()+
-      (j.updated? ' · data from '+new Date(j.updated).toLocaleString():'')+'.';
-  }catch(e){
-    card.innerHTML='<span class="badge bad">▲ NO RESPONSE</span><div class="detail">Could not reach <code>/api/health</code>. Open this page from the deployed site (not as a local file).</div>';
-    document.getElementById('foot').textContent='Last checked '+new Date().toLocaleTimeString()+'.';
-  }finally{
-    checking=false;
-    if(btn){ btn.disabled=false; btn.textContent=btn.dataset.label||'↻ Re-check'; }
-  }
+const API='/api/thread';
+let KEY=localStorage.getItem('dankStaffKey')||'';
+let cur=null, curSeq=0, pollT=null, listT=null, ordersT=null, lastSeen={};   // threadId -> last seq seen
+let TAB='chats', ORDERS=[], knownOrders=new Set(), firstOrderLoad=true, LIVE=false;
+const $=s=>document.querySelector(s);
+
+/* Everything this console displays on the Orders and Chats tabs arrives from
+   POST /api/order and POST /api/thread, and neither of those asks the caller
+   for any credential — anyone on the internet can place an order or open a
+   chat and choose exactly what text lands here. This page holds the staff key
+   and can read every customer's name, phone and address, so a single script
+   that runs in it hands the whole order book to whoever sent it.
+
+   esc() used to cover only & < >. That is enough in text position but not in
+   an attribute, and it was being used in attributes — href="tel:${…}",
+   value="${…}" — where a customer "name" of  " onmouseover="…  simply closed
+   the quote and carried on as markup. It now covers the quotes too, plus /
+   so a value can never start closing a tag it was never inside. */
+const ESC_MAP={'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;','/':'&#x2F;'};
+const esc=s=>String(s??'').replace(/[&<>"'\/]/g,c=>ESC_MAP[c]);
+
+/* Slips and shift-count proof photos are rendered straight into <img src="…">.
+   The API side only tests that the string begins with "data:image/", which
+   something like  data:image/x," onerror="…  passes without trouble, so the
+   console re-checks the shape itself: unless it reads as a base64 raster data
+   URL it is not rendered at all. Returns '' for anything else, so callers can
+   show a placeholder instead of a booby-trapped tag. */
+const imgSrc=u=>{ const s=String(u??'');
+  return /^data:image\/(png|jpe?g|gif|webp|bmp);base64,[A-Za-z0-9+\/=\s]+$/i.test(s)?esc(s):''; };
+
+/* The staff key used to ride in the query string of every GET (…?key=…). A
+   query string is the one part of a URL that gets written down everywhere: the
+   platform's access log, any proxy in front of it, and the Referer header the
+   browser attaches to anything the page loads or links to. The key is now sent
+   as a header instead, where none of that happens.
+
+   Two headers, for a reason. api/_auth.js — the shared check the rest of the
+   API now goes through — reads the key from ?key=, from body.key, or from
+   X-Staff-Key, so X-Staff-Key is the one that actually works today.
+   Authorization: Bearer is the shape this console was asked to speak and the
+   one to keep if the two ever converge; sending it costs a header and means
+   that switch needs no change here. Both are safe to add without tripping a
+   CORS preflight, because the console only ever calls its own origin.
+
+   Two calls still have to put the key where it will be logged, and they are the
+   ones api/thread.js reads by hand instead of through _auth.js: the open-thread
+   poll (it decides from req.query.key whether to hand back the customer name,
+   cart and transcript) and sending a reply (it decides from body.key whether
+   the message is from staff or from the customer). Header-only there would not
+   fail loudly — the context panel would quietly come back empty and staff
+   replies would be filed as the customer's. So those two pass legacy:true and
+   nothing else does. When thread.js moves onto _auth.js, delete the two
+   arguments and the branches below, and the key is out of the logs for good. */
+function authGet(url,k,legacy){
+  const key=k??KEY;
+  const sep=url.includes('?')?'&':'?';
+  return fetch(legacy?url+sep+'key='+encodeURIComponent(key):url,
+    {headers:{'X-Staff-Key':key,'Authorization':'Bearer '+key}});
 }
-check();
+function authPost(url,body,legacy){
+  return fetch(url,{method:'POST',
+    headers:{'Content-Type':'application/json','X-Staff-Key':KEY,'Authorization':'Bearer '+KEY},
+    body:JSON.stringify(legacy?{...body,key:KEY}:body)});
+}
+
+const ago=t=>{const s=(Date.now()-t)/1e3; if(s<60)return 'now'; if(s<3600)return Math.floor(s/60)+'m'; if(s<86400)return Math.floor(s/3600)+'h'; return Math.floor(s/86400)+'d';};
+function beep(){ try{ const a=new (window.AudioContext||window.webkitAudioContext)(); const o=a.createOscillator(),g=a.createGain();
+  o.connect(g); g.connect(a.destination); o.frequency.value=880; g.gain.value=.06; o.start(); o.stop(a.currentTime+.15);}catch(e){} }
+
+async function login(){
+  const k=$('#keyInput').value.trim()||KEY; if(!k){$('#loginErr').textContent='Enter the key';return;}
+  let r;
+  try{ r=await authGet(`${API}?list=1`,k); }
+  catch(e){ $('#loginErr').textContent='Network error — check your connection'; return; }
+  if(!r.ok){ $('#loginErr').textContent='Wrong key'; return; }
+  KEY=k; localStorage.setItem('dankStaffKey',k); LIVE=true;
+  const j=await r.json();
+  $('#storeStat').innerHTML=j.redis?'<span class="pill">● storage: redis</span>':'<span class="pill warn">● storage: memory (set up Upstash for production)</span>';
+  $('#login').style.display='none'; $('#listWrap').style.display='flex'; $('#chatWrap').style.display='flex'; $('#logoutBtn').style.display='';
+  renderList(j.threads); startListPoll(); pollOrders(); startOrderPoll();
+  /* The Telegram and LINE alerts link back here as staff.html#orders and
+     staff.html#count. These were two separate ifs, so #orders matched the tab
+     branch and then fell through to the thread branch as well: the console
+     opened a conversation called "orders" that does not exist, and on a phone
+     the `chatting` class it sets hid the order list behind an empty chat pane.
+     Exactly one branch runs now. */
+  const hash=decodeURIComponent(location.hash.slice(1));
+  if(hash==='orders'||hash==='count'||hash==='gifts'||hash==='box'||hash==='lab'||hash==='chats'||hash==='member'||hash==='sales') setTab(hash);
+  /* A member card scanned with the phone's own camera lands here:
+     staff.html#m=XXXXXXXXXXXX. The code rides in the fragment on purpose —
+     fragments never leave the browser, so a customer's card code does not
+     end up in an access log the way a query string would. */
+  else if(/^m=/i.test(hash)) { setTab('member'); lookupMember(hash.slice(2)); }
+  else if(hash.length>2) openThread(hash);
+  /* Scanning a second card while the console is already open only changes
+     the fragment, which does not reload the page. Without this, the second
+     customer would never appear. */
+  window.addEventListener('hashchange',()=>{ const h=decodeURIComponent(location.hash.slice(1));
+    if(/^m=/i.test(h)){ setTab('member'); lookupMember(h.slice(2)); } });
+}
+function logout(){ localStorage.removeItem('dankStaffKey'); LIVE=false; location.reload(); }
+
+function setTab(t){ if(typeof stopCamScan==='function') stopCamScan(); TAB=t; $('#tabChats').classList.toggle('active',t==='chats'); $('#tabOrders').classList.toggle('active',t==='orders'); $('#tabGifts').classList.toggle('active',t==='gifts'); $('#tabCount').classList.toggle('active',t==='count'); $('#tabBox').classList.toggle('active',t==='box'); $('#tabLab').classList.toggle('active',t==='lab'); $('#tabMember').classList.toggle('active',t==='member'); $('#tabSales').classList.toggle('active',t==='sales');
+  if(t==='orders'){ renderOrders(); $('#ordCnt').style.display='none'; knownOrders=new Set(ORDERS.map(o=>o.orderId)); }
+  else if(t==='gifts'){ loadGifts(); }
+  else if(t==='count'){ loadCount(); }
+  else if(t==='box'){ loadBoxGifts(); }
+  else if(t==='lab'){ loadLab(); }
+  else if(t==='member'){ renderMember(); }
+  else if(t==='sales'){ loadSales(); }
+  else refreshChats(); }
+let GIFT_MENU=[], GIFT_SEL=new Set();
+async function loadGifts(){
+  const el=$('#list'); el.innerHTML='<div class="ghdr">Loading…</div>';
+  try{
+    const [mr,gr]=await Promise.all([fetch('/api/products'),fetch('/api/freegifts')]);
+    GIFT_MENU=(await mr.json()).filter(p=>p.priceTiers && ['Exotics','Topshelf','Midgrade','Premium'].includes(p.category));
+    GIFT_SEL=new Set((await gr.json()).skus||[]);
+    renderGifts();
+  }catch(e){ el.innerHTML='<div class="ghdr">Could not load menu.</div>'; }
+}
+function renderGifts(){
+  const el=$('#list');
+  el.innerHTML='<div class="ghdr">Tick the 1g flowers you\'ll give as the free gram. Customers pick from these on their first order.</div>'+
+    GIFT_MENU.map(p=>`<div class="grow ${GIFT_SEL.has(p.id)?'on':''}" data-act="gift" data-id="${esc(p.id)}">
+      <div class="chk">${GIFT_SEL.has(p.id)?'✓':''}</div>
+      <div><div class="gn">${esc(p.name)}</div><div class="gm">${esc(p.category)} · THC ${esc(p.thcLabel||p.thc)} · ฿${esc((p.priceTiers?.[0]?.price)??'')}/g</div></div>
+    </div>`).join('');
+}
+async function toggleGift(id){
+  if(GIFT_SEL.has(id)) GIFT_SEL.delete(id); else GIFT_SEL.add(id);
+  renderGifts();
+  try{ await authPost('/api/freegifts',{skus:[...GIFT_SEL]}); }catch(e){}
+}
+/* ---- Box gifts: stock for the things that ride along free ---------------
+   Every 28 grams of flower in an order earns a DANK Custom Box, and the box
+   brings the hash, the brownie, the jelly, the Backwoods, the papers, the tee
+   and the hat with it. api/order.js takes them off the ledger the moment the
+   order lands. This tab is where the numbers behind that ledger come from —
+   and without it they never arrive: a gift whose stock is still blank is never
+   counted and can never report short, and a gift with no POS product linked is
+   skipped when the order is pushed to StoreHub, so its shop stock never moves.
+
+   Two different saves, on purpose. Linking a gift to a POS product edits the
+   list and leaves the counter alone. Setting a stock number is a restock: it
+   zeroes the issued count, because "there are forty hats in the shop" means
+   counting starts again from now, not that forty is a running total. */
+let BOX=null, BOXPROD=[], boxBusy=false;
+
+function boxToast(msg){
+  let t=$('#boxToast');
+  if(!t){ t=document.createElement('div'); t.id='boxToast';
+    t.style.cssText='position:fixed;left:50%;bottom:22px;transform:translateX(-50%);z-index:99;'
+      +'background:var(--panel2);border:1px solid var(--line2);color:var(--txt);padding:10px 16px;'
+      +'border-radius:11px;font-size:13px;font-weight:700;box-shadow:0 8px 24px rgba(0,0,0,.5);'
+      +'max-width:90vw;text-align:center;pointer-events:none;transition:opacity .2s';
+    document.body.appendChild(t); }
+  t.textContent=msg; t.style.opacity='1';
+  clearTimeout(boxToast._t); boxToast._t=setTimeout(()=>{ t.style.opacity='0'; },2600);
+}
+
+async function loadBoxGifts(){
+  const el=$('#list'); el.innerHTML='<div class="ghdr">Loading…</div>';
+  try{
+    /* The product list is a convenience, not a requirement — it turns the POS
+       field from "type a 24-character id" into a picker. If it fails the row
+       falls back to a text input rather than the tab failing with it. */
+    const [gr,pr]=await Promise.all([ authGet('/api/boxgifts'), fetch('/api/products').catch(()=>null) ]);
+    if(!gr.ok){ el.innerHTML='<div class="ghdr">Could not load the box gifts.</div>'; return; }
+    BOX=await gr.json();
+    if(!BOX||!BOX.staff){ el.innerHTML='<div class="ghdr">The server did not accept the staff key for this tab. Log out and back in.</div>'; return; }
+    BOXPROD=[];
+    if(pr&&pr.ok){ try{ const j=await pr.json(); if(Array.isArray(j)) BOXPROD=j; }catch(e){} }
+    renderBoxGifts();
+  }catch(e){ el.innerHTML='<div class="ghdr">Could not load the box gifts.</div>'; }
+}
+
+function posOptions(sel){
+  const by={};
+  BOXPROD.forEach(p=>{ if(!p||!p.shId) return; const c=p.category||'Other'; (by[c]=by[c]||[]).push(p); });
+  const cats=Object.keys(by).sort();
+  const known=cats.some(c=>by[c].some(p=>p.shId===sel));
+  return '<option value="">— not linked, POS stock will not move —</option>'
+    + (sel&&!known?`<option value="${esc(sel)}" selected>currently ${esc(sel)}</option>`:'')
+    + cats.map(c=>`<optgroup label="${esc(c)}">`
+        + by[c].map(x=>`<option value="${esc(x.shId)}"${x.shId===sel?' selected':''}>${esc(x.name)}</option>`).join('')
+        + '</optgroup>').join('');
+}
+
+const BOXINP='background:var(--bg2);border:1px solid var(--line2);color:var(--txt);padding:7px;border-radius:8px;outline:none';
+
+function boxRow(g){
+  const tracked=g.stock!==null&&g.stock!==undefined;
+  const rem=tracked?g.remaining:null;
+  const col=!tracked?'var(--muted2)':rem<0?'var(--danger)':rem<=3?'var(--gold)':'var(--green2)';
+  const state=!tracked?'not tracked':rem<0?('SHORT by '+Math.abs(rem)):(rem+' left');
+  return `<div class="ocard" style="padding:11px 12px;margin:8px 12px">
+    <div style="display:flex;align-items:center;gap:10px">
+      <div style="font-size:20px;flex-shrink:0">${esc(g.emoji||'\u{1F381}')}</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-weight:700;font-size:13.5px">${esc(g.label||g.id)}</div>
+        <div style="font-size:11.5px;color:var(--muted2)">given out ${esc(g.issued??0)} · <b style="color:${col}">${esc(state)}</b></div>
+      </div>
+      <input inputmode="numeric" placeholder="—" value="${esc(tracked?g.stock:'')}"
+        data-act="box-stock-in" data-id="${esc(g.id)}"
+        style="${BOXINP};width:62px;text-align:center;font-size:14px;flex-shrink:0">
+      <button class="undo-btn" data-act="box-stock" data-id="${esc(g.id)}" style="padding:7px 10px;flex-shrink:0">Set</button>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;margin-top:8px">
+      <div style="font-size:11.5px;color:var(--muted2);white-space:nowrap">POS product</div>
+      ${BOXPROD.length
+        ? `<select data-act="box-sh" data-id="${esc(g.id)}" style="${BOXINP};flex:1;min-width:0;font-size:12.5px">${posOptions(g.shId||'')}</select>`
+        : `<input placeholder="StoreHub product id" value="${esc(g.shId||'')}" data-act="box-sh" data-id="${esc(g.id)}" style="${BOXINP};flex:1;min-width:0;font-size:12.5px">`}
+    </div>
+  </div>`;
+}
+
+function renderBoxGifts(){
+  const gifts=BOX.gifts||[];
+  const nolink=gifts.filter(g=>!g.shId).length;
+  const short=gifts.filter(g=>g.short).length;
+  $('#list').innerHTML=
+    `<div class="ghdr">Every <b>${esc(BOX.threshold)}g</b> of flower in an order sends one of each of these out free and takes one off the count.
+      Type a number and press Set to start tracking a gift — leave it blank and it is never counted.
+      Orders are never blocked: if a gift runs out the sale still goes through and the alert says what is missing.</div>`
+    + `<div class="ocard" style="display:flex;align-items:center;gap:10px;margin:8px 12px">
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:800;font-size:13.5px">Grams per box</div>
+          <div style="color:var(--muted2);font-size:11.5px">How much flower earns one box</div>
+        </div>
+        <input id="boxThresh" inputmode="decimal" value="${esc(BOX.threshold)}" style="${BOXINP};width:62px;text-align:center;font-size:14px">
+        <button class="undo-btn" data-act="box-thresh" style="padding:7px 10px">Save</button>
+      </div>`
+    + gifts.map(boxRow).join('')
+    + (nolink?`<div class="ghdr" style="color:var(--gold)">⚠️ ${nolink} gift${nolink>1?'s are':' is'} not linked to a POS product, so ${nolink>1?'they':'it'} will not come off StoreHub stock when an order goes out. Pick the matching product on each row.</div>`:'')
+    + (short?`<div class="ghdr" style="color:var(--danger)">⚠️ ${short} gift${short>1?'s have':' has'} run out. Restock in the shop, then type the new number here and press Set.</div>`:'');
+}
+
+async function boxSetStock(id){
+  if(boxBusy) return;
+  const inp=$(`[data-act="box-stock-in"][data-id="${CSS.escape(id)}"]`);
+  if(!inp) return;
+  const raw=String(inp.value||'').trim();
+  /* Blank is not zero. null stops tracking the gift altogether; 0 says the
+     shop genuinely has none of it left and every box should report short. */
+  const stock = raw==='' ? null : Number(raw);
+  if(stock!==null && !Number.isFinite(stock)){ boxToast('Enter a number, or leave it blank to stop tracking'); return; }
+  boxBusy=true;
+  try{
+    const r=await authPost('/api/boxgifts',{action:'restock',id,stock});
+    if(!r.ok){ boxToast('Could not save — check the connection'); return; }
+    BOX={...(await r.json()),staff:true}; renderBoxGifts();
+    boxToast(stock===null?'No longer tracked':'Set to '+stock+' — counting starts from now');
+  }catch(e){ boxToast('Could not save — check the connection'); }
+  finally{ boxBusy=false; }
+}
+
+async function boxSetPos(id,shId){
+  if(boxBusy) return;
+  /* A save rewrites the list but not the counters, so linking a product here
+     does not lose how many have already gone out. */
+  const gifts=(BOX.gifts||[]).map(g=>g.id===id?{...g,shId:String(shId||'')}:g);
+  boxBusy=true;
+  try{
+    const r=await authPost('/api/boxgifts',{action:'save',gifts,threshold:BOX.threshold});
+    if(!r.ok){ boxToast('Could not save — check the connection'); return; }
+    BOX={...(await r.json()),staff:true}; renderBoxGifts();
+    boxToast(shId?'Linked — POS stock moves with the order':'Unlinked from the POS');
+  }catch(e){ boxToast('Could not save — check the connection'); }
+  finally{ boxBusy=false; }
+}
+
+async function boxSetThresh(){
+  if(boxBusy) return;
+  const el=$('#boxThresh'); const v=Number(String(el&&el.value||'').trim());
+  if(!Number.isFinite(v)||v<1){ boxToast('Enter how many grams earn one box'); return; }
+  boxBusy=true;
+  try{
+    const r=await authPost('/api/boxgifts',{action:'save',gifts:BOX.gifts||[],threshold:v});
+    if(!r.ok){ boxToast('Could not save — check the connection'); return; }
+    BOX={...(await r.json()),staff:true}; renderBoxGifts();
+    boxToast('One box per '+v+'g of flower');
+  }catch(e){ boxToast('Could not save — check the connection'); }
+  finally{ boxBusy=false; }
+}
+
+/* ---- Lab: the real certificate, typed in from the paperwork -------------
+   The product page draws a potency card for every strain. With nothing on file
+   it derives the numbers from the strain database and says so on its face:
+   hollow band, "Estimated from strain data — not a lab result". The moment a
+   certificate is saved here that same card turns into a lab report — solid
+   band, method, test date, lot number, heavy-metal clearance, and the measured
+   figures instead of the menu's.
+
+   Which is why this tab asks for the certificate rather than offering to fill
+   anything in. Everything except the cannabinoid percentages is optional and a
+   blank field is left blank, never guessed: a report with no test date shows
+   no test date. Type only what the paperwork actually says, and the card is
+   only ever as confident as the paperwork is.
+
+   Deleting a report is not destructive — the product falls back to the
+   estimated card, which is where it started. */
+let LABP=[], LABR={}, LABSEL='', labBusy=false;
+
+/* Common cannabis terpenes, offered as a datalist so the names stay spelled
+   the same way across products - the card prints them verbatim. */
+const LABNAMES=["Myrcene","Limonene","β-Caryophyllene","Linalool","α-Pinene","β-Pinene","Terpinolene","Humulene","Ocimene","α-Bisabolol","trans-Nerolidol","Guaiol","Valencene","Geraniol","Camphene","Eucalyptol","Geranyl Acetate"];
+
+/* Same rule as the storefront and api/_lab.js: lowercase, drop (bracketed)
+   words, keep letters, digits and hyphens. A product id already looks like
+   this, which is why an id is the preferred key. */
+const labKey=s=>String(s||'').toLowerCase().replace(/\([^)]*\)/g,'').replace(/[^a-z0-9-]/g,'').slice(0,64);
+
+/* Merch, beer and the kitchen have nothing to test. */
+const labTestable=p=>p&&!/^(Beer|Accessories|Merch|Drinks|Food)$/i.test(p.category||'');
+
+async function loadLab(){
+  const el=$('#list'); el.innerHTML='<div class="ghdr">Loading…</div>';
+  try{
+    const [pr,lr]=await Promise.all([ fetch('/api/products').catch(()=>null), fetch('/api/lab').catch(()=>null) ]);
+    LABP=[]; LABR={};
+    if(pr&&pr.ok){ try{ const j=await pr.json(); if(Array.isArray(j)) LABP=j.filter(labTestable); }catch(e){} }
+    if(lr&&lr.ok){ try{ const j=await lr.json(); LABR=(j&&j.reports)||{}; }catch(e){} }
+    /* /api/lab missing is the one failure worth naming: it means the api
+       folder on GitHub is behind this page, and every save would 404 with no
+       clue why. */
+    if(!lr||!lr.ok){ el.innerHTML='<div class="ghdr">The /api/lab endpoint is not on this deployment yet — upload the api folder and reload. Nothing typed here would save.</div>'; return; }
+    if(!LABP.length){ el.innerHTML='<div class="ghdr">Could not load the product list.</div>'; return; }
+    if(!LABSEL||!LABP.some(x=>labKey(x.id)===LABSEL)) LABSEL=labKey(LABP[0].id);
+    renderLab();
+  }catch(e){ el.innerHTML='<div class="ghdr">Could not load the lab reports.</div>'; }
+}
+
+/* A saved report may be keyed by product id or by flattened name, because
+   lab-db.json in the repo can use either. Look for both. */
+function labFor(prod){
+  if(!prod) return null;
+  return LABR[labKey(prod.id)] || LABR[labKey(prod.name)] || null;
+}
+
+function labProdOptions(){
+  const by={};
+  LABP.forEach(p=>{ const c=p.category||'Other'; (by[c]=by[c]||[]).push(p); });
+  return Object.keys(by).sort().map(c=>`<optgroup label="${esc(c)}">`
+    + by[c].map(x=>`<option value="${esc(labKey(x.id))}"${labKey(x.id)===LABSEL?' selected':''}>${labFor(x)?'✓ ':''}${esc(x.name)}</option>`).join('')
+    + '</optgroup>').join('');
+}
+
+const LABIN='background:var(--bg2);border:1px solid var(--line2);color:var(--txt);padding:7px 8px;border-radius:8px;outline:none;font-size:13px;width:100%;box-sizing:border-box';
+const LABLBL='display:block;font-size:11px;color:var(--muted2);margin:0 0 3px;font-weight:700;letter-spacing:.3px;text-transform:uppercase';
+
+function labField(k,label,val,ph){
+  return `<div><label style="${LABLBL}">${esc(label)}</label>
+    <input data-lab="${esc(k)}" value="${esc(val??'')}" placeholder="${esc(ph||'')}" style="${LABIN}"></div>`;
+}
+function labNum(k,label,val){
+  return `<div><label style="${LABLBL}">${esc(label)}</label>
+    <input data-lab="${esc(k)}" inputmode="decimal" value="${esc(val??'')}" placeholder="—" style="${LABIN};text-align:center"></div>`;
+}
+
+function renderLab(){
+  const prod=LABP.find(x=>labKey(x.id)===LABSEL)||LABP[0];
+  const r=labFor(prod)||{};
+  const c=r.cannabinoids||{};
+  const t=Array.isArray(r.terpenes)?r.terpenes:[];
+  const saved=Object.keys(LABR).length;
+  /* align-items:end keeps the boxes on one line when a label wraps to two -
+     without it a long caption pushes its own input half a row lower than its
+     neighbours and the block reads as broken. */
+  const grid='display:grid;grid-template-columns:repeat(auto-fit,minmax(96px,1fr));gap:9px;margin:8px 0 0;align-items:end';
+
+  $('#list').innerHTML=
+    `<div class="ghdr">Type what the certificate says and the product page stops estimating: the card turns into a full lab report with the method, the date, the lot number and the measured numbers.
+      Leave a field blank and it simply is not shown — nothing here is filled in for you.
+      <b>${saved}</b> product${saved===1?'':'s'} currently ${saved===1?'has':'have'} a certificate on file.</div>
+
+    <div class="ocard" style="padding:12px;margin:8px 12px">
+      <label style="${LABLBL}">Product</label>
+      <select data-act="lab-prod" style="${LABIN};font-size:13.5px">${labProdOptions()}</select>
+      <div style="font-size:11.5px;color:var(--muted2);margin-top:6px">
+        ${prod?esc(prod.category||'')+' · menu says THC '+esc(prod.thcLabel||prod.thc||'—'):''}
+        ${r.updated?' · <b style="color:var(--green2)">certificate saved '+esc(r.updated)+'</b>':' · <span style="color:var(--gold)">no certificate — the card is estimating</span>'}
+      </div>
+    </div>
+
+    <div class="ocard" style="padding:12px;margin:8px 12px">
+      <div style="font-weight:800;font-size:13px;margin-bottom:2px">The paperwork</div>
+      <div style="font-size:11.5px;color:var(--muted2);margin-bottom:8px">Copy the header of the certificate. The date is stored exactly as you type it.</div>
+      <div style="${grid}">
+        ${labField('method','Method',r.method,'HPLC')}
+        ${labField('tested','Tested',r.tested,'29/07/26')}
+        ${labField('sample','Sample',r.sample,'Dried flower')}
+        ${labField('lot','Lot no.',r.lot,'N 014')}
+      </div>
+      <div style="${grid}">
+        <div><label style="${LABLBL}">Product type</label>
+          <select data-lab="kind" style="${LABIN}">
+            ${['','flower','extract','vape','edible','preroll'].map(k=>`<option value="${k}"${(r.kind||'')===k?' selected':''}>${k||'auto — as the menu has it'}</option>`).join('')}
+          </select></div>
+        <div><label style="${LABLBL}">Heavy metals</label>
+          <label style="display:flex;align-items:center;gap:7px;font-size:12.5px;padding:7px 0">
+            <input type="checkbox" id="labMetals"${r.metals===false?'':' checked'} style="width:16px;height:16px">
+            <span>Screened &amp; clear</span></label></div>
+      </div>
+    </div>
+
+    <div class="ocard" style="padding:12px;margin:8px 12px">
+      <div style="font-weight:800;font-size:13px;margin-bottom:2px">Cannabinoids (%)</div>
+      <div style="font-size:11.5px;color:var(--muted2);margin-bottom:8px">At least one is required — this is what makes it a report rather than a letterhead. Δ9-THC is the headline on extracts and vapes; Total THC is the headline on flower; Total is every cannabinoid added up.</div>
+      <div style="${grid}">
+        ${labNum('d9thc','Δ9-THC',c.d9thc)}
+        ${labNum('totalThc','Total THC',c.totalThc)}
+        ${labNum('total','Total',c.total)}
+        ${labNum('thcv','THCV',c.thcv)}
+        ${labNum('cbg','CBG',c.cbg)}
+        ${labNum('cbc','CBC',c.cbc)}
+        ${labNum('cbd','CBD',c.cbd)}
+        ${labNum('cbn','CBN',c.cbn)}
+      </div>
+    </div>
+
+    <div class="ocard" style="padding:12px;margin:8px 12px">
+      <div style="font-weight:800;font-size:13px;margin-bottom:2px">Terpenes</div>
+      <div style="font-size:11.5px;color:var(--muted2);margin-bottom:8px">Up to five, biggest first — they draw the bars and the radar. Leave the rest blank.</div>
+      <datalist id="labNames">${LABNAMES.map(n=>`<option value="${esc(n)}">`).join('')}</datalist>
+      ${[0,1,2,3,4].map(i=>`<div style="display:flex;gap:8px;margin-bottom:7px">
+        <input data-lab="t${i}n" list="labNames" value="${esc(t[i]?.name||'')}" placeholder="Terpene ${i+1}" style="${LABIN};flex:1">
+        <input data-lab="t${i}p" inputmode="decimal" value="${esc(t[i]?.pct??'')}" placeholder="%" style="${LABIN};width:76px;flex:0 0 76px;text-align:center">
+      </div>`).join('')}
+      <label style="${LABLBL};margin-top:6px">Aroma note (optional)</label>
+      <textarea data-lab="aroma" rows="3" placeholder="Left blank, the card writes one from the terpenes." style="${LABIN};resize:vertical">${esc(r.aroma||'')}</textarea>
+    </div>
+
+    <div style="display:flex;gap:9px;margin:10px 12px 24px">
+      <button class="btn" data-act="lab-save" style="flex:1">Save certificate</button>
+      ${labFor(prod)?'<button class="undo-btn" data-act="lab-del" style="padding:9px 14px">Delete</button>':''}
+    </div>`;
+}
+
+function labVal(k){ const el=$(`[data-lab="${k}"]`); return el?String(el.value||'').trim():''; }
+
+async function labSave(){
+  if(labBusy) return;
+  const prod=LABP.find(x=>labKey(x.id)===LABSEL); if(!prod) return;
+  const can={};
+  ['d9thc','totalThc','total','thcv','cbg','cbc','cbd','cbn'].forEach(k=>{
+    const v=labVal(k); if(v!=='') can[k]=Number(v);
+  });
+  const bad=Object.keys(can).filter(k=>!Number.isFinite(can[k])||can[k]<0||can[k]>100);
+  if(bad.length){ boxToast('Check '+bad[0]+' — percentages only, 0 to 100'); return; }
+  if(!Object.keys(can).length){ boxToast('Type at least one cannabinoid percentage'); return; }
+
+  const terpenes=[];
+  for(let i=0;i<5;i++){
+    const n=labVal('t'+i+'n'), v=labVal('t'+i+'p');
+    if(!n&&v==='') continue;
+    /* Half a row is almost always a typo rather than an intention, and a
+       terpene with no number cannot be drawn. Say which row. */
+    if(!n||v===''){ boxToast('Terpene '+(i+1)+' needs both a name and a percentage'); return; }
+    const pct=Number(v);
+    if(!Number.isFinite(pct)||pct<0||pct>20){ boxToast('Terpene '+(i+1)+': percentages only, 0 to 20'); return; }
+    terpenes.push({name:n,pct});
+  }
+
+  const report={ cannabinoids:can, terpenes, metals:!!($('#labMetals')&&$('#labMetals').checked) };
+  ['kind','method','tested','sample','lot','aroma'].forEach(k=>{ const v=labVal(k); if(v) report[k]=v; });
+
+  labBusy=true;
+  try{
+    const res=await authPost('/api/lab',{action:'save',product:prod.id,report});
+    const j=await res.json().catch(()=>null);
+    if(!res.ok){ boxToast((j&&j.error)||'Could not save — check the connection'); return; }
+    LABR=(j&&j.reports)||LABR; renderLab();
+    boxToast('Saved — '+prod.name+' now shows a lab report');
+  }catch(e){ boxToast('Could not save — check the connection'); }
+  finally{ labBusy=false; }
+}
+
+async function labDelete(){
+  if(labBusy) return;
+  const prod=LABP.find(x=>labKey(x.id)===LABSEL); if(!prod) return;
+  if(!confirm('Remove the certificate for '+prod.name+'? The card goes back to showing an estimate.')) return;
+  labBusy=true;
+  try{
+    const res=await authPost('/api/lab',{action:'delete',product:prod.id});
+    const j=await res.json().catch(()=>null);
+    if(!res.ok){ boxToast((j&&j.error)||'Could not delete — check the connection'); return; }
+    LABR=(j&&j.reports)||{}; renderLab();
+    boxToast('Removed — back to an estimate');
+  }catch(e){ boxToast('Could not delete — check the connection'); }
+  finally{ labBusy=false; }
+}
+
+async function refreshChats(){ try{ const r=await authGet(`${API}?list=1`); if(r.ok) renderList((await r.json()).threads); }catch(e){} }
+async function pollOrders(){
+  try{ const r=await authGet('/api/orders'); if(!r.ok) return;
+    ORDERS=(await r.json()).orders||[];
+    const fresh=ORDERS.filter(o=>!knownOrders.has(o.orderId)&&o.status!=='done');
+    if(!firstOrderLoad && fresh.length){ beep(); const c=$('#ordCnt'); if(TAB!=='orders'){ c.textContent=fresh.length; c.style.display='flex'; } }
+    if(firstOrderLoad){ knownOrders=new Set(ORDERS.map(o=>o.orderId)); firstOrderLoad=false;
+      const n=ORDERS.filter(o=>o.status!=='done').length; if(n&&TAB!=='orders'){ $('#ordCnt').textContent=n; $('#ordCnt').style.display='flex'; } }
+    if(TAB==='orders') renderOrders();
+  }catch(e){}
+}
+function renderOrders(){
+  const el=$('#list');
+  if(!ORDERS.length){ el.innerHTML='<div style="padding:30px;color:var(--muted2);text-align:center;font-size:13.5px">No orders yet.<br>Online orders appear here instantly.</div>'; return; }
+  /* Every field below is customer-supplied: POST /api/order takes no key and
+     spreads the whole posted body over the stored record, so even orderId and
+     status are whatever the sender chose. The card is still built with a
+     template literal because it is mostly layout, but that means every single
+     hole has to go through esc() — including the numbers, because
+     (5).toLocaleString() formats a number while ("<img …>").toLocaleString()
+     just returns the string it was given. */
+  el.innerHTML=ORDERS.map(o=>{
+    const items=(o.items||[]).map(i=>`${esc(i.name)} (${esc(i.option)}) ×${esc(i.qty)}`).join('<br>');
+    /* A table order has no address and no pickup branch — the table IS the
+       destination, and it is the one thing a runner has to read at a glance,
+       so it gets the gold treatment instead of being squeezed into "🏬  ". */
+    const where=o.fulfilment==='table'
+      ?`<b style="color:var(--gold);font-size:14px">🪑 ${esc(o.table||'')}</b> — in-house, bring it over`
+      :o.fulfilment==='delivery'
+      ?`🚚 ${esc(o.delivery?.zone||'')} — ${esc(o.delivery?.address||'')}`
+      :`🏬 ${esc(o.pickup?.branch||'')} ${o.pickup?.time?('· '+esc(o.pickup.time)):''}`;
+    const id=esc(o.orderId||'');
+    return `<div class="ocard ${o.status==='done'?'done':''}">
+      <div class="oh"><span class="oid">${id}</span><span class="badge ${o.status==='done'?'closed':'open'}">${esc(o.status||'')}</span><span class="ot">${o.at?ago(o.at):''}</span></div>
+      <div class="items">${items}</div>
+      <div class="tot">฿${esc(((o.total??o.subtotal)||0).toLocaleString())} · ${esc(o.payment||'')}${o.member?' ⭐':''}${o.payStatus==='paid'?' <span style="color:var(--green2)">· PAID ✅</span>':(['PromptPay','Card'].includes(o.payment)?' <span style="color:var(--gold)">· unpaid</span>':'')}</div>
+      ${o.discount>0||o.deliveryFee>0?`<div style="font-size:11px;color:var(--muted2);margin-top:2px">sub ฿${esc((o.subtotal||0).toLocaleString())}${o.discount>0?` · −฿${esc(o.discount)} ${esc(o.promo||'')}`:''}${o.deliveryFee>0?` · +฿${esc(o.deliveryFee)} delivery`:''}</div>`:''}
+      <div class="meta">${where}<br>👤 ${esc(o.customer?.name||'-')} · <a style="color:var(--green2)" href="tel:${esc(o.customer?.phone||'')}">${esc(o.customer?.phone||'')}</a>${o.notes?'<br>📝 '+esc(o.notes):''}</div>
+      <div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap">${o.slipUploaded?`<button class="undo-btn" data-act="slip" data-id="${id}">🧾 View slip</button>`:''}<button class="undo-btn" data-act="upload" data-id="${id}">📎 Upload proof</button></div>
+      <div class="orow">${o.status==='done'
+        ?`<button class="undo-btn" data-act="order" data-id="${id}" data-status="new">↩ Reopen</button>`
+        :`<button class="done-btn" data-act="order" data-id="${id}" data-status="done">✓ Mark done</button>`}</div>
+    </div>`;}).join('');
+}
+async function viewSlip(id){
+  try{ const r=await authGet(`/api/slip?id=${encodeURIComponent(id)}`); const j=await r.json();
+    if(!j.image){ alert('No slip found'); return; }
+    /* Anyone can POST a slip for a known order id, and the stored value went
+       into src="…" as it came. imgSrc() refuses anything that is not a base64
+       raster data URL, so a slip crafted to close the attribute renders as a
+       "not an image" line instead of running. */
+    const src=imgSrc(j.image);
+    let ov=document.getElementById('slipOv'); if(!ov){ ov=document.createElement('div'); ov.id='slipOv';
+      ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:200;display:flex;align-items:center;justify-content:center;padding:20px';
+      ov.onclick=()=>ov.remove(); document.body.appendChild(ov); }
+    ov.innerHTML=`<div style="max-width:90vw;max-height:90vh;text-align:center">${src
+        ?`<img src="${src}" style="max-width:100%;max-height:80vh;border-radius:12px">`
+        :'<div style="color:#ff6b6b">That slip is not a readable image — it was rejected.</div>'
+      }<div style="color:#fff;margin-top:10px;font-size:13px">Slip · ${esc(id)} — tap anywhere to close</div></div>`;
+  }catch(e){ alert('Could not load slip'); }
+}
+let _slipUpId="";
+function staffResize(file,maxW,q){ return new Promise((ok,err)=>{ const fr=new FileReader();
+  fr.onload=()=>{ const img=new Image(); img.onload=()=>{ const sc=Math.min(1,maxW/img.width); const c=document.createElement('canvas');
+    c.width=Math.round(img.width*sc); c.height=Math.round(img.height*sc); c.getContext('2d').drawImage(img,0,0,c.width,c.height);
+    ok(c.toDataURL('image/jpeg',q)); }; img.onerror=err; img.src=fr.result; }; fr.onerror=err; fr.readAsDataURL(file); }); }
+function staffUploadSlip(id){ _slipUpId=id; let inp=document.getElementById('staffSlipInput');
+  if(!inp){ inp=document.createElement('input'); inp.type='file'; inp.accept='image/*'; inp.id='staffSlipInput'; inp.style.display='none';
+    inp.onchange=async()=>{ const f=inp.files&&inp.files[0]; inp.value=''; if(!f||!_slipUpId) return;
+      try{ const dataUrl=await staffResize(f,1000,0.7);
+        // Sent with the key: /api/slip rate-limits anonymous uploads to a
+        // handful per order, which is right for customers and wrong for a
+        // member of staff working through a stack of transfers.
+        const r=await authPost('/api/slip',{orderId:_slipUpId,image:dataUrl});
+        if(r.ok){ alert('✅ Proof uploaded for '+_slipUpId); pollOrders(); }
+        else { const j=await r.json().catch(()=>({})); alert('⚠️ '+(j.error||'Upload failed')); }
+      }catch(e){ alert('⚠️ Upload failed'); } };
+    document.body.appendChild(inp); }
+  inp.click();
+}
+async function setOrder(id,status){
+  await authPost('/api/orders',{orderId:id,status});
+  pollOrders();
+}
+function startListPoll(){ clearInterval(listT); listT=setInterval(async()=>{ if(TAB!=='chats')return;
+  try{ const r=await authGet(`${API}?list=1`); if(r.ok) renderList((await r.json()).threads); }catch(e){} },4000); }
+
+/* The order poll was started with a bare setInterval() whose handle nobody
+   kept. Anything that called login() again — and the tab-switching path did —
+   stacked a second timer on the first, so a console left open all shift ended
+   up asking /api/orders several times a second without anyone noticing. Each
+   of the three polls now has exactly one live handle, cleared before it is
+   replaced, and they all stop while the tab is in the background: a phone in a
+   pocket has no reason to keep the API busy. */
+function startOrderPoll(){ clearInterval(ordersT); ordersT=setInterval(pollOrders,5000); }
+function startThreadPoll(){ clearInterval(pollT); pollT=setInterval(()=>pull(false),3000); }
+function stopPolls(){ clearInterval(ordersT); clearInterval(listT); clearInterval(pollT); ordersT=listT=pollT=null; }
+document.addEventListener('visibilitychange',()=>{
+  if(document.hidden){ stopPolls(); return; }
+  if(!LIVE) return;
+  pollOrders(); startOrderPoll(); startListPoll();
+  if(TAB==='chats') refreshChats();
+  if(cur){ pull(false); startThreadPoll(); }
+});
+
+function renderList(threads){
+  const el=$('#list');
+  if(!threads.length){ el.innerHTML='<div style="padding:30px;color:var(--muted2);text-align:center;font-size:13.5px">No conversations yet.<br>Handoffs from DANK AI appear here.</div>'; return; }
+  el.innerHTML=threads.map(t=>{
+    const unread=t.lastFrom==='customer'&&(lastSeen[t.id]||0)<t.count;
+    if(unread&&document.hasFocus&&!document.hasFocus()){}
+    /* Name, contact and preview text all come from POST /api/thread, which any
+       visitor can call without a key — same rule as the order cards, every
+       hole escaped, and the thread id carried as data-id rather than
+       interpolated into an onclick string. */
+    return `<button class="trow ${cur===t.id?'sel':''} ${unread?'unread':''}" data-act="thread" data-id="${esc(t.id)}">
+      <span class="top"><span class="who">${esc(t.customer?.name||t.customer?.contact||t.id)}</span>
+      <span class="badge ${esc(t.status||'')}">${esc(t.status||'')}</span><span class="when">${t.lastAt?ago(t.lastAt):''}</span></span>
+      <span class="prev">${t.lastFrom==='customer'?'🧑 ':t.lastFrom==='staff'?'👨‍💼 ':''}${esc(t.lastText||'')}</span>
+      ${t.cartCount?`<span class="meta">🛒 ${esc(t.cartCount)} items · ฿${esc((t.subtotal||0).toLocaleString())}</span>`:''}
+    </button>`;}).join('');
+}
+
+async function openThread(id){
+  cur=id; curSeq=0; document.body.classList.add('chatting'); location.hash=id;
+  $('#chatWrap').innerHTML=`
+    <div id="chatHead"><button class="ghost" onclick="backToList()" style="display:none" id="backBtn">←</button>
+      <div class="c-info"><div class="c-name" id="cName">…</div><div class="c-sub" id="cSub"></div></div>
+      <div class="actions"><button class="ghost danger" onclick="closeThread()">Close ticket</button></div></div>
+    <div id="msgs"></div>
+    <div id="ctxBox" style="display:none"></div>
+    <div class="quicks">
+      <button onclick="quick('On it! Give me one minute 🙏')">On it 🙏</button>
+      <button onclick="quick('Yes, that\\'s in stock right now ✅')">In stock ✅</button>
+      <button onclick="quick('We can deliver that today. Which area are you in?')">Delivery today</button>
+      <button onclick="quick('ได้เลยครับ รอสักครู่นะครับ 🙏')">ได้เลยครับ 🙏</button>
+    </div>
+    <div id="replyBar"><input id="reply" placeholder="Reply as staff…" onkeydown="if(event.key==='Enter')sendReply()"><button id="sendBtn" onclick="sendReply()">Send</button></div>`;
+  if(window.matchMedia('(max-width:760px)').matches) $('#backBtn').style.display='';
+  await pull(true);
+  startThreadPoll();
+}
+function backToList(){ document.body.classList.remove('chatting'); }
+
+async function pull(first){
+  if(!cur) return;
+  try{
+    const r=await authGet(`${API}?threadId=${encodeURIComponent(cur)}&since=${encodeURIComponent(curSeq)}`,null,true);
+    if(!r.ok) return;
+    const j=await r.json();
+    if(first){
+      $('#cName').textContent=j.customer?.name||j.customer?.contact||cur;
+      $('#cSub').textContent=`${j.customer?.contact||''} · ticket ${cur} · ${j.status}`;
+      let ctx='';
+      if(j.cart?.length) ctx+=`<b>🛒 Cart (฿${esc((j.subtotal||0).toLocaleString())}):</b> `+j.cart.map(c=>`${esc(c.name)} ×${esc(c.qty)}`).join(' · ')+'<br>';
+      if(j.transcript?.length) ctx+=`<b>🤖 AI chat before transfer:</b><br>`+j.transcript.map(m=>`${m.role==='user'?'🧑':'🤖'} ${esc(m.text)}`).join('<br>');
+      if(ctx){ $('#ctxBox').innerHTML=ctx; $('#ctxBox').style.display='block'; }
+    }
+    let gotCustomer=false;
+    for(const m of j.messages||[]){
+      curSeq=Math.max(curSeq,m.seq);
+      addMsg(m);
+      if(m.from==='customer'&&!first){ gotCustomer=true; }
+    }
+    lastSeen[cur]=curSeq;
+    if(gotCustomer) beep();
+  }catch(e){}
+}
+/* A chat message is whatever the person on the other end typed, so it is built
+   out of text nodes rather than markup — nothing here can be mistaken for a
+   tag. `from` decides the bubble style and used to be pasted into className
+   unchecked; it is now matched against the three classes the stylesheet
+   actually defines. The pre-wrap on .m keeps line breaks readable. */
+function addMsg(m){
+  const from=m.from==='staff'?'staff':m.from==='system'?'system':'customer';
+  const d=document.createElement('div'); d.className='m '+from;
+  d.textContent=String(m.text??'');
+  const t=document.createElement('span'); t.className='t';
+  t.textContent=new Date(m.at).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'});
+  d.appendChild(t);
+  $('#msgs').appendChild(d); $('#msgs').scrollTop=$('#msgs').scrollHeight;
+}
+function quick(t){ $('#reply').value=t; sendReply(); }
+async function sendReply(){
+  const t=$('#reply').value.trim(); if(!t||!cur)return; $('#reply').value='';
+  try{ await authPost(API,{action:'send',threadId:cur,text:t,staffName:'DANK Team'},true);
+    pull(false);
+  }catch(e){ alert('Send failed'); }
+}
+async function closeThread(){
+  if(!cur||!confirm('Close this conversation?'))return;
+  await authPost(API,{action:'close',threadId:cur});
+  pull(false);
+}
+/* ===================== SHIFT COUNT / INVENTORY ===================== */
+let COUNT_PRODUCTS=[], COUNT_VALS={}, COUNT_PROOFS=[], selectedCode=null;
+let scalePort=null, scaleReader=null, lastWeight=null, scaleKeep=false;
+
+async function loadCount(){
+  const el=$('#list');
+  el.innerHTML='<div class="ghdr" style="padding:14px">Loading products…</div>';
+  try{
+    const res=await fetch('product-codes.json'); COUNT_PRODUCTS=await res.json();
+    // merge live stock (expected) from /api/products when available
+    try{ const live=await (await fetch('/api/products')).json();
+      const byId={}; (Array.isArray(live)?live:[]).forEach(p=>byId[p.id]=p);
+      COUNT_PRODUCTS.forEach(p=>{ if(byId[p.id]&&typeof byId[p.id].stock==='number') p.stock=byId[p.id].stock; });
+    }catch(e){}
+  }catch(e){ el.innerHTML='<div class="ghdr" style="padding:14px">Could not load product-codes.json.</div>'; return; }
+  COUNT_VALS={}; COUNT_PROOFS=[]; selectedCode=null;
+  renderCountUI();
+}
+
+function renderCountUI(){
+  const serialOK = ('serial' in navigator);
+  const rows=COUNT_PRODUCTS.map(p=>countRow(p)).join('');
+  $('#list').innerHTML=`
+  <div style="padding:12px 12px 90px">
+    <div style="background:var(--panel);border:1px solid var(--line2);border-radius:14px;padding:12px;margin-bottom:12px;position:sticky;top:0;z-index:5">
+      <div style="font-weight:800;margin-bottom:8px">📦 Shift Count · <span style="color:var(--muted)">${new Date().toLocaleDateString()}</span></div>
+      <input id="scanInput" placeholder="Scan a product QR / type a code, then Enter…" autocomplete="off"
+        style="width:100%;background:var(--bg2);border:1px solid var(--line2);color:var(--txt);padding:11px;border-radius:10px;font-size:15px;outline:none"
+        onkeydown="if(event.key==='Enter'){onScan(this.value);this.value='';event.preventDefault();}">
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">
+        <button class="undo-btn" onclick="startCamScan()">📷 Camera scan</button>
+        <button class="undo-btn" onclick="connectScale()" ${serialOK?'':'disabled title="Web Serial not supported here"'}>⚖️ ${serialOK?'Connect scale':'Scale n/a'}</button>
+        <span id="scaleRead" style="align-self:center;font-weight:800;color:var(--gold)">${serialOK?'scale: —':'use Chrome/Edge on desktop/Android for scale'}</span>
+      </div>
+      <div id="camBox" style="display:none;margin-top:8px;text-align:center">
+        <video id="camVid" playsinline style="width:100%;max-width:320px;border-radius:10px;background:#000"></video>
+        <div><button class="undo-btn" onclick="stopCamScan()" style="margin-top:6px">Stop camera</button></div>
+      </div>
+    </div>
+
+    <div style="display:flex;justify-content:space-between;color:var(--muted2);font-size:11px;font-weight:700;padding:0 6px 6px">
+      <span>PRODUCT</span><span>EXPECTED · COUNTED</span>
+    </div>
+    <div id="countRows">${rows}</div>
+
+    <div style="background:var(--panel);border:1px solid var(--line2);border-radius:14px;padding:12px;margin-top:14px">
+      <div style="font-weight:800;margin-bottom:4px">🧾 Proof of existence photos <span style="color:var(--danger)">*</span></div>
+      <div style="color:var(--muted);font-size:12px;margin-bottom:10px">Photograph the counted stock as proof. At least one photo is required to close the shift.</div>
+      <div id="proofGrid" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px"></div>
+      <label style="display:block;border:1px dashed var(--line2);border-radius:12px;padding:16px;text-align:center;color:var(--muted);cursor:pointer">
+        <input type="file" accept="image/*" capture="environment" multiple style="display:none" onchange="addProofPhotos(this)">
+        📎 Tap to add proof photo(s)
+      </label>
+    </div>
+
+    <button class="btn" style="margin-top:14px" onclick="submitCount()">✅ Submit &amp; Close shift</button>
+
+    <div style="margin-top:20px">
+      <div style="font-weight:800;margin-bottom:8px">Recent counts</div>
+      <div id="countHistory" style="color:var(--muted);font-size:13px">Loading…</div>
+    </div>
+  </div>`;
+  renderProofGrid(); loadCountHistory();
+  setTimeout(()=>$('#scanInput')&&$('#scanInput').focus(),120);
+}
+
+function countRow(p){
+  const v=COUNT_VALS[p.code];
+  const variance=(v!==undefined&&v!=='')?(Number(v)-Number(p.stock||0)):null;
+  const vColor=variance===null?'var(--muted2)':(variance===0?'var(--green2)':(variance>0?'var(--gold)':'var(--danger)'));
+  const vTxt=variance===null?'':(variance>0?'+'+variance:String(variance));
+  /* Names and codes here come from product-codes.json, but `stock` is merged in
+     from /api/products, and the code lands in three attributes as well as in
+     the text — so it all goes through esc() and the row keeps its code in a
+     data- attribute instead of inside an inline handler. */
+  const code=esc(p.code);
+  return `<div class="ocard" id="row-${code}" style="padding:10px 12px;margin-bottom:8px">
+    <div style="display:flex;align-items:center;gap:10px">
+      <div style="flex:1;min-width:0">
+        <div style="font-family:ui-monospace,monospace;font-weight:800;color:var(--green2);font-size:13px">${code}</div>
+        <div style="font-weight:600;font-size:13.5px">${esc(p.name)}</div>
+        <div style="color:var(--muted);font-size:11px">${esc([p.category,p.type].filter(Boolean).join(' · '))}</div>
+      </div>
+      <div style="text-align:right">
+        <div style="color:var(--muted2);font-size:11px">exp <b style="color:var(--muted)">${esc(p.stock??0)}</b></div>
+        <div style="display:flex;align-items:center;gap:6px;margin-top:3px">
+          <input inputmode="decimal" value="${esc(v??'')}" placeholder="0" data-act="count" data-code="${code}"
+            style="width:66px;background:var(--bg2);border:1px solid var(--line2);color:var(--txt);padding:7px;border-radius:8px;font-size:14px;text-align:center;outline:none">
+          <button class="undo-btn" title="Apply scale reading" data-act="scale" data-code="${code}" style="padding:7px 9px">⚖️</button>
+        </div>
+        <div id="var-${code}" style="font-size:11px;font-weight:800;margin-top:3px;color:${vColor}">${vTxt?('Δ '+vTxt):''}</div>
+      </div>
+    </div>
+  </div>`;
+}
+
+// Update ONLY the variance line in place — never re-render the row, or we'd
+// destroy the <input> the user is typing in (loses focus after each keystroke).
+function setCount(code,val){ COUNT_VALS[code]=val; updateVariance(code); }
+function updateVariance(code){
+  const p=COUNT_PRODUCTS.find(x=>x.code===code); if(!p)return;
+  const el=document.getElementById('var-'+code); if(!el)return;
+  const v=COUNT_VALS[code];
+  const variance=(v!==undefined&&v!=='')?(Number(v)-Number(p.stock||0)):null;
+  el.style.color=variance===null?'var(--muted2)':(variance===0?'var(--green2)':(variance>0?'var(--gold)':'var(--danger)'));
+  el.textContent=variance===null?'':('Δ '+(variance>0?'+'+variance:String(variance)));
+}
+function selectRow(code){
+  selectedCode=code;
+  const row=document.getElementById('row-'+code); if(!row)return;
+  row.scrollIntoView({behavior:'smooth',block:'center'});
+  row.style.boxShadow='0 0 0 2px var(--green)'; setTimeout(()=>{row.style.boxShadow='';},1200);
+  const inp=row.querySelector('input'); if(inp){ inp.focus(); inp.select(); }
+}
+function onScan(raw){
+  const code=String(raw||'').trim().toUpperCase();
+  if(!code) return;
+  const p=COUNT_PRODUCTS.find(x=>String(x.code).toUpperCase()===code);
+  if(p){ beep(); selectRow(p.code); }
+  else { alert('No product for code: '+code); }
+}
+
+/* ---- 👤 Member: who is standing at the counter ----------------------------
+   The customer shows their card. Staff either point the shop phone's camera at
+   the QR — which opens this console at staff.html#m=CODE — press Scan card
+   below, or type the number on the card. All three land in lookupMember().
+
+   The card code and the phone number are different things on purpose. The code
+   is what the QR carries: it identifies the member to us and is meaningless to
+   anyone else who photographs the card. The phone number is the member ID the
+   customer can read out when a screen is cracked or a camera won't focus. The
+   endpoint takes either.                                                     */
+const MEMIN='background:var(--bg2);border:1px solid var(--line2);color:var(--txt);padding:10px 12px;border-radius:9px;outline:none;font-size:15px;flex:1;min-width:0';
+let MEM=null;
+
+function renderMember(){
+  const el=$('#list');
+  el.innerHTML=`<div class="ghdr">Scan the QR on the customer's card, or type their member ID — that's their phone number.</div>
+    <div class="ocard" style="padding:12px">
+      <div style="display:flex;gap:8px">
+        <input id="mIn" placeholder="Phone number or card code" autocomplete="off"
+          onkeydown="if(event.key==='Enter')lookupMember(this.value)" style="${MEMIN}">
+        <button class="btn" style="padding:10px 16px" onclick="lookupMember($('#mIn').value)">Look up</button>
+      </div>
+      <div style="margin-top:8px"><button class="undo-btn" onclick="memberScan()">📷 Scan card</button></div>
+      <div id="mCamBox" style="display:none;margin-top:8px;text-align:center">
+        <video id="mCamVid" playsinline style="width:100%;max-width:320px;border-radius:10px;background:#000"></video>
+        <div><button class="undo-btn" onclick="stopCamScan()" style="margin-top:6px">Stop camera</button></div>
+      </div>
+    </div>
+    <div id="mOut"></div>`;
+  if(MEM) renderMemberProfile(MEM);
+}
+function memberScan(){ startCamScan(v=>lookupMember(v), '#mCamVid', '#mCamBox'); }
+
+/* One box for everything staff might have in their hand: the whole scanned
+   link, the code alone, the code with its dashes, or the phone number. Letters
+   mean it is a card code — no phone number has any. */
+function memberQuery(raw){
+  let s=String(raw||'').trim();
+  const m=s.match(/[#&?]m=([0-9A-Za-z-]+)/) || s.match(/^m=([0-9A-Za-z-]+)$/i);
+  if(m) return {code:m[1].toUpperCase().replace(/[^0-9A-Z]/g,'')};
+  const flat=s.toUpperCase().replace(/[^0-9A-Z]/g,'');
+  if(/[A-Z]/.test(flat)) return {code:flat};
+  const ph=s.replace(/[^0-9]/g,'');
+  return ph.length>=6 ? {phone:ph} : {};
+}
+
+async function lookupMember(raw){
+  if(TAB!=='member') setTab('member');
+  const q=memberQuery(raw);
+  const box=()=>$('#mOut');
+  if(!q.code && !q.phone){ if(box()) box().innerHTML='<div class="ghdr">Type a phone number, or scan the card.</div>'; return; }
+  const inp=$('#mIn'); if(inp) inp.value=q.phone||q.code;
+  if(box()) box().innerHTML='<div class="ghdr">Looking up…</div>';
+  const url='/api/customer?'+(q.code?('code='+encodeURIComponent(q.code)):('phone='+encodeURIComponent(q.phone)));
+  let r;
+  try{ r=await authGet(url); }
+  catch(e){ if(box()) box().innerHTML='<div class="ghdr">No connection — try again.</div>'; return; }
+  if(r.status===401){ if(box()) box().innerHTML='<div class="ghdr">Your staff key was refused. Log out and back in.</div>'; return; }
+  if(r.status===503){ if(box()) box().innerHTML='<div class="ghdr">Member cards are not switched on for this shop yet — ADMIN_SECRET is not set on the deployment.</div>'; return; }
+  if(!r.ok){ if(box()) box().innerHTML='<div class="ghdr">That did not look like a member ID or a card code.</div>'; return; }
+  const j=await r.json();
+  MEM=j; renderMemberProfile(j);
+}
+
+const baht=v=>'฿'+Math.round(Number(v)||0).toLocaleString();
+const memDate=t=>t?new Date(t).toLocaleDateString(undefined,{day:'numeric',month:'short',year:'numeric'}):'—';
+function memTile(v,label,colour){
+  return `<div style="flex:1;min-width:92px;background:var(--bg2);border:1px solid var(--line2);border-radius:11px;padding:10px 8px;text-align:center">
+    <div style="font-size:20px;font-weight:900;color:${colour}">${esc(v)}</div>
+    <div style="font-size:10.5px;color:var(--muted2);font-weight:700;letter-spacing:.4px;text-transform:uppercase;margin-top:2px">${esc(label)}</div></div>`;
+}
+
+function renderMemberProfile(j){
+  const el=$('#mOut'); if(!el) return;
+  if(!j.found){
+    /* A code nobody owns is a fault in the card, not in the customer — say
+       which, so staff look at the right thing. */
+    if(j.reason==='unknown-code'){
+      el.innerHTML=`<div class="ocard" style="padding:16px"><div style="font-weight:800;font-size:15px">This card isn't one of ours</div>
+        <div style="color:var(--muted);font-size:13px;margin-top:6px;line-height:1.6">Code <b>${esc(j.code||'')}</b> doesn't match any member here. It may be from another shop, or issued before the member codes were reset. Ask for their phone number instead.</div></div>`;
+      return;
+    }
+    const who=(j.customer&&j.customer.phone)||'';
+    el.innerHTML=`<div class="ocard" style="padding:16px"><div style="font-weight:800;font-size:15px">New face 🌱</div>
+      <div style="color:var(--muted);font-size:13px;margin-top:6px;line-height:1.6">${who?'<b>'+esc(who)+'</b> is':'That number is'} not in the CRM yet — no orders, no points. Sign them up and their first gram is free.</div>
+      ${(j.promos||[]).map(p=>`<div style="margin-top:8px;font-size:12.5px"><span class="pill">${esc(p.label)}</span> <span style="color:var(--muted2)">${esc(p.state)}</span></div>`).join('')}</div>`;
+    return;
+  }
+  const c=j.customer||{}, l=j.loyalty||{}, w=j.wallet||{}, o=j.orders||{};
+  const badges=[c.inWeb?'website':'', c.inPos?'in the shop':''].filter(Boolean).join(' · ');
+  el.innerHTML=`
+    <div class="ocard" style="padding:16px">
+      <div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap">
+        <div style="font-size:20px;font-weight:900">${esc(c.name||'DANK Member')}</div>
+        ${j.via==='scan'?'<span class="pill">scanned</span>':''}
+        ${badges?`<span style="color:var(--muted2);font-size:12px">${esc(badges)}</span>`:''}
+      </div>
+      <div style="color:var(--muted);font-size:13.5px;margin-top:4px">
+        Member ID <b style="font-family:ui-monospace,Menlo,monospace;color:var(--txt)">${esc(c.id||'')}</b>
+        ${c.pretty?` · card <span style="font-family:ui-monospace,Menlo,monospace;color:var(--gold)">${esc(c.pretty)}</span>`:''}
+      </div>
+      <div style="color:var(--muted2);font-size:12px;margin-top:2px">Member since ${esc(memDate(c.since))}${l.syncedAt?` · POS synced ${esc(ago(l.syncedAt))} ago`:''}</div>
+      <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
+        ${memTile((+l.points||0).toLocaleString(),'points','var(--gold)')}
+        ${memTile(+l.visits||0,'visits','var(--green2)')}
+        ${memTile(baht(w.balance),'wallet','var(--green2)')}
+        ${memTile(o.count||0,'orders','var(--txt)')}
+        ${memTile(baht(o.spent),'spent','var(--gold)')}
+      </div>
+      ${(o.usual&&o.usual.length)?`<div style="margin-top:12px;font-size:13px"><span style="color:var(--muted2);font-weight:700">THEIR USUAL</span> — ${o.usual.map(u=>esc(u.name)+' ×'+(+u.qty||0)).join(', ')}</div>`:''}
+    </div>
+
+    <div id="mOwe"></div>
+
+    <div class="ocard" style="padding:14px 16px">
+      <div style="font-weight:800;font-size:13px;color:var(--muted2);letter-spacing:.4px;text-transform:uppercase">What they're owed</div>
+      ${(j.promos||[]).map(p=>`<div style="display:flex;justify-content:space-between;gap:10px;margin-top:8px;font-size:13px">
+        <span>${esc(p.label)}</span><span style="color:${p.state==='already used'?'var(--muted2)':'var(--green2)'};font-weight:700;white-space:nowrap">${esc(p.state)}</span></div>`).join('')}
+    </div>
+
+    <div class="ocard" style="padding:14px 16px">
+      <div style="font-weight:800;font-size:13px;color:var(--muted2);letter-spacing:.4px;text-transform:uppercase">Orders${o.count?` · ${o.count}`:''}</div>
+      ${o.count?(o.list||[]).map(x=>`<div style="border-top:1px solid var(--line2);padding:9px 0;font-size:13px">
+          <div style="display:flex;justify-content:space-between;gap:10px">
+            <span style="font-weight:700">${esc(x.orderId||'')}</span>
+            <span style="color:var(--gold);font-weight:800">${esc(baht(x.total))}</span>
+          </div>
+          <div style="color:var(--muted2);font-size:11.5px;margin-top:2px">${esc(memDate(x.at))}${x.status?' · '+esc(x.status):''}${x.payment?' · '+esc(x.payment):''}</div>
+          <div style="color:var(--muted);font-size:12px;margin-top:3px">${(x.items||[]).map(i=>esc(i.name)+(i.option?' ('+esc(i.option)+')':'')+' ×'+(+i.qty||1)).join(', ')}</div>
+        </div>`).join(''):'<div style="color:var(--muted);font-size:13px;margin-top:8px">Nothing yet — this would be their first.</div>'}
+      ${(o.count&&o.complete===false)?'<div style="color:var(--muted2);font-size:11.5px;margin-top:8px">Older orders than these may exist — only the recent ones were searched.</div>':''}
+    </div>
+
+    ${(w.history&&w.history.length)?`<div class="ocard" style="padding:14px 16px">
+      <div style="font-weight:800;font-size:13px;color:var(--muted2);letter-spacing:.4px;text-transform:uppercase">Wallet</div>
+      ${w.history.map(h=>`<div style="display:flex;justify-content:space-between;gap:10px;border-top:1px solid var(--line2);padding:8px 0;font-size:13px">
+        <span>${esc(h.reason||h.t||'')}<span style="color:var(--muted2);font-size:11.5px"> · ${esc(memDate(h.at))}</span></span>
+        <span style="font-weight:800;color:${(h.t==='debit'||(+h.amount||0)<0)?'var(--danger)':'var(--green2)'};white-space:nowrap">${(h.t==='debit')?'−':'+'}${esc(baht(Math.abs(+h.amount||0)))}</span></div>`).join('')}
+    </div>`:''}`;
+
+  /* What they owe is not on the customer record — it is derived from the
+     order book, so it can never drift out of step with it. One extra call,
+     fired after the card is already on screen, so a slow sweep never delays
+     the thing staff actually asked for. */
+  if(c.phone) memberOwed(c.phone);
+}
+
+async function memberOwed(phone){
+  const box=()=>$('#mOwe');
+  if(!box()) return;
+  box().innerHTML='<div class="ocard" style="padding:12px 16px;color:var(--muted2);font-size:12.5px">Checking whether they owe the shop anything…</div>';
+  let j;
+  try{
+    const r=await authGet('/api/sales?owed=1&phone='+encodeURIComponent(phone));
+    if(!r.ok){ if(box()) box().innerHTML=''; return; }
+    j=await r.json();
+  }catch(e){ if(box()) box().innerHTML=''; return; }
+  if(!box()) return;
+  const c=(j.customers||[])[0];
+  const total=Number((j.owed&&j.owed.total)||0);
+  if(!c || total<=0){
+    box().innerHTML='<div class="ocard" style="padding:13px 16px"><span style="color:var(--green2);font-weight:800;font-size:13.5px">✅ Nothing owing</span>'+
+      '<span style="color:var(--muted2);font-size:12px"> · every bill on this number is settled</span></div>';
+    return;
+  }
+  const bills=(c.bills||[]).map(b=>
+    '<div style="border-top:1px solid var(--line2);padding:9px 0">'+
+      '<div style="display:flex;justify-content:space-between;gap:10px;align-items:baseline">'+
+        '<span style="font-weight:700;font-size:13px">'+esc(b.orderId)+'</span>'+
+        '<span style="font-weight:800;color:var(--danger);white-space:nowrap">'+esc(baht(b.owes))+'</span></div>'+
+      '<div style="color:var(--muted2);font-size:11.5px;margin-top:2px">'+esc(memDate(b.at)+' · '+(b.payment||'')+' · '+(b.owesKind==='wallet'?'wallet reserved, not yet taken':'never paid online'))+'</div>'+
+      '<div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap">'+
+        (b.owesKind==='wallet'
+          ?'<button class="done-btn" data-act="wsettle" data-id="'+esc(b.orderId)+'">💳 Settle from wallet</button>'
+          :'<button class="done-btn" data-act="paid" data-id="'+esc(b.orderId)+'">✓ They paid</button>')+
+        '<button class="undo-btn" data-act="bill" data-id="'+esc(b.orderId)+'" style="padding:7px 11px">Open bill</button>'+
+      '</div></div>').join('');
+  const tabs=(c.tabs||[]).map(t=>
+    '<div style="border-top:1px solid var(--line2);padding:9px 0">'+
+      '<div style="display:flex;justify-content:space-between;gap:10px;align-items:baseline">'+
+        '<span style="font-weight:700;font-size:13px">🧾 Tab'+(t.note?esc(' — '+t.note):'')+'</span>'+
+        '<span style="font-weight:800;color:var(--danger);white-space:nowrap">'+esc(baht(t.amount))+'</span></div>'+
+      '<div style="color:var(--muted2);font-size:11.5px;margin-top:2px">'+esc(memDate(t.at)+(t.by?' · opened by '+t.by:''))+'</div>'+
+      '<div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap">'+
+        '<button class="done-btn" data-act="tab-settle" data-phone="'+esc(c.phone)+'" data-id="'+esc(t.id)+'">✓ Paid up</button>'+
+        '<button class="undo-btn" data-act="tab-del" data-phone="'+esc(c.phone)+'" data-id="'+esc(t.id)+'" style="padding:7px 11px;color:#ff9db0">Remove</button>'+
+      '</div></div>').join('');
+  box().innerHTML='<div class="ocard" style="padding:14px 16px;border-color:var(--danger)">'+
+    '<div style="display:flex;justify-content:space-between;gap:10px;align-items:baseline;flex-wrap:wrap">'+
+      '<div style="font-weight:800;font-size:13px;color:var(--danger);letter-spacing:.4px;text-transform:uppercase">Owes the shop</div>'+
+      '<div style="font-size:22px;font-weight:900;color:var(--danger);white-space:nowrap">'+esc(baht(total))+'</div></div>'+
+    bills+tabs+
+    '<div style="color:var(--muted2);font-size:11px;margin-top:9px;line-height:1.5">'+esc(j.note||'')+'</div>'+
+  '</div>';
+}
+
+/* ---- camera scan (lazy-load jsQR) ---- */
+let camStream=null, camRAF=null;
+/* This pulls third-party code into a page that is holding the staff key, so
+   whatever cdnjs serves gets to read the order book. It needs an integrity=
+   hash so the browser refuses a file that is not the exact 1.4.0 build we
+   expect. The hash is missing because it could not be computed here: outbound
+   HTTPS in this environment is blocked by egress policy, and a guessed or
+   copied hash is worse than none — it would silently break the camera scanner
+   the first time it was wrong. Compute it once from the exact URL below and
+   paste it in as s.integrity:
+     curl -s https://cdnjs.cloudflare.com/ajax/libs/jsQR/1.4.0/jsQR.min.js | openssl dgst -sha384 -binary | openssl base64 -A
+   crossOrigin is set already, because integrity only takes effect on a
+   CORS-enabled request — with it in place, adding the hash is a one-line
+   change. The version is pinned in the URL, so the hash will not drift. */
+function loadJsQR(){ return new Promise((ok)=>{ if(window.jsQR)return ok(); const s=document.createElement('script');
+  s.crossOrigin='anonymous'; s.referrerPolicy='no-referrer';
+  s.src='https://cdnjs.cloudflare.com/ajax/libs/jsQR/1.4.0/jsQR.min.js'; s.onload=ok; s.onerror=ok; document.head.appendChild(s); }); }
+/* The Count tab was the only caller when this was written, so the video
+   element and the result handler were both hard-coded. The member card needs
+   the same camera in a different tab, so both are arguments now, defaulting to
+   what Count already passed — its onclick keeps working untouched. */
+let camBoxSel='#camBox';
+async function startCamScan(handler, vidSel, boxSel){
+  const onHit=(typeof handler==='function')?handler:onScan;
+  vidSel=vidSel||'#camVid'; camBoxSel=boxSel||'#camBox';
+  await loadJsQR();
+  if(!window.jsQR){ alert('Camera scanner library unavailable — a USB scanner or manual entry still works.'); return; }
+  try{
+    camStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}});
+    const v=$(vidSel); v.srcObject=camStream; await v.play(); $(camBoxSel).style.display='block';
+    const cv=document.createElement('canvas'), cx=cv.getContext('2d');
+    const tick=()=>{ if(!camStream)return; if(v.readyState===v.HAVE_ENOUGH_DATA){
+        cv.width=v.videoWidth; cv.height=v.videoHeight; cx.drawImage(v,0,0,cv.width,cv.height);
+        const img=cx.getImageData(0,0,cv.width,cv.height); const q=window.jsQR(img.data,cv.width,cv.height);
+        if(q&&q.data){ stopCamScan(); onHit(q.data); return; } }
+      camRAF=requestAnimationFrame(tick); };
+    tick();
+  }catch(e){ alert('Could not open camera: '+e.message); }
+}
+function stopCamScan(){ if(camRAF)cancelAnimationFrame(camRAF); camRAF=null;
+  if(camStream){ camStream.getTracks().forEach(t=>t.stop()); camStream=null; }
+  const box=$(camBoxSel); if(box)box.style.display='none'; }
+
+/* ---- Web Serial scale ---- */
+async function connectScale(){
+  if(!('serial' in navigator)){ alert('Web Serial is not supported on this browser. Use Chrome or Edge on desktop or Android.'); return; }
+  try{
+    scalePort=await navigator.serial.requestPort();
+    await scalePort.open({baudRate:9600});
+    $('#scaleRead').textContent='scale: connected…';
+    scaleKeep=true; readScaleLoop();
+  }catch(e){ $('#scaleRead').textContent='scale: '+(e.message||'failed'); }
+}
+async function readScaleLoop(){
+  const dec=new TextDecoderStream(); const done=scalePort.readable.pipeTo(dec.writable).catch(()=>{});
+  scaleReader=dec.readable.getReader(); let buf='';
+  try{
+    while(scaleKeep){
+      const {value,done:d}=await scaleReader.read(); if(d)break;
+      buf+=value; let i;
+      while((i=buf.search(/[\r\n]/))>=0){ const line=buf.slice(0,i); buf=buf.slice(i+1); parseScale(line); }
+    }
+  }catch(e){}
+}
+function parseScale(line){
+  const m=String(line).match(/(-?\d+(?:\.\d+)?)/);
+  if(m){ lastWeight=parseFloat(m[0]); const el=$('#scaleRead'); if(el)el.textContent='scale: '+lastWeight+' g'; }
+}
+function applyScale(code){
+  if(lastWeight===null){ alert('No scale reading yet. Connect the scale and place product on it.'); return; }
+  const row=document.getElementById('row-'+code); const inp=row&&row.querySelector('input');
+  if(inp) inp.value=String(lastWeight);   // reflect it in the field (setCount no longer re-renders the row)
+  setCount(code, String(lastWeight));
+}
+
+/* ---- proof photos ---- */
+async function addProofPhotos(input){
+  const files=[...(input.files||[])]; input.value='';
+  for(const f of files){
+    if(COUNT_PROOFS.length>=12){ alert('Max 12 photos'); break; }
+    try{ const dataUrl=await staffResize(f,1100,0.7); COUNT_PROOFS.push(dataUrl); }catch(e){}
+  }
+  renderProofGrid();
+}
+function renderProofGrid(){
+  const g=$('#proofGrid'); if(!g)return;
+  g.innerHTML=COUNT_PROOFS.map((src,i)=>`<div style="position:relative">
+    <img src="${imgSrc(src)}" style="width:72px;height:72px;object-fit:cover;border-radius:10px;border:1px solid var(--line2)">
+    <button data-act="proof-del" data-i="${i}" style="position:absolute;top:-6px;right:-6px;background:var(--danger);color:#fff;border-radius:50%;width:20px;height:20px;font-weight:900;line-height:1">×</button>
+  </div>`).join('') || '<span style="color:var(--muted2);font-size:12px">No photos yet</span>';
+}
+
+/* ---- submit ---- */
+async function submitCount(){
+  if(!COUNT_PROOFS.length){ alert('Add at least one proof-of-existence photo before closing the shift.'); return; }
+  const lines=COUNT_PRODUCTS.map(p=>({code:p.code,name:p.name,expected:Number(p.stock||0),counted:(COUNT_VALS[p.code]??'')}));
+  const counted=lines.filter(l=>l.counted!=='').length;
+  if(!counted){ alert('Enter at least one counted quantity.'); return; }
+  if(!confirm(`Close shift?\n${counted}/${lines.length} items counted · ${COUNT_PROOFS.length} proof photo(s).`)) return;
+  try{
+    const r=await authPost('/api/count',{staff:'DANK Team',lines,photos:COUNT_PROOFS});
+    const j=await r.json();
+    if(r.ok){ alert(`✅ Shift count saved (${j.id}). Variances: ${j.varianceCount}.`); COUNT_VALS={};COUNT_PROOFS=[];selectedCode=null; renderCountUI(); }
+    else alert('⚠️ '+(j.error||'Failed to save'));
+  }catch(e){ alert('⚠️ Network error'); }
+}
+
+/* ---- history ---- */
+async function loadCountHistory(){
+  const el=$('#countHistory'); if(!el)return;
+  try{
+    const j=await (await authGet('/api/count?list=1')).json();
+    const s=j.sessions||[];
+    if(!s.length){ el.innerHTML='<span style="color:var(--muted2)">No counts yet.</span>'; return; }
+    /* POST /api/count has been open to unauthenticated callers, so a session in
+       this list is not necessarily one a member of staff created — treat every
+       field as untrusted text. */
+    el.innerHTML=s.map(x=>`<div class="ocard" style="padding:9px 12px;margin-bottom:6px;cursor:pointer" data-act="count-view" data-id="${esc(x.id)}">
+      <div style="display:flex;justify-content:space-between"><b>${esc(x.id)}</b><span style="color:var(--muted2)">${ago(x.at)}</span></div>
+      <div style="color:var(--muted);font-size:12px">${esc(x.countedItems)}/${esc(x.total)} counted · ${esc(x.photoCount)} photo(s) · <span style="color:${x.varianceCount?'var(--gold)':'var(--green2)'}">${esc(x.varianceCount)} variance${x.varianceCount===1?'':'s'}</span></div>
+    </div>`).join('');
+  }catch(e){ el.innerHTML='<span style="color:var(--muted2)">Could not load history.</span>'; }
+}
+async function viewCount(id){
+  try{
+    const x=await (await authGet('/api/count?id='+encodeURIComponent(id))).json();
+    const vars=(x.lines||[]).filter(l=>l.variance!=null&&l.variance!==0);
+    /* Same warning as the history list: this session may have been posted by a
+       stranger. The photos are the sharpest edge — the API only tested that
+       each one starts with "data:image/", which  data:image/x," onerror="…
+       satisfies, so they go through imgSrc() and anything that is not a real
+       base64 raster is dropped rather than rendered. */
+    const photos=(x.photos||[]).map(imgSrc).filter(Boolean);
+    let ov=document.getElementById('cntOv'); if(!ov){ ov=document.createElement('div'); ov.id='cntOv';
+      ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:200;overflow:auto;padding:18px'; document.body.appendChild(ov); }
+    ov.innerHTML=`<div style="max-width:560px;margin:0 auto;color:var(--txt)">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <b>${esc(x.id)} · ${new Date(x.at).toLocaleString()}</b>
+        <button class="undo-btn" onclick="document.getElementById('cntOv').remove()">Close ✕</button></div>
+      <div style="color:var(--muted);font-size:13px;margin-bottom:10px">By ${esc(x.staff||'')} · ${esc(x.countedItems)}/${esc(x.total)} counted · ${esc(x.varianceCount)} variance(s)</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">${photos.map(src=>`<img src="${src}" style="width:120px;height:120px;object-fit:cover;border-radius:10px;border:1px solid var(--line2)">`).join('')||'<span style="color:var(--muted2)">No photos</span>'}</div>
+      <div style="font-weight:800;margin-bottom:6px">Variances</div>
+      ${vars.length?vars.map(l=>`<div class="ocard" style="padding:8px 12px;margin-bottom:5px;display:flex;justify-content:space-between"><span>${esc(l.code)} · ${esc(l.name)}</span><span style="color:${l.variance>0?'var(--gold)':'var(--danger)'};font-weight:800">exp ${esc(l.expected)} → ${esc(l.counted)} (${l.variance>0?'+':''}${esc(l.variance)})</span></div>`).join(''):'<div style="color:var(--green2)">No variances 🎉</div>'}
+    </div>`;
+  }catch(e){ alert('Could not load count'); }
+}
+
+/* ============================================================
+   💰 SALES — the takings, the bills behind them, and who owes
+   ------------------------------------------------------------
+   Three views over one endpoint. "Bills" is the transaction list
+   with a full drill-down on tap; "Day totals" is the same money
+   added up per day and per payment method; "Owed" is every
+   customer with an unsettled wallet order, an unpaid online
+   order or a tab staff opened by hand.
+
+   Cash is never counted as owing — see the note at the top of
+   api/sales.js. The reason is printed on the Owed view too,
+   because a number that looks too low is only trustworthy if it
+   says what it left out.
+   ============================================================ */
+let SALES=null, OWED=null, SALES_DAYS=7, SALES_VIEW='bills';
+/* The month report defaults to the month that just finished, because that is
+   the one anybody asks about — you close July, then you look at July. */
+let MONTH=null, SALES_MONTH=(function(){ const n=new Date(); const d0=new Date(n.getFullYear(), n.getMonth()-1, 1);
+  return d0.getFullYear()+'-'+String(d0.getMonth()+1).padStart(2,'0'); })();
+const MONTH_NAMES=['January','February','March','April','May','June','July','August','September','October','November','December'];
+function monthLabel(s){ const m=String(s||'').split('-'); return (MONTH_NAMES[Number(m[1])-1]||s)+' '+m[0]; }
+function lastMonths(n){ const out=[], now=new Date();
+  for(let i=1;i<=n;i++){ const d0=new Date(now.getFullYear(), now.getMonth()-i+1, 1);
+    out.push(d0.getFullYear()+'-'+String(d0.getMonth()+1).padStart(2,'0')); }
+  return out; }
+const SALEIN='background:var(--bg2);border:1px solid var(--line2);color:var(--txt);padding:9px 11px;border-radius:9px;outline:none;font-size:14px';
+
+function salesErr(r){
+  const el=$('#list');
+  if(r.status===401){ el.innerHTML='<div class="ghdr">Your staff key was refused. Log out and back in.</div>'; return; }
+  if(r.status===503){ el.innerHTML='<div class="ghdr">Sales are not switched on for this deployment — STAFF_KEY is not set.</div>'; return; }
+  el.innerHTML='<div class="ghdr">Could not load the takings (error '+esc(r.status)+').</div>';
+}
+
+async function loadSales(){
+  const el=$('#list');
+  if(!SALES && !OWED && !MONTH) el.innerHTML='<div class="ghdr">Loading the takings…</div>';
+  try{
+    if(SALES_VIEW==='owed'){
+      const r=await authGet('/api/sales?owed=1');
+      if(!r.ok) return salesErr(r);
+      OWED=await r.json();
+    } else if(SALES_VIEW==='month'){
+      const r=await authGet('/api/sales?month='+encodeURIComponent(SALES_MONTH));
+      if(!r.ok) return salesErr(r);
+      MONTH=await r.json();
+    } else {
+      const r=await authGet('/api/sales?days='+SALES_DAYS);
+      if(!r.ok) return salesErr(r);
+      SALES=await r.json();
+    }
+  }catch(e){ el.innerHTML='<div class="ghdr">No connection — try again.</div>'; return; }
+  renderSales();
+}
+
+function salesTile(v,label,colour,sub){
+  return '<div style="flex:1;min-width:88px;background:var(--bg2);border:1px solid var(--line2);border-radius:11px;padding:10px 8px;text-align:center">'+
+    '<div style="font-size:19px;font-weight:900;color:'+colour+'">'+esc(v)+'</div>'+
+    '<div style="font-size:10.5px;color:var(--muted2);font-weight:700;letter-spacing:.4px;text-transform:uppercase;margin-top:2px">'+esc(label)+'</div>'+
+    (sub?'<div style="font-size:10.5px;color:var(--muted);margin-top:2px">'+esc(sub)+'</div>':'')+'</div>';
+}
+function salesChip(label,act,val,on){
+  return '<button class="undo-btn" data-act="'+act+'" data-v="'+esc(val)+'" style="padding:6px 11px;font-size:12px'+(on?';border-color:var(--green);color:var(--green2);background:rgba(61,220,132,.1)':'')+'">'+esc(label)+'</button>';
+}
+
+function renderSales(){
+  const el=$('#list');
+  const views='<div style="display:flex;gap:6px;flex-wrap:wrap">'+
+      salesChip('🧾 Bills','sales-view','bills',SALES_VIEW==='bills')+
+      salesChip('📅 Day totals','sales-view','days',SALES_VIEW==='days')+
+      salesChip('📆 Month','sales-view','month',SALES_VIEW==='month')+
+      salesChip('💸 Owed','sales-view','owed',SALES_VIEW==='owed')+
+    '</div>';
+  /* The month view swaps the rolling-window chips for calendar months — a
+     rolling 30 days and "July" are different questions and mixing the two
+     controls is how you end up reporting the wrong number. */
+  if(SALES_VIEW==='month'){
+    const chips=lastMonths(6).map(m=>salesChip(monthLabel(m),'sales-month',m,SALES_MONTH===m)).join('');
+    el.innerHTML='<div class="ghdr" style="padding-bottom:10px">'+views+
+      '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:7px">'+chips+'</div>'+
+      '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:7px">'+
+        '<button class="undo-btn" data-act="month-csv" data-v="bills" style="padding:6px 11px;font-size:12px">⬇ Bills</button>'+
+        '<button class="undo-btn" data-act="month-csv" data-v="products" style="padding:6px 11px;font-size:12px">⬇ Avg price per product</button>'+
+        '<button class="undo-btn" data-act="month-csv" data-v="spenders" style="padding:6px 11px;font-size:12px">⬇ Top spenders</button>'+
+      '</div></div><div id="salesBody"></div>';
+    const b2=$('#salesBody');
+    if(!MONTH){ b2.innerHTML='<div class="ghdr">Loading…</div>'; return; }
+    return renderMonth(b2);
+  }
+  const periods=SALES_VIEW==='owed'?'':'<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:7px">'+
+      salesChip('Today','sales-days','1',SALES_DAYS===1)+
+      salesChip('7 days','sales-days','7',SALES_DAYS===7)+
+      salesChip('30 days','sales-days','30',SALES_DAYS===30)+
+      salesChip('90 days','sales-days','90',SALES_DAYS===90)+
+      '<button class="undo-btn" data-act="sales-csv" style="padding:6px 11px;font-size:12px">⬇ CSV</button>'+
+    '</div>';
+  el.innerHTML='<div class="ghdr" style="padding-bottom:10px">'+views+periods+'</div><div id="salesBody"></div>';
+  const body=$('#salesBody');
+  if(SALES_VIEW==='owed') return renderOwed(body);
+  if(!SALES){ body.innerHTML='<div class="ghdr">Loading…</div>'; return; }
+  if(SALES_VIEW==='days') return renderDayTotals(body);
+  return renderBills(body);
+}
+
+function salesHead(){
+  const s=(SALES&&SALES.summary)||{};
+  return '<div class="ocard" style="padding:13px 12px">'+
+    '<div style="display:flex;gap:8px;flex-wrap:wrap">'+
+      salesTile(baht(s.gross),'taken','var(--gold)')+
+      salesTile(s.orders||0,'bills','var(--txt)')+
+      salesTile(baht(s.average),'average bill','var(--green2)')+
+      salesTile(baht(s.collected),'in hand','var(--green2)')+
+      salesTile(baht(s.owed),'still owed',(s.owed>0?'var(--danger)':'var(--muted2)'),(s.owedBills||0)+' bill'+((s.owedBills===1)?'':'s'))+
+    '</div>'+
+    '<div style="font-size:11.5px;color:var(--muted2);margin-top:9px;line-height:1.55">'+
+      esc('Last '+(SALES.range&&SALES.range.days||0)+' days')+
+      (s.discount>0?esc(' · '+baht(s.discount)+' given away in discounts'):'')+
+      (s.delivery>0?esc(' · '+baht(s.delivery)+' delivery fees'):'')+
+      (s.memberOrders?esc(' · '+s.memberOrders+' member ⭐'):'')+
+      (s.boxes?esc(' · '+s.boxes+' custom box'+(s.boxes===1?'':'es')):'')+
+      (s.cancelled?esc(' · '+s.cancelled+' cancelled, not counted'):'')+
+    '</div>'+
+    (SALES.truncated?'<div style="font-size:11.5px;color:var(--gold);margin-top:6px">Only the most recent orders were read — older ones exist beyond this page.</div>':'')+
+  '</div>';
+}
+
+function billRow(b){
+  const owe=b.owes>0;
+  return '<div class="ocard" style="padding:11px 13px;cursor:pointer" data-act="bill" data-id="'+esc(b.orderId)+'">'+
+    '<div class="oh"><span class="oid">'+esc(b.orderId)+'</span>'+
+      (owe?'<span class="badge" style="color:var(--danger);border-color:var(--danger)">'+esc(b.owesKind==='wallet'?'wallet unsettled':'unpaid')+'</span>':
+           '<span class="badge open">'+esc(b.payStatus==='paid'?'paid':(b.payment==='Cash'?'cash':'ok'))+'</span>')+
+      '<span class="ot">'+esc(b.at?ago(b.at):'')+'</span></div>'+
+    '<div style="display:flex;justify-content:space-between;gap:10px;margin-top:5px;align-items:baseline">'+
+      '<span style="font-size:12.5px;color:var(--muted)">'+esc((b.lines||0)+' line'+(b.lines===1?'':'s')+' · '+(b.itemCount||0)+' item'+(b.itemCount===1?'':'s')+' · '+(b.payment||'—'))+(b.member?' ⭐':'')+'</span>'+
+      '<span style="font-weight:900;font-size:15px;color:var(--gold);white-space:nowrap">'+esc(baht(b.total))+'</span></div>'+
+    '<div style="font-size:11.5px;color:var(--muted2);margin-top:3px">'+esc((b.customer&&b.customer.name)||'—')+(b.customer&&b.customer.phone?esc(' · '+b.customer.phone):'')+
+      (b.table?esc(' · 🪑 '+b.table):'')+esc(b.day?' · '+b.day:'')+'</div>'+
+    (owe?'<div style="font-size:12px;color:var(--danger);font-weight:700;margin-top:4px">Owes '+esc(baht(b.owes))+'</div>':'')+
+  '</div>';
+}
+
+function renderBills(body){
+  const list=SALES.bills||[];
+  body.innerHTML=salesHead()+
+    (list.length?list.map(billRow).join(''):'<div style="padding:26px;color:var(--muted2);text-align:center;font-size:13.5px">No bills in this period.</div>');
+}
+
+function renderDayTotals(body){
+  const days=SALES.byDay||[], pays=SALES.byPayment||[], top=SALES.topItems||[];
+  const row=(a,b2,c,d2)=>'<div style="display:flex;gap:10px;border-top:1px solid var(--line2);padding:8px 0;font-size:13px;align-items:baseline">'+
+    '<span style="flex:1;font-weight:700">'+esc(a)+'</span><span style="color:var(--muted2);font-size:11.5px;width:64px">'+esc(b2)+'</span>'+
+    '<span style="font-weight:800;color:var(--gold);white-space:nowrap">'+esc(c)+'</span>'+
+    (d2?'<span style="color:var(--danger);font-size:11.5px;white-space:nowrap;width:86px;text-align:right">'+esc(d2)+'</span>':'<span style="width:86px"></span>')+'</div>';
+  body.innerHTML=salesHead()+
+    '<div class="ocard" style="padding:13px 15px"><div style="font-weight:800;font-size:13px;color:var(--muted2);letter-spacing:.4px;text-transform:uppercase">Day by day</div>'+
+      (days.length?days.map(x=>row(x.day,x.orders+' bills',baht(x.gross),x.owed>0?('owed '+baht(x.owed)):'')).join(''):'<div style="color:var(--muted);font-size:13px;margin-top:8px">Nothing yet.</div>')+
+    '</div>'+
+    '<div class="ocard" style="padding:13px 15px"><div style="font-weight:800;font-size:13px;color:var(--muted2);letter-spacing:.4px;text-transform:uppercase">How they paid</div>'+
+      (pays.length?pays.map(x=>row(x.payment,x.orders+' bills',baht(x.gross),x.owed>0?('owed '+baht(x.owed)):'')).join(''):'<div style="color:var(--muted);font-size:13px;margin-top:8px">Nothing yet.</div>')+
+    '</div>'+
+    '<div class="ocard" style="padding:13px 15px"><div style="font-weight:800;font-size:13px;color:var(--muted2);letter-spacing:.4px;text-transform:uppercase">Best sellers</div>'+
+      (top.length?top.map(x=>row(x.name,'×'+x.qty,baht(x.gross),'')).join(''):'<div style="color:var(--muted);font-size:13px;margin-top:8px">Nothing yet.</div>')+
+    '</div>';
+}
+
+/* ---- one calendar month ---------------------------------------------- */
+/* Three questions in one screen: what the month took, what a customer spends
+   in a visit, and what each product actually sold for. The last one is worked
+   out from the bills rather than the price list, so member pricing, promo
+   codes and any price a member of staff adjusted at the counter are all
+   already in it. */
+function renderMonth(body){
+  const s=MONTH.summary||{}, cust=MONTH.customers||[], prods=MONTH.products||[], days=MONTH.byDay||[], pays=MONTH.byPayment||[];
+  if(!s.orders){
+    body.innerHTML='<div class="ocard" style="padding:16px 15px"><div style="font-weight:800;font-size:15px">'+esc(monthLabel(MONTH.month))+'</div>'+
+      '<div style="color:var(--muted);font-size:13px;margin-top:6px">No bills in the app for this month yet. Anything rung up in the shop only appears here once it reaches the app.</div></div>';
+    return;
+  }
+  const tiles='<div style="display:flex;gap:7px;flex-wrap:wrap;margin-bottom:10px">'+
+    salesTile(baht(s.gross),'took',  'var(--gold)',   s.orders+' bills')+
+    salesTile(baht(s.average),'avg bill','var(--green2)', s.units+' items sold')+
+    salesTile(baht(s.collected),'in hand','var(--green)', s.tradingDays+' trading days')+
+    salesTile(baht(s.owed),'still owed', s.owed>0?'var(--danger)':'var(--muted2)', s.owedBills+' bills')+
+  '</div>'+
+  '<div style="display:flex;gap:7px;flex-wrap:wrap;margin-bottom:12px">'+
+    salesTile(s.customers,'customers','var(--txt)', s.repeatCustomers+' came back')+
+    salesTile(s.memberOrders,'member bills','var(--txt)', s.boxes?(s.boxes+' custom boxes'):'')+
+    salesTile(baht(s.discount),'discounted','var(--muted)', s.cancelled?(s.cancelled+' cancelled'):'')+
+    salesTile(s.bestDay?baht(s.bestDay.gross):'—','best day','var(--gold)', s.bestDay?s.bestDay.day:'')+
+  '</div>';
+
+  const medal=i=>i===0?'🥇':i===1?'🥈':i===2?'🥉':(i+1)+'.';
+  const spenders=cust.slice(0,25).map((c,i)=>
+    '<div style="display:flex;gap:10px;align-items:baseline;border-top:1px solid var(--line2);padding:9px 0">'+
+      '<span style="width:26px;font-weight:800;color:var(--muted2)">'+esc(medal(i))+'</span>'+
+      '<span style="flex:1;min-width:0">'+
+        '<span style="font-weight:700;font-size:13.5px;'+(c.phone?'color:var(--green2);cursor:pointer':'')+'"'+(c.phone?(' data-act="owed-member" data-phone="'+esc(c.phone)+'"'):'')+'>'+esc(c.name||(c.phone?c.phone:'Counter / walk-in'))+'</span>'+
+        '<span style="display:block;color:var(--muted2);font-size:11.5px">'+esc((c.phone||'no phone')+' · '+c.bills+' bill'+(c.bills===1?'':'s')+' · avg '+baht(c.avgBill)+(c.member?' · member':''))+'</span>'+
+      '</span>'+
+      '<span style="text-align:right;white-space:nowrap">'+
+        '<span style="font-weight:800;color:var(--gold)">'+esc(baht(c.spent))+'</span>'+
+        (c.owed>0?'<span style="display:block;color:var(--danger);font-size:11.5px">owes '+esc(baht(c.owed))+'</span>':'')+
+      '</span>'+
+    '</div>').join('');
+
+  const priceRows=prods.slice(0,60).map(x=>
+    '<div style="display:flex;gap:10px;align-items:baseline;border-top:1px solid var(--line2);padding:8px 0;font-size:13px">'+
+      '<span style="flex:1;min-width:0;font-weight:700">'+esc(x.name)+
+        (x.freeQty?'<span style="display:block;color:var(--muted2);font-size:11px">+'+esc(x.freeQty)+' given free</span>':'')+'</span>'+
+      '<span style="color:var(--muted2);font-size:11.5px;width:56px;text-align:right">×'+esc(x.qty)+'</span>'+
+      '<span style="font-weight:800;color:var(--green2);width:78px;text-align:right;white-space:nowrap">'+esc(baht(x.avgPrice))+'</span>'+
+      '<span style="font-weight:800;color:var(--gold);width:86px;text-align:right;white-space:nowrap">'+esc(baht(x.gross))+'</span>'+
+    '</div>').join('');
+
+  const dayRows=days.map(x=>
+    '<div style="display:flex;gap:10px;border-top:1px solid var(--line2);padding:7px 0;font-size:13px;align-items:baseline">'+
+      '<span style="flex:1;font-weight:700">'+esc(x.day)+'</span>'+
+      '<span style="color:var(--muted2);font-size:11.5px;width:64px">'+esc(x.orders+' bills')+'</span>'+
+      '<span style="font-weight:800;color:var(--gold);white-space:nowrap">'+esc(baht(x.gross))+'</span></div>').join('');
+
+  const payRows=pays.map(x=>
+    '<div style="display:flex;gap:10px;border-top:1px solid var(--line2);padding:7px 0;font-size:13px;align-items:baseline">'+
+      '<span style="flex:1;font-weight:700">'+esc(x.payment)+'</span>'+
+      '<span style="color:var(--muted2);font-size:11.5px;width:64px">'+esc(x.orders+' bills')+'</span>'+
+      '<span style="font-weight:800;color:var(--gold);white-space:nowrap">'+esc(baht(x.gross))+'</span>'+
+      (x.owed>0?'<span style="color:var(--danger);font-size:11.5px;width:86px;text-align:right;white-space:nowrap">owed '+esc(baht(x.owed))+'</span>':'<span style="width:86px"></span>')+'</div>').join('');
+
+  const card=(title,inner,sub)=>'<div class="ocard" style="padding:13px 15px">'+
+    '<div style="font-weight:800;font-size:13px;color:var(--muted2);letter-spacing:.4px;text-transform:uppercase">'+esc(title)+'</div>'+
+    (sub?'<div style="color:var(--muted);font-size:11.5px;margin-top:3px">'+esc(sub)+'</div>':'')+inner+'</div>';
+
+  body.innerHTML='<div style="padding:0 4px 4px"><div style="font-weight:900;font-size:16px;margin-bottom:8px">'+esc(monthLabel(MONTH.month))+'</div>'+tiles+'</div>'+
+    card('Highest spending', spenders||'<div style="color:var(--muted);font-size:13px;margin-top:8px">Nobody yet.</div>', 'Tap a name to open their card')+
+    card('Average selling price', '<div style="display:flex;gap:10px;font-size:10.5px;color:var(--muted2);text-transform:uppercase;letter-spacing:.4px;padding-top:6px"><span style="flex:1">Product</span><span style="width:56px;text-align:right">Sold</span><span style="width:78px;text-align:right">Avg each</span><span style="width:86px;text-align:right">Took</span></div>'+(priceRows||'<div style="color:var(--muted);font-size:13px;margin-top:8px">Nothing yet.</div>'), 'What it actually sold for — money taken ÷ units sold')+
+    card('Day by day', dayRows||'')+
+    card('How they paid', payRows||'')+
+    (MONTH.truncated?'<div class="ghdr" style="color:var(--gold)">Only the most recent bills could be read, so this month is partial.</div>':'');
+}
+
+function monthCSV(kind){
+  if(!MONTH||!MONTH.summary||!MONTH.summary.orders){ alert('Nothing to export for this month yet.'); return; }
+  const q=v=>'"'+String(v==null?'':v).replace(/"/g,'""')+'"';
+  let head=[], rows=[], name='';
+  if(kind==='products'){
+    head=['Product','Sold','Avg selling price','Took','Given free','Bills'];
+    rows=(MONTH.products||[]).map(x=>[x.name,x.qty,x.avgPrice,x.gross,x.freeQty,x.bills].map(q).join(','));
+    name='avg-price';
+  } else if(kind==='spenders'){
+    head=['Rank','Customer','Phone','Bills','Spent','Avg bill','Items','Still owed','Member','Last bill'];
+    rows=(MONTH.customers||[]).map((c,i)=>[i+1,c.name,c.phone,c.bills,c.spent,c.avgBill,c.items,c.owed,c.member?'yes':'',c.last?new Date(c.last).toISOString().slice(0,10):''].map(q).join(','));
+    name='top-spenders';
+  } else {
+    head=['Bill','Date','Customer','Phone','Payment','Items','Subtotal','Discount','Total','Still owed'];
+    rows=(MONTH.bills||[]).map(b=>[b.orderId,b.day,(b.customer&&b.customer.name)||'',(b.customer&&b.customer.phone)||'',b.payment,b.itemCount,b.subtotal,b.discount,b.total,b.owes].map(q).join(','));
+    name='bills';
+  }
+  const blob=new Blob(['﻿'+[head.map(q).join(',')].concat(rows).join('\r\n')],{type:'text/csv;charset=utf-8'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+  a.download='dank-'+name+'-'+MONTH.month+'.csv'; a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href),4000);
+}
+
+/* ---- who owes -------------------------------------------------------- */
+function owedCard(c){
+  const bills=(c.bills||[]).map(b=>
+    '<div style="border-top:1px solid var(--line2);padding:9px 0">'+
+      '<div style="display:flex;justify-content:space-between;gap:10px;align-items:baseline">'+
+        '<span style="font-weight:700;font-size:13px;cursor:pointer;color:var(--green2)" data-act="bill" data-id="'+esc(b.orderId)+'">'+esc(b.orderId)+'</span>'+
+        '<span style="font-weight:800;color:var(--danger);white-space:nowrap">'+esc(baht(b.owes))+'</span></div>'+
+      '<div style="color:var(--muted2);font-size:11.5px;margin-top:2px">'+esc(memDate(b.at)+' · '+(b.payment||'')+' · '+(b.owesKind==='wallet'?'wallet reserved, not yet settled':'never paid online'))+'</div>'+
+      '<div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap">'+
+        (b.owesKind==='wallet'
+          ?'<button class="done-btn" data-act="wsettle" data-id="'+esc(b.orderId)+'">💳 Settle from wallet</button>'
+          :'<button class="done-btn" data-act="paid" data-id="'+esc(b.orderId)+'">✓ They paid</button>')+
+        '<button class="undo-btn" data-act="bill" data-id="'+esc(b.orderId)+'" style="padding:7px 11px">Open bill</button>'+
+      '</div></div>').join('');
+  const tabs=(c.tabs||[]).map(t=>
+    '<div style="border-top:1px solid var(--line2);padding:9px 0">'+
+      '<div style="display:flex;justify-content:space-between;gap:10px;align-items:baseline">'+
+        '<span style="font-weight:700;font-size:13px">🧾 Tab'+(t.note?esc(' — '+t.note):'')+'</span>'+
+        '<span style="font-weight:800;color:var(--danger);white-space:nowrap">'+esc(baht(t.amount))+'</span></div>'+
+      '<div style="color:var(--muted2);font-size:11.5px;margin-top:2px">'+esc(memDate(t.at)+(t.by?' · opened by '+t.by:''))+'</div>'+
+      '<div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap">'+
+        '<button class="done-btn" data-act="tab-settle" data-phone="'+esc(c.phone)+'" data-id="'+esc(t.id)+'">✓ Paid up</button>'+
+        '<button class="undo-btn" data-act="tab-del" data-phone="'+esc(c.phone)+'" data-id="'+esc(t.id)+'" style="padding:7px 11px;color:#ff9db0">Remove</button>'+
+      '</div></div>').join('');
+  return '<div class="ocard" style="padding:14px 15px">'+
+    '<div style="display:flex;justify-content:space-between;gap:10px;align-items:baseline;flex-wrap:wrap">'+
+      '<div><div style="font-weight:900;font-size:16px">'+esc(c.name||'No name on file')+'</div>'+
+        '<div style="color:var(--muted);font-size:12.5px;margin-top:2px"><a style="color:var(--green2)" href="tel:'+esc(c.phone)+'">'+esc(c.phone)+'</a>'+
+        (c.oldest?esc(' · oldest '+memDate(c.oldest)):'')+'</div></div>'+
+      '<div style="font-size:22px;font-weight:900;color:var(--danger);white-space:nowrap">'+esc(baht(c.total))+'</div></div>'+
+    '<div style="margin-top:6px"><button class="undo-btn" data-act="owed-member" data-phone="'+esc(c.phone)+'" style="padding:7px 11px">👤 Open their card</button></div>'+
+    bills+tabs+
+  '</div>';
+}
+
+function renderOwed(body){
+  if(!OWED){ body.innerHTML='<div class="ghdr">Loading…</div>'; return; }
+  const o=OWED.owed||{}, cs=OWED.customers||[];
+  const form='<div class="ocard" style="padding:13px 14px">'+
+    '<div style="font-weight:800;font-size:13px;color:var(--muted2);letter-spacing:.4px;text-transform:uppercase">Open a tab</div>'+
+    '<div style="color:var(--muted);font-size:12.5px;margin:6px 0 9px;line-height:1.55">For someone who walked out owing cash. It shows here until you mark it paid, and on their member card.</div>'+
+    '<div style="display:flex;gap:7px;flex-wrap:wrap">'+
+      '<input id="tabPhone" placeholder="Phone number" inputmode="tel" style="'+SALEIN+';flex:2;min-width:130px">'+
+      '<input id="tabAmt" placeholder="฿ amount" inputmode="decimal" style="'+SALEIN+';flex:1;min-width:96px">'+
+    '</div>'+
+    '<div style="display:flex;gap:7px;flex-wrap:wrap;margin-top:7px">'+
+      '<input id="tabName" placeholder="Name (optional)" style="'+SALEIN+';flex:1;min-width:120px">'+
+      '<input id="tabNote" placeholder="What for (optional)" style="'+SALEIN+';flex:2;min-width:130px">'+
+      '<button class="done-btn" data-act="tab-add" style="padding:9px 14px">Open tab</button>'+
+    '</div></div>';
+  body.innerHTML='<div class="ocard" style="padding:13px 12px">'+
+      '<div style="display:flex;gap:8px;flex-wrap:wrap">'+
+        salesTile(baht(o.total),'owed to the shop',(o.total>0?'var(--danger)':'var(--green2)'))+
+        salesTile(o.customers||0,'people','var(--txt)')+
+        salesTile(o.bills||0,'bills','var(--muted)')+
+        salesTile(o.tabs||0,'tabs','var(--muted)')+
+      '</div>'+
+      '<div style="font-size:11.5px;color:var(--muted2);margin-top:9px;line-height:1.55">'+esc(OWED.note||'')+'</div>'+
+      (OWED.truncated?'<div style="font-size:11.5px;color:var(--gold);margin-top:6px">Only the most recent orders were read — an older unpaid bill may not be here.</div>':'')+
+    '</div>'+form+
+    (cs.length?cs.map(owedCard).join(''):'<div style="padding:26px;color:var(--green2);text-align:center;font-size:13.5px">Nobody owes the shop anything. 🌿</div>');
+}
+
+/* ---- one bill, in full ----------------------------------------------- */
+async function openBill(id){
+  let j;
+  try{ const r=await authGet('/api/sales?bill='+encodeURIComponent(id));
+    if(!r.ok){ alert(r.status===404?'That bill is no longer stored.':'Could not load that bill.'); return; }
+    j=await r.json();
+  }catch(e){ alert('Could not load that bill.'); return; }
+  const b=j.bill||{};
+  const line=i=>'<div style="display:flex;gap:10px;border-top:1px solid var(--line2);padding:7px 0;font-size:13px">'+
+    '<span style="flex:1">'+esc(i.name)+(i.option?'<span style="color:var(--muted2)"> · '+esc(i.option)+'</span>':'')+(i.bonus?' <span style="color:var(--green2);font-size:11px">FREE</span>':'')+'</span>'+
+    '<span style="color:var(--muted2);width:34px;text-align:right">×'+esc(i.qty)+'</span>'+
+    '<span style="font-weight:800;width:78px;text-align:right;white-space:nowrap">'+esc(baht(i.lineTotal))+'</span></div>';
+  const tot=(a,v,colour)=>'<div style="display:flex;justify-content:space-between;gap:10px;font-size:13px;margin-top:5px'+(colour?';color:'+colour:'')+'"><span>'+esc(a)+'</span><span style="font-weight:800;white-space:nowrap">'+esc(v)+'</span></div>';
+  const where=b.table?('🪑 Table '+b.table):b.delivery?('🚚 '+(b.delivery.zone||'')+' — '+(b.delivery.address||'')):b.pickup?('🏬 '+(b.pickup.branch||'')+' '+(b.pickup.time||'')):'';
+  const gifts=(b.box&&b.box.gifts&&b.box.gifts.length)
+    ?'<div style="margin-top:10px;font-size:12.5px;color:var(--green2)">📦 Custom box ×'+esc(b.box.boxes)+' ('+esc(b.box.grams)+'g) — '+esc(b.box.gifts.map(g=>g.label+' ×'+g.qty).join(', '))+'</div>':'';
+  let ov=document.getElementById('billOv');
+  if(!ov){ ov=document.createElement('div'); ov.id='billOv';
+    ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.82);z-index:210;display:flex;align-items:flex-start;justify-content:center;padding:18px;overflow:auto';
+    ov.addEventListener('click',e=>{ if(e.target===ov) ov.remove(); });
+    document.body.appendChild(ov); }
+  ov.innerHTML='<div style="max-width:460px;width:100%;background:var(--panel);border:1px solid var(--line2);border-radius:16px;padding:18px 18px 20px">'+
+    '<div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px">'+
+      '<div><div style="font-weight:900;font-size:18px;color:var(--green2)">'+esc(b.orderId)+'</div>'+
+      '<div style="color:var(--muted2);font-size:11.5px;margin-top:2px">'+esc(memDate(b.at)+(b.at?' · '+new Date(b.at).toLocaleTimeString([], {hour:"2-digit",minute:"2-digit"}):''))+'</div></div>'+
+      '<button class="undo-btn" data-act="bill-close" style="padding:6px 11px">Close</button></div>'+
+    '<div style="margin-top:12px">'+((b.items||[]).map(line).join('')||'<div style="color:var(--muted);font-size:13px">No lines on this bill.</div>')+'</div>'+
+    '<div style="border-top:1px solid var(--line2);margin-top:10px;padding-top:8px">'+
+      tot('Subtotal',baht(b.subtotal))+
+      (b.discount>0?tot('Discount'+(b.promo?' ('+b.promo+')':''),'−'+baht(b.discount),'var(--gold)'):'')+
+      (b.deliveryFee>0?tot('Delivery',baht(b.deliveryFee)):'')+
+      '<div style="display:flex;justify-content:space-between;gap:10px;font-size:17px;font-weight:900;margin-top:8px;border-top:1px solid var(--line2);padding-top:8px"><span>Total</span><span style="color:var(--gold)">'+esc(baht(b.total))+'</span></div>'+
+    '</div>'+
+    gifts+
+    '<div style="margin-top:12px;font-size:12.5px;color:var(--muted);line-height:1.6">'+
+      '💳 '+esc(b.payment||'—')+(b.member?' · member ⭐':'')+
+      (b.payStatus==='paid'?' · <b style="color:var(--green2)">PAID</b>'+(b.paidAt?esc(' '+memDate(b.paidAt)):''):'')+
+      (b.owes>0?' · <b style="color:var(--danger)">owes '+esc(baht(b.owes))+'</b>':'')+
+      (b.wallet?'<br>👛 wallet '+(b.wallet.settled?'settled':'reserved '+esc(baht(b.wallet.amount))+', not yet taken'):'')+
+      (b.priceAdjusted?'<br><span style="color:var(--gold)">⚠ the posted price disagreed with the menu and was corrected up</span>':'')+
+      (where?'<br>'+esc(where):'')+
+      '<br>👤 '+esc((b.customer&&b.customer.name)||'—')+(b.customer&&b.customer.phone?' · <a style="color:var(--green2)" href="tel:'+esc(b.customer.phone)+'">'+esc(b.customer.phone)+'</a>':'')+
+      (b.notes?'<br>📝 '+esc(b.notes):'')+
+    '</div>'+
+    '<div style="margin-top:13px;display:flex;gap:7px;flex-wrap:wrap">'+
+      (b.owes>0
+        ?(b.owesKind==='wallet'
+            ?'<button class="done-btn" data-act="wsettle" data-id="'+esc(b.orderId)+'">💳 Settle from wallet</button>'
+            :'<button class="done-btn" data-act="paid" data-id="'+esc(b.orderId)+'">✓ They paid</button>')
+        :(b.payStatus==='paid'?'<button class="undo-btn" data-act="unpaid" data-id="'+esc(b.orderId)+'" style="padding:8px 12px">↩ Not paid after all</button>':''))+
+      (b.slip?'<button class="undo-btn" data-act="slip" data-id="'+esc(b.orderId)+'" style="padding:8px 12px">🧾 View slip</button>':'')+
+    '</div></div>';
+}
+function closeBill(){ const ov=document.getElementById('billOv'); if(ov) ov.remove(); }
+
+/* The same three buttons appear on the Sales tab and on a member's card.
+   Whichever one is open is the one that has to redraw. */
+async function salesRefresh(){
+  SALES=null; OWED=null;
+  if(TAB==='sales') await loadSales();
+  else if(MEM && MEM.customer && MEM.customer.phone) await memberOwed(MEM.customer.phone);
+}
+
+async function billPaid(id,paid){
+  try{
+    const r=await authPost('/api/sales',{action:paid?'mark-paid':'mark-unpaid',orderId:id});
+    const j=await r.json().catch(()=>({}));
+    if(!r.ok){ alert('⚠️ '+(j.detail||j.error||'Could not update that bill')); return; }
+    closeBill(); await salesRefresh(); pollOrders();
+  }catch(e){ alert('⚠️ Could not update that bill'); }
+}
+async function billWalletSettle(id){
+  if(!confirm('Take the money out of their wallet now?')) return;
+  try{
+    const r=await authPost('/api/wallet',{action:'settle',orderId:id});
+    const j=await r.json().catch(()=>({}));
+    if(!r.ok){ alert('⚠️ '+(j.error||'Could not settle that wallet order')); return; }
+    closeBill(); await salesRefresh(); pollOrders();
+    alert('✅ Settled — their wallet is now '+baht(j.balance));
+  }catch(e){ alert('⚠️ Could not settle that wallet order'); }
+}
+async function tabAdd(){
+  const phone=($('#tabPhone')||{}).value||'', amount=($('#tabAmt')||{}).value||'';
+  const name=($('#tabName')||{}).value||'', note=($('#tabNote')||{}).value||'';
+  if(!String(phone).replace(/[^0-9]/g,'')){ alert('Enter their phone number'); return; }
+  if(!(Number(amount)>0)){ alert('Enter how much they owe'); return; }
+  try{
+    const r=await authPost('/api/sales',{action:'tab',phone,amount:Number(amount),name,note});
+    const j=await r.json().catch(()=>({}));
+    if(!r.ok){ alert('⚠️ '+(j.error||'Could not open that tab')); return; }
+    await salesRefresh();
+  }catch(e){ alert('⚠️ Could not open that tab'); }
+}
+async function tabClose(phone,id,del){
+  try{
+    const r=await authPost('/api/sales',{action:del?'tab-delete':'tab-settle',phone,id});
+    const j=await r.json().catch(()=>({}));
+    if(!r.ok){ alert('⚠️ '+(j.error||'Could not update that tab')); return; }
+    await salesRefresh();
+  }catch(e){ alert('⚠️ Could not update that tab'); }
+}
+
+/* The bills as a spreadsheet. The BOM is there so Excel reads the Thai names
+   and the ฿ sign as UTF-8 instead of guessing a Windows codepage. */
+function salesCSV(){
+  if(!SALES||!(SALES.bills||[]).length){ alert('Nothing to export yet.'); return; }
+  const q=v=>'"'+String(v==null?'':v).replace(/"/g,'""')+'"';
+  const head=['Bill','Date','Time','Customer','Phone','Payment','Paid?','Lines','Items','Subtotal','Discount','Delivery','Total','Still owed','Where'];
+  const rows=SALES.bills.map(b=>{
+    const dt=b.at?new Date(b.at):null;
+    return [b.orderId,b.day,dt?dt.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}):'',
+      (b.customer&&b.customer.name)||'',(b.customer&&b.customer.phone)||'',b.payment,
+      b.owes>0?'NO':(b.payStatus==='paid'?'yes':(b.payment==='Cash'?'cash at counter':'yes')),
+      b.lines,b.itemCount,b.subtotal,b.discount,b.deliveryFee,b.total,b.owes,b.table||b.fulfilment||''].map(q).join(',');
+  });
+  const blob=new Blob(['﻿'+[head.map(q).join(',')].concat(rows).join('\r\n')],{type:'text/csv;charset=utf-8'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+  a.download='dank-bills-'+SALES_DAYS+'d.csv'; a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href),4000);
+}
+
+/* Every row and button the console draws into #list used to carry its own
+   onclick="doThing('<some id>')". That put an untrusted id inside a quoted
+   attribute inside a JavaScript string — two nested escaping rules, and an
+   order id of  ');alert(1);('  satisfied neither. The ids ride in data-
+   attributes now, where esc() is the only rule that applies, and one listener
+   on #list (which outlives every re-render) reads them back and calls the
+   function directly. Nothing here builds code out of a string. */
+$('#list').addEventListener('click',e=>{
+  const el=e.target.closest('[data-act]'); if(!el) return;
+  const d=el.dataset;
+  switch(d.act){
+    case 'thread':     openThread(d.id); break;
+    case 'gift':       toggleGift(d.id); break;
+    case 'slip':       viewSlip(d.id); break;
+    case 'upload':     staffUploadSlip(d.id); break;
+    case 'order':      setOrder(d.id,d.status); break;
+    case 'count-view': viewCount(d.id); break;
+    case 'scale':      applyScale(d.code); break;
+    case 'proof-del':  COUNT_PROOFS.splice(Number(d.i),1); renderProofGrid(); break;
+    case 'box-stock':  boxSetStock(d.id); break;
+    case 'box-thresh': boxSetThresh(); break;
+    case 'lab-save':   labSave(); break;
+    case 'lab-del':    labDelete(); break;
+    case 'sales-view':  SALES_VIEW=d.v; loadSales(); break;
+    case 'sales-days':  SALES_DAYS=Number(d.v)||7; SALES=null; loadSales(); break;
+    case 'sales-month': SALES_MONTH=d.v; MONTH=null; loadSales(); break;
+    case 'month-csv':   monthCSV(d.v); break;
+    case 'sales-csv':   salesCSV(); break;
+    case 'bill':        openBill(d.id); break;
+    case 'paid':        billPaid(d.id,true); break;
+    case 'unpaid':      billPaid(d.id,false); break;
+    case 'wsettle':     billWalletSettle(d.id); break;
+    case 'tab-add':     tabAdd(); break;
+    case 'tab-settle':  tabClose(d.phone,d.id,false); break;
+    case 'tab-del':     tabClose(d.phone,d.id,true); break;
+    case 'owed-member': setTab('member'); lookupMember(d.phone); break;
+  }
+});
+/* The bill drill-down paints itself into #billOv, which sits outside #list, so
+   the delegation above never sees its buttons. It gets its own listener on the
+   same pattern rather than inline onclick attributes. */
+document.addEventListener('click',e=>{
+  const ov=e.target.closest('#billOv'); if(!ov) return;
+  const el=e.target.closest('[data-act]'); if(!el) return;
+  const d=el.dataset;
+  switch(d.act){
+    case 'bill-close': closeBill(); break;
+    case 'paid':       billPaid(d.id,true); break;
+    case 'unpaid':     billPaid(d.id,false); break;
+    case 'wsettle':    billWalletSettle(d.id); break;
+    case 'slip':       viewSlip(d.id); break;
+    case 'thread':     closeBill(); openThread(d.id); break;
+  }
+});
+$('#list').addEventListener('input',e=>{
+  const el=e.target.closest('[data-act="count"]'); if(el) setCount(el.dataset.code,el.value);
+});
+/* A <select> fires change, not click — and the POS picker is the one control
+   on this page that saves the moment it is touched, so it needs its own
+   listener on #list rather than an inline handler. */
+$('#list').addEventListener('change',e=>{
+  const el=e.target.closest('[data-act="box-sh"]'); if(el) return boxSetPos(el.dataset.id,el.value);
+  /* Switching product reloads the form from that product's saved report, so it
+     has to run on change rather than on a Load button nobody would press. */
+  const lp=e.target.closest('[data-act="lab-prod"]'); if(lp){ LABSEL=lp.value; renderLab(); }
+});
+
+if(KEY){ $('#keyInput').value=KEY; login(); }
 </script>
 <script src="i18n.js"></script>
 </body>

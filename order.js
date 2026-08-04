@@ -13,6 +13,7 @@
 
 import crypto from "node:crypto";
 import { setJSON, indexAdd } from "./_store.js";
+import { normPhone } from "./_phone.js";
 import { getBalance } from "./_wallet.js";
 import { pushTransaction } from "./_storehub.js";
 import { boxesInOrder, issueGifts, giftAlertLines, getGiftConfig } from "./_boxgifts.js";
@@ -188,6 +189,12 @@ export default async function handler(req, res) {
     // order:<returned id> claimed to be a different order entirely.
     await setJSON("order:" + orderId, { ...o, orderId, at: Date.now(), status: "new" });
     await indexAdd(orderId, "orders:index");
+    /* A second index, keyed on the customer, so that pulling up one person's
+       history when staff scan their card is one read instead of a walk over
+       every order the shop has ever taken. Table orders get "TABLE-T3" as
+       their phone and normalise to nothing, so they simply don't land here. */
+    const who = normPhone(o.customer?.phone);
+    if (who.length >= 6) await indexAdd(orderId, "orders:by:" + who);
   } catch (e) { console.error("order save failed:", e.message); }
 
   // 0b) Telegram ping — staff phones buzz instantly (same bot as chat handoffs)

@@ -1,42 +1,74 @@
-/* /api/freegifts — which SKUs are offered as the free 1G (manager-controlled).
+/* /api/line-summary — daily LINE group summary (Bryan AI monitor), serverless.
+   Driven by Vercel Cron (see vercel.json) once a day, and callable on demand.
 
-   The manager chooses the eligible free-gram SKUs in the staff console; the
-   storefront reads them here to build the customer's "choose your free 1G"
-   picker. Determination lives in the backend: a stored list (set by the
-   manager) takes priority; if unset, it falls back to products flagged
-   `freeGift:true` in the menu (StoreHub tag or products.json).
+     GET   (Vercel Cron, or ?key=STAFF_KEY)   → summarize last 24h of every
+           monitored source, push each to LINE_TO. Auth: Vercel's cron
+           Authorization: Bearer $CRON_SECRET, or ?key=STAFF_KEY.
+     POST  { sourceId?, hours?, key }         → summarize one source (or all),
+           push to LINE_TO, and return the text. Requires key = STAFF_KEY.
 
-     GET  → { skus: [id,...] }
-     POST { key, skus:[...] }  (staff key)  → save the list                */
-
-import { getJSON, setJSON } from "./_store.js";
-import { getMenu } from "./_menu.js";
+   Env: STAFF_KEY, LINE_CHANNEL_ACCESS_TOKEN, LINE_TO, XAI_API_KEY, CRON_SECRET
+        (optional, set it so Vercel Cron authorizes itself), SUMMARY_TO
+        (optional override of where summaries go; defaults to LINE_TO).        */
+import { listSources, getMessagesSince, summarize } from "./_linelog.js";
+import { linePush } from "./_line.js";
 import { requireStaff } from "./_auth.js";
+
+function cronAuthed(req) {
+  const cs = process.env.CRON_SECRET;
+  if (cs && req.headers?.authorization === `Bearer ${cs}`) return true;
+  return false;
+}
+
+async function runAll(hours) {
+  const since = Date.now() - hours * 3600 * 1000;
+  const to = process.env.SUMMARY_TO || process.env.LINE_TO;
+  const ids = await listSources();
+  const out = [];
+  for (const id of ids) {
+    const msgs = await getMessagesSince(id, since);
+    const text = await summarize(msgs, { sourceLabel: id });
+    if (to) await linePush(to, `📋 สรุปกลุ่ม ${id} (${hours} ชม.)\n\n${text}`);
+    out.push({ sourceId: id, messages: msgs.length });
+  }
+  return out;
+}
 
 export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
-  res.setHeader("Cache-Control", "no-store");
   if (req.method === "OPTIONS") return res.status(204).end();
 
+  // ---- GET: cron / quick manual ----
+  if (req.method === "GET") {
+    // Vercel Cron authorises itself with CRON_SECRET; a human uses the staff key.
+    if (!cronAuthed(req) && !requireStaff(req, res)) return;
+    const hours = Number(req.query?.hours) || 24;
+    try {
+      const done = await runAll(hours);
+      return res.status(200).json({ ok: true, summarized: done });
+    } catch (e) {
+      return res.status(500).json({ ok: false, error: e.message });
+    }
+  }
+
+  // ---- POST: on-demand (staff) ----
+  if (req.method !== "POST") return res.status(405).json({ error: "method" });
+  if (!requireStaff(req, res)) return;
+  const b = req.body || {};
+  const hours = Number(b.hours) || 24;
+  const to = process.env.SUMMARY_TO || process.env.LINE_TO;
   try {
-    if (req.method === "GET") {
-      let list = await getJSON("freegifts");
-      if (!Array.isArray(list)) {
-        const m = await getMenu();
-        list = (m.data || []).filter((p) => p.freeGift).map((p) => p.id);
-      }
-      return res.status(200).json({ skus: list });
+    if (b.sourceId) {
+      const since = Date.now() - hours * 3600 * 1000;
+      const msgs = await getMessagesSince(b.sourceId, since);
+      const summary = await summarize(msgs, { sourceLabel: b.sourceId });
+      if (to) await linePush(to, `📋 สรุปกลุ่ม ${b.sourceId} (${hours} ชม.)\n\n${summary}`);
+      return res.status(200).json({ ok: true, summary, messages: msgs.length });
     }
-    if (req.method === "POST") {
-      if (!requireStaff(req, res)) return;
-      const b = req.body || {};
-      const skus = Array.isArray(b.skus) ? b.skus.slice(0, 100) : [];
-      await setJSON("freegifts", skus, 60 * 60 * 24 * 365);
-      return res.status(200).json({ ok: true, skus });
-    }
-    return res.status(405).json({ error: "method" });
+    const done = await runAll(hours);
+    return res.status(200).json({ ok: true, summarized: done });
   } catch (e) {
-    return res.status(500).json({ error: "server" });
+    return res.status(500).json({ ok: false, error: e.message });
   }
 }

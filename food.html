@@ -1,956 +1,168 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Order Food & Drinks · DANK BKK</title>
-<meta name="description" content="Scan, order and pay from your table. Food, coffee, shakes, beer and cannabis bar menu at DANK Cannabis Club Bangkok.">
-<meta name="theme-color" content="#0b100c">
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌿</text></svg>">
-<style>
-  :root{
-    --bg:#0b100c; --panel:#121a13; --panel2:#16211a; --line:#1e2a20; --line2:#2a3a2e;
-    --txt:#eaf3ec; --muted:#9db3a3; --muted2:#728a7a;
-    --green:#4ade80; --deep:#16a34a; --gold:#cfa85a; --red:#ef4444;
-    --radius:16px; --shadow:0 10px 30px rgba(0,0,0,.45);
-  }
-  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-  html,body{margin:0;padding:0}
-  body{
-    background:var(--bg); color:var(--txt); font-size:15px;
-    font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans Thai",sans-serif;
-    padding-bottom:120px; overflow-x:hidden;
-  }
-  a{color:inherit;text-decoration:none}
-  button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
-  img{max-width:100%;display:block}
-  .wrap{max-width:1100px;margin:0 auto;padding:0 14px}
-  .hidden{display:none !important}
-
-  /* ---------- Header ---------- */
-  header{position:sticky;top:0;z-index:50;background:rgba(11,16,12,.92);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
-  .hd{display:flex;align-items:center;gap:12px;height:60px}
-  .brand{display:flex;align-items:center;gap:8px;font-weight:800;letter-spacing:.5px}
-  .brand .leaf{font-size:19px}
-  .brand .sub{color:var(--muted2);font-weight:600}
-  .back{margin-left:auto;font-size:13.5px;color:var(--muted);border:1px solid var(--line2);padding:8px 12px;border-radius:999px;white-space:nowrap}
-  .back:hover{color:var(--green);border-color:var(--green)}
-  /* On a phone the shop name and the back link fought for the same row and both
-     wrapped onto two lines. The subtitle is decoration, so it goes first. */
-  @media(max-width:520px){ .brand .sub{display:none} }
-
-  /* ---------- Age gate (beer and edibles are on this menu too) ---------- */
-  #gate{position:fixed;inset:0;z-index:120;display:flex;align-items:center;justify-content:center;padding:24px;
-        background:radial-gradient(circle at 50% 30%,#0c1a11,#040705 70%)}
-  #gate .card{max-width:400px;width:100%;background:var(--panel);border:1px solid var(--line2);border-radius:20px;padding:30px 24px;text-align:center;box-shadow:var(--shadow)}
-  #gate .leaf{font-size:48px;line-height:1}
-  #gate h1{margin:12px 0 6px;font-size:23px}
-  #gate p{color:var(--muted);font-size:14px;line-height:1.6;margin:6px 0 20px}
-  #gate .badge{display:inline-block;background:rgba(239,68,68,.13);border:1px solid #6b2626;color:#ff9a9a;font-weight:800;font-size:12.5px;letter-spacing:.5px;border-radius:999px;padding:6px 13px}
-
-  /* ---------- Table banner ---------- */
-  .tablebar{
-    margin:14px 0 6px;padding:14px 16px;border-radius:var(--radius);
-    background:linear-gradient(120deg,#14251a,#0d1a12 65%),radial-gradient(circle at 90% 20%,rgba(207,168,90,.22),transparent 55%);
-    border:1px solid var(--line2);display:flex;align-items:center;gap:14px;flex-wrap:wrap;
-  }
-  .tablebar .big{font-size:26px;font-weight:900;color:var(--gold);letter-spacing:1px;display:flex;align-items:center;gap:9px}
-  .tablebar .sub{color:var(--muted);font-size:13.5px;line-height:1.45}
-  .tablebar .chg{margin-left:auto;font-size:12.5px;color:var(--muted2);border:1px solid var(--line2);border-radius:999px;padding:7px 12px}
-  .dot{width:9px;height:9px;border-radius:50%;background:var(--green);box-shadow:0 0 9px var(--green);animation:pulse 2s infinite}
-  @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.82)}}
-
-  /* ---------- Category tabs ---------- */
-  .tabs{position:sticky;top:60px;z-index:40;background:var(--bg);padding:10px 0 8px}
-  .tabrow{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}
-  .tabrow::-webkit-scrollbar{display:none}
-  .tab{white-space:nowrap;padding:9px 15px;border-radius:999px;background:var(--panel);border:1px solid var(--line2);color:var(--muted);font-size:13.5px;font-weight:700;transition:.15s}
-  .tab.active{background:var(--green);border-color:var(--green);color:#04180d}
-
-  /* ---------- Items ---------- */
-  h2.sec{font-size:19px;margin:22px 0 10px;display:flex;align-items:center;gap:9px}
-  h2.sec small{color:var(--muted2);font-weight:600;font-size:13px}
-  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(168px,1fr));gap:13px}
-
-  /* ---------- 3D photo cards ----------
-     Three nested layers on purpose: the outer one owns the perspective, the
-     middle one takes the tilt (scroll position on a phone, pointer on a
-     desktop, the gyroscope if the customer allows it), and the inner one does
-     the flip. Keeping tilt and flip on separate elements is what stops the two
-     transforms fighting each other. */
-  /* Cards in a row stretch to the tallest one so the grid doesn't come out
-     ragged, and the + button is pinned to the bottom of each. */
-  .item{ perspective:900px; position:relative; height:100%; }
-  .item > .c3tilt, .item .c3in, .face.front{ height:100% }
-  .face.front{ display:flex; flex-direction:column }
-  .body3{ flex:1; display:flex; flex-direction:column }
-  .body3 .qty{ margin-top:auto }
-  .body3 > .tag{ align-self:flex-start }
-  .face.rear > *{ max-width:100% }
-  .c3tilt{
-    transform:rotateX(var(--rx,0deg)) rotateY(var(--ry,0deg));
-    transition:transform .18s ease-out; will-change:transform;
-  }
-  .c3in{
-    position:relative;transform-style:preserve-3d;transition:transform .62s cubic-bezier(.2,.8,.25,1);
-  }
-  .item.flipped .c3in{ transform:rotateY(180deg) }
-  /* Only the side facing the customer takes taps — otherwise the hidden
-     front face swallows the click on the back's "go back" line. */
-  .face.rear{pointer-events:none}
-  .item.flipped .face.front{pointer-events:none}
-  .item.flipped .face.rear{pointer-events:auto}
-  .face{
-    backface-visibility:hidden;-webkit-backface-visibility:hidden;
-    background:var(--panel);border:1px solid var(--line);border-radius:16px;overflow:hidden;
-    box-shadow:0 10px 26px rgba(0,0,0,.45),0 2px 5px rgba(0,0,0,.4);
-  }
-  .face.rear{
-    position:absolute;inset:0;transform:rotateY(180deg);
-    background:linear-gradient(160deg,#16211a,#0e150f);padding:14px 14px 12px;
-    display:flex;flex-direction:column;
-  }
-  .item.inCart .face.front{border-color:var(--green);box-shadow:0 0 0 1px rgba(74,222,128,.4),0 12px 28px rgba(0,0,0,.5)}
-
-  .photo{ position:relative;aspect-ratio:4/3;background:#16201a;overflow:hidden }
-  .photo img{
-    width:100%;height:100%;object-fit:cover;display:block;
-    transform:translateZ(28px) scale(1.06);transition:transform .3s;
-  }
-  .item:hover .photo img{ transform:translateZ(38px) scale(1.12) }
-  .photo .emofb{
-    position:absolute;inset:0;display:none;align-items:center;justify-content:center;font-size:52px;
-    background:radial-gradient(circle at 50% 35%,#1e2f23,#101a13);
-  }
-  .photo.noimg img{display:none}
-  .photo.noimg .emofb{display:flex}
-  /* A soft sheen across the glass so the photo reads as a lit surface with the
-     dish sitting under it, not a flat rectangle. */
-  .photo .gloss{
-    position:absolute;inset:0;pointer-events:none;
-    background:linear-gradient(150deg,rgba(255,255,255,.16),transparent 42%),
-               linear-gradient(0deg,rgba(6,10,7,.72),transparent 52%);
-    transform:translateZ(40px);
-  }
-  .photo .pr{
-    position:absolute;left:9px;bottom:8px;transform:translateZ(52px);
-    background:linear-gradient(135deg,var(--gold),#b8923f);color:#20100a;
-    font-weight:900;font-size:14px;border-radius:999px;padding:4px 11px;
-    box-shadow:0 5px 14px rgba(0,0,0,.5);
-  }
-  .flipbtn{
-    position:absolute;right:8px;top:8px;transform:translateZ(52px);
-    width:29px;height:29px;border-radius:50%;border:1px solid rgba(255,255,255,.22);
-    background:rgba(10,16,11,.62);backdrop-filter:blur(6px);color:#dcefe1;
-    font-size:14px;font-weight:800;line-height:1;display:flex;align-items:center;justify-content:center;
-  }
-  .flipbtn:active{transform:translateZ(52px) scale(.88)}
-
-  .body3{padding:10px 12px 12px;position:relative}
-  .item .nm{font-weight:800;font-size:14.5px;line-height:1.25;transform:translateZ(18px)}
-  .item .th{color:var(--muted2);font-size:12px;margin-top:2px}
-  .item .ds{color:var(--muted);font-size:12px;margin-top:5px;line-height:1.4}
-  .tag{display:inline-block;font-size:10.5px;font-weight:800;letter-spacing:.4px;padding:2px 7px;border-radius:999px;margin:6px 5px 0 0;border:1px solid var(--line2);color:var(--muted2)}
-  .tag.spicy{color:#fca5a5;border-color:#4b1f1f}
-  .tag.veg{color:#86efac;border-color:#1e3a25}
-  .tag.age{color:var(--gold);border-color:#4a3a1d}
-
-  .face.rear .bt{font-weight:800;font-size:14px}
-  .face.rear .bth{color:var(--muted2);font-size:12px;margin-top:1px}
-  .face.rear h4{margin:11px 0 3px;font-size:10.5px;letter-spacing:1px;color:var(--green);font-weight:900}
-  .face.rear p{margin:0;font-size:12px;line-height:1.5;color:var(--muted)}
-  .face.rear .alg{color:#e6cf9a}
-  .face.rear .close{margin-top:auto;align-self:flex-start;font-size:12px;font-weight:800;color:var(--muted2);padding:7px 0 0}
-
-  .item .out{position:absolute;inset:0;background:rgba(11,16,12,.74);border-radius:16px;display:flex;align-items:center;justify-content:center;font-weight:800;color:var(--muted);letter-spacing:1px;font-size:13px;transform:translateZ(60px);z-index:3}
-
-  @media (prefers-reduced-motion:reduce){
-    .c3tilt{transform:none !important;transition:none}
-    .photo img{transform:none !important}
-    .c3in{transition:transform .2s}
-  }
-
-  /* ---------- Bundle deals ---------- */
-  .deals{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:12px}
-  .deal{
-    position:relative;border-radius:16px;padding:15px 15px 14px;overflow:hidden;
-    background:linear-gradient(135deg,#17281c,#101a13 60%),radial-gradient(circle at 92% 12%,rgba(207,168,90,.22),transparent 55%);
-    border:1px solid #3a4d3f;display:flex;gap:12px;align-items:flex-start;transition:.18s;
-  }
-  .deal:hover{transform:translateY(-2px);box-shadow:var(--shadow);border-color:var(--gold)}
-  .deal.inCart{border-color:var(--green)}
-  /* A thin light sweeps across the deal cards so the promo row reads as the
-     offer it is, without the whole card blinking at someone mid-meal. */
-  .deal::before{
-    content:"";position:absolute;top:0;left:-55%;width:40%;height:100%;
-    background:linear-gradient(100deg,transparent,rgba(255,255,255,.09),transparent);
-    transform:skewX(-18deg);animation:dealshine 5.5s ease-in-out infinite;pointer-events:none;
-  }
-  @keyframes dealshine{0%{left:-55%}45%,100%{left:135%}}
-  /* The featured deals get a slow turn in 3D — enough to catch the eye across
-     a room, slow enough that nobody eating under it gets seasick. */
-  .deal{perspective:900px}
-  .deal .dphoto{
-    position:relative;flex:0 0 74px;width:74px;height:74px;border-radius:14px;overflow:hidden;
-    transform-style:preserve-3d;animation:dealspin 9s ease-in-out infinite;
-    box-shadow:0 8px 18px rgba(0,0,0,.5);
-  }
-  .deal .dphoto img{width:100%;height:100%;object-fit:cover;display:block}
-  .deal .dphoto .emofb{position:absolute;inset:0;display:none;align-items:center;justify-content:center;font-size:30px;background:radial-gradient(circle at 50% 35%,#22331f,#101a13)}
-  .deal .dphoto.noimg img{display:none}
-  .deal .dphoto.noimg .emofb{display:flex}
-  .deal .dphoto .g{position:absolute;inset:0;background:linear-gradient(150deg,rgba(255,255,255,.2),transparent 45%)}
-  @keyframes dealspin{
-    0%,100%{transform:rotateY(-16deg) rotateX(5deg)}
-    50%{transform:rotateY(16deg) rotateX(-4deg)}
-  }
-  @media (prefers-reduced-motion:reduce){ .deal .dphoto{animation:none} }
-  .deal .ico{font-size:27px;line-height:1;flex:0 0 auto;margin-top:2px}
-  .deal .nm{font-weight:800;font-size:15.5px;line-height:1.25}
-  .deal .th{color:var(--muted2);font-size:12.5px;margin-top:2px}
-  .deal .ds{color:var(--muted);font-size:12.5px;margin-top:6px;line-height:1.45}
-  .deal .parts{color:var(--muted2);font-size:12px;margin-top:6px;line-height:1.5}
-  .deal .prices{display:flex;align-items:baseline;gap:9px;margin-top:9px;flex-wrap:wrap}
-  .deal .now{color:var(--gold);font-weight:900;font-size:18px}
-  .deal .was{color:var(--muted2);text-decoration:line-through;font-size:13.5px}
-  .save{background:rgba(74,222,128,.14);border:1px solid #1e5233;color:var(--green);font-weight:800;font-size:11.5px;border-radius:999px;padding:3px 9px}
-  .badge2{position:absolute;top:0;right:0;background:linear-gradient(135deg,var(--gold),#b8923f);color:#20100a;font-size:10px;font-weight:900;letter-spacing:.7px;padding:4px 11px;border-bottom-left-radius:11px}
-  .deal.closed{opacity:.5}
-  .deal .when{color:#e6cf9a;font-size:11.5px;margin-top:7px;font-weight:700}
-
-  .qty{margin-left:auto;display:flex;align-items:center;gap:9px;flex:0 0 auto}
-  .body3 .qty{margin-top:11px;justify-content:flex-end;transform:translateZ(24px)}
-  .rnd{width:34px;height:34px;border-radius:50%;border:1px solid var(--line2);background:var(--panel2);display:flex;align-items:center;justify-content:center;font-size:19px;font-weight:800;line-height:1;transition:.14s}
-  .rnd:active{transform:scale(.88)}
-  .rnd.add{background:linear-gradient(135deg,var(--green),var(--deep));color:#04180d;border-color:transparent}
-  .qnum{min-width:16px;text-align:center;font-weight:800}
-
-  /* ---------- Cart bar ---------- */
-  .cartbar{
-    position:fixed;left:0;right:0;bottom:0;z-index:60;padding:12px 14px calc(12px + env(safe-area-inset-bottom));
-    background:rgba(11,16,12,.95);backdrop-filter:blur(12px);border-top:1px solid var(--line2);
-    transform:translateY(130%);transition:transform .28s cubic-bezier(.2,.9,.3,1.2);
-  }
-  .cartbar.show{transform:translateY(0)}
-  .cartbtn{
-    width:100%;max-width:1072px;margin:0 auto;display:flex;align-items:center;gap:12px;
-    background:linear-gradient(135deg,var(--green),var(--deep));color:#04180d;font-weight:900;
-    padding:15px 18px;border-radius:14px;font-size:16px;box-shadow:0 8px 26px rgba(22,163,74,.32);
-  }
-  .cartbtn .n{background:rgba(4,24,13,.22);border-radius:999px;padding:3px 10px;font-size:14px}
-  .cartbtn .tot{margin-left:auto}
-
-  /* ---------- Sheet ---------- */
-  .scrim{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:70;opacity:0;pointer-events:none;transition:.22s}
-  .scrim.show{opacity:1;pointer-events:auto}
-  .sheet{
-    position:fixed;left:0;right:0;bottom:0;z-index:80;background:var(--panel);border-top-left-radius:22px;border-top-right-radius:22px;
-    border-top:1px solid var(--line2);max-height:88vh;overflow-y:auto;
-    padding:8px 16px calc(26px + env(safe-area-inset-bottom));
-    transform:translateY(102%);transition:transform .3s cubic-bezier(.2,.9,.3,1.05);
-  }
-  .sheet.show{transform:translateY(0)}
-  .grab{width:44px;height:4px;border-radius:99px;background:var(--line2);margin:8px auto 14px}
-  .sheet h3{margin:0 0 12px;font-size:19px}
-  .line{display:flex;align-items:center;gap:10px;padding:11px 0;border-bottom:1px solid var(--line)}
-  .line .nm2{font-weight:600;font-size:14.5px}
-  .line .lt{margin-left:auto;font-weight:800;color:var(--gold);min-width:70px;text-align:right}
-  .totals{display:flex;padding:9px 0;font-size:14px;color:var(--muted)}
-  .totals b{margin-left:auto;color:var(--txt)}
-  .totals.grand{font-size:19px;color:var(--txt);font-weight:900;border-top:1px solid var(--line2);margin-top:6px;padding-top:12px}
-  .totals.grand b{color:var(--gold)}
-  label.fld{display:block;margin:12px 0 0;font-size:13px;color:var(--muted)}
-  .fld input,.fld textarea,.fld select{
-    width:100%;margin-top:6px;background:var(--panel2);border:1px solid var(--line2);color:var(--txt);
-    padding:12px 13px;border-radius:11px;font-size:15px;outline:none;font-family:inherit;
-  }
-  .fld input:focus,.fld textarea:focus,.fld select:focus{border-color:var(--green)}
-  .paygrid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:8px}
-  .pay{border:1px solid var(--line2);background:var(--panel2);border-radius:12px;padding:13px 10px;text-align:center;font-size:13.5px;font-weight:700;line-height:1.35;transition:.15s}
-  .pay.sel{border-color:var(--green);background:rgba(74,222,128,.11);color:var(--green)}
-  .btn{display:flex;align-items:center;justify-content:center;gap:9px;width:100%;padding:16px;border-radius:14px;font-weight:900;font-size:16px;margin-top:16px}
-  .btn-primary{background:linear-gradient(135deg,var(--green),var(--deep));color:#04180d}
-  .btn-primary[disabled]{opacity:.55}
-  .btn-ghost{border:1px solid var(--line2);color:var(--muted);font-weight:700;font-size:14.5px;padding:13px;margin-top:9px}
-  .warn{background:rgba(207,168,90,.09);border:1px solid #4a3a1d;color:#e6cf9a;border-radius:12px;padding:11px 13px;font-size:12.5px;line-height:1.5;margin-top:14px}
-
-  /* ---------- Table picker ---------- */
-  .tgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:12px}
-  .tbtn{background:var(--panel2);border:1px solid var(--line2);border-radius:13px;padding:17px 6px;font-weight:900;font-size:16px;transition:.15s}
-  .tbtn:active{transform:scale(.94)}
-  .tbtn.sel{border-color:var(--gold);color:var(--gold);background:rgba(207,168,90,.1)}
-
-  /* ---------- Done ---------- */
-  .done{text-align:center;padding:26px 6px 6px}
-  .done .tick{font-size:60px;animation:pop .5s cubic-bezier(.2,1.4,.4,1)}
-  @keyframes pop{0%{transform:scale(0);opacity:0}100%{transform:scale(1);opacity:1}}
-  .done .oid{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:19px;color:var(--gold);letter-spacing:1px;margin-top:8px}
-  .toast{position:fixed;left:50%;bottom:104px;transform:translateX(-50%) translateY(20px);z-index:95;background:#0f1a12;border:1px solid var(--line2);color:var(--txt);padding:11px 17px;border-radius:999px;font-size:13.5px;opacity:0;transition:.22s;pointer-events:none;box-shadow:var(--shadow)}
-  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
-  footer{color:var(--muted2);font-size:12.5px;text-align:center;padding:34px 14px 10px;line-height:1.7}
-</style>
-</head>
-<body>
-
-<div id="gate">
-  <div class="card">
-    <div class="leaf">🌿</div>
-    <div class="badge">20+ ONLY · เฉพาะอายุ 20 ปีขึ้นไป</div>
-    <h1>DANK Kitchen &amp; Bar</h1>
-    <p>
-      This menu includes beer and cannabis edibles.<br>
-      เมนูนี้มีเบียร์และขนมกัญชา — สำหรับผู้ที่มีอายุ 20 ปีขึ้นไป
-    </p>
-    <button class="btn btn-primary" style="margin-top:0" onclick="askMotion();passGate()">✅ I am 20+ · เข้าสู่เมนู</button>
-    <button class="btn btn-ghost" id="gateExit" onclick="location.href='index.html'">Exit</button>
-  </div>
-</div>
-
-<header>
-  <div class="wrap hd">
-    <a class="brand" id="brandLink" href="index.html"><span class="leaf">🌿</span> DANK <span class="sub">Kitchen &amp; Bar</span></a>
-    <a class="back" id="backLink" href="index.html">← Cannabis menu</a>
-  </div>
-</header>
-
-<div class="wrap">
-
-  <!-- table banner -->
-  <div class="tablebar" id="tableBar">
-    <div>
-      <div class="big"><span class="dot"></span> <span id="tableName">Table</span></div>
-      <div class="sub" id="tableSub">Order food &amp; drinks straight to your table — staff bring it over.</div>
-    </div>
-    <button class="chg" onclick="openTablePicker()">Change table</button>
-  </div>
-
-  <!-- tabs -->
-  <div class="tabs">
-    <div class="tabrow" id="tabRow"></div>
-  </div>
-
-  <div id="menuBody"></div>
-
-  <footer>
-    Kitchen open 11:00 – 23:00 · Bar until late<br>
-    Prices in Thai baht. Cannabis items 20+ only, ID may be asked.<br>
-    Edibles take 30–90 minutes to work — start low, go slow.
-  </footer>
-</div>
-
-<!-- cart bar -->
-<div class="cartbar" id="cartBar">
-  <button class="cartbtn" onclick="openCart()">
-    <span class="n" id="cartN">0</span>
-    <span id="cartLabel">View order</span>
-    <span class="tot" id="cartTotal">฿0</span>
-  </button>
-</div>
-
-<div class="scrim" id="scrim" onclick="closeSheet()"></div>
-<div class="sheet" id="sheet"><div class="grab"></div><div id="sheetBody"></div></div>
-<div class="toast" id="toast"></div>
-
-<script>
-/* ============================================================
-   DANK BKK — table ordering (food.html)
-   Customer scans the QR on their table  →  food.html?table=T3
-   Everything below runs client-side; the order is POSTed to
-   /api/order with fulfilment:"table", which is what puts it in
-   the staff console and the BRYAN POS Orders tab.
-   ============================================================ */
-"use strict";
-
-var TABLES = ["T1","T2","T3","T4","T5","T6","Bar 1","Bar 2"];
-var MENU = { categories: [], items: [] };
-var cart = {};            // id -> qty
-var table = null;         // "T3" or null
-var cat = "all";
-var payment = "cash";
-
-/* ---------- table from the QR ---------- */
-function readTable(){
-  var q = new URLSearchParams(location.search);
-  var raw = q.get("table") || q.get("t") || q.get("tb") || "";
-  raw = String(raw).trim();
-  if (!raw) return null;
-  /* the printed cards may carry "T3", "3", "t3", "bar1", "Bar 1" */
-  var norm = raw.toLowerCase().replace(/[\s_-]+/g, "");
-  for (var i = 0; i < TABLES.length; i++){
-    if (TABLES[i].toLowerCase().replace(/\s+/g,"") === norm) return TABLES[i];
-  }
-  if (/^\d+$/.test(norm)){
-    var n = parseInt(norm, 10);
-    if (n >= 1 && n <= TABLES.length) return TABLES[n-1];
-  }
-  return null;
-}
-
-function saveTable(t){
-  table = t;
-  try{ t ? sessionStorage.setItem("dankTable", t) : sessionStorage.removeItem("dankTable"); }catch(e){}
-  paintTable();
-}
-
-/* A scanned table QR must stay on the food page — no side doors into the
-   cannabis shop. Anything that would navigate away is removed while a table
-   is set, and the brand mark just reloads this menu. */
-function lockToFood(){
-  var href = table ? "food.html?table=" + encodeURIComponent(table) : "index.html";
-  var b = document.getElementById("brandLink"); if (b) b.setAttribute("href", href);
-  var back = document.getElementById("backLink"); if (back) back.style.display = table ? "none" : "";
-  var ex = document.getElementById("gateExit");
-  if (ex){
-    if (table){ ex.style.display = "none"; }
-    else { ex.style.display = ""; }
-  }
-}
-
-function paintTable(){
-  lockToFood();
-  var nm = document.getElementById("tableName");
-  var sub = document.getElementById("tableSub");
-  if (table){
-    nm.textContent = (/^bar/i.test(table) ? "🍸 " : "🪑 ") + table;
-    sub.textContent = "Order food & drinks straight to your table — staff bring it over.";
-  } else {
-    nm.textContent = "Pick your table";
-    sub.textContent = "Scan the QR card on your table, or tap Change table to choose it.";
-  }
-}
-
-/* ---------- menu ---------- */
-function loadMenu(){
-  fetch("food-menu.json", { cache: "no-store" })
-    .then(function(r){ if(!r.ok) throw new Error("http"); return r.json(); })
-    .then(function(j){
-      MENU = j || MENU;
-      MENU.items = (MENU.items || []).filter(function(i){ return i && i.name && i.price != null; });
-      renderTabs(); render();
-    })
-    .catch(function(){
-      document.getElementById("menuBody").innerHTML =
-        '<div class="warn" style="margin-top:20px">Menu could not load. Pull down to refresh, or ask a staff member — they can take your order at the table.</div>';
-    });
-}
-
-function esc(s){ return String(s == null ? "" : s).replace(/[&<>"]/g, function(c){ return ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"})[c]; }); }
-function baht(n){ return "฿" + Number(n || 0).toLocaleString("en-US"); }
-
-function renderTabs(){
-  var row = document.getElementById("tabRow");
-  var html = '<button class="tab' + (cat === "all" ? " active" : "") + '" onclick="setCat(\'all\')">✨ All</button>';
-  if ((MENU.bundles || []).length){
-    html += '<button class="tab' + (cat === "deals" ? " active" : "") + '" onclick="setCat(\'deals\')">🔥 Deals</button>';
-  }
-  (MENU.categories || []).forEach(function(c){
-    html += '<button class="tab' + (cat === c.id ? " active" : "") + '" onclick="setCat(\'' + esc(c.id) + '\')">' +
-            esc(c.emoji || "") + " " + esc(c.name) + "</button>";
-  });
-  row.innerHTML = html;
-}
-
-function setCat(id){
-  cat = id; renderTabs(); render();
-  window.scrollTo({ top: 130, behavior: "smooth" });
-}
-
-function tagHtml(t){
-  var m = { spicy:["spicy","🌶 spicy"], veg:["veg","🌱 veg"], edible:["age","🌿 edible"], "18+":["age","18+"], "21+":["age","21+"], cbd:["veg","CBD"] };
-  var v = m[t]; if (!v) return "";
-  return '<span class="tag ' + v[0] + '">' + v[1] + "</span>";
-}
-
-/* ---------- photos & 3D ----------
-   The photo layer is deliberately forgiving: if a URL ever dies the card falls
-   back to its emoji tile instead of showing a broken-image icon, so a dead link
-   can never leave a customer staring at a blank square mid-order. */
-function photoHtml(it, cls){
-  var src = it.img || "";
-  return '<div class="' + cls + (src ? "" : " noimg") + '">' +
-    (src ? '<img loading="lazy" decoding="async" alt="' + esc(it.name) + '" src="' + esc(src) +
-           '" onerror="this.parentNode.classList.add(\'noimg\')">' : "") +
-    '<div class="emofb">' + esc(it.emoji || "🍽") + "</div>" +
-    (cls === "photo"
-      ? '<div class="gloss"></div><div class="pr">' + baht(it.price) + "</div>"
-      : '<div class="g"></div>') +
-  "</div>";
-}
-
-function flipCard(id){
-  var el = document.getElementById("it_" + id);
-  if (el) el.classList.toggle("flipped");
-}
-
-/* Tilt. Three inputs, all optional, all cheap:
-   · where the card sits in the viewport (works on every phone, no permission)
-   · the pointer, on a desktop
-   · the gyroscope, if the customer said yes to it
-   Only cards actually on screen are touched, and everything runs on one rAF. */
-var tiltCards = [], tiltQueued = false, gyro = { x: 0, y: 0 };
-function collectTilt(){
-  tiltCards = [];
-  var els = document.querySelectorAll(".item");
-  for (var i = 0; i < els.length; i++){
-    var t = els[i].querySelector(".c3tilt");
-    if (t) tiltCards.push({ box: els[i], t: t });
-  }
-  queueTilt();
-}
-function queueTilt(){
-  if (tiltQueued) return;
-  tiltQueued = true;
-  requestAnimationFrame(applyTilt);
-}
-function applyTilt(){
-  tiltQueued = false;
-  var h = window.innerHeight || 800;
-  for (var i = 0; i < tiltCards.length; i++){
-    var c = tiltCards[i], r = c.box.getBoundingClientRect();
-    if (r.bottom < -60 || r.top > h + 60) continue;
-    var mid = r.top + r.height / 2;
-    var p = (mid - h / 2) / (h / 2);          // -1 above centre … +1 below
-    if (p > 1) p = 1; if (p < -1) p = -1;
-    var rx = (-p * 7) + gyro.x;
-    var ry = gyro.y;
-    c.t.style.setProperty("--rx", rx.toFixed(2) + "deg");
-    c.t.style.setProperty("--ry", ry.toFixed(2) + "deg");
-  }
-}
-function bindTilt(){
-  window.addEventListener("scroll", queueTilt, { passive: true });
-  window.addEventListener("resize", queueTilt, { passive: true });
-  document.addEventListener("pointermove", function(e){
-    if (e.pointerType !== "mouse") return;
-    var w = window.innerWidth || 1;
-    gyro.y = ((e.clientX / w) - .5) * 9;
-    queueTilt();
-  }, { passive: true });
-}
-/* iOS will only hand over the gyroscope from inside a tap, so the age-gate
-   button is where we ask. Refusing it costs nothing — scroll tilt still runs. */
-function askMotion(){
-  try{
-    if (typeof DeviceOrientationEvent !== "undefined" &&
-        typeof DeviceOrientationEvent.requestPermission === "function"){
-      DeviceOrientationEvent.requestPermission().then(function(r){
-        if (r === "granted") startGyro();
-      }).catch(function(){});
-    } else { startGyro(); }
-  }catch(e){}
-}
-function startGyro(){
-  window.addEventListener("deviceorientation", function(e){
-    /* Desktops and headless browsers fire this event with null readings — take
-       them as "no gyroscope" rather than as "phone lying flat", which would
-       otherwise tilt every card hard over on a machine with no sensor. */
-    if (e.beta == null || e.gamma == null) return;
-    var b = Number(e.beta) || 0, g = Number(e.gamma) || 0;
-    gyro.x = Math.max(-6, Math.min(6, (b - 45) / 7));
-    gyro.y = Math.max(-9, Math.min(9, g / 3.5));
-    queueTilt();
-  }, true);
-}
-
-function render(){
-  var body = document.getElementById("menuBody");
-  /* A re-render throws the DOM away, so remember which cards the customer had
-     turned over and put them back — otherwise reading the allergens and then
-     tapping + snaps the card shut in their face. */
-  var wasFlipped = [];
-  var fl = body.querySelectorAll(".item.flipped");
-  for (var z = 0; z < fl.length; z++) wasFlipped.push(fl[z].id);
-  var cats = (MENU.categories || []).filter(function(c){ return cat === "all" || c.id === cat; });
-  var html = (cat === "all" || cat === "deals") ? renderDeals() : "";
-  if (cat === "deals") cats = [];
-  cats.forEach(function(c){
-    var list = (MENU.items || []).filter(function(i){ return i.cat === c.id; });
-    if (!list.length) return;
-    html += '<h2 class="sec">' + esc(c.emoji || "") + " " + esc(c.name) +
-            ' <small>' + esc(c.nameTh || "") + " · " + list.length + " items</small></h2><div class=\"grid\">";
-    list.forEach(function(it){
-      var q = cart[it.id] || 0;
-      html += '<div class="item' + (q ? " inCart" : "") + '" id="it_' + esc(it.id) + '"><div class="c3tilt"><div class="c3in">' +
-        '<div class="face front">' +
-          photoHtml(it, "photo") +
-          '<button class="flipbtn" onclick="flipCard(\'' + esc(it.id) + '\')" aria-label="What is in it">i</button>' +
-          '<div class="body3">' +
-            '<div class="nm">' + esc(it.name) + "</div>" +
-            (it.nameTh ? '<div class="th">' + esc(it.nameTh) + "</div>" : "") +
-            (it.desc ? '<div class="ds">' + esc(it.desc) + "</div>" : "") +
-            (it.tags || []).map(tagHtml).join("") +
-            '<div class="qty">' +
-              (q ? '<button class="rnd" onclick="bump(\'' + esc(it.id) + '\',-1)">−</button><span class="qnum">' + q + "</span>" : "") +
-              '<button class="rnd add" onclick="bump(\'' + esc(it.id) + '\',1)">+</button>' +
-            "</div>" +
-          "</div>" +
-        "</div>" +
-        '<div class="face rear">' +
-          '<div class="bt">' + esc(it.name) + "</div>" +
-          (it.nameTh ? '<div class="bth">' + esc(it.nameTh) + "</div>" : "") +
-          "<h4>WHAT'S IN IT</h4><p>" + esc(it.ing || it.desc || "Ask our staff and they'll talk you through it.") + "</p>" +
-          (it.alg ? '<h4>ALLERGENS</h4><p class="alg">' + esc(it.alg) + "</p>" : "") +
-          '<div class="close" onclick="flipCard(\'' + esc(it.id) + '\')">← back to the photo</div>' +
-        "</div>" +
-        "</div></div>" +
-        (it.out ? '<div class="out">SOLD OUT</div>' : "") +
-      "</div>";
-    });
-    html += "</div>";
-  });
-  body.innerHTML = html || '<div class="warn" style="margin-top:20px">Nothing in this section right now.</div>';
-  for (var z2 = 0; z2 < wasFlipped.length; z2++){
-    var fc = document.getElementById(wasFlipped[z2]);
-    if (fc) fc.classList.add("flipped");
-  }
-  collectTilt();
-}
-
-function itemById(id){
-  var list = MENU.items || [];
-  for (var i = 0; i < list.length; i++) if (list[i].id === id) return list[i];
-  var bl = MENU.bundles || [];
-  for (var k = 0; k < bl.length; k++) if (bl[k].id === id) return bl[k];
-  return null;
-}
-
-/* ---------- bundle promotions ----------
-   A bundle never stores its own "was" price. It stores which menu items are in
-   it, and the normal price is added up from those items at render time — so the
-   day a beer price changes, the saving printed on the deal changes with it
-   instead of quietly becoming a lie. */
-function bundleParts(bd){
-  return (bd.parts || []).map(function(pt){
-    var it = null, list = MENU.items || [];
-    for (var i = 0; i < list.length; i++) if (list[i].id === pt.id) { it = list[i]; break; }
-    return it ? { item: it, qty: Number(pt.qty) || 1 } : null;
-  }).filter(Boolean);
-}
-function bundleWas(bd){
-  return bundleParts(bd).reduce(function(a, p){ return a + p.item.price * p.qty; }, 0);
-}
-function bundleText(bd){
-  return bundleParts(bd).map(function(p){ return (p.qty > 1 ? p.qty + "× " : "") + p.item.name; }).join(" + ");
-}
-/* Happy hour. Runs off the customer's own clock, which is the only one this page
-   has — good enough to stop the deal being ordered at 3am, and staff can still
-   refuse it at the table. Shop time, 24h, "16:00". */
-function bundleOpen(bd){
-  var h = bd.hours;
-  if (!h || !h.from || !h.to) return true;
-  var now = new Date();
-  if (h.days && h.days.length && h.days.indexOf(now.getDay()) === -1) return false;
-  var mins = now.getHours() * 60 + now.getMinutes();
-  function toMin(t){ var x = String(t).split(":"); return (Number(x[0]) || 0) * 60 + (Number(x[1]) || 0); }
-  var from = toMin(h.from), to = toMin(h.to);
-  return from <= to ? (mins >= from && mins < to) : (mins >= from || mins < to);  // to<from = crosses midnight
-}
-function isBundle(id){
-  var bl = MENU.bundles || [];
-  for (var i = 0; i < bl.length; i++) if (bl[i].id === id) return true;
-  return false;
-}
-
-function renderDeals(){
-  var list = (MENU.bundles || []).filter(function(bd){ return bundleParts(bd).length; });
-  if (!list.length) return "";
-  var html = '<h2 class="sec">🔥 Deals & Bundles <small>โปรโมชัน · ' + list.length + " sets</small></h2>" +
-             '<div class="deals">';
-  list.forEach(function(bd){
-    var was = bundleWas(bd), save = was - bd.price, open = bundleOpen(bd), q = cart[bd.id] || 0;
-    html += '<div class="deal' + (q ? " inCart" : "") + (open ? "" : " closed") + '" id="it_' + esc(bd.id) + '">' +
-      (bd.badge ? '<div class="badge2">' + esc(bd.badge) + "</div>" : "") +
-      (bd.img ? photoHtml(bd, "dphoto") : '<div class="ico">' + esc(bd.emoji || "🎁") + "</div>") +
-      '<div style="min-width:0;flex:1">' +
-        '<div class="nm">' + esc(bd.name) + "</div>" +
-        (bd.nameTh ? '<div class="th">' + esc(bd.nameTh) + "</div>" : "") +
-        (bd.desc ? '<div class="ds">' + esc(bd.desc) + "</div>" : "") +
-        '<div class="parts">📦 ' + esc(bundleText(bd)) + "</div>" +
-        (bd.tags || []).map(tagHtml).join("") +
-        '<div class="prices"><span class="now">' + baht(bd.price) + "</span>" +
-          (save > 0 ? '<span class="was">' + baht(was) + '</span><span class="save">SAVE ' + baht(save) + "</span>" : "") +
-        "</div>" +
-        (bd.hours ? '<div class="when">⏰ ' + esc(bd.hours.from) + "–" + esc(bd.hours.to) +
-                    (open ? " — on now" : " only — not available right now") + "</div>" : "") +
-      "</div>" +
-      '<div class="qty">' +
-        (q ? '<button class="rnd" onclick="bump(\'' + esc(bd.id) + '\',-1)">−</button><span class="qnum">' + q + "</span>" : "") +
-        (open ? '<button class="rnd add" onclick="bump(\'' + esc(bd.id) + '\',1)">+</button>' : "") +
-      "</div>" +
-    "</div>";
-  });
-  return html + "</div>";
-}
-
-function bump(id, d){
-  var it = itemById(id);
-  if (!it || it.out) return;
-  if (d > 0 && isBundle(id) && !bundleOpen(it)) { toast("That deal is not on right now"); return; }
-  cart[id] = Math.max(0, (cart[id] || 0) + d);
-  if (!cart[id]) delete cart[id];
-  render(); paintCart();
-  if (d > 0) toast(it.name + " added");
-}
-
-/* ---------- cart ---------- */
-function cartLines(){
-  return Object.keys(cart).map(function(id){
-    var it = itemById(id); if (!it) return null;
-    var qty = cart[id];
-    var bundle = isBundle(id);
-    return {
-      id: id, name: it.name, nameTh: it.nameTh || "",
-      /* The staff console and the POS print "name (option)", so the contents of
-         a set go in option — otherwise the kitchen gets a ticket that says
-         "Munchie Box" and has to go and look the deal up. */
-      option: bundle ? bundleText(it) : "",
-      bundle: bundle,
-      was: bundle ? bundleWas(it) : 0,
-      qty: qty, price: it.price, lineTotal: it.price * qty,
-    };
-  }).filter(Boolean);
-}
-function cartTotal(){ return cartLines().reduce(function(a, l){ return a + l.lineTotal; }, 0); }
-function cartCount(){ return cartLines().reduce(function(a, l){ return a + l.qty; }, 0); }
-
-function paintCart(){
-  var n = cartCount();
-  document.getElementById("cartN").textContent = n;
-  document.getElementById("cartTotal").textContent = baht(cartTotal());
-  document.getElementById("cartBar").classList.toggle("show", n > 0);
-}
-
-/* ---------- sheet ---------- */
-function openSheet(html){
-  document.getElementById("sheetBody").innerHTML = html;
-  document.getElementById("sheet").classList.add("show");
-  document.getElementById("scrim").classList.add("show");
-  document.body.style.overflow = "hidden";
-}
-function closeSheet(){
-  document.getElementById("sheet").classList.remove("show");
-  document.getElementById("scrim").classList.remove("show");
-  document.body.style.overflow = "";
-}
-
-function openTablePicker(){
-  var html = "<h3>Which table are you at?</h3>" +
-    '<div style="color:var(--muted);font-size:13.5px">Normally the QR card on your table fills this in for you.</div><div class="tgrid">';
-  TABLES.forEach(function(t){
-    html += '<button class="tbtn' + (table === t ? " sel" : "") + '" onclick="pickTable(\'' + t + '\')">' + esc(t) + "</button>";
-  });
-  html += "</div>" +
-    '<button class="btn btn-ghost" onclick="pickTable(\'\')">I\'m not in the shop — takeaway / delivery</button>';
-  openSheet(html);
-}
-function pickTable(t){
-  saveTable(t || null);
-  closeSheet();
-  toast(t ? "Table set to " + t : "No table — we'll ask for your phone at checkout");
-}
-
-function openCart(){
-  var lines = cartLines();
-  if (!lines.length) return;
-  var sub = cartTotal();
-  var svc = Math.round(sub * (Number(MENU.serviceChargePct) || 0) / 100);
-  var html = "<h3>🧾 Your order" + (table ? " · " + esc(table) : "") + "</h3>";
-  lines.forEach(function(l){
-    html += '<div class="line">' +
-      '<button class="rnd" onclick="stash();bump(\'' + esc(l.id) + '\',-1);openCart()">−</button>' +
-      '<span class="qnum">' + l.qty + "</span>" +
-      '<button class="rnd add" onclick="stash();bump(\'' + esc(l.id) + '\',1);openCart()">+</button>' +
-      '<span class="nm2">' + esc(l.name) +
-        (l.bundle ? '<small style="display:block;color:var(--muted);font-size:11.5px;line-height:1.4">' + esc(l.option) + "</small>" : "") +
-      "</span>" +
-      '<span class="lt">' + baht(l.lineTotal) + "</span></div>";
-  });
-  /* Show what the deals took off the bill — a saving nobody sees is a saving
-     nobody came back for. */
-  var saved = lines.reduce(function(a, l){ return a + (l.bundle ? Math.max(0, l.was - l.price) * l.qty : 0); }, 0);
-  html += '<div class="totals">Subtotal <b>' + baht(sub) + "</b></div>";
-  if (saved > 0) html += '<div class="totals" style="color:var(--green);font-weight:800">🔥 You saved <b style="color:var(--green)">' + baht(saved) + "</b></div>";
-  if (svc) html += '<div class="totals">Service ' + MENU.serviceChargePct + "% <b>" + baht(svc) + "</b></div>";
-  html += '<div class="totals grand">Total <b>' + baht(sub + svc) + "</b></div>";
-
-  if (!table){
-    html += '<div class="warn">No table selected. <b onclick="openTablePicker()" style="color:var(--green);cursor:pointer">Pick your table</b> — or leave it and we\'ll treat this as a takeaway order.</div>';
-  }
-
-  html += '<label class="fld">Your name (so staff can find you)<input id="fName" oninput="stash()" placeholder="e.g. Bryan" value="' + esc(form.name || lastName()) + '"></label>';
-  html += '<label class="fld">Phone ' + (table ? "(optional)" : "(required for takeaway)") + '<input id="fPhone" oninput="stash()" type="tel" inputmode="tel" placeholder="08x xxx xxxx" value="' + esc(form.phone || lastPhone()) + '"></label>';
-  html += '<label class="fld">Notes for the kitchen<textarea id="fNotes" oninput="stash()" rows="2" placeholder="no chilli, extra rice, allergy…">' + esc(form.notes) + "</textarea></label>";
-
-  html += '<label class="fld" style="margin-top:16px">How do you want to pay?</label><div class="paygrid">' +
-    payBtn("cash",      "💵 Cash<br>at the table") +
-    payBtn("promptpay", "📱 PromptPay<br>QR at the table") +
-    payBtn("card",      "💳 Card<br>staff bring reader") +
-    payBtn("till",      "🧾 Add to my tab<br>pay at the till") +
-  "</div>";
-
-  html += '<button class="btn btn-primary" id="sendBtn" onclick="sendOrder()">Send order to the kitchen · ' + baht(sub + svc) + "</button>";
-  html += '<button class="btn btn-ghost" onclick="closeSheet()">Keep browsing</button>';
-  openSheet(html);
-}
-
-function payBtn(id, label){
-  return '<button class="pay' + (payment === id ? " sel" : "") + '" data-pay="' + id + '" onclick="setPay(\'' + id + '\')">' + label + "</button>";
-}
-
-/* Every +/- inside the basket re-renders the sheet, so anything already typed
-   has to be held outside the DOM or it disappears mid-order. */
-var form = { name: "", phone: "", notes: "" };
-function stash(){
-  var n = document.getElementById("fName"), p = document.getElementById("fPhone"), t = document.getElementById("fNotes");
-  if (n) form.name = n.value;
-  if (p) form.phone = p.value;
-  if (t) form.notes = t.value;
-}
-/* Choosing a payment method used to re-render the whole sheet, which blew away
-   whatever the customer had already typed into name / phone / notes — you only
-   noticed once the order arrived in the kitchen with no name on it. Toggle the
-   class instead and leave the inputs alone. */
-function setPay(id){
-  payment = id;
-  var btns = document.querySelectorAll(".paygrid .pay");
-  for (var i = 0; i < btns.length; i++) btns[i].classList.toggle("sel", btns[i].dataset.pay === id);
-  var s = document.getElementById("sendBtn");
-  if (s) s.textContent = "Send order to the kitchen · " + baht(cartTotal() + Math.round(cartTotal() * (Number(MENU.serviceChargePct) || 0) / 100));
-}
-
-function lastName(){ try { return localStorage.getItem("dankName") || ""; } catch(e){ return ""; } }
-function lastPhone(){ try { return localStorage.getItem("dankPhone") || ""; } catch(e){ return ""; } }
-
-/* ---------- send ---------- */
-var PAY_LABEL = { cash: "Cash at table", promptpay: "PromptPay at table", card: "Card at table", till: "Tab — pay at till" };
-
-function sendOrder(){
-  var lines = cartLines();
-  if (!lines.length) return;
-  var name = (document.getElementById("fName").value || "").trim();
-  var phone = (document.getElementById("fPhone").value || "").trim();
-  var notes = (document.getElementById("fNotes").value || "").trim();
-
-  if (!table && !phone){
-    toast("Add a phone number, or pick your table");
-    document.getElementById("fPhone").focus();
-    return;
-  }
-  try{
-    if (name) localStorage.setItem("dankName", name);
-    if (phone) localStorage.setItem("dankPhone", phone);
-  }catch(e){}
-
-  var sub = cartTotal();
-  var svc = Math.round(sub * (Number(MENU.serviceChargePct) || 0) / 100);
-  var order = {
-    kind: "food",
-    fulfilment: table ? "table" : "pickup",
-    table: table || "",
-    items: lines.map(function(l){
-      return { id: l.id, name: l.name, option: l.option || "", qty: l.qty, price: l.price, lineTotal: l.lineTotal, kind: "food" };
-    }),
-    subtotal: sub,
-    serviceCharge: svc,
-    total: sub + svc,
-    payment: PAY_LABEL[payment] || "Cash at table",
-    notes: notes,
-    customer: { name: name || (table ? table : "Walk-in"), phone: phone || (table ? "TABLE-" + table.replace(/\s+/g, "") : "") },
-    pickup: table ? { branch: "In-house · " + table } : {},
-    source: "table-qr",
-  };
-
-  var btn = document.getElementById("sendBtn");
-  btn.disabled = true; btn.textContent = "Sending…";
-
-  fetch("/api/order", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(order),
-  })
-  .then(function(r){ return r.json().then(function(j){ return { ok: r.ok, j: j }; }); })
-  .then(function(res){
-    if (!res.ok || !res.j || res.j.ok === false) throw new Error(res.j && res.j.error || "failed");
-    showDone(res.j.orderId || "", sub + svc);
-  })
-  .catch(function(){
-    btn.disabled = false;
-    btn.textContent = "Send order to the kitchen · " + baht(sub + svc);
-    fallbackLine(order);
-  });
-}
-
-function showDone(orderId, total){
-  cart = {}; form = { name: "", phone: "", notes: "" }; render(); paintCart();
-  openSheet(
-    '<div class="done"><div class="tick">✅</div>' +
-    "<h3 style=\"margin:14px 0 4px\">Order sent to the kitchen</h3>" +
-    '<div style="color:var(--muted);font-size:14px;line-height:1.6">' +
-      (table ? "Staff are bringing it to <b>" + esc(table) + "</b>." : "We'll call you when it's ready.") +
-      "<br>Total " + baht(total) + " · " + esc(PAY_LABEL[payment]) +
-    "</div>" +
-    (orderId ? '<div class="oid">' + esc(orderId) + "</div>" : "") +
-    '<button class="btn btn-primary" onclick="closeSheet()">Order something else</button>' +
-    (table
-      ? '<button class="btn btn-ghost" onclick="closeSheet()">Done</button></div>'
-      : '<button class="btn btn-ghost" onclick="location.href=\'index.html\'">Back to the cannabis menu</button></div>')
-  );
-}
-
-/* If the API is down the order must still reach staff — open LINE with the
-   whole basket pre-typed rather than silently losing it. */
-function fallbackLine(order){
-  var txt = "🍽 TABLE ORDER" + (order.table ? " — " + order.table : "") + "\n" +
-    order.items.map(function(i){ return "• " + i.name + " x" + i.qty + " = ฿" + i.lineTotal; }).join("\n") +
-    "\nTotal ฿" + order.total + "\nPay: " + order.payment +
-    (order.notes ? "\nNotes: " + order.notes : "") +
-    (order.customer.name ? "\nName: " + order.customer.name : "");
-  openSheet(
-    '<h3>⚠ Could not reach the kitchen</h3>' +
-    '<div style="color:var(--muted);font-size:14px;line-height:1.6">The internet dropped. Tap below to send the same order on LINE, or just show this screen to a staff member.</div>' +
-    '<pre style="white-space:pre-wrap;background:var(--panel2);border:1px solid var(--line2);border-radius:12px;padding:13px;font-size:13px;margin-top:12px">' + esc(txt) + "</pre>" +
-    '<a class="btn btn-primary" target="_blank" rel="noopener" href="https://line.me/R/oaMessage/@dankbkk/?' + encodeURIComponent(txt) + '">Send on LINE</a>' +
-    '<button class="btn btn-ghost" onclick="closeSheet()">Close</button>'
-  );
-}
-
-/* ---------- misc ---------- */
-var toastT;
-function toast(msg){
-  var el = document.getElementById("toast");
-  el.textContent = msg; el.classList.add("show");
-  clearTimeout(toastT); toastT = setTimeout(function(){ el.classList.remove("show"); }, 1800);
-}
-
-document.addEventListener("keydown", function(e){ if (e.key === "Escape") closeSheet(); });
-
-/* ---------- age gate ----------
-   Asked once per visit, not once per page view: a customer at a table will
-   reopen this menu three or four times over an evening and being challenged
-   every round of drinks is what makes people stop using the QR at all. */
-function passGate(){
-  try{ sessionStorage.setItem("dankAge20", "1"); }catch(e){}
-  var g = document.getElementById("gate");
-  g.style.transition = "opacity .25s"; g.style.opacity = "0";
-  setTimeout(function(){ g.remove(); }, 250);
-}
-
-/* ---------- boot ---------- */
-(function init(){
-  var seen = false;
-  try{ seen = sessionStorage.getItem("dankAge20") === "1"; }catch(e){}
-  if (seen){ var g = document.getElementById("gate"); if (g) g.remove(); }
-
-  var t = readTable();
-  if (!t){ try { t = sessionStorage.getItem("dankTable"); } catch(e){} }
-  saveTable(t && TABLES.indexOf(t) !== -1 ? t : null);
-  bindTilt();
-  paintCart();
-  loadMenu();
-})();
-</script>
-
-<!-- site-wide 🌐 language picker, same file every other page uses -->
-<script src="i18n.js"></script>
-</body>
-</html>
+# DANK BKK — one project, shop + POS together
+
+This folder is the **whole thing**: the shop, the staff console, the Build Your
+Joint page, the BRYAN POS app, and the `api/` folder that connects them.
+
+Everything runs from one GitHub repo and one Vercel project.
+
+| Address | What it is |
+|---|---|
+| `/` | The DANK BKK shop (customers) |
+| `/pos.html` | BRYAN POS (staff, PIN protected) |
+| `/staff.html` | Staff console — chats, orders, free gram, stock count |
+| `/build-your-joint.html` | Build Your Joint |
+| `/api/…` | The 38 files that make orders, menu sync, members and payments work |
+
+---
+
+## 1 · Upload every file to GitHub
+
+Repo: **bryank31172-web/DANK-MEDICAL-POS-APP**
+
+1. Unzip this folder somewhere you can see it.
+2. Open the repo on github.com → **Add file** → **Upload files**.
+3. Open the unzipped folder, press **Ctrl+A** (Windows) or **Cmd+A** (Mac) to
+   select everything — the loose files **and** the `api` and `assets` folders —
+   and drag the whole selection onto the upload page in one go.
+4. Wait until the list on screen shows `api/` with files inside it. **If you
+   don't see the `api` folder listed, stop and drag it in again** — that folder
+   is the part that makes orders reach the POS, and it is the piece that went
+   missing last time.
+5. Commit.
+
+Anything already in the repo with the same name is replaced automatically. If
+there is an old `dank medical pos.zip` sitting in the repo, delete it — a zip
+file does nothing on Vercel, only the unzipped files count.
+
+## 2 · Set the required variables in Vercel
+
+Vercel → your project → **Settings** → **Environment Variables**.
+
+Always needed:
+
+| Name | Value |
+|---|---|
+| `STAFF_KEY` | your staff key — the one I sent you in chat (already set in Vercel) |
+| `UPSTASH_REDIS_REST_URL` | from your Upstash database |
+| `UPSTASH_REDIS_REST_TOKEN` | from your Upstash database |
+| `POS_APP_URL` | `https://dank-medical-pos-app.vercel.app` |
+
+Needed by the feature next to it — leave one blank and **only that feature**
+stops, with a clear `503 {"error":"not configured"}` rather than a silent hole:
+
+| Name | Without it |
+|---|---|
+| `ADMIN_EMAIL` | owner edit-mode login is off |
+| `ADMIN_PASSWORD` | owner edit-mode login is off |
+| `ADMIN_SECRET` | owner edit-mode login is off (this signs the session token) |
+| `POS_SYNC_KEY` | the POS can't push its menu to the website |
+| `WEBHOOK_SECRET` | `/api/gbp-webhook` and `/api/storehub-webhook` reject everything |
+| `LINE_CHANNEL_SECRET` | LINE webhooks can't be verified, so they're refused |
+
+These six used to have working values written into the `api/` files, which is
+why the site ran with no setup at all. It also meant the admin password, the
+POS link key and the fallback staff key were sitting in every copy of the source
+— including the GitHub repo. They have been removed. Nothing falls back to a
+default any more, and no endpoint accepts a request it can't check.
+
+**The Upstash pair is not optional.** Without it an order can be taken by one
+server and then asked for by a different one, and it disappears. Upstash has a
+free plan: upstash.com → create a Redis database → copy the REST URL and REST
+token. It also backs the per-address rate limits on the public endpoints; on
+memory alone each Vercel instance counts separately and the limits are looser.
+
+Optional extras (`STOREHUB_TOKEN`, `LINE_CHANNEL_ACCESS_TOKEN`,
+`GOOGLE_MAPS_API_KEY`, payment keys…) are listed with explanations in
+`.env.example`. The shop works without them.
+
+After saving, go to **Deployments** and redeploy, otherwise the new variables
+aren't picked up.
+
+### Wallet orders now wait for staff
+
+A web order paid from the customer's wallet arrives as **wallet pending**: the
+site checks the balance, refuses the order if it isn't enough, and holds the
+amount against the order — but no money moves until someone on staff settles it
+from the console. The reason is simple: `/api/order` takes a phone number and no
+password, so before this, typing somebody else's number into checkout spent
+their balance. An endpoint that can't tell who is calling must never move money.
+Settling is idempotent, so pressing it twice can't debit twice. Once phone
+numbers are verified at login with a one-time code, this can go straight back to
+debiting at checkout — the order record already carries everything needed
+(`walletReserved`, `walletAmount`, `walletBalance`).
+
+## 3 · Put the staff key into the POS, once
+
+Open `/pos.html` → Settings → **API / Website Integration**.
+
+Under *Website URL* there is a **Staff Key** box. Paste your staff key into it
+— the same value as `STAFF_KEY` in Vercel — and save. That is the only setting
+you need; the POS now finds the website by itself, because they live at the
+same address.
+
+(The key itself is deliberately not written down in this file. These notes get
+committed to GitHub, and anyone who reads the key can read your customers'
+orders. Copy it from Vercel → Settings → Environment Variables.)
+
+(The *API KEY* box below it is a different thing and you can leave it empty.)
+
+## 4 · Point the domain
+
+Vercel → Settings → **Domains** → **Add Domain** → `dankbangkok.com`. Vercel
+then offers to add `www.dankbangkok.com` too — say yes, and set the redirect so
+one of the two is the real address and the other bounces to it.
+
+At your registrar, add the two records Vercel shows you:
+
+| Type | Name | Value |
+|---|---|---|
+| `A` | `@` | `76.76.21.21` |
+| `CNAME` | `www` | **the value on your Vercel screen** |
+
+The A record is Vercel's general-purpose address and is the same for everyone.
+The CNAME is **not** — every project now gets its own, something along the
+lines of `d1d4fc829fe7bc7c.vercel-dns-017.com`. Copy it off the Domains page
+rather than out of any guide, including this one.
+
+DNS takes a few minutes to a few hours to spread. Vercel issues the HTTPS
+certificate by itself once it can see the records — nothing to buy, nothing to
+install. When the domain goes green the shop is at dankbangkok.com and the POS
+is at dankbangkok.com/pos.html.
+
+---
+
+## Check it's alive
+
+- `/api/health` → shows `{"ok":true …}`
+- `/api/menu-version` → after the POS has been open ~1 minute, `"source":"pos"`
+- Place a test order on the shop, wait 30 seconds, look at the POS Orders tab.
+
+## If orders still don't arrive
+
+1. Open `/api/orders?key=YOUR_STAFF_KEY` in a browser (paste your real staff key
+   in place of `YOUR_STAFF_KEY`).
+   - `{"orders":[…]}` → the website has them, the problem is in the POS.
+   - `401` → `STAFF_KEY` in Vercel doesn't match the key you typed.
+   - `503 {"error":"not configured"}` → `STAFF_KEY` isn't set in Vercel at all.
+   - `404` → the `api/` folder didn't upload. Back to step 1.
+2. In the POS, check the Staff Key box actually has the key saved in it.
+3. Check the Upstash variables are set and you redeployed after setting them.
+
+The orders list shows the most recent 60 by default; `?limit=` goes up to 300,
+`?archive=1` reaches back past the live window, and `?offset=` pages through it
+(the reply carries `total` and `nextOffset`). Older orders used to be dropped
+outright once 200 had gone by — they're kept now, just not on the first page.
+
+## Settling a wallet order by hand
+
+If the console doesn't offer a button yet, a wallet-pending order is settled
+with one call, which is safe to repeat:
+
+```
+POST /api/wallet   {"action":"settle","orderId":"DK…","key":"YOUR_STAFF_KEY"}
+```
+
+It answers `{ok:true, balance, amount}`, or `402` with the customer's balance if
+they've spent it elsewhere since, or `{alreadySettled:true}` if it was done
+already. Do it when the customer is in front of you, or after you've confirmed
+by phone that the order is really theirs.

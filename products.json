@@ -1,1863 +1,417 @@
-[
-  {
-    "id": "crunch-berrie",
-    "name": "Crunch Berrie",
-    "category": "Exotics",
-    "type": "Hybrid",
-    "thc": 29,
-    "thcLabel": "29%",
-    "cbd": 0,
-    "featured": true,
-    "isNew": true,
-    "stock": 25,
-    "unit": "g",
-    "effects": [
-      "Relaxed",
-      "Happy",
-      "Euphoric"
-    ],
-    "flavors": [
-      "Berry",
-      "Sweet",
-      "Cream"
-    ],
-    "description": "Fresh drop — candy-berry exotic with a smooth, happy high. One of our newest strains.",
-    "image": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-6890.png?v=1782732640",
-    "priceTiers": [
-      {
-        "label": "½g",
-        "price": 400,
-        "member": 360
-      },
-      {
-        "label": "1 joint",
-        "price": 400,
-        "member": 360
-      },
-      {
-        "label": "1g",
-        "price": 800,
-        "member": 720
-      },
-      {
-        "label": "3.5g · 3+1 FREE",
-        "price": 2400,
-        "member": 2160
-      }
-    ],
-    "code": "EXO-01"
-  },
-  {
-    "id": "alien-mint",
-    "name": "Alien Mint",
-    "category": "Exotics",
-    "type": "Hybrid",
-    "thc": 30,
-    "thcLabel": "30%",
-    "cbd": 0,
-    "featured": true,
-    "isNew": true,
-    "stock": 22,
-    "unit": "g",
-    "effects": [
-      "Relaxed",
-      "Happy",
-      "Euphoric"
-    ],
-    "flavors": [
-      "Mint",
-      "Gas",
-      "Cookies"
-    ],
-    "description": "Minty, gassy and out of this world. New-season exotic at a full 30% THC.",
-    "image": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-6888.png?v=1782731863",
-    "priceTiers": [
-      {
-        "label": "½g",
-        "price": 400,
-        "member": 360
-      },
-      {
-        "label": "1 joint",
-        "price": 400,
-        "member": 360
-      },
-      {
-        "label": "1g",
-        "price": 800,
-        "member": 720
-      },
-      {
-        "label": "3.5g · 3+1 FREE",
-        "price": 2400,
-        "member": 2160
-      }
-    ],
-    "code": "EXO-02"
-  },
-  {
-    "id": "cookie-monster",
-    "name": "Cookie Monster",
-    "category": "Exotics",
-    "type": "Indica",
-    "thc": 31,
-    "thcLabel": "31%",
-    "cbd": 0,
-    "featured": true,
-    "isNew": true,
-    "stock": 18,
-    "unit": "g",
-    "effects": [
-      "Relaxed",
-      "Sleepy",
-      "Happy"
-    ],
-    "flavors": [
-      "Cookies",
-      "Sweet",
-      "Earthy"
-    ],
-    "description": "Indica-leaning heavyweight — doughy cookie flavour and a deep body melt.",
-    "image": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-6884.jpg?v=1782730860",
-    "priceTiers": [
-      {
-        "label": "½g",
-        "price": 400,
-        "member": 360
-      },
-      {
-        "label": "1 joint",
-        "price": 400,
-        "member": 360
-      },
-      {
-        "label": "1g",
-        "price": 800,
-        "member": 720
-      },
-      {
-        "label": "3.5g · 3+1 FREE",
-        "price": 2400,
-        "member": 2160
-      }
-    ],
-    "code": "EXO-03"
-  },
-  {
-    "id": "d-lish",
-    "name": "D-Lish",
-    "category": "Exotics",
-    "type": "Hybrid",
-    "thc": 30,
-    "thcLabel": "30%",
-    "cbd": 0,
-    "isNew": true,
-    "stock": 20,
-    "unit": "g",
-    "effects": [
-      "Relaxed",
-      "Happy",
-      "Euphoric"
-    ],
-    "flavors": [
-      "Fruity",
-      "Candy"
-    ],
-    "description": "Delicious by name — juicy candy terps with a balanced, blissful hybrid high.",
-    "image": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-6883.png?v=1782730523",
-    "priceTiers": [
-      {
-        "label": "½g",
-        "price": 400,
-        "member": 360
-      },
-      {
-        "label": "1 joint",
-        "price": 400,
-        "member": 360
-      },
-      {
-        "label": "1g",
-        "price": 800,
-        "member": 720
-      },
-      {
-        "label": "3.5g · 3+1 FREE",
-        "price": 2400,
-        "member": 2160
-      }
-    ],
-    "code": "EXO-04"
-  },
-  {
-    "id": "black-cherry",
-    "name": "Black Cherry",
-    "category": "Exotics",
-    "type": "Indica",
-    "thc": 32,
-    "thcLabel": "30–32%",
-    "cbd": 0,
-    "isNew": true,
-    "stock": 16,
-    "unit": "g",
-    "effects": [
-      "Relaxed",
-      "Sleepy",
-      "Calm"
-    ],
-    "flavors": [
-      "Cherry",
-      "Sweet",
-      "Earthy"
-    ],
-    "description": "Dark cherry indica — rich fruit flavour and a heavy, restful finish.",
-    "image": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-6879.jpg?v=1782729302",
-    "priceTiers": [
-      {
-        "label": "½g",
-        "price": 400,
-        "member": 360
-      },
-      {
-        "label": "1 joint",
-        "price": 400,
-        "member": 360
-      },
-      {
-        "label": "1g",
-        "price": 800,
-        "member": 720
-      },
-      {
-        "label": "3.5g · 3+1 FREE",
-        "price": 2400,
-        "member": 2160
-      }
-    ],
-    "code": "EXO-05"
-  },
-  {
-    "id": "orange-z",
-    "name": "Orange Z",
-    "category": "Exotics",
-    "type": "Hybrid",
-    "thc": 30,
-    "thcLabel": "29–30%",
-    "cbd": 0,
-    "isNew": true,
-    "stock": 20,
-    "unit": "g",
-    "effects": [
-      "Relaxed",
-      "Happy",
-      "Euphoric"
-    ],
-    "flavors": [
-      "Orange",
-      "Citrus",
-      "Zkittlez"
-    ],
-    "description": "Zesty citrus cross with Z-family sweetness. Bright, happy and potent.",
-    "image": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-6878.jpg?v=1782729032",
-    "priceTiers": [
-      {
-        "label": "½g",
-        "price": 400,
-        "member": 360
-      },
-      {
-        "label": "1 joint",
-        "price": 400,
-        "member": 360
-      },
-      {
-        "label": "1g",
-        "price": 800,
-        "member": 720
-      },
-      {
-        "label": "3.5g · 3+1 FREE",
-        "price": 2400,
-        "member": 2160
-      }
-    ],
-    "code": "EXO-06"
-  },
-  {
-    "id": "giraffe-puzzy",
-    "name": "Giraffe Puzzy",
-    "category": "Exotics",
-    "type": "Hybrid",
-    "thc": 30,
-    "thcLabel": "30%",
-    "cbd": 0,
-    "stock": 15,
-    "unit": "g",
-    "effects": [
-      "Relaxed",
-      "Happy",
-      "Euphoric"
-    ],
-    "flavors": [
-      "Exotic",
-      "Funky",
-      "Sweet"
-    ],
-    "description": "Rare exotic cut with funky terps and a tall, euphoric high.",
-    "image": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-6876.jpg?v=1782725629",
-    "priceTiers": [
-      {
-        "label": "½g",
-        "price": 400,
-        "member": 360
-      },
-      {
-        "label": "1 joint",
-        "price": 400,
-        "member": 360
-      },
-      {
-        "label": "1g",
-        "price": 800,
-        "member": 720
-      },
-      {
-        "label": "3.5g · 3+1 FREE",
-        "price": 2400,
-        "member": 2160
-      }
-    ],
-    "code": "EXO-07"
-  },
-  {
-    "id": "blue-nerdz",
-    "name": "Blue Nerdz",
-    "category": "Exotics",
-    "type": "Hybrid",
-    "thc": 32,
-    "thcLabel": "30–32%",
-    "cbd": 0,
-    "stock": 14,
-    "unit": "g",
-    "effects": [
-      "Relaxed",
-      "Happy",
-      "Euphoric"
-    ],
-    "flavors": [
-      "Blueberry",
-      "Candy"
-    ],
-    "description": "Blue candy terps stacked on serious potency — a fan favourite exotic.",
-    "image": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-6875.jpg?v=1782723699",
-    "priceTiers": [
-      {
-        "label": "½g",
-        "price": 400,
-        "member": 360
-      },
-      {
-        "label": "1 joint",
-        "price": 400,
-        "member": 360
-      },
-      {
-        "label": "1g",
-        "price": 800,
-        "member": 720
-      },
-      {
-        "label": "3.5g · 3+1 FREE",
-        "price": 2400,
-        "member": 2160
-      }
-    ],
-    "code": "EXO-08"
-  },
-  {
-    "id": "thai-orange-tea",
-    "name": "Thai Orange Tea",
-    "category": "Exotics",
-    "type": "Hybrid",
-    "thc": 30,
-    "thcLabel": "29–30%",
-    "cbd": 0,
-    "stock": 18,
-    "unit": "g",
-    "effects": [
-      "Relaxed",
-      "Happy",
-      "Euphoric"
-    ],
-    "flavors": [
-      "Thai Tea",
-      "Orange",
-      "Sweet"
-    ],
-    "description": "Local legend — Thai-tea sweetness with orange zest. Smooth and strong.",
-    "image": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-6873.jpg?v=1782722872",
-    "priceTiers": [
-      {
-        "label": "½g",
-        "price": 400,
-        "member": 360
-      },
-      {
-        "label": "1 joint",
-        "price": 400,
-        "member": 360
-      },
-      {
-        "label": "1g",
-        "price": 800,
-        "member": 720
-      },
-      {
-        "label": "3.5g · 3+1 FREE",
-        "price": 2400,
-        "member": 2160
-      }
-    ],
-    "code": "EXO-09"
-  },
-  {
-    "id": "red-hot",
-    "name": "Red Hot",
-    "category": "Exotics",
-    "type": "Hybrid",
-    "thc": 30,
-    "thcLabel": "29–30%",
-    "cbd": 0,
-    "stock": 20,
-    "unit": "g",
-    "effects": [
-      "Relaxed",
-      "Happy",
-      "Euphoric"
-    ],
-    "flavors": [
-      "Spice",
-      "Sweet",
-      "Gas"
-    ],
-    "description": "Fiery exotic with sweet-spice terps and a fast-hitting euphoria.",
-    "image": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-6090.jpg?v=1781096752",
-    "priceTiers": [
-      {
-        "label": "½g",
-        "price": 400,
-        "member": 360
-      },
-      {
-        "label": "1 joint",
-        "price": 400,
-        "member": 360
-      },
-      {
-        "label": "1g",
-        "price": 800,
-        "member": 720
-      },
-      {
-        "label": "3.5g · 3+1 FREE",
-        "price": 2400,
-        "member": 2160
-      }
-    ],
-    "code": "EXO-10"
-  },
-  {
-    "id": "coco-chanel",
-    "name": "Coco Chanel",
-    "category": "Exotics",
-    "type": "Hybrid",
-    "thc": 28,
-    "thcLabel": "26–28%",
-    "cbd": 0,
-    "stock": 19,
-    "unit": "g",
-    "effects": [
-      "Relaxed",
-      "Happy",
-      "Euphoric"
-    ],
-    "flavors": [
-      "Cocoa",
-      "Floral",
-      "Gas"
-    ],
-    "description": "Designer-grade flower — smooth cocoa florals with a luxury finish.",
-    "image": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/CB952B9D-5F70-4968-B268-A766D1893BCE.png?v=1780143593",
-    "priceTiers": [
-      {
-        "label": "½g",
-        "price": 400,
-        "member": 360
-      },
-      {
-        "label": "1 joint",
-        "price": 400,
-        "member": 360
-      },
-      {
-        "label": "1g",
-        "price": 800,
-        "member": 720
-      },
-      {
-        "label": "3.5g · 3+1 FREE",
-        "price": 2400,
-        "member": 2160
-      }
-    ],
-    "code": "EXO-11"
-  },
-  {
-    "id": "pink-zugar",
-    "name": "Pink Zugar",
-    "category": "Exotics",
-    "type": "Hybrid",
-    "thc": 27,
-    "thcLabel": "22–27%",
-    "cbd": 0,
-    "stock": 21,
-    "unit": "g",
-    "effects": [
-      "Relaxed",
-      "Happy",
-      "Euphoric"
-    ],
-    "flavors": [
-      "Sugar",
-      "Berry",
-      "Floral"
-    ],
-    "description": "Sweet pink sugar terps — a gentler exotic that's easy to love.",
-    "image": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-5581.png?v=1780144311",
-    "priceTiers": [
-      {
-        "label": "½g",
-        "price": 400,
-        "member": 360
-      },
-      {
-        "label": "1 joint",
-        "price": 400,
-        "member": 360
-      },
-      {
-        "label": "1g",
-        "price": 800,
-        "member": 720
-      },
-      {
-        "label": "3.5g · 3+1 FREE",
-        "price": 2400,
-        "member": 2160
-      }
-    ],
-    "code": "EXO-12"
-  },
-  {
-    "id": "lcg-rx11",
-    "name": "LCG RX11",
-    "category": "Exotics",
-    "type": "Hybrid",
-    "thc": 29,
-    "thcLabel": "29%",
-    "cbd": 0,
-    "stock": 17,
-    "unit": "g",
-    "effects": [
-      "Relaxed",
-      "Happy",
-      "Euphoric"
-    ],
-    "flavors": [
-      "Gelato",
-      "Cherry",
-      "Gas"
-    ],
-    "description": "Lemon Cherry Gelato pheno RX11 — connoisseur cut with loud terps.",
-    "image": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-5253.png?v=1779642559",
-    "priceTiers": [
-      {
-        "label": "½g",
-        "price": 400,
-        "member": 360
-      },
-      {
-        "label": "1 joint",
-        "price": 400,
-        "member": 360
-      },
-      {
-        "label": "1g",
-        "price": 800,
-        "member": 720
-      },
-      {
-        "label": "3.5g · 3+1 FREE",
-        "price": 2400,
-        "member": 2160
-      }
-    ],
-    "code": "EXO-13"
-  },
-  {
-    "id": "toad-venom",
-    "name": "Toad Venom",
-    "category": "Exotics",
-    "type": "Hybrid",
-    "thc": 35,
-    "thcLabel": "28–35%",
-    "cbd": 0,
-    "featured": true,
-    "stock": 15,
-    "unit": "g",
-    "effects": [
-      "Euphoric",
-      "Relaxed",
-      "Sleepy"
-    ],
-    "flavors": [
-      "Gas",
-      "Earthy",
-      "Pungent"
-    ],
-    "description": "One of the strongest flowers in the shop — up to 35% THC. Handle with respect.",
-    "image": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-5254.png?v=1779642336",
-    "priceTiers": [
-      {
-        "label": "½g",
-        "price": 400,
-        "member": 360
-      },
-      {
-        "label": "1 joint",
-        "price": 400,
-        "member": 360
-      },
-      {
-        "label": "1g",
-        "price": 800,
-        "member": 720
-      },
-      {
-        "label": "3.5g · 3+1 FREE",
-        "price": 2400,
-        "member": 2160
-      }
-    ],
-    "code": "EXO-14"
-  },
-  {
-    "id": "lemon-cherry-gelato",
-    "name": "Lemon Cherry Gelato",
-    "category": "Exotics",
-    "type": "Hybrid",
-    "thc": 31.5,
-    "thcLabel": "31.5%",
-    "cbd": 0,
-    "featured": true,
-    "stock": 18,
-    "unit": "g",
-    "effects": [
-      "Relaxed",
-      "Happy",
-      "Euphoric"
-    ],
-    "flavors": [
-      "Lemon",
-      "Cherry",
-      "Gelato"
-    ],
-    "description": "The famous LCG — creamy gelato with lemon-cherry brightness at 31.5%.",
-    "image": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/48E8E325-A1F7-43F4-8777-6520094BA6C9.png?v=1780151539",
-    "priceTiers": [
-      {
-        "label": "½g",
-        "price": 400,
-        "member": 360
-      },
-      {
-        "label": "1 joint",
-        "price": 400,
-        "member": 360
-      },
-      {
-        "label": "1g",
-        "price": 800,
-        "member": 720
-      },
-      {
-        "label": "3.5g · 3+1 FREE",
-        "price": 2400,
-        "member": 2160
-      }
-    ],
-    "code": "EXO-15"
-  },
-  {
-    "id": "gelato-x",
-    "name": "Gelato X",
-    "category": "Exotics",
-    "type": "Indica",
-    "thc": 28,
-    "thcLabel": "28%",
-    "cbd": 0,
-    "stock": 16,
-    "unit": "g",
-    "effects": [
-      "Relaxed",
-      "Happy",
-      "Sleepy"
-    ],
-    "flavors": [
-      "Gelato",
-      "Cream",
-      "Sweet"
-    ],
-    "description": "Indica-leaning Gelato cross — creamy, calming and dessert-sweet.",
-    "image": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/5BC567FD-D2D3-40DD-9E61-C184268D134C.png?v=1780151537",
-    "priceTiers": [
-      {
-        "label": "½g",
-        "price": 400,
-        "member": 360
-      },
-      {
-        "label": "1 joint",
-        "price": 450,
-        "member": 405
-      },
-      {
-        "label": "1g",
-        "price": 800,
-        "member": 720
-      },
-      {
-        "label": "3.5g · 3+1 FREE",
-        "price": 2400,
-        "member": 2160
-      }
-    ],
-    "code": "EXO-16"
-  },
-  {
-    "id": "og-zkittlez",
-    "name": "OG Kush × Zkittlez",
-    "category": "Topshelf",
-    "type": "Hybrid",
-    "thc": 30,
-    "thcLabel": "28–30%",
-    "cbd": 0,
-    "featured": true,
-    "stock": 24,
-    "unit": "g",
-    "effects": [
-      "Relaxed",
-      "Happy",
-      "Euphoric"
-    ],
-    "flavors": [
-      "OG",
-      "Zkittlez",
-      "Fruit"
-    ],
-    "description": "Classic OG structure with Zkittlez candy — best-of-both topshelf.",
-    "image": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-6880.jpg?v=1782729487",
-    "priceTiers": [
-      {
-        "label": "½g",
-        "price": 300,
-        "member": 270
-      },
-      {
-        "label": "1 joint",
-        "price": 300,
-        "member": 270
-      },
-      {
-        "label": "1g",
-        "price": 600,
-        "member": 540
-      },
-      {
-        "label": "3.5g · 3+1 FREE",
-        "price": 1800,
-        "member": 1620
-      }
-    ],
-    "code": "TOP-01"
-  },
-  {
-    "id": "ztupid",
-    "freeGift": true,
-    "name": "Ztupid",
-    "category": "Topshelf",
-    "type": "Hybrid",
-    "thc": 26,
-    "thcLabel": "26%",
-    "cbd": 0,
-    "stock": 20,
-    "unit": "g",
-    "effects": [
-      "Relaxed",
-      "Happy",
-      "Euphoric"
-    ],
-    "flavors": [
-      "Z",
-      "Fruity",
-      "Sweet"
-    ],
-    "description": "Ztupidly smooth — fruity Z-family topshelf at a friendly price.",
-    "image": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-5586.png?v=1780149518",
-    "priceTiers": [
-      {
-        "label": "½g",
-        "price": 300,
-        "member": 270
-      },
-      {
-        "label": "1 joint",
-        "price": 300,
-        "member": 270
-      },
-      {
-        "label": "1g",
-        "price": 600,
-        "member": 540
-      },
-      {
-        "label": "3.5g · 3+1 FREE",
-        "price": 1800,
-        "member": 1620
-      }
-    ],
-    "code": "TOP-02"
-  },
-  {
-    "id": "sherb-tank",
-    "name": "Sherb Tank",
-    "category": "Topshelf",
-    "type": "Hybrid",
-    "thc": 25,
-    "thcLabel": "25%",
-    "cbd": 0,
-    "stock": 22,
-    "unit": "g",
-    "effects": [
-      "Relaxed",
-      "Happy",
-      "Euphoric"
-    ],
-    "flavors": [
-      "Sherbet",
-      "Cream",
-      "Gas"
-    ],
-    "description": "Creamy sherbet terps in a tank of a flower. Reliable topshelf pick.",
-    "image": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-5575.png?v=1780144807",
-    "priceTiers": [
-      {
-        "label": "½g",
-        "price": 300,
-        "member": 270
-      },
-      {
-        "label": "1 joint",
-        "price": 300,
-        "member": 270
-      },
-      {
-        "label": "1g",
-        "price": 600,
-        "member": 540
-      },
-      {
-        "label": "3.5g · 3+1 FREE",
-        "price": 1800,
-        "member": 1620
-      }
-    ],
-    "code": "TOP-03"
-  },
-  {
-    "id": "king-cherry",
-    "name": "King Cherry",
-    "category": "Topshelf",
-    "type": "Hybrid",
-    "thc": 28,
-    "thcLabel": "28%",
-    "cbd": 0,
-    "stock": 20,
-    "unit": "g",
-    "effects": [
-      "Relaxed",
-      "Happy",
-      "Euphoric"
-    ],
-    "flavors": [
-      "Cherry",
-      "Sweet"
-    ],
-    "description": "Royal cherry flavour with a confident, balanced high.",
-    "image": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/6A808D23-ABAB-45D5-B098-B58A737A0113.png?v=1780144616",
-    "priceTiers": [
-      {
-        "label": "½g",
-        "price": 300,
-        "member": 270
-      },
-      {
-        "label": "1 joint",
-        "price": 300,
-        "member": 270
-      },
-      {
-        "label": "1g",
-        "price": 600,
-        "member": 540
-      },
-      {
-        "label": "3.5g · 3+1 FREE",
-        "price": 1800,
-        "member": 1620
-      }
-    ],
-    "code": "TOP-04"
-  },
-  {
-    "id": "baby-cake",
-    "name": "Baby Cake",
-    "category": "Topshelf",
-    "type": "Hybrid",
-    "thc": 28,
-    "thcLabel": "24–28%",
-    "cbd": 0,
-    "stock": 18,
-    "unit": "g",
-    "effects": [
-      "Relaxed",
-      "Happy",
-      "Calm"
-    ],
-    "flavors": [
-      "Cake",
-      "Vanilla",
-      "Sweet"
-    ],
-    "description": "Soft cake batter terps — sweet, mellow and easy-going.",
-    "image": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-5575.png?v=1780144807",
-    "priceTiers": [
-      {
-        "label": "½g",
-        "price": 300,
-        "member": 270
-      },
-      {
-        "label": "1 joint",
-        "price": 300,
-        "member": 270
-      },
-      {
-        "label": "1g",
-        "price": 600,
-        "member": 540
-      },
-      {
-        "label": "3.5g · 3+1 FREE",
-        "price": 1800,
-        "member": 1620
-      }
-    ],
-    "code": "TOP-05"
-  },
-  {
-    "id": "zkittles-top",
-    "name": "Zkittles",
-    "category": "Topshelf",
-    "type": "Hybrid",
-    "thc": 30,
-    "thcLabel": "30%",
-    "cbd": 0,
-    "stock": 21,
-    "unit": "g",
-    "effects": [
-      "Relaxed",
-      "Happy",
-      "Euphoric"
-    ],
-    "flavors": [
-      "Tropical",
-      "Berry",
-      "Candy"
-    ],
-    "description": "Taste the rainbow — award-winning candy strain at topshelf price.",
-    "image": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-5586.png?v=1780149518",
-    "priceTiers": [
-      {
-        "label": "½g",
-        "price": 300,
-        "member": 270
-      },
-      {
-        "label": "1 joint",
-        "price": 300,
-        "member": 270
-      },
-      {
-        "label": "1g",
-        "price": 600,
-        "member": 540
-      },
-      {
-        "label": "3.5g · 3+1 FREE",
-        "price": 1800,
-        "member": 1620
-      }
-    ],
-    "code": "TOP-06"
-  },
-  {
-    "id": "mac1",
-    "freeGift": true,
-    "name": "Mac1",
-    "category": "Midgrade",
-    "type": "Hybrid",
-    "thc": 29,
-    "thcLabel": "29%",
-    "cbd": 0,
-    "featured": true,
-    "stock": 30,
-    "unit": "g",
-    "effects": [
-      "Relaxed",
-      "Happy",
-      "Euphoric"
-    ],
-    "flavors": [
-      "Cream",
-      "Citrus",
-      "Diesel"
-    ],
-    "description": "MAC quality at midgrade money — our best-value smoke, hands down.",
-    "image": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-6886.png?v=1782731272",
-    "priceTiers": [
-      {
-        "label": "½g",
-        "price": 200,
-        "member": 180
-      },
-      {
-        "label": "1 joint",
-        "price": 200,
-        "member": 180
-      },
-      {
-        "label": "1g",
-        "price": 400,
-        "member": 360
-      },
-      {
-        "label": "3.5g · 3+1 FREE",
-        "price": 1200,
-        "member": 1080
-      }
-    ],
-    "code": "MID-01"
-  },
-  {
-    "id": "superboof",
-    "freeGift": true,
-    "name": "Superboof",
-    "category": "Midgrade",
-    "type": "Hybrid",
-    "thc": 30,
-    "thcLabel": "28–30%",
-    "cbd": 0,
-    "stock": 26,
-    "unit": "g",
-    "effects": [
-      "Relaxed",
-      "Happy",
-      "Euphoric"
-    ],
-    "flavors": [
-      "Citrus",
-      "Funk",
-      "Sweet"
-    ],
-    "description": "Punches way above its price tag — loud citrus funk for ฿400/g.",
-    "image": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-5258.png?v=1779643656",
-    "priceTiers": [
-      {
-        "label": "½g",
-        "price": 200,
-        "member": 180
-      },
-      {
-        "label": "1 joint",
-        "price": 200,
-        "member": 180
-      },
-      {
-        "label": "1g",
-        "price": 400,
-        "member": 360
-      },
-      {
-        "label": "3.5g · 3+1 FREE",
-        "price": 1200,
-        "member": 1080
-      }
-    ],
-    "code": "MID-02"
-  },
-  {
-    "id": "thai-durian",
-    "freeGift": true,
-    "name": "Thailand Durian",
-    "category": "Midgrade",
-    "type": "Hybrid",
-    "thc": 22,
-    "thcLabel": "22%",
-    "cbd": 0,
-    "stock": 28,
-    "unit": "g",
-    "effects": [
-      "Relaxed",
-      "Happy",
-      "Social"
-    ],
-    "flavors": [
-      "Durian",
-      "Tropical",
-      "Funky"
-    ],
-    "description": "Proudly Thai — real durian funk, smooth smoke, local price.",
-    "image": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/83C2F813-6C1F-4A98-BCBB-B53C99E3634D.jpg?v=1779643290",
-    "priceTiers": [
-      {
-        "label": "½g",
-        "price": 200,
-        "member": 180
-      },
-      {
-        "label": "1 joint",
-        "price": 200,
-        "member": 180
-      },
-      {
-        "label": "1g",
-        "price": 400,
-        "member": 360
-      },
-      {
-        "label": "3.5g · 3+1 FREE",
-        "price": 1200,
-        "member": 1080
-      }
-    ],
-    "code": "MID-03"
-  },
-  {
-    "id": "pineapple-express",
-    "name": "Snow Brands Pineapple Express",
-    "category": "Premium",
-    "type": "Sativa",
-    "thc": 60,
-    "thcLabel": "60%",
-    "cbd": 0,
-    "featured": true,
-    "stock": 10,
-    "unit": "g",
-    "effects": [
-      "Energetic",
-      "Euphoric",
-      "Creative"
-    ],
-    "flavors": [
-      "Pineapple",
-      "Tropical"
-    ],
-    "description": "SuperExo snow-frosted flower at a massive 60% THC. Sativa rocket fuel.",
-    "image": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/F8CDE9E5-64B9-4526-B65C-9E13833140ED.jpg?v=1776872037",
-    "priceTiers": [
-      {
-        "label": "½g",
-        "price": 450,
-        "member": 405
-      },
-      {
-        "label": "1 joint",
-        "price": 450,
-        "member": 405
-      },
-      {
-        "label": "3.5g · 3+1 FREE",
-        "price": 2700,
-        "member": 2430
-      }
-    ],
-    "code": "PRM-01"
-  },
-  {
-    "id": "kaws-rocks",
-    "name": "KAWS Moon Rocks",
-    "category": "Premium",
-    "type": "Hybrid",
-    "thc": 60,
-    "thcLabel": "60% · CBD 15%",
-    "cbd": 15,
-    "stock": 8,
-    "unit": "g",
-    "effects": [
-      "Euphoric",
-      "Relaxed",
-      "Sleepy"
-    ],
-    "flavors": [
-      "Hash",
-      "Earthy"
-    ],
-    "description": "Moon-rock hash — flower rolled in oil and kief. 60% THC, 15% CBD.",
-    "image": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-3052.jpg?v=1734773931",
-    "price": 713,
-    "member": 640,
-    "code": "PRM-02"
-  },
-  {
-    "id": "zooties",
-    "name": "Zooties Premium Joint",
-    "category": "Joints",
-    "type": "Hybrid",
-    "thc": 30,
-    "thcLabel": "Exotic",
-    "cbd": 0,
-    "featured": true,
-    "stock": 40,
-    "unit": "roll",
-    "effects": [
-      "Relaxed",
-      "Happy",
-      "Euphoric"
-    ],
-    "flavors": [
-      "Exotic"
-    ],
-    "description": "Premium exotic pre-roll, ready to smoke. Grab-and-go luxury.",
-    "image": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/18974187-610E-4BB3-8149-5F9240AEBA54.png?v=1692912822",
-    "price": 320,
-    "member": 288,
-    "code": "JNT-01"
-  },
-  {
-    "id": "backwoods",
-    "name": "Backwoods (Single)",
-    "category": "Joints",
-    "type": "Hybrid",
-    "thc": 0,
-    "thcLabel": "Blunt wrap",
-    "cbd": 0,
-    "stock": 50,
-    "unit": "pc",
-    "effects": [],
-    "flavors": [
-      "Original",
-      "Russian Cream",
-      "Berry"
-    ],
-    "description": "Single Backwoods leaf — Original, Russian Cream or Berry. Roll it fat.",
-    "image": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/E6E24816-9C5D-4224-BED4-E4EE198728EE.jpg?v=1722467143",
-    "price": 120,
-    "member": 108,
-    "code": "JNT-02"
-  },
-  {
-    "id": "sour-belts",
-    "name": "Sour Belts 3000mg",
-    "category": "Edibles",
-    "type": "Hybrid",
-    "thc": 3000,
-    "thcLabel": "3000mg pack",
-    "cbd": 0,
-    "featured": true,
-    "stock": 15,
-    "unit": "pack",
-    "effects": [
-      "Euphoric",
-      "Happy",
-      "Relaxed"
-    ],
-    "flavors": [
-      "Strawberry",
-      "Rainbow",
-      "Watermelon",
-      "Blueberry"
-    ],
-    "description": "Legendary sour belts — 3000mg per pack (or ฿300 per 300mg piece). Four flavours.",
-    "image": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/60A4B51E-20C4-491D-8DB1-F249A9A17F19.jpg?v=1722974672",
-    "priceTiers": [
-      {
-        "label": "1 piece 300mg",
-        "price": 300,
-        "member": 270
-      },
-      {
-        "label": "Full pack 3000mg",
-        "price": 2700,
-        "member": 2430
-      }
-    ],
-    "code": "EDB-01"
-  },
-  {
-    "id": "gummies-500",
-    "name": "Gummies 500mg",
-    "category": "Edibles",
-    "type": "Hybrid",
-    "thc": 500,
-    "thcLabel": "500mg",
-    "cbd": 0,
-    "stock": 25,
-    "unit": "pack",
-    "effects": [
-      "Relaxed",
-      "Happy"
-    ],
-    "flavors": [
-      "Mixed Fruit"
-    ],
-    "description": "Potent 500mg gummy pack — precisely dosed, seriously effective.",
-    "image": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/B6FCB2C5-67B8-48BE-8624-E5B5ED21ADD0.jpg?v=1774365683",
-    "price": 800,
-    "member": 720,
-    "code": "EDB-02"
-  },
-  {
-    "id": "wacky-worms",
-    "name": "Wacky Worms Gummies",
-    "category": "Edibles",
-    "type": "Hybrid",
-    "thc": 280,
-    "thcLabel": "infused",
-    "cbd": 0,
-    "stock": 30,
-    "unit": "pack",
-    "effects": [
-      "Happy",
-      "Giggly"
-    ],
-    "flavors": [
-      "Sour",
-      "Fruity"
-    ],
-    "description": "Wiggly, sour and infused — a fun entry-level edible.",
-    "image": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/B05B1BFE-3324-4490-9E53-DD30A3A804B5.jpg?v=1774365826",
-    "price": 280,
-    "member": 252,
-    "code": "EDB-03"
-  },
-  {
-    "id": "dank-cookie",
-    "name": "Dank Cookie 50mg",
-    "category": "Edibles",
-    "type": "Hybrid",
-    "thc": 50,
-    "thcLabel": "50mg",
-    "cbd": 0,
-    "stock": 35,
-    "unit": "pc",
-    "effects": [
-      "Relaxed",
-      "Happy"
-    ],
-    "flavors": [
-      "Cookie",
-      "Chocolate"
-    ],
-    "description": "Our house-baked 50mg cookie — the perfect single dose.",
-    "image": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/19BDC7A2-8DF2-4408-A427-3E36AA5CE49C.jpg?v=1774364851",
-    "price": 200,
-    "member": 180,
-    "code": "EDB-04"
-  },
-  {
-    "id": "brownies",
-    "name": "Cannabis Brownies 50mg",
-    "category": "Edibles",
-    "type": "Indica",
-    "thc": 50,
-    "thcLabel": "50mg each",
-    "cbd": 0,
-    "stock": 20,
-    "unit": "pack",
-    "effects": [
-      "Relaxed",
-      "Sleepy"
-    ],
-    "flavors": [
-      "Chocolate",
-      "Fudge"
-    ],
-    "description": "Fudgy infused brownies, 50mg each. 2-pack ฿500 or 5-pack ฿1,100.",
-    "image": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/D4BA6F7A-1C40-4F24-9DF0-3ADD1D365C47.png?v=1693553371",
-    "priceTiers": [
-      {
-        "label": "2 pack",
-        "price": 500,
-        "member": 450
-      },
-      {
-        "label": "5 pack",
-        "price": 1100,
-        "member": 990
-      }
-    ],
-    "code": "EDB-05"
-  },
-  {
-    "id": "muhameds-ed",
-    "name": "Muhameds Edible",
-    "category": "Edibles",
-    "type": "Hybrid",
-    "thc": 1000,
-    "thcLabel": "high dose",
-    "cbd": 0,
-    "stock": 12,
-    "unit": "pack",
-    "effects": [
-      "Euphoric",
-      "Relaxed"
-    ],
-    "flavors": [
-      "Candy"
-    ],
-    "description": "Heavy-hitter branded edible for experienced users only.",
-    "image": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/581081B6-E329-4DA3-9474-6DC414060F6E.jpg?v=1774365587",
-    "price": 2000,
-    "member": 1800,
-    "code": "EDB-06"
-  },
-  {
-    "id": "hidden-hills",
-    "name": "Hidden Hills Resin Jelly 1000mg",
-    "category": "Edibles",
-    "type": "Hybrid",
-    "thc": 1000,
-    "thcLabel": "1000mg",
-    "cbd": 0,
-    "stock": 18,
-    "unit": "pack",
-    "effects": [
-      "Euphoric",
-      "Relaxed"
-    ],
-    "flavors": [
-      "Bombsicle",
-      "Watermelon",
-      "ZAZA Blast",
-      "White Gummy"
-    ],
-    "description": "Live-resin infused jelly, 1000mg — four wild flavours.",
-    "image": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/93EC5B80-F590-46E5-96BD-F72CA565FB73.jpg?v=1774364815",
-    "price": 600,
-    "member": 540,
-    "code": "EDB-07"
-  },
-  {
-    "id": "muhameds-vape",
-    "name": "Muhameds Live Resin Disposable 2g",
-    "category": "Vapes",
-    "type": "Hybrid",
-    "thc": 90,
-    "thcLabel": "2000mg",
-    "cbd": 0,
-    "featured": true,
-    "isNew": true,
-    "stock": 22,
-    "unit": "pc",
-    "effects": [
-      "Euphoric",
-      "Relaxed"
-    ],
-    "flavors": [
-      "11 strains"
-    ],
-    "description": "NEW Season 2026 — 2000mg live-resin disposable, 11 strain flavours.",
-    "image": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-0764.jpg?v=1766923400",
-    "price": 2700,
-    "member": 2430,
-    "code": "VAP-01"
-  },
-  {
-    "id": "tre-rosin",
-    "name": "TRE Live Rosin Disposable 3.5g",
-    "category": "Vapes",
-    "type": "Hybrid",
-    "thc": 90,
-    "thcLabel": "3500mg",
-    "cbd": 0,
-    "stock": 15,
-    "unit": "pc",
-    "effects": [
-      "Euphoric",
-      "Relaxed"
-    ],
-    "flavors": [
-      "Blueberry Slushie",
-      "Frosted Guava",
-      "Peach Cobbler",
-      "Watermelon Gushers",
-      "Grape Guava",
-      "Blue Cereal"
-    ],
-    "description": "Solventless live rosin in a huge 3.5g disposable — six flavours.",
-    "image": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-0857.jpg?v=1726907546",
-    "price": 2800,
-    "member": 2520,
-    "code": "VAP-02"
-  },
-  {
-    "id": "live-resin",
-    "name": "Live Resin / Rosin 1g",
-    "category": "Vapes",
-    "type": "Hybrid",
-    "thc": 78,
-    "thcLabel": "78%",
-    "cbd": 0,
-    "stock": 14,
-    "unit": "g",
-    "effects": [
-      "Relaxed",
-      "Euphoric"
-    ],
-    "flavors": [
-      "Watermelon",
-      "Candy Apple",
-      "Peach Ring"
-    ],
-    "description": "Terpy dabs at 78% THC — watermelon, candy apple or peach ring.",
-    "image": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/F65C3592-4891-46E4-8DFD-F934040771D3.jpg?v=1693211965",
-    "price": 1200,
-    "member": 1080,
-    "code": "VAP-03"
-  },
-  {
-    "id": "diamond-wax",
-    "name": "Diamond Wax 98%",
-    "category": "Vapes",
-    "type": "Hybrid",
-    "thc": 98,
-    "thcLabel": "98%",
-    "cbd": 0,
-    "stock": 10,
-    "unit": "g",
-    "effects": [
-      "Very Potent"
-    ],
-    "flavors": [
-      "Pure"
-    ],
-    "description": "Near-pure THCA diamonds. 0.5g ฿1,250 · 1g ฿2,500 · 4g pays for 3.",
-    "image": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/490898B9-C7EB-4156-847A-80AA80C3CD7E.jpg?v=1722975003",
-    "priceTiers": [
-      {
-        "label": "0.5g",
-        "price": 1250,
-        "member": 1125
-      },
-      {
-        "label": "1g",
-        "price": 2500,
-        "member": 2250
-      },
-      {
-        "label": "4g · 3+1 FREE",
-        "price": 10000,
-        "member": 9000
-      }
-    ],
-    "code": "VAP-04"
-  },
-  {
-    "id": "crispyboy",
-    "name": "Crispy Boy Lager Can",
-    "category": "Beer",
-    "type": "Hybrid",
-    "thc": 0,
-    "thcLabel": "Craft beer",
-    "cbd": 0,
-    "stock": 94,
-    "unit": "can",
-    "effects": [
-      "Refreshing",
-      "Social"
-    ],
-    "flavors": [
-      "Crisp",
-      "Malt"
-    ],
-    "description": "Ice-cold local craft lager — the perfect session pairing. Non-infused.",
-    "image": "https://images.unsplash.com/photo-1628534315533-5627d6b1dde8?auto=format&fit=crop&w=640&h=480&q=70",
-    "price": 220,
-    "member": 198,
-    "code": "BER-01"
-  },
-  {
-    "id": "bong-session",
-    "name": "Bong Session",
-    "category": "Accessories",
-    "type": "Hybrid",
-    "thc": 0,
-    "thcLabel": "In-store",
-    "cbd": 0,
-    "stock": 9,
-    "unit": "session",
-    "effects": [],
-    "flavors": [],
-    "description": "Glass bong session at the shop — we set you up, you enjoy.",
-    "image": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/rn-image_picker_lib_temp_2a66b33b-ab91-43c9-88d3-d0872b46c111.jpg?v=1747352386",
-    "price": 1400,
-    "member": 1260,
-    "code": "ACC-01"
-  },
-  {
-    "id": "grinder-alu",
-    "name": "Aluminium Grinder 2-Piece",
-    "category": "Accessories",
-    "type": "Hybrid",
-    "thc": 0,
-    "thcLabel": "Gear",
-    "cbd": 0,
-    "stock": 20,
-    "unit": "pc",
-    "effects": [],
-    "flavors": [
-      "Silver",
-      "Black"
-    ],
-    "description": "Solid aluminium 2-piece grinder in silver or black.",
-    "image": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/rn-image_picker_lib_temp_5d48e56c-6cd3-479b-bd25-edcd554da20f.jpg?v=1747350208",
-    "price": 600,
-    "member": 540,
-    "code": "ACC-02"
-  },
-  {
-    "id": "allinone",
-    "name": "All-In-One Rolling Kit",
-    "category": "Accessories",
-    "type": "Hybrid",
-    "thc": 0,
-    "thcLabel": "Kit",
-    "cbd": 0,
-    "stock": 25,
-    "unit": "kit",
-    "effects": [],
-    "flavors": [
-      "5 designs"
-    ],
-    "description": "32 unbleached papers + 32 tips + shredder + tray, five artist designs.",
-    "image": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/rn-image_picker_lib_temp_ef9c4f40-e978-48d5-9118-8329f5030f81.jpg?v=1747347341",
-    "price": 240,
-    "member": 216,
-    "code": "ACC-03"
-  },
-  {
-    "id": "raw-quarter",
-    "name": "RAW ¼ Papers (+Tips)",
-    "category": "Accessories",
-    "type": "Hybrid",
-    "thc": 0,
-    "thcLabel": "Papers",
-    "cbd": 0,
-    "stock": 60,
-    "unit": "pack",
-    "effects": [],
-    "flavors": [],
-    "description": "RAW classic ¼ papers ฿60, or with tips ฿120.",
-    "image": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/rn-image_picker_lib_temp_51e6c7d8-7f16-4a03-a68d-5a791a7a4b95.jpg?v=1747351626",
-    "priceTiers": [
-      {
-        "label": "Papers",
-        "price": 60,
-        "member": 54
-      },
-      {
-        "label": "Papers + Tips",
-        "price": 120,
-        "member": 108
-      }
-    ],
-    "code": "ACC-04"
-  },
-  {
-    "id": "raw-king",
-    "name": "RAW Classic Kingsize",
-    "category": "Accessories",
-    "type": "Hybrid",
-    "thc": 0,
-    "thcLabel": "Papers",
-    "cbd": 0,
-    "stock": 60,
-    "unit": "pack",
-    "effects": [],
-    "flavors": [
-      "Classic",
-      "Black"
-    ],
-    "description": "Kingsize RAW — Classic ฿80 or Black ฿100.",
-    "image": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/5E938697-1B0F-4714-AFE7-E618B5C3CFD2.jpg?v=1693557480",
-    "priceTiers": [
-      {
-        "label": "Classic",
-        "price": 80,
-        "member": 72
-      },
-      {
-        "label": "Black",
-        "price": 100,
-        "member": 90
-      }
-    ],
-    "code": "ACC-05"
-  },
-  {
-    "id": "raw-tips",
-    "name": "RAW Tips / Wild Tips",
-    "category": "Accessories",
-    "type": "Hybrid",
-    "thc": 0,
-    "thcLabel": "Tips",
-    "cbd": 0,
-    "stock": 80,
-    "unit": "pack",
-    "effects": [],
-    "flavors": [],
-    "description": "RAW tips, regular or unrefined Wild — ฿51 a pack.",
-    "image": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/rn-image_picker_lib_temp_7f82c5da-3aa1-40bd-9f81-b748021a4bbd.jpg?v=1747347667",
-    "price": 51,
-    "member": 46,
-    "code": "ACC-06"
-  },
-  {
-    "id": "clipper",
-    "name": "Clipper Lighter",
-    "category": "Accessories",
-    "type": "Hybrid",
-    "thc": 0,
-    "thcLabel": "Lighter",
-    "cbd": 0,
-    "stock": 100,
-    "unit": "pc",
-    "effects": [],
-    "flavors": [],
-    "description": "The classic refillable Clipper. Don't let friends 'borrow' it.",
-    "image": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/rn-image_picker_lib_temp_f07fbe9d-1bb0-40ad-9ed2-1cecdddad837.jpg?v=1747349959",
-    "price": 40,
-    "member": 36,
-    "code": "ACC-07"
-  },
-  {
-    "id": "plastic-grinder",
-    "name": "Plastic Grinder",
-    "category": "Accessories",
-    "type": "Hybrid",
-    "thc": 0,
-    "thcLabel": "Gear",
-    "cbd": 0,
-    "stock": 40,
-    "unit": "pc",
-    "effects": [],
-    "flavors": [],
-    "description": "Simple, dependable pocket grinder.",
-    "image": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/5A110104-F265-40D5-AF13-F22D34C8CB97.jpg?v=1693557942",
-    "price": 84,
-    "member": 76,
-    "code": "ACC-08"
-  },
-  {
-    "id": "waterproof-bag",
-    "name": "Waterproof Bag",
-    "category": "Accessories",
-    "type": "Hybrid",
-    "thc": 0,
-    "thcLabel": "Gear",
-    "cbd": 0,
-    "stock": 30,
-    "unit": "pc",
-    "effects": [],
-    "flavors": [],
-    "description": "Smell-proof, waterproof stash bag.",
-    "image": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/9221D9D8-A023-4397-BDD5-584043191141.png?v=1710969052",
-    "price": 120,
-    "member": 108,
-    "code": "ACC-09"
-  },
-  {
-    "id": "tee-2026",
-    "name": "DANK Limited 2026 Tee",
-    "category": "Merch",
-    "type": "Hybrid",
-    "thc": 0,
-    "thcLabel": "M–2XL",
-    "cbd": 0,
-    "featured": true,
-    "stock": 24,
-    "unit": "pc",
-    "effects": [],
-    "flavors": [
-      "Black",
-      "White"
-    ],
-    "description": "Limited 2026 drop — black or white, sizes M to 2XL.",
-    "image": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-2016.jpg?v=1771238786",
-    "price": 343,
-    "member": 309,
-    "code": "MRC-01"
-  },
-  {
-    "id": "tee-2025",
-    "name": "DANK T-Shirt 2025 Collection",
-    "category": "Merch",
-    "type": "Hybrid",
-    "thc": 0,
-    "thcLabel": "M–2XL",
-    "cbd": 0,
-    "stock": 30,
-    "unit": "pc",
-    "effects": [],
-    "flavors": [
-      "White",
-      "Brown"
-    ],
-    "description": "2025 collection tee in white or brown, M–2XL.",
-    "image": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/rn-image_picker_lib_temp_19a88183-a299-4ea3-bcd6-08f12845a4ee.jpg?v=1756065454",
-    "price": 294,
-    "member": 265,
-    "code": "MRC-02"
-  },
-  {
-    "id": "tee-2023",
-    "name": "DANK 2023 White Limited Tee",
-    "category": "Merch",
-    "type": "Hybrid",
-    "thc": 0,
-    "thcLabel": "M–2XL",
-    "cbd": 0,
-    "stock": 15,
-    "unit": "pc",
-    "effects": [],
-    "flavors": [
-      "White"
-    ],
-    "description": "OG 2023 white limited tee — collector's piece.",
-    "image": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-7908.png?v=1710969383",
-    "price": 273,
-    "member": 246,
-    "code": "MRC-03"
-  }
-]
+{
+ "_readme": "Photo backfill for products that arrive from the POS without an image. 'byName' is matched on the product name with punctuation, spaces and any (bracketed) words removed and letters lower-cased, so '( weed ) Crispy Boy Lager Can' matches 'crispyboylagercan'. Add your own entries here: key = the flattened name, value = an image URL or a path like 'assets/crunchberrie.jpg'. 'generic' supplies a category-style photo for anything with no name match; set GENERIC_PRODUCT_IMAGES=0 in Vercel to turn those off and fall back to the leaf placeholder instead.",
+ "byName": {
+  "crunchberrie": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-6890.png?v=1782732640",
+  "alienmint": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-6888.png?v=1782731863",
+  "cookiemonster": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-6884.jpg?v=1782730860",
+  "dlish": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-6883.png?v=1782730523",
+  "blackcherry": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-6879.jpg?v=1782729302",
+  "orangez": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-6878.jpg?v=1782729032",
+  "giraffepuzzy": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-6876.jpg?v=1782725629",
+  "bluenerdz": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-6875.jpg?v=1782723699",
+  "thaiorangetea": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-6873.jpg?v=1782722872",
+  "redhot": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-6090.jpg?v=1781096752",
+  "cocochanel": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/CB952B9D-5F70-4968-B268-A766D1893BCE.png?v=1780143593",
+  "pinkzugar": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-5581.png?v=1780144311",
+  "lcgrx11": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-5253.png?v=1779642559",
+  "toadvenom": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-5254.png?v=1779642336",
+  "lemoncherrygelato": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/48E8E325-A1F7-43F4-8777-6520094BA6C9.png?v=1780151539",
+  "gelatox": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/5BC567FD-D2D3-40DD-9E61-C184268D134C.png?v=1780151537",
+  "ogkushzkittlez": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-6880.jpg?v=1782729487",
+  "ztupid": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-5582.png?v=1780144103",
+  "sherbtank": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-5575.png?v=1780144807",
+  "kingcherry": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/6A808D23-ABAB-45D5-B098-B58A737A0113.png?v=1780144616",
+  "babycake": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/CD5473B7-F811-4BB0-A9C6-92BA47595CA5.png?v=1780143697",
+  "zkittles": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-5586.png?v=1780149518",
+  "mac1": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-6886.png?v=1782731272",
+  "superboof": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-5258.png?v=1779643656",
+  "thailanddurian": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/83C2F813-6C1F-4A98-BCBB-B53C99E3634D.jpg?v=1779643290",
+  "snowbrandspineappleexpress": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/F8CDE9E5-64B9-4526-B65C-9E13833140ED.jpg?v=1776872037",
+  "kawsmoonrocks": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-3052.jpg?v=1734773931",
+  "zootiespremiumjoint": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/18974187-610E-4BB3-8149-5F9240AEBA54.png?v=1692912822",
+  "backwoods": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/E6E24816-9C5D-4224-BED4-E4EE198728EE.jpg?v=1722467143",
+  "sourbelts3000mg": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/4B774043-846F-452C-BFB5-43040B22556D.jpg?v=1774364981",
+  "gummies500mg": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/B6FCB2C5-67B8-48BE-8624-E5B5ED21ADD0.jpg?v=1774365683",
+  "wackywormsgummies": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/B05B1BFE-3324-4490-9E53-DD30A3A804B5.jpg?v=1774365826",
+  "dankcookie50mg": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/19BDC7A2-8DF2-4408-A427-3E36AA5CE49C.jpg?v=1774364851",
+  "cannabisbrownies50mg": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/D4BA6F7A-1C40-4F24-9DF0-3ADD1D365C47.png?v=1693553371",
+  "muhamedsedible": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/581081B6-E329-4DA3-9474-6DC414060F6E.jpg?v=1774365587",
+  "hiddenhillsresinjelly1000mg": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/93EC5B80-F590-46E5-96BD-F72CA565FB73.jpg?v=1774364815",
+  "muhamedsliveresindisposable2g": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-0764.jpg?v=1766923400",
+  "treliverosindisposable35g": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-0857.jpg?v=1726907546",
+  "liveresinrosin1g": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/F65C3592-4891-46E4-8DFD-F934040771D3.jpg?v=1693211965",
+  "diamondwax98": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/490898B9-C7EB-4156-847A-80AA80C3CD7E.jpg?v=1722975003",
+  "crispyboylagercan": "https://images.unsplash.com/photo-1628534315533-5627d6b1dde8?auto=format&fit=crop&w=640&h=480&q=70",
+  "bongsession": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/rn-image_picker_lib_temp_2a66b33b-ab91-43c9-88d3-d0872b46c111.jpg?v=1747352386",
+  "aluminiumgrinder2piece": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/rn-image_picker_lib_temp_5d48e56c-6cd3-479b-bd25-edcd554da20f.jpg?v=1747350208",
+  "allinonerollingkit": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/rn-image_picker_lib_temp_ef9c4f40-e978-48d5-9118-8329f5030f81.jpg?v=1747347341",
+  "rawpapers": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/rn-image_picker_lib_temp_51e6c7d8-7f16-4a03-a68d-5a791a7a4b95.jpg?v=1747351626",
+  "rawclassickingsize": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/5E938697-1B0F-4714-AFE7-E618B5C3CFD2.jpg?v=1693557480",
+  "rawtipswildtips": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/rn-image_picker_lib_temp_7f82c5da-3aa1-40bd-9f81-b748021a4bbd.jpg?v=1747347667",
+  "clipperlighter": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/rn-image_picker_lib_temp_f07fbe9d-1bb0-40ad-9ed2-1cecdddad837.jpg?v=1747349959",
+  "plasticgrinder": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/5A110104-F265-40D5-AF13-F22D34C8CB97.jpg?v=1693557942",
+  "waterproofbag": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/9221D9D8-A023-4397-BDD5-584043191141.png?v=1710969052",
+  "danklimited2026tee": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-2016.jpg?v=1771238786",
+  "danktshirt2025collection": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/rn-image_picker_lib_temp_19a88183-a299-4ea3-bcd6-08f12845a4ee.jpg?v=1756065454",
+  "dank2023whitelimitedtee": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-7908.png?v=1710969383",
+  "crunchberriethc29": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-6890.png?v=1782732640",
+  "exocrunchberrie": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-6890.png?v=1782732640",
+  "exocrunchberriethc29": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-6890.png?v=1782732640",
+  "alienmintthc30": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-6888.png?v=1782731863",
+  "exoalienmint": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-6888.png?v=1782731863",
+  "exoalienmintthc30": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-6888.png?v=1782731863",
+  "midgrademac1thc29": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-6886.png?v=1782731272",
+  "midgrademac1": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-6886.png?v=1782731272",
+  "mac1thc29": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-6886.png?v=1782731272",
+  "cookiemonsterthc31": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-6884.jpg?v=1782730860",
+  "exocookiemonster": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-6884.jpg?v=1782730860",
+  "exocookiemonsterthc31": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-6884.jpg?v=1782730860",
+  "exodlish": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-6883.png?v=1782730523",
+  "dlishthc30": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-6883.png?v=1782730523",
+  "exodlishthc30": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-6883.png?v=1782730523",
+  "topshelfogkushxzkittlezthc2830": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-6880.jpg?v=1782729487",
+  "ogkushxzkittlez": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-6880.jpg?v=1782729487",
+  "ogkushxzkittlezthc2830": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-6880.jpg?v=1782729487",
+  "topshelfogkushxzkittlez": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-6880.jpg?v=1782729487",
+  "exoblackcherry": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-6879.jpg?v=1782729302",
+  "exoblackcherrythc3032": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-6879.jpg?v=1782729302",
+  "blackcherrythc3032": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-6879.jpg?v=1782729302",
+  "orangezthc2930": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-6878.jpg?v=1782729032",
+  "exoorangezthc2930": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-6878.jpg?v=1782729032",
+  "exoorangez": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-6878.jpg?v=1782729032",
+  "topshelfztupidthc26": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-5582.png?v=1780144103",
+  "ztupidthc26": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-5582.png?v=1780144103",
+  "topshelfztupid": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-5582.png?v=1780144103",
+  "whitelotus": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-6877.jpg?v=1782726867",
+  "exowhitelotus": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-6877.jpg?v=1782726867",
+  "exowhitelotusthc31": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-6877.jpg?v=1782726867",
+  "whitelotusthc31": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-6877.jpg?v=1782726867",
+  "giraffepuzzythc30": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-6876.jpg?v=1782725629",
+  "exogiraffepuzzy": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-6876.jpg?v=1782725629",
+  "exogiraffepuzzythc30": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-6876.jpg?v=1782725629",
+  "exobluenerdzthc3032": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-6875.jpg?v=1782723699",
+  "bluenerdzthc3032": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-6875.jpg?v=1782723699",
+  "exobluenerdz": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-6875.jpg?v=1782723699",
+  "exothaiorangeteathc2930": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-6873.jpg?v=1782722872",
+  "exothaiorangetea": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-6873.jpg?v=1782722872",
+  "thaiorangeteathc2930": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-6873.jpg?v=1782722872",
+  "redhotthc2930": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-6090.jpg?v=1781096752",
+  "exoredhotthc2930": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-6090.jpg?v=1781096752",
+  "exoredhot": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-6090.jpg?v=1781096752",
+  "exococochanel": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/CB952B9D-5F70-4968-B268-A766D1893BCE.png?v=1780143593",
+  "exococochanelthc2628": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/CB952B9D-5F70-4968-B268-A766D1893BCE.png?v=1780143593",
+  "cocochanelthc2628": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/CB952B9D-5F70-4968-B268-A766D1893BCE.png?v=1780143593",
+  "sherbtankthc25": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-5575.png?v=1780144807",
+  "topshelfsherbtankthc25": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-5575.png?v=1780144807",
+  "topshelfsherbtank": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-5575.png?v=1780144807",
+  "topshelfkingcherrythc28": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/6A808D23-ABAB-45D5-B098-B58A737A0113.png?v=1780144616",
+  "topshelfkingcherry": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/6A808D23-ABAB-45D5-B098-B58A737A0113.png?v=1780144616",
+  "kingcherrythc28": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/6A808D23-ABAB-45D5-B098-B58A737A0113.png?v=1780144616",
+  "exopinkzugarthc2227": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-5581.png?v=1780144311",
+  "pinkzugarthc2227": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-5581.png?v=1780144311",
+  "exopinkzugar": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-5581.png?v=1780144311",
+  "topshelfbabycakethc2428": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/CD5473B7-F811-4BB0-A9C6-92BA47595CA5.png?v=1780143697",
+  "babycakethc2428": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/CD5473B7-F811-4BB0-A9C6-92BA47595CA5.png?v=1780143697",
+  "topshelfbabycake": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/CD5473B7-F811-4BB0-A9C6-92BA47595CA5.png?v=1780143697",
+  "exomellowz": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/D8AB80ED-9C47-4045-AAB2-3F197CAA0A05.png?v=1780143506",
+  "mellowzthc2529": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/D8AB80ED-9C47-4045-AAB2-3F197CAA0A05.png?v=1780143506",
+  "mellowz": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/D8AB80ED-9C47-4045-AAB2-3F197CAA0A05.png?v=1780143506",
+  "exomellowzthc2529": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/D8AB80ED-9C47-4045-AAB2-3F197CAA0A05.png?v=1780143506",
+  "midgradesuperboof": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-5258.png?v=1779643656",
+  "midgradesuperboofthc2830": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-5258.png?v=1779643656",
+  "superboofthc2830": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-5258.png?v=1779643656",
+  "exolcgrx11thc29": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-5253.png?v=1779642559",
+  "lcgrx11thc29": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-5253.png?v=1779642559",
+  "exolcgrx11": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-5253.png?v=1779642559",
+  "exotoadvenom": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-5254.png?v=1779642336",
+  "toadvenomthc2835": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-5254.png?v=1779642336",
+  "exotoadvenomthc2835": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-5254.png?v=1779642336",
+  "lemoncherrygelatothc315": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/48E8E325-A1F7-43F4-8777-6520094BA6C9.png?v=1780151539",
+  "topzkittlesthc30": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-5586.png?v=1780149518",
+  "zkittlesthc30": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-5586.png?v=1780149518",
+  "topzkittles": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-5586.png?v=1780149518",
+  "gelatoxthc28": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/5BC567FD-D2D3-40DD-9E61-C184268D134C.png?v=1780151537",
+  "exogelatox": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/5BC567FD-D2D3-40DD-9E61-C184268D134C.png?v=1780151537",
+  "exogelatoxthc28": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/5BC567FD-D2D3-40DD-9E61-C184268D134C.png?v=1780151537",
+  "superexothesnowbrandspineappleexpress": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/F8CDE9E5-64B9-4526-B65C-9E13833140ED.jpg?v=1776872037",
+  "thesnowbrandspineappleexpressthc60": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/F8CDE9E5-64B9-4526-B65C-9E13833140ED.jpg?v=1776872037",
+  "thesnowbrandspineappleexpress": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/F8CDE9E5-64B9-4526-B65C-9E13833140ED.jpg?v=1776872037",
+  "superexothesnowbrandspineappleexpressthc60": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/F8CDE9E5-64B9-4526-B65C-9E13833140ED.jpg?v=1776872037",
+  "midgradethailanddurian": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/83C2F813-6C1F-4A98-BCBB-B53C99E3634D.jpg?v=1779643290",
+  "midgradethailanddurianthc22": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/83C2F813-6C1F-4A98-BCBB-B53C99E3634D.jpg?v=1779643290",
+  "thailanddurianthc22": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/83C2F813-6C1F-4A98-BCBB-B53C99E3634D.jpg?v=1779643290",
+  "muhameds": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/581081B6-E329-4DA3-9474-6DC414060F6E.jpg?v=1774365587",
+  "gummy500mg": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/6ADB4E12-BF7B-4679-93DC-20454C48A48C.jpg?v=1774365477",
+  "sourbeltscannabisgummies3000mgbigpack10pieces": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/60A4B51E-20C4-491D-8DB1-F249A9A17F19.jpg?v=1722974672",
+  "cannabisbrownies": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/D4BA6F7A-1C40-4F24-9DF0-3ADD1D365C47.png?v=1693553371",
+  "muhammedsliveresindisposable2000mg": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-0764.jpg?v=1766923400",
+  "muhammedsthcliveresindisposable2000mg": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-0764.jpg?v=1766923400",
+  "hiddenhillsliveresinjelly": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/93EC5B80-F590-46E5-96BD-F72CA565FB73.jpg?v=1774364815",
+  "treliverosin3500mgdisposablevape": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-0857.jpg?v=1726907546",
+  "treliverosin3500mgthcdisposablevape": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-0857.jpg?v=1726907546",
+  "danktshirtcollection2025": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/rn-image_picker_lib_temp_19a88183-a299-4ea3-bcd6-08f12845a4ee.jpg?v=1756065454",
+  "rawquarterrawquartertips": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/rn-image_picker_lib_temp_51e6c7d8-7f16-4a03-a68d-5a791a7a4b95.jpg?v=1747351626",
+  "grinderaluminium2piece": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/rn-image_picker_lib_temp_5d48e56c-6cd3-479b-bd25-edcd554da20f.jpg?v=1747350208",
+  "allinone": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/rn-image_picker_lib_temp_ef9c4f40-e978-48d5-9118-8329f5030f81.jpg?v=1747347341",
+  "danklimited2026blackandwhitetshirt": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-2016.jpg?v=1771238786",
+  "shirt": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-2016.jpg?v=1771238786",
+  "kawsrocks": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-3052.jpg?v=1734773931",
+  "clipper": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/rn-image_picker_lib_temp_f07fbe9d-1bb0-40ad-9ed2-1cecdddad837.jpg?v=1747349959",
+  "lighterclipper": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/rn-image_picker_lib_temp_f07fbe9d-1bb0-40ad-9ed2-1cecdddad837.jpg?v=1747349959",
+  "rawtipsrawwildtips": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/rn-image_picker_lib_temp_7f82c5da-3aa1-40bd-9f81-b748021a4bbd.jpg?v=1747347667",
+  "rawclassicrawclassicblack": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/5E938697-1B0F-4714-AFE7-E618B5C3CFD2.jpg?v=1693557480",
+  "liveresinrosinthc78": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/F65C3592-4891-46E4-8DFD-F934040771D3.jpg?v=1693211965",
+  "liveresinrosin": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/F65C3592-4891-46E4-8DFD-F934040771D3.jpg?v=1693211965",
+  "diamondwaxthc98": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/490898B9-C7EB-4156-847A-80AA80C3CD7E.jpg?v=1722975003",
+  "diamondwax": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/490898B9-C7EB-4156-847A-80AA80C3CD7E.jpg?v=1722975003",
+  "premiumexoticjointszooties": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/18974187-610E-4BB3-8149-5F9240AEBA54.png?v=1692912822",
+  "zooties": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/18974187-610E-4BB3-8149-5F9240AEBA54.png?v=1692912822",
+  "pineappleexpress": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/F8CDE9E5-64B9-4526-B65C-9E13833140ED.jpg?v=1776872037",
+  "snowbrands": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/F8CDE9E5-64B9-4526-B65C-9E13833140ED.jpg?v=1776872037",
+  "muhammeds": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-0764.jpg?v=1766923400",
+  "treliverosin": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-0857.jpg?v=1726907546",
+  "danktshirt": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/rn-image_picker_lib_temp_19a88183-a299-4ea3-bcd6-08f12845a4ee.jpg?v=1756065454",
+  "dankcookie": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/19BDC7A2-8DF2-4408-A427-3E36AA5CE49C.jpg?v=1774364851",
+  "dankbrownie": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/D4BA6F7A-1C40-4F24-9DF0-3ADD1D365C47.png?v=1693553371",
+  "raw12": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/rn-image_picker_lib_temp_51e6c7d8-7f16-4a03-a68d-5a791a7a4b95.jpg?v=1747351626",
+  "raw14": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/rn-image_picker_lib_temp_51e6c7d8-7f16-4a03-a68d-5a791a7a4b95.jpg?v=1747351626"
+ },
+ "generic": {
+  "flower": "https://images.unsplash.com/photo-1518469669531-9b8c528f909d?auto=format&fit=crop&w=640&h=480&q=70",
+  "joints": "https://images.unsplash.com/photo-1627485805208-d94a791d463d?auto=format&fit=crop&w=640&h=480&q=70",
+  "edibles": "https://images.unsplash.com/photo-1635342219731-4ae2bf39e1e9?auto=format&fit=crop&w=640&h=480&q=70",
+  "vapes": "https://images.unsplash.com/photo-1579165466814-e646cfa4a3be?auto=format&fit=crop&w=640&h=480&q=70",
+  "drinks": "https://images.unsplash.com/photo-1522997169209-1629f3f89fdf?auto=format&fit=crop&w=640&h=480&q=70",
+  "accessories": "https://images.unsplash.com/photo-1545114687-ab1c9f9fc260?auto=format&fit=crop&w=640&h=480&q=70",
+  "merch": "https://images.unsplash.com/photo-1583743814966-8936f5b7be1a?auto=format&fit=crop&w=640&h=480&q=70"
+ },
+ "byKeyword": {
+  "americano": "https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?auto=format&fit=crop&w=640&h=480&q=70",
+  "asahi": "https://images.unsplash.com/photo-1552853041-59e6f459f83b?auto=format&fit=crop&w=640&h=480&q=70",
+  "bananapeanut": "https://images.unsplash.com/photo-1685967836529-b0e8d6938227?auto=format&fit=crop&w=640&h=480&q=70",
+  "basil": "https://images.unsplash.com/photo-1562565651-7d4948f339eb?auto=format&fit=crop&w=640&h=480&q=70",
+  "battery": "https://images.unsplash.com/photo-1598048145816-4d54a3af68fe?auto=format&fit=crop&w=640&h=480&q=70",
+  "beanie": "https://images.unsplash.com/photo-1588850561407-ed78c282e89b?auto=format&fit=crop&w=640&h=480&q=70",
+  "beefburger": "https://images.unsplash.com/photo-1561758033-d89a9ad46330?auto=format&fit=crop&w=640&h=480&q=70",
+  "beer": "https://images.unsplash.com/photo-1671118720259-026c46d4a67c?auto=format&fit=crop&w=640&h=480&q=70",
+  "biscuit": "https://images.unsplash.com/photo-1499636136210-6f4ee915583e?auto=format&fit=crop&w=640&h=480&q=70",
+  "blunt": "https://images.unsplash.com/photo-1627485805208-d94a791d463d?auto=format&fit=crop&w=640&h=480&q=70",
+  "bong": "https://images.unsplash.com/photo-1601505612614-178f7ca0077c?auto=format&fit=crop&w=640&h=480&q=70",
+  "brownie": "https://images.unsplash.com/photo-1515037893149-de7f840978e2?auto=format&fit=crop&w=640&h=480&q=70",
+  "bucket": "https://images.unsplash.com/photo-1671118720259-026c46d4a67c?auto=format&fit=crop&w=640&h=480&q=70",
+  "budweiser": "https://images.unsplash.com/photo-1671118720259-026c46d4a67c?auto=format&fit=crop&w=640&h=480&q=70",
+  "burger": "https://images.unsplash.com/photo-1561758033-d89a9ad46330?auto=format&fit=crop&w=640&h=480&q=70",
+  "candy": "https://images.unsplash.com/photo-1635342219731-4ae2bf39e1e9?auto=format&fit=crop&w=640&h=480&q=70",
+  "cannabiscookie": "https://images.unsplash.com/photo-1499636136210-6f4ee915583e?auto=format&fit=crop&w=640&h=480&q=70",
+  "cap": "https://images.unsplash.com/photo-1588850561407-ed78c282e89b?auto=format&fit=crop&w=640&h=480&q=70",
+  "cappuccino": "https://images.unsplash.com/photo-1674327105074-46dd8319164b?auto=format&fit=crop&w=640&h=480&q=70",
+  "cart": "https://images.unsplash.com/photo-1579165466814-e646cfa4a3be?auto=format&fit=crop&w=640&h=480&q=70",
+  "cartridge": "https://images.unsplash.com/photo-1579165466814-e646cfa4a3be?auto=format&fit=crop&w=640&h=480&q=70",
+  "chang": "https://images.unsplash.com/photo-1629808222864-282aa0cb3ae0?auto=format&fit=crop&w=640&h=480&q=70",
+  "chickenfried": "https://images.unsplash.com/photo-1512058564366-18510be2db19?auto=format&fit=crop&w=640&h=480&q=70",
+  "chickenkaraage": "https://images.unsplash.com/photo-1562967914-608f82629710?auto=format&fit=crop&w=640&h=480&q=70",
+  "chickenwings": "https://images.unsplash.com/photo-1637273484026-11d51fb64024?auto=format&fit=crop&w=640&h=480&q=70",
+  "chips": "https://images.unsplash.com/photo-1630384060421-cb20d0e0649d?auto=format&fit=crop&w=640&h=480&q=70",
+  "chocolate": "https://images.unsplash.com/photo-1635342219731-4ae2bf39e1e9?auto=format&fit=crop&w=640&h=480&q=70",
+  "cider": "https://images.unsplash.com/photo-1509459331813-67a0c10e527c?auto=format&fit=crop&w=640&h=480&q=70",
+  "cocktail": "https://images.unsplash.com/photo-1609951651556-5334e2706168?auto=format&fit=crop&w=640&h=480&q=70",
+  "coconutshake": "https://images.unsplash.com/photo-1535922964111-cf1f1e862dcc?auto=format&fit=crop&w=640&h=480&q=70",
+  "coffee": "https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?auto=format&fit=crop&w=640&h=480&q=70",
+  "coke": "https://images.unsplash.com/photo-1629654613528-5d0a2e4166de?auto=format&fit=crop&w=640&h=480&q=70",
+  "cokecoke": "https://images.unsplash.com/photo-1629654613528-5d0a2e4166de?auto=format&fit=crop&w=640&h=480&q=70",
+  "cola": "https://images.unsplash.com/photo-1629654613528-5d0a2e4166de?auto=format&fit=crop&w=640&h=480&q=70",
+  "cone": "https://images.unsplash.com/photo-1599050853416-4e3992e744d8?auto=format&fit=crop&w=640&h=480&q=70",
+  "cookie": "https://images.unsplash.com/photo-1499636136210-6f4ee915583e?auto=format&fit=crop&w=640&h=480&q=70",
+  "corona": "https://images.unsplash.com/photo-1671118720259-026c46d4a67c?auto=format&fit=crop&w=640&h=480&q=70",
+  "cracker": "https://images.unsplash.com/photo-1575759474091-bab3c631c632?auto=format&fit=crop&w=640&h=480&q=70",
+  "curry": "https://images.unsplash.com/photo-1594756202469-9ff9799b2e4e?auto=format&fit=crop&w=640&h=480&q=70",
+  "dab": "https://images.unsplash.com/photo-1649127473471-6c6b78919415?auto=format&fit=crop&w=640&h=480&q=70",
+  "disposable": "https://images.unsplash.com/photo-1579165466814-e646cfa4a3be?auto=format&fit=crop&w=640&h=480&q=70",
+  "draft": "https://images.unsplash.com/photo-1659464560849-78cbaa3f206e?auto=format&fit=crop&w=640&h=480&q=70",
+  "draught": "https://images.unsplash.com/photo-1659464560849-78cbaa3f206e?auto=format&fit=crop&w=640&h=480&q=70",
+  "espresso": "https://images.unsplash.com/photo-1579992357154-faf4bde95b3d?auto=format&fit=crop&w=640&h=480&q=70",
+  "filter": "https://images.unsplash.com/photo-1599050853416-4e3992e744d8?auto=format&fit=crop&w=640&h=480&q=70",
+  "flatwhite": "https://images.unsplash.com/photo-1593443320739-77f74939d0da?auto=format&fit=crop&w=640&h=480&q=70",
+  "frenchfries": "https://images.unsplash.com/photo-1630384060421-cb20d0e0649d?auto=format&fit=crop&w=640&h=480&q=70",
+  "freshorange": "https://images.unsplash.com/photo-1600271886742-f049cd451bba?auto=format&fit=crop&w=640&h=480&q=70",
+  "friedchicken": "https://images.unsplash.com/photo-1562967914-608f82629710?auto=format&fit=crop&w=640&h=480&q=70",
+  "friedrice": "https://images.unsplash.com/photo-1512058564366-18510be2db19?auto=format&fit=crop&w=640&h=480&q=70",
+  "fries": "https://images.unsplash.com/photo-1630384060421-cb20d0e0649d?auto=format&fit=crop&w=640&h=480&q=70",
+  "gelato": "https://images.unsplash.com/photo-1497034825429-c343d7c6a68f?auto=format&fit=crop&w=640&h=480&q=70",
+  "glasspipe": "https://images.unsplash.com/photo-1601505612614-178f7ca0077c?auto=format&fit=crop&w=640&h=480&q=70",
+  "greencurry": "https://images.unsplash.com/photo-1594756202469-9ff9799b2e4e?auto=format&fit=crop&w=640&h=480&q=70",
+  "greentea": "https://images.unsplash.com/photo-1515823064-d6e0c04616a7?auto=format&fit=crop&w=640&h=480&q=70",
+  "grinder": "https://images.unsplash.com/photo-1545114687-ab1c9f9fc260?auto=format&fit=crop&w=640&h=480&q=70",
+  "guinness": "https://images.unsplash.com/photo-1720110919165-49df0e4f5d49?auto=format&fit=crop&w=640&h=480&q=70",
+  "gummies": "https://images.unsplash.com/photo-1635342219731-4ae2bf39e1e9?auto=format&fit=crop&w=640&h=480&q=70",
+  "gummy": "https://images.unsplash.com/photo-1635342219731-4ae2bf39e1e9?auto=format&fit=crop&w=640&h=480&q=70",
+  "ham": "https://images.unsplash.com/photo-1528736235302-52922df5c122?auto=format&fit=crop&w=640&h=480&q=70",
+  "hash": "https://images.unsplash.com/photo-1649127473471-6c6b78919415?auto=format&fit=crop&w=640&h=480&q=70",
+  "hat": "https://images.unsplash.com/photo-1588850561407-ed78c282e89b?auto=format&fit=crop&w=640&h=480&q=70",
+  "hefe": "https://images.unsplash.com/photo-1769267163818-02071257c551?auto=format&fit=crop&w=640&h=480&q=70",
+  "heineken": "https://images.unsplash.com/photo-1618885472179-5e474019f2a9?auto=format&fit=crop&w=640&h=480&q=70",
+  "hemplemonade": "https://images.unsplash.com/photo-1623084921164-4a8c5c37a912?auto=format&fit=crop&w=640&h=480&q=70",
+  "hoodie": "https://images.unsplash.com/photo-1583743814966-8936f5b7be1a?auto=format&fit=crop&w=640&h=480&q=70",
+  "icecream": "https://images.unsplash.com/photo-1497034825429-c343d7c6a68f?auto=format&fit=crop&w=640&h=480&q=70",
+  "icedlemon": "https://images.unsplash.com/photo-1470752354724-60a1d2b1907f?auto=format&fit=crop&w=640&h=480&q=70",
+  "ipa": "https://images.unsplash.com/photo-1659464560849-78cbaa3f206e?auto=format&fit=crop&w=640&h=480&q=70",
+  "joint": "https://images.unsplash.com/photo-1627485805208-d94a791d463d?auto=format&fit=crop&w=640&h=480&q=70",
+  "juice": "https://images.unsplash.com/photo-1680954464671-6191ab264214?auto=format&fit=crop&w=640&h=480&q=70",
+  "karaage": "https://images.unsplash.com/photo-1562967914-608f82629710?auto=format&fit=crop&w=640&h=480&q=70",
+  "kief": "https://images.unsplash.com/photo-1649127473471-6c6b78919415?auto=format&fit=crop&w=640&h=480&q=70",
+  "krapao": "https://images.unsplash.com/photo-1562565651-7d4948f339eb?auto=format&fit=crop&w=640&h=480&q=70",
+  "lager": "https://images.unsplash.com/photo-1671118720259-026c46d4a67c?auto=format&fit=crop&w=640&h=480&q=70",
+  "latte": "https://images.unsplash.com/photo-1593443320739-77f74939d0da?auto=format&fit=crop&w=640&h=480&q=70",
+  "lemonade": "https://images.unsplash.com/photo-1623084921164-4a8c5c37a912?auto=format&fit=crop&w=640&h=480&q=70",
+  "leo": "https://images.unsplash.com/photo-1671118720259-026c46d4a67c?auto=format&fit=crop&w=640&h=480&q=70",
+  "lighter": "https://images.unsplash.com/photo-1545114687-ab1c9f9fc260?auto=format&fit=crop&w=640&h=480&q=70",
+  "macchiato": "https://images.unsplash.com/photo-1593443320739-77f74939d0da?auto=format&fit=crop&w=640&h=480&q=70",
+  "mangosmoothie": "https://images.unsplash.com/photo-1623065422902-30a2d299bbe4?auto=format&fit=crop&w=640&h=480&q=70",
+  "margheritapizza": "https://images.unsplash.com/photo-1574071318508-1cdbab80d002?auto=format&fit=crop&w=640&h=480&q=70",
+  "matcha": "https://images.unsplash.com/photo-1515823064-d6e0c04616a7?auto=format&fit=crop&w=640&h=480&q=70",
+  "matchalatte": "https://images.unsplash.com/photo-1515823064-d6e0c04616a7?auto=format&fit=crop&w=640&h=480&q=70",
+  "milkshake": "https://images.unsplash.com/photo-1535922964111-cf1f1e862dcc?auto=format&fit=crop&w=640&h=480&q=70",
+  "mineral": "https://images.unsplash.com/photo-1523362628745-0c100150b504?auto=format&fit=crop&w=640&h=480&q=70",
+  "mocha": "https://images.unsplash.com/photo-1593443320739-77f74939d0da?auto=format&fit=crop&w=640&h=480&q=70",
+  "nacho": "https://images.unsplash.com/photo-1775708856908-aafcf9baa5d0?auto=format&fit=crop&w=640&h=480&q=70",
+  "nachoscheese": "https://images.unsplash.com/photo-1775708856908-aafcf9baa5d0?auto=format&fit=crop&w=640&h=480&q=70",
+  "noodle": "https://images.unsplash.com/photo-1637806930600-37fa8892069d?auto=format&fit=crop&w=640&h=480&q=70",
+  "noodlesoup": "https://images.unsplash.com/photo-1569718212165-3a8278d5f624?auto=format&fit=crop&w=640&h=480&q=70",
+  "nugget": "https://images.unsplash.com/photo-1562967914-608f82629710?auto=format&fit=crop&w=640&h=480&q=70",
+  "orange": "https://images.unsplash.com/photo-1600271886742-f049cd451bba?auto=format&fit=crop&w=640&h=480&q=70",
+  "padkrapao": "https://images.unsplash.com/photo-1562565651-7d4948f339eb?auto=format&fit=crop&w=640&h=480&q=70",
+  "padthai": "https://images.unsplash.com/photo-1637806930600-37fa8892069d?auto=format&fit=crop&w=640&h=480&q=70",
+  "paleale": "https://images.unsplash.com/photo-1659464560849-78cbaa3f206e?auto=format&fit=crop&w=640&h=480&q=70",
+  "papers": "https://images.unsplash.com/photo-1599050853416-4e3992e744d8?auto=format&fit=crop&w=640&h=480&q=70",
+  "peanut": "https://images.unsplash.com/photo-1575759474091-bab3c631c632?auto=format&fit=crop&w=640&h=480&q=70",
+  "peanutscrackers": "https://images.unsplash.com/photo-1575759474091-bab3c631c632?auto=format&fit=crop&w=640&h=480&q=70",
+  "pepsi": "https://images.unsplash.com/photo-1629654613528-5d0a2e4166de?auto=format&fit=crop&w=640&h=480&q=70",
+  "pho": "https://images.unsplash.com/photo-1569718212165-3a8278d5f624?auto=format&fit=crop&w=640&h=480&q=70",
+  "pilsner": "https://images.unsplash.com/photo-1671118720259-026c46d4a67c?auto=format&fit=crop&w=640&h=480&q=70",
+  "pizza": "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?auto=format&fit=crop&w=640&h=480&q=70",
+  "pod": "https://images.unsplash.com/photo-1579165466814-e646cfa4a3be?auto=format&fit=crop&w=640&h=480&q=70",
+  "popcornchicken": "https://images.unsplash.com/photo-1562967914-608f82629710?auto=format&fit=crop&w=640&h=480&q=70",
+  "porter": "https://images.unsplash.com/photo-1720110919165-49df0e4f5d49?auto=format&fit=crop&w=640&h=480&q=70",
+  "preroll": "https://images.unsplash.com/photo-1627485805208-d94a791d463d?auto=format&fit=crop&w=640&h=480&q=70",
+  "ramen": "https://images.unsplash.com/photo-1569718212165-3a8278d5f624?auto=format&fit=crop&w=640&h=480&q=70",
+  "redbull": "https://images.unsplash.com/photo-1613218222876-954978a4404e?auto=format&fit=crop&w=640&h=480&q=70",
+  "resin": "https://images.unsplash.com/photo-1649127473471-6c6b78919415?auto=format&fit=crop&w=640&h=480&q=70",
+  "rice": "https://images.unsplash.com/photo-1512058564366-18510be2db19?auto=format&fit=crop&w=640&h=480&q=70",
+  "rig": "https://images.unsplash.com/photo-1601505612614-178f7ca0077c?auto=format&fit=crop&w=640&h=480&q=70",
+  "rolling": "https://images.unsplash.com/photo-1599050853416-4e3992e744d8?auto=format&fit=crop&w=640&h=480&q=70",
+  "rollingpaper": "https://images.unsplash.com/photo-1599050853416-4e3992e744d8?auto=format&fit=crop&w=640&h=480&q=70",
+  "rosin": "https://images.unsplash.com/photo-1649127473471-6c6b78919415?auto=format&fit=crop&w=640&h=480&q=70",
+  "salad": "https://images.unsplash.com/photo-1572449043416-55f4685c9bb7?auto=format&fit=crop&w=640&h=480&q=70",
+  "sandwich": "https://images.unsplash.com/photo-1539252554453-80ab65ce3586?auto=format&fit=crop&w=640&h=480&q=70",
+  "shake": "https://images.unsplash.com/photo-1535922964111-cf1f1e862dcc?auto=format&fit=crop&w=640&h=480&q=70",
+  "shatter": "https://images.unsplash.com/photo-1649127473471-6c6b78919415?auto=format&fit=crop&w=640&h=480&q=70",
+  "shirt": "https://images.unsplash.com/photo-1583743814966-8936f5b7be1a?auto=format&fit=crop&w=640&h=480&q=70",
+  "singha": "https://images.unsplash.com/photo-1600213903598-25be92abde40?auto=format&fit=crop&w=640&h=480&q=70",
+  "smoothie": "https://images.unsplash.com/photo-1570696516188-ade861b84a49?auto=format&fit=crop&w=640&h=480&q=70",
+  "snack": "https://images.unsplash.com/photo-1575759474091-bab3c631c632?auto=format&fit=crop&w=640&h=480&q=70",
+  "sock": "https://images.unsplash.com/photo-1583743814966-8936f5b7be1a?auto=format&fit=crop&w=640&h=480&q=70",
+  "soda": "https://images.unsplash.com/photo-1534616042650-80f5c9b61f09?auto=format&fit=crop&w=640&h=480&q=70",
+  "sodawater": "https://images.unsplash.com/photo-1534616042650-80f5c9b61f09?auto=format&fit=crop&w=640&h=480&q=70",
+  "softdrink": "https://images.unsplash.com/photo-1629654613528-5d0a2e4166de?auto=format&fit=crop&w=640&h=480&q=70",
+  "somtam": "https://images.unsplash.com/photo-1648421331147-9fcfab29536e?auto=format&fit=crop&w=640&h=480&q=70",
+  "soup": "https://images.unsplash.com/photo-1569718212165-3a8278d5f624?auto=format&fit=crop&w=640&h=480&q=70",
+  "spacebrownie": "https://images.unsplash.com/photo-1515037893149-de7f840978e2?auto=format&fit=crop&w=640&h=480&q=70",
+  "springroll": "https://images.unsplash.com/photo-1695712641569-05eee7b37b6d?auto=format&fit=crop&w=640&h=480&q=70",
+  "springrolls": "https://images.unsplash.com/photo-1695712641569-05eee7b37b6d?auto=format&fit=crop&w=640&h=480&q=70",
+  "sprite": "https://images.unsplash.com/photo-1621330716555-5cad596c4562?auto=format&fit=crop&w=640&h=480&q=70",
+  "sticker": "https://images.unsplash.com/photo-1540651810471-5699df74834f?auto=format&fit=crop&w=640&h=480&q=70",
+  "stillwater": "https://images.unsplash.com/photo-1523362628745-0c100150b504?auto=format&fit=crop&w=640&h=480&q=70",
+  "storage": "https://images.unsplash.com/photo-1545114687-ab1c9f9fc260?auto=format&fit=crop&w=640&h=480&q=70",
+  "stout": "https://images.unsplash.com/photo-1720110919165-49df0e4f5d49?auto=format&fit=crop&w=640&h=480&q=70",
+  "sundae": "https://images.unsplash.com/photo-1497034825429-c343d7c6a68f?auto=format&fit=crop&w=640&h=480&q=70",
+  "sushi": "https://images.unsplash.com/photo-1579584425555-c3ce17fd4351?auto=format&fit=crop&w=640&h=480&q=70",
+  "tea": "https://images.unsplash.com/photo-1599767431130-41b1c51d9a7b?auto=format&fit=crop&w=640&h=480&q=70",
+  "tee": "https://images.unsplash.com/photo-1583743814966-8936f5b7be1a?auto=format&fit=crop&w=640&h=480&q=70",
+  "thai": "https://images.unsplash.com/photo-1637806930600-37fa8892069d?auto=format&fit=crop&w=640&h=480&q=70",
+  "thaiiced": "https://images.unsplash.com/photo-1599767431130-41b1c51d9a7b?auto=format&fit=crop&w=640&h=480&q=70",
+  "tiger": "https://images.unsplash.com/photo-1671118720259-026c46d4a67c?auto=format&fit=crop&w=640&h=480&q=70",
+  "tip": "https://images.unsplash.com/photo-1599050853416-4e3992e744d8?auto=format&fit=crop&w=640&h=480&q=70",
+  "toast": "https://images.unsplash.com/photo-1528736235302-52922df5c122?auto=format&fit=crop&w=640&h=480&q=70",
+  "toastieham": "https://images.unsplash.com/photo-1528736235302-52922df5c122?auto=format&fit=crop&w=640&h=480&q=70",
+  "tomyum": "https://images.unsplash.com/photo-1569718212165-3a8278d5f624?auto=format&fit=crop&w=640&h=480&q=70",
+  "tote": "https://images.unsplash.com/photo-1583743814966-8936f5b7be1a?auto=format&fit=crop&w=640&h=480&q=70",
+  "tray": "https://images.unsplash.com/photo-1545114687-ab1c9f9fc260?auto=format&fit=crop&w=640&h=480&q=70",
+  "tshirt": "https://images.unsplash.com/photo-1583743814966-8936f5b7be1a?auto=format&fit=crop&w=640&h=480&q=70",
+  "vape": "https://images.unsplash.com/photo-1579165466814-e646cfa4a3be?auto=format&fit=crop&w=640&h=480&q=70",
+  "water": "https://images.unsplash.com/photo-1523362628745-0c100150b504?auto=format&fit=crop&w=640&h=480&q=70",
+  "watermelonjuice": "https://images.unsplash.com/photo-1680954464671-6191ab264214?auto=format&fit=crop&w=640&h=480&q=70",
+  "waterpipe": "https://images.unsplash.com/photo-1601505612614-178f7ca0077c?auto=format&fit=crop&w=640&h=480&q=70",
+  "wax": "https://images.unsplash.com/photo-1649127473471-6c6b78919415?auto=format&fit=crop&w=640&h=480&q=70",
+  "weediced": "https://images.unsplash.com/photo-1556679343-c7306c1976bc?auto=format&fit=crop&w=640&h=480&q=70",
+  "weiss": "https://images.unsplash.com/photo-1769267163818-02071257c551?auto=format&fit=crop&w=640&h=480&q=70",
+  "weissbier": "https://images.unsplash.com/photo-1769267163818-02071257c551?auto=format&fit=crop&w=640&h=480&q=70",
+  "weizen": "https://images.unsplash.com/photo-1769267163818-02071257c551?auto=format&fit=crop&w=640&h=480&q=70",
+  "wheat": "https://images.unsplash.com/photo-1769267163818-02071257c551?auto=format&fit=crop&w=640&h=480&q=70",
+  "whisky": "https://images.unsplash.com/photo-1695057672316-7efe5b856ab0?auto=format&fit=crop&w=640&h=480&q=70",
+  "wings": "https://images.unsplash.com/photo-1637273484026-11d51fb64024?auto=format&fit=crop&w=640&h=480&q=70",
+  "witbier": "https://images.unsplash.com/photo-1769267163818-02071257c551?auto=format&fit=crop&w=640&h=480&q=70",
+  "crunchberrie": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-6890.png?v=1782732640",
+  "alienmint": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-6888.png?v=1782731863",
+  "mac1": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-6886.png?v=1782731272",
+  "cookiemonster": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-6884.jpg?v=1782730860",
+  "dlish": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-6883.png?v=1782730523",
+  "orangez": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-6878.jpg?v=1782729032",
+  "ztupid": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-5582.png?v=1780144103",
+  "whitelotus": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-6877.jpg?v=1782726867",
+  "giraffepuzzy": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-6876.jpg?v=1782725629",
+  "bluenerdz": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-6875.jpg?v=1782723699",
+  "cocochanel": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/CB952B9D-5F70-4968-B268-A766D1893BCE.png?v=1780143593",
+  "sherbtank": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-5575.png?v=1780144807",
+  "kingcherry": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/6A808D23-ABAB-45D5-B098-B58A737A0113.png?v=1780144616",
+  "pinkzugar": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-5581.png?v=1780144311",
+  "mellowz": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/D8AB80ED-9C47-4045-AAB2-3F197CAA0A05.png?v=1780143506",
+  "superboof": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-5258.png?v=1779643656",
+  "lcgrx11": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-5253.png?v=1779642559",
+  "toadvenom": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-5254.png?v=1779642336",
+  "zkittles": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-5586.png?v=1780149518",
+  "gelatox": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/5BC567FD-D2D3-40DD-9E61-C184268D134C.png?v=1780151537",
+  "muhameds": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/581081B6-E329-4DA3-9474-6DC414060F6E.jpg?v=1774365587",
+  "backwoods": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/E6E24816-9C5D-4224-BED4-E4EE198728EE.jpg?v=1722467143",
+  "kawsrocks": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-3052.jpg?v=1734773931",
+  "diamondwax": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/490898B9-C7EB-4156-847A-80AA80C3CD7E.jpg?v=1722975003",
+  "zooties": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/18974187-610E-4BB3-8149-5F9240AEBA54.png?v=1692912822",
+  "pineappleexpress": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/F8CDE9E5-64B9-4526-B65C-9E13833140ED.jpg?v=1776872037",
+  "snowbrands": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/F8CDE9E5-64B9-4526-B65C-9E13833140ED.jpg?v=1776872037",
+  "muhammeds": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-0764.jpg?v=1766923400",
+  "treliverosin": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-0857.jpg?v=1726907546",
+  "danktshirt": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/rn-image_picker_lib_temp_19a88183-a299-4ea3-bcd6-08f12845a4ee.jpg?v=1756065454",
+  "dankcookie": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/19BDC7A2-8DF2-4408-A427-3E36AA5CE49C.jpg?v=1774364851",
+  "dankbrownie": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/D4BA6F7A-1C40-4F24-9DF0-3ADD1D365C47.png?v=1693553371",
+  "bongsession": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/rn-image_picker_lib_temp_2a66b33b-ab91-43c9-88d3-d0872b46c111.jpg?v=1747352386",
+  "waterproofbag": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/9221D9D8-A023-4397-BDD5-584043191141.png?v=1710969052",
+  "sherbtan": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-5575.png?v=1780144807",
+  "backwood": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/E6E24816-9C5D-4224-BED4-E4EE198728EE.jpg?v=1722467143",
+  "blackwood": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/E6E24816-9C5D-4224-BED4-E4EE198728EE.jpg?v=1722467143",
+  "rawblack": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/5E938697-1B0F-4714-AFE7-E618B5C3CFD2.jpg?v=1693557480",
+  "rawwide": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/rn-image_picker_lib_temp_7f82c5da-3aa1-40bd-9f81-b748021a4bbd.jpg?v=1747347667",
+  "rawtips": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/rn-image_picker_lib_temp_7f82c5da-3aa1-40bd-9f81-b748021a4bbd.jpg?v=1747347667",
+  "vodka": "https://images.unsplash.com/photo-1591704951890-0862b2e98acb?auto=format&fit=crop&w=640&h=480&q=70",
+  "schweppes": "https://images.unsplash.com/photo-1523362628745-0c100150b504?auto=format&fit=crop&w=640&h=480&q=70",
+  "cbd": "https://images.unsplash.com/flagged/photo-1564833125683-b9fde4516274?auto=format&fit=crop&w=640&h=480&q=70",
+  "cbg": "https://images.unsplash.com/flagged/photo-1564833125683-b9fde4516274?auto=format&fit=crop&w=640&h=480&q=70",
+  "cbn": "https://images.unsplash.com/flagged/photo-1564833125683-b9fde4516274?auto=format&fit=crop&w=640&h=480&q=70",
+  "romeo": "https://images.unsplash.com/photo-1547652577-b4fe2f34d7ee?auto=format&fit=crop&w=640&h=480&q=70",
+  "julieta": "https://images.unsplash.com/photo-1547652577-b4fe2f34d7ee?auto=format&fit=crop&w=640&h=480&q=70",
+  "guantanamera": "https://images.unsplash.com/photo-1547652577-b4fe2f34d7ee?auto=format&fit=crop&w=640&h=480&q=70",
+  "habana": "https://images.unsplash.com/photo-1547652577-b4fe2f34d7ee?auto=format&fit=crop&w=640&h=480&q=70",
+  "cohiba": "https://images.unsplash.com/photo-1547652577-b4fe2f34d7ee?auto=format&fit=crop&w=640&h=480&q=70",
+  "krispies": "https://images.unsplash.com/photo-1726072375899-434c539ac731?auto=format&fit=crop&w=640&h=480&q=70",
+  "krispie": "https://images.unsplash.com/photo-1726072375899-434c539ac731?auto=format&fit=crop&w=640&h=480&q=70",
+  "grinderalumin": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/rn-image_picker_lib_temp_5d48e56c-6cd3-479b-bd25-edcd554da20f.jpg?v=1747350208",
+  "grinderplastic": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/5A110104-F265-40D5-AF13-F22D34C8CB97.jpg?v=1693557942",
+  "plasticgrinder": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/5A110104-F265-40D5-AF13-F22D34C8CB97.jpg?v=1693557942",
+  "clipper": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/rn-image_picker_lib_temp_f07fbe9d-1bb0-40ad-9ed2-1cecdddad837.jpg?v=1747349959",
+  "puzzy": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-6876.jpg?v=1782725629",
+  "cookiezmonster": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-6884.jpg?v=1782730860",
+  "lcg": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-5253.png?v=1779642559",
+  "ogkushxzkittles": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-6880.jpg?v=1782729487",
+  "ogkushxzkittlez": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-6880.jpg?v=1782729487"
+ },
+ "_readme2": "byKeyword is a looser net: the product name is flattened and scanned for each of these words, longest first, so '(Beer) Wila weizen (1Jar' finds 'weizen' and '(Food) Chicken Karaage' finds 'karaage'. Anything still unmatched gets a generated tile from /api/tile — a unique coloured card drawn from the product's own name, so no two products look alike.",
+ "_readme3": "Weed/flower products (name or category matching weed/flower/exotic/topshelf/midgrade/indica/sativa) only ever match the shop's own cdn.shopify.com photos or an exact byName entry - never generic stock keywords, never a category photo. Strains named after food (Chocolate Crip, Tea Time, Durian Pop) would otherwise get food pictures. Unmatched strains get their generated /api/tile card."
+}

@@ -1,0 +1,54 @@
+Code,Product,Category,Type,THC,Stock,Unit,Price(from)
+EXO-01,Crunch Berrie,Exotics,Hybrid,29%,25,g,400
+EXO-02,Alien Mint,Exotics,Hybrid,30%,22,g,400
+EXO-03,Cookie Monster,Exotics,Indica,31%,18,g,400
+EXO-04,D-Lish,Exotics,Hybrid,30%,20,g,400
+EXO-05,Black Cherry,Exotics,Indica,30–32%,16,g,400
+EXO-06,Orange Z,Exotics,Hybrid,29–30%,20,g,400
+EXO-07,Giraffe Puzzy,Exotics,Hybrid,30%,15,g,400
+EXO-08,Blue Nerdz,Exotics,Hybrid,30–32%,14,g,400
+EXO-09,Thai Orange Tea,Exotics,Hybrid,29–30%,18,g,400
+EXO-10,Red Hot,Exotics,Hybrid,29–30%,20,g,400
+EXO-11,Coco Chanel,Exotics,Hybrid,26–28%,19,g,400
+EXO-12,Pink Zugar,Exotics,Hybrid,22–27%,21,g,400
+EXO-13,LCG RX11,Exotics,Hybrid,29%,17,g,400
+EXO-14,Toad Venom,Exotics,Hybrid,28–35%,15,g,400
+EXO-15,Lemon Cherry Gelato,Exotics,Hybrid,31.5%,18,g,400
+EXO-16,Gelato X,Exotics,Indica,28%,16,g,400
+TOP-01,OG Kush × Zkittlez,Topshelf,Hybrid,28–30%,24,g,300
+TOP-02,Ztupid,Topshelf,Hybrid,26%,20,g,300
+TOP-03,Sherb Tank,Topshelf,Hybrid,25%,22,g,300
+TOP-04,King Cherry,Topshelf,Hybrid,28%,20,g,300
+TOP-05,Baby Cake,Topshelf,Hybrid,24–28%,18,g,300
+TOP-06,Zkittles,Topshelf,Hybrid,30%,21,g,300
+MID-01,Mac1,Midgrade,Hybrid,29%,30,g,200
+MID-02,Superboof,Midgrade,Hybrid,28–30%,26,g,200
+MID-03,Thailand Durian,Midgrade,Hybrid,22%,28,g,200
+PRM-01,Snow Brands Pineapple Express,Premium,Sativa,60%,10,g,450
+PRM-02,KAWS Moon Rocks,Premium,Hybrid,60% · CBD 15%,8,g,
+JNT-01,Zooties Premium Joint,Joints,Hybrid,Exotic,40,roll,
+JNT-02,Backwoods (Single),Joints,Hybrid,Blunt wrap,50,pc,
+EDB-01,Sour Belts 3000mg,Edibles,Hybrid,3000mg pack,15,pack,300
+EDB-02,Gummies 500mg,Edibles,Hybrid,500mg,25,pack,
+EDB-03,Wacky Worms Gummies,Edibles,Hybrid,infused,30,pack,
+EDB-04,Dank Cookie 50mg,Edibles,Hybrid,50mg,35,pc,
+EDB-05,Cannabis Brownies 50mg,Edibles,Indica,50mg each,20,pack,500
+EDB-06,Muhameds Edible,Edibles,Hybrid,high dose,12,pack,
+EDB-07,Hidden Hills Resin Jelly 1000mg,Edibles,Hybrid,1000mg,18,pack,
+VAP-01,Muhameds Live Resin Disposable 2g,Vapes,Hybrid,2000mg,22,pc,
+VAP-02,TRE Live Rosin Disposable 3.5g,Vapes,Hybrid,3500mg,15,pc,
+VAP-03,Live Resin / Rosin 1g,Vapes,Hybrid,78%,14,g,
+VAP-04,Diamond Wax 98%,Vapes,Hybrid,98%,10,g,1250
+BER-01,Crispy Boy Lager Can,Beer,Hybrid,Craft beer,94,can,
+ACC-01,Bong Session,Accessories,Hybrid,In-store,9,session,
+ACC-02,Aluminium Grinder 2-Piece,Accessories,Hybrid,Gear,20,pc,
+ACC-03,All-In-One Rolling Kit,Accessories,Hybrid,Kit,25,kit,
+ACC-04,RAW ¼ Papers (+Tips),Accessories,Hybrid,Papers,60,pack,60
+ACC-05,RAW Classic Kingsize,Accessories,Hybrid,Papers,60,pack,80
+ACC-06,RAW Tips / Wild Tips,Accessories,Hybrid,Tips,80,pack,
+ACC-07,Clipper Lighter,Accessories,Hybrid,Lighter,100,pc,
+ACC-08,Plastic Grinder,Accessories,Hybrid,Gear,40,pc,
+ACC-09,Waterproof Bag,Accessories,Hybrid,Gear,30,pc,
+MRC-01,DANK Limited 2026 Tee,Merch,Hybrid,M–2XL,24,pc,
+MRC-02,DANK T-Shirt 2025 Collection,Merch,Hybrid,M–2XL,30,pc,
+MRC-03,DANK 2023 White Limited Tee,Merch,Hybrid,M–2XL,15,pc,
