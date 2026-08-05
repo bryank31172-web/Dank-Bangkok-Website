@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>ClinicWorks Cannabis — License · Build · Operate · Grow</title>
+<meta name="description" content="ClinicWorks Cannabis — turnkey medical cannabis clinic consultancy in Thailand. Licensing, buildout, operations and growth."/>
+<style>
+:root{
+  --forest:#1B3B26; --pine:#2E5B39; --leaf:#5B9147; --leaf-soft:#7FB069;
+  --ink:#111C15; --paper:#F2EFE8; --paper2:#E9E4D8; --card:#FFFFFF;
+  --bg:var(--paper); --bg2:var(--paper2); --surface:var(--card);
+  --text:var(--ink); --text-dim:#4A5A4E; --line:#D8D2C2;
+  --hero-ink:#F2EFE8; --accent:var(--leaf);
+  --shadow:0 18px 50px rgba(17,28,21,.12);
+}
+@media (prefers-color-scheme: dark){
+  :root{ --bg:#0C1710; --bg2:#0F1D14; --surface:#14241A; --text:#E8E9E2;
+    --text-dim:#9FB3A4; --line:#24382B; --accent:#7FB069; --shadow:0 18px 50px rgba(0,0,0,.45); }
+}
+:root[data-theme="dark"]{ --bg:#0C1710; --bg2:#0F1D14; --surface:#14241A; --text:#E8E9E2;
+  --text-dim:#9FB3A4; --line:#24382B; --accent:#7FB069; --shadow:0 18px 50px rgba(0,0,0,.45); }
+:root[data-theme="light"]{ --bg:#F2EFE8; --bg2:#E9E4D8; --surface:#FFFFFF; --text:#111C15;
+  --text-dim:#4A5A4E; --line:#D8D2C2; --accent:#5B9147; --shadow:0 18px 50px rgba(17,28,21,.12); }
+
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+@media (prefers-reduced-motion: reduce){ html{scroll-behavior:auto} *,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important} }
+body{
+  font-family:"Avenir Next","Segoe UI",system-ui,-apple-system,sans-serif;
+  background:var(--bg); color:var(--text); line-height:1.6; overflow-x:hidden;
+}
+.disp{ font-weight:800; letter-spacing:-.02em; line-height:1.08; text-wrap:balance; }
+.eyebrow{ font-size:11px; font-weight:700; letter-spacing:.22em; text-transform:uppercase; color:var(--accent); }
+a{color:inherit}
+button{font-family:inherit;cursor:pointer}
+:focus-visible{outline:2px solid var(--accent); outline-offset:3px; border-radius:4px}
+img{max-width:100%}
+
+/* ---------- top bar ---------- */
+.bar{
+  position:fixed; inset:0 0 auto 0; z-index:50; display:flex; align-items:center; gap:14px;
+  padding:12px clamp(16px,4vw,40px);
+  background:color-mix(in srgb,var(--bg) 82%,transparent); backdrop-filter:blur(12px);
+  border-bottom:1px solid color-mix(in srgb,var(--line) 60%,transparent);
+  transform:translateY(-100%); transition:transform .4s ease;
+}
+.bar.on{transform:translateY(0)}
+.bar .mark{width:34px;height:34px;border-radius:8px;object-fit:cover}
+.bar .name{font-weight:800;font-size:14px;letter-spacing:.02em}
+.bar .name span{color:var(--accent)}
+.bar nav{margin-left:auto;display:flex;gap:4px;align-items:center;flex-wrap:wrap}
+.bar nav a{
+  font-size:12.5px;font-weight:600;text-decoration:none;color:var(--text-dim);
+  padding:7px 11px;border-radius:8px;transition:color .2s,background .2s;
+}
+.bar nav a:hover{color:var(--text);background:color-mix(in srgb,var(--accent) 12%,transparent)}
+.chipbtn{
+  font-size:11.5px;font-weight:700;border:1px solid var(--line);background:var(--surface);
+  color:var(--text);border-radius:999px;padding:6px 12px;transition:border-color .2s;
+}
+.chipbtn:hover{border-color:var(--accent)}
+
+/* ---------- hero ---------- */
+.hero{position:relative;min-height:100svh;display:flex;align-items:center;justify-content:center;text-align:center;overflow:hidden;background:#0B140E}
+.hero video,.hero .vfallback{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.hero .vfallback{background:
+  radial-gradient(90% 70% at 50% 0%,#2E5B39 0%,#16301F 55%,#0B140E 100%);}
+.hero::after{content:"";position:absolute;inset:0;background:
+  linear-gradient(180deg,rgba(11,20,14,.45) 0%,rgba(11,20,14,.25) 40%,rgba(11,20,14,.78) 100%)}
+.hero-inner{position:relative;z-index:2;color:var(--hero-ink);padding:90px 20px 70px;max-width:880px}
+.hero .logo{
+  width:clamp(150px,24vw,230px);border-radius:22px;box-shadow:0 24px 70px rgba(0,0,0,.5);
+  opacity:0;transform:translateY(18px) scale(.96);animation:rise .9s .15s cubic-bezier(.2,.7,.2,1) forwards;
+}
+.hero h1{font-size:clamp(34px,6vw,64px);margin:26px 0 12px;opacity:0;transform:translateY(18px);animation:rise .9s .35s cubic-bezier(.2,.7,.2,1) forwards}
+.hero h1 em{font-style:normal;color:#9FD07E}
+.hero p.lead{font-size:clamp(15px,2vw,19px);color:#CBD8C8;max-width:56ch;margin:0 auto;opacity:0;transform:translateY(18px);animation:rise .9s .5s cubic-bezier(.2,.7,.2,1) forwards}
+.pillars-line{
+  display:flex;gap:clamp(10px,3vw,26px);justify-content:center;margin:30px 0 34px;flex-wrap:wrap;
+  opacity:0;animation:rise .9s .65s cubic-bezier(.2,.7,.2,1) forwards;
+}
+.pillars-line span{font-size:clamp(11px,1.6vw,14px);font-weight:700;letter-spacing:.24em;display:flex;align-items:center;gap:clamp(10px,3vw,26px)}
+.pillars-line .dot{width:5px;height:5px;border-radius:50%;background:#9FD07E;display:inline-block}
+.cta-row{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;opacity:0;animation:rise .9s .8s cubic-bezier(.2,.7,.2,1) forwards}
+.btn{
+  display:inline-block;font-weight:700;font-size:14.5px;text-decoration:none;border-radius:12px;
+  padding:14px 26px;transition:transform .2s,box-shadow .2s,background .2s;border:0;
+}
+.btn:hover{transform:translateY(-2px)}
+.btn-solid{background:#5B9147;color:#fff;box-shadow:0 10px 30px rgba(91,145,71,.4)}
+.btn-solid:hover{background:#67a251}
+.btn-ghost{background:rgba(242,239,232,.1);color:var(--hero-ink);border:1px solid rgba(242,239,232,.35);backdrop-filter:blur(6px)}
+.btn-ghost:hover{background:rgba(242,239,232,.18)}
+@keyframes rise{to{opacity:1;transform:none}}
+.scrollhint{position:absolute;bottom:26px;left:50%;transform:translateX(-50%);z-index:2;color:#CBD8C8;font-size:11px;letter-spacing:.2em;text-transform:uppercase;opacity:.8;animation:bob 2.4s ease-in-out infinite}
+@keyframes bob{0%,100%{transform:translate(-50%,0)}50%{transform:translate(-50%,7px)}}
+
+/* ---------- sections ---------- */
+.sec{padding:clamp(64px,9vw,110px) clamp(18px,5vw,48px);max-width:1160px;margin:0 auto}
+.sec-head{max-width:620px;margin-bottom:clamp(30px,5vw,54px)}
+.sec-head h2{font-size:clamp(26px,4vw,40px);margin:10px 0 12px}
+.sec-head p{color:var(--text-dim);max-width:58ch}
+.reveal{opacity:0;transform:translateY(26px);transition:opacity .7s ease,transform .7s cubic-bezier(.2,.7,.2,1)}
+.reveal.in{opacity:1;transform:none}
+
+/* ---------- journey (4 pillars) ---------- */
+.journey{display:grid;grid-template-columns:280px 1fr;gap:clamp(20px,4vw,48px)}
+@media(max-width:820px){.journey{grid-template-columns:1fr}}
+.stage-rail{display:flex;flex-direction:column;gap:8px}
+@media(max-width:820px){.stage-rail{flex-direction:row;overflow-x:auto;padding-bottom:6px}}
+.stage{
+  display:flex;align-items:center;gap:14px;text-align:left;border:1px solid var(--line);
+  background:var(--surface);border-radius:14px;padding:14px 16px;min-width:190px;
+  transition:border-color .25s,background .25s,transform .2s;
+}
+.stage:hover{transform:translateX(3px)}
+@media(max-width:820px){.stage:hover{transform:none}}
+.stage .n{
+  font-size:12px;font-weight:800;width:30px;height:30px;border-radius:9px;flex:none;
+  display:flex;align-items:center;justify-content:center;
+  background:color-mix(in srgb,var(--accent) 14%,transparent);color:var(--accent);
+  font-variant-numeric:tabular-nums;transition:background .25s,color .25s;
+}
+.stage .t{font-weight:800;font-size:14px;letter-spacing:.06em}
+.stage .s{font-size:11.5px;color:var(--text-dim)}
+.stage[aria-selected="true"]{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 9%,var(--surface))}
+.stage[aria-selected="true"] .n{background:var(--accent);color:#fff}
+.stage-panel{
+  background:var(--surface);border:1px solid var(--line);border-radius:20px;
+  padding:clamp(22px,4vw,40px);box-shadow:var(--shadow);min-height:340px;
+}
+.stage-panel .eyebrow{display:block;margin-bottom:6px}
+.stage-panel h3{font-size:clamp(21px,3vw,30px);margin-bottom:10px}
+.stage-panel p.desc{color:var(--text-dim);max-width:62ch;margin-bottom:20px}
+.pts{list-style:none;display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px}
+.pts li{
+  display:flex;gap:10px;align-items:flex-start;font-size:13.5px;background:var(--bg2);
+  border-radius:12px;padding:12px 14px;
+}
+.pts li::before{content:"✚";color:var(--accent);font-weight:800;flex:none;margin-top:1px}
+.panel-swap{animation:panelIn .45s cubic-bezier(.2,.7,.2,1)}
+@keyframes panelIn{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+
+/* ---------- numbers ---------- */
+.numbers{background:linear-gradient(160deg,var(--forest) 0%,#152C1C 100%);color:#E9EFE4}
+.numbers .sec-head h2{color:#fff}
+.numbers .sec-head p{color:#AFC3AC}
+.numgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:16px}
+.num{
+  border:1px solid rgba(159,208,126,.22);border-radius:18px;padding:24px 22px;
+  background:rgba(255,255,255,.03);
+}
+.num b{display:block;font-size:clamp(30px,4.4vw,46px);font-weight:800;color:#9FD07E;font-variant-numeric:tabular-nums;letter-spacing:-.02em}
+.num span{font-size:12.5px;color:#AFC3AC;letter-spacing:.04em}
+
+/* ---------- services ---------- */
+.svcgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:16px}
+.svc{
+  background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:24px;
+  transition:transform .25s,box-shadow .25s,border-color .25s;
+}
+.svc:hover{transform:translateY(-5px);box-shadow:var(--shadow);border-color:color-mix(in srgb,var(--accent) 50%,var(--line))}
+.svc .ic{
+  width:42px;height:42px;border-radius:12px;display:flex;align-items:center;justify-content:center;
+  background:color-mix(in srgb,var(--accent) 14%,transparent);font-size:19px;margin-bottom:14px;
+}
+.svc h4{font-size:16px;margin-bottom:7px}
+.svc p{font-size:13.5px;color:var(--text-dim)}
+
+/* ---------- contact ---------- */
+.contact{background:var(--bg2)}
+.contact-wrap{display:grid;grid-template-columns:1fr 1fr;gap:clamp(24px,5vw,60px);align-items:center}
+@media(max-width:820px){.contact-wrap{grid-template-columns:1fr}}
+.contact .logo2{width:170px;border-radius:18px;box-shadow:var(--shadow)}
+.field{margin-bottom:14px}
+.field label{display:block;font-size:12px;font-weight:700;letter-spacing:.06em;margin-bottom:6px;color:var(--text-dim)}
+.field input,.field textarea,.field select{
+  width:100%;border:1px solid var(--line);background:var(--surface);color:var(--text);
+  border-radius:11px;padding:12px 14px;font-family:inherit;font-size:14px;transition:border-color .2s;
+}
+.field input:focus,.field textarea:focus,.field select:focus{outline:none;border-color:var(--accent)}
+.formnote{font-size:12px;color:var(--text-dim);margin-top:10px}
+.sent{background:color-mix(in srgb,var(--accent) 14%,transparent);border:1px solid var(--accent);border-radius:12px;padding:14px 16px;font-size:14px;font-weight:600}
+
+footer{padding:34px clamp(18px,5vw,48px);text-align:center;font-size:12px;color:var(--text-dim);border-top:1px solid var(--line)}
+footer b{color:var(--text)}
+</style>
+</head>
+<body>
+
+<header class="bar" id="bar">
+  <img class="mark" src="logo.jpg" alt="ClinicWorks Cannabis logo"/>
+  <div class="name">CLINIC<span>WORKS</span></div>
+  <nav>
+    <a href="#journey" data-i="nav_journey">The Journey</a>
+    <a href="#numbers" data-i="nav_numbers">Track Record</a>
+    <a href="#services" data-i="nav_services">Services</a>
+    <a href="#contact" data-i="nav_contact">Contact</a>
+    <button class="chipbtn" id="langBtn" aria-label="Switch language">ไทย</button>
+    <button class="chipbtn" id="themeBtn" aria-label="Toggle theme">◐</button>
+  </nav>
+</header>
+
+<section class="hero">
+  <div class="vfallback"></div>
+  <video autoplay muted loop playsinline preload="metadata" aria-hidden="true"
+         onerror="this.style.display='none'">
+    <source src="hero.mp4" type="video/mp4"/>
+  </video>
+  <div class="hero-inner">
+    <img class="logo" src="logo.jpg" alt="ClinicWorks Cannabis — License, Build, Operate, Grow"/>
+    <h1 class="disp" data-i="h1">Your cannabis clinic, <em>done right</em> — from paperwork to profit.</h1>
+    <p class="lead" data-i="lead">ClinicWorks Cannabis is a turnkey consultancy for medical cannabis clinics in Thailand. We take you from first licence application to a running, audited, growing business.</p>
+    <div class="pillars-line" aria-hidden="true">
+      <span>LICENSE <i class="dot"></i></span><span>BUILD <i class="dot"></i></span><span>OPERATE <i class="dot"></i></span><span>GROW</span>
+    </div>
+    <div class="cta-row">
+      <a class="btn btn-solid" href="#contact" data-i="cta1">Start your clinic</a>
+      <a class="btn btn-ghost" href="#journey" data-i="cta2">See how it works</a>
+    </div>
+  </div>
+  <div class="scrollhint" data-i="scroll">Scroll</div>
+</section>
+
+<section class="sec" id="journey">
+  <div class="sec-head reveal">
+    <span class="eyebrow" data-i="j_eyebrow">The ClinicWorks method</span>
+    <h2 class="disp" data-i="j_h2">Four stages. One partner.</h2>
+    <p data-i="j_p">The order matters — each stage unlocks the next. Tap a stage to see exactly what we do there.</p>
+  </div>
+  <div class="journey reveal">
+    <div class="stage-rail" role="tablist" aria-label="Stages" id="rail"></div>
+    <div class="stage-panel" id="panel" role="tabpanel"></div>
+  </div>
+</section>
+
+<section class="numbers" id="numbers">
+  <div class="sec">
+    <div class="sec-head reveal">
+      <span class="eyebrow" style="color:#9FD07E" data-i="n_eyebrow">Proven in the field</span>
+      <h2 class="disp" data-i="n_h2">We run what we preach.</h2>
+      <p data-i="n_p">Our playbook comes from operating real dispensaries and clinics — not from a slide deck.</p>
+    </div>
+    <div class="numgrid reveal">
+      <div class="num"><b data-count="5">0</b><span data-i="n1">branches operated across Thailand</span></div>
+      <div class="num"><b data-count="315">0</b><span data-i="n2">SKUs under live inventory audit</span></div>
+      <div class="num"><b data-count="3">0</b><span data-i="n3">shifts a day, stock-checked in and out</span></div>
+      <div class="num"><b data-count="100" data-suffix="%">0</b><span data-i="n4">licensed &amp; compliant operations</span></div>
+    </div>
+  </div>
+</section>
+
+<section class="sec" id="services">
+  <div class="sec-head reveal">
+    <span class="eyebrow" data-i="s_eyebrow">What we deliver</span>
+    <h2 class="disp" data-i="s_h2">Everything a clinic needs to open — and stay open.</h2>
+  </div>
+  <div class="svcgrid reveal">
+    <div class="svc"><div class="ic">📋</div><h4 data-i="s1h">Licensing &amp; compliance</h4><p data-i="s1p">Medical clinic and cannabis licences, doctor partnerships, document prep and renewals — handled end to end.</p></div>
+    <div class="svc"><div class="ic">🏗️</div><h4 data-i="s2h">Clinic buildout</h4><p data-i="s2p">Location scouting, layout, branding and fit-out that passes inspection and pulls customers in.</p></div>
+    <div class="svc"><div class="ic">🖥️</div><h4 data-i="s3h">POS &amp; inventory systems</h4><p data-i="s3p">Our own POS with shift clock-in/out stock audits, scale integration and real-time reporting.</p></div>
+    <div class="svc"><div class="ic">👩‍⚕️</div><h4 data-i="s4h">Staff &amp; operations</h4><p data-i="s4p">Hiring, training, shift schedules, audit trails — the systems that stop shrinkage before it starts.</p></div>
+    <div class="svc"><div class="ic">🛒</div><h4 data-i="s5h">Supply &amp; sourcing</h4><p data-i="s5p">Vetted growers and product lines, price negotiation, and stock planning matched to what actually sells.</p></div>
+    <div class="svc"><div class="ic">📈</div><h4 data-i="s6h">Growth &amp; marketing</h4><p data-i="s6p">Online storefronts, memberships, delivery and multi-branch expansion when the numbers say go.</p></div>
+  </div>
+</section>
+
+<section class="contact sec-outer" id="contact">
+  <div class="sec">
+    <div class="contact-wrap reveal">
+      <div>
+        <img class="logo2" src="logo.jpg" alt="ClinicWorks Cannabis logo"/>
+        <h2 class="disp" style="font-size:clamp(24px,3.4vw,36px);margin:18px 0 10px" data-i="c_h2">Let's open yours.</h2>
+        <p style="color:var(--text-dim);max-width:46ch" data-i="c_p">Tell us where you are in the journey — even if that's "just an idea". We'll reply with an honest read on cost, timeline and licence path.</p>
+      </div>
+      <form id="cform" novalidate>
+        <div class="field"><label for="f_name" data-i="f1">Name</label><input id="f_name" required autocomplete="name"/></div>
+        <div class="field"><label for="f_contact" data-i="f2">LINE ID / phone / email</label><input id="f_contact" required/></div>
+        <div class="field"><label for="f_stage" data-i="f3">Where are you now?</label>
+          <select id="f_stage">
+            <option data-i="o1">Just an idea</option>
+            <option data-i="o2">Have a location</option>
+            <option data-i="o3">Applying for licence</option>
+            <option data-i="o4">Open — need better operations</option>
+          </select>
+        </div>
+        <div class="field"><label for="f_msg" data-i="f4">Message</label><textarea id="f_msg" rows="3"></textarea></div>
+        <button class="btn btn-solid" type="submit" data-i="f_send">Send inquiry</button>
+        <div class="formnote" data-i="f_note">Sends via your email app — or message us on LINE.</div>
+      </form>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <b>ClinicWorks Cannabis</b> · License · Build · Operate · Grow · Bangkok, Thailand<br/>
+  © 2026 ClinicWorks Cannabis. For licensed medical cannabis business consulting only.
+</footer>
+
+<script>
+/* ---------- i18n ---------- */
+var I18N={
+ en:{},
+ th:{
+  nav_journey:"ขั้นตอน",nav_numbers:"ผลงาน",nav_services:"บริการ",nav_contact:"ติดต่อ",
+  h1:"เปิดคลินิกกัญชาของคุณ แบบถูกต้องครบวงจร — ตั้งแต่ใบอนุญาตถึงกำไร",
+  lead:"ClinicWorks Cannabis คือที่ปรึกษาครบวงจรสำหรับคลินิกกัญชาทางการแพทย์ในประเทศไทย พาคุณตั้งแต่ยื่นใบอนุญาตแรก จนถึงธุรกิจที่เดินได้จริง ตรวจสอบได้ และเติบโต",
+  cta1:"เริ่มเปิดคลินิก",cta2:"ดูขั้นตอนทั้งหมด",scroll:"เลื่อนลง",
+  j_eyebrow:"วิธีของ ClinicWorks",j_h2:"4 ขั้นตอน พาร์ทเนอร์เดียว",
+  j_p:"ลำดับสำคัญ — แต่ละขั้นปลดล็อกขั้นถัดไป แตะแต่ละขั้นเพื่อดูว่าเราทำอะไรให้บ้าง",
+  n_eyebrow:"พิสูจน์จากหน้างานจริง",n_h2:"เราทำเองมาแล้วทุกอย่างที่แนะนำ",
+  n_p:"Playbook ของเรามาจากการเปิดร้านและคลินิกจริง ไม่ใช่จากสไลด์นำเสนอ",
+  n1:"สาขาที่ดำเนินการทั่วไทย",n2:"SKU ภายใต้ระบบตรวจสต๊อกสด",n3:"กะต่อวัน ตรวจสต๊อกเข้า-ออกทุกกะ",n4:"ดำเนินการถูกกฎหมาย 100%",
+  s_eyebrow:"สิ่งที่เราส่งมอบ",s_h2:"ทุกอย่างที่คลินิกต้องมี — เพื่อเปิดได้ และอยู่รอด",
+  s1h:"ใบอนุญาต & กฎหมาย",s1p:"ใบอนุญาตคลินิกและกัญชา จับคู่แพทย์ เตรียมเอกสาร ต่ออายุ — ดูแลครบจบ",
+  s2h:"สร้างและตกแต่งคลินิก",s2p:"หาทำเล วางผัง แบรนด์ดิ้ง ตกแต่งให้ผ่านตรวจและดึงลูกค้า",
+  s3h:"ระบบ POS & สต๊อก",s3p:"POS ของเราเอง มีตรวจสต๊อกเข้า-ออกงานทุกกะ ต่อเครื่องชั่ง รายงานสด",
+  s4h:"พนักงาน & ระบบงาน",s4p:"จ้าง ฝึก จัดกะ audit log — ระบบที่หยุดของหายก่อนจะเกิด",
+  s5h:"จัดหาสินค้า",s5p:"ผู้ปลูกและสินค้าที่คัดแล้ว ต่อรองราคา วางแผนสต๊อกตามของที่ขายจริง",
+  s6h:"การตลาด & ขยายสาขา",s6p:"หน้าร้านออนไลน์ ระบบสมาชิก เดลิเวอรี่ และขยายสาขาเมื่อตัวเลขพร้อม",
+  c_h2:"มาเปิดของคุณกัน",
+  c_p:"บอกเราว่าคุณอยู่ขั้นไหน — แม้จะแค่ 'มีไอเดีย' เราจะตอบพร้อมประเมินต้นทุน ระยะเวลา และเส้นทางใบอนุญาตแบบตรงไปตรงมา",
+  f1:"ชื่อ",f2:"LINE ID / โทร / อีเมล",f3:"ตอนนี้คุณอยู่ขั้นไหน?",f4:"ข้อความ",
+  o1:"แค่มีไอเดีย",o2:"มีทำเลแล้ว",o3:"กำลังยื่นใบอนุญาต",o4:"เปิดแล้ว — อยากได้ระบบที่ดีกว่า",
+  f_send:"ส่งข้อความ",f_note:"ส่งผ่านแอปอีเมลของคุณ — หรือทัก LINE หาเราได้เลย",
+  st1t:"LICENSE",st1s:"ใบอนุญาตครบ ถูกต้อง",st2t:"BUILD",st2s:"สร้างคลินิกให้ผ่านตรวจ",
+  st3t:"OPERATE",st3s:"ระบบร้านที่ตรวจสอบได้",st4t:"GROW",st4s:"ขยายเมื่อตัวเลขพร้อม",
+  sent:"✅ เปิดแอปอีเมลแล้ว — ถ้าไม่ขึ้น ทัก LINE หาเราได้เลย"
+ }
+};
+var STAGES=[
+ {n:"01",key:"license",t:"LICENSE",s:"Paperwork, done properly",
+  en:{h:"Get licensed without the guesswork.",d:"Thailand's cannabis rules change fast. We keep your application current, complete and honest — so it passes the first time.",
+    pts:["Medical clinic licence + cannabis dispensing licence","Doctor & pharmacist partnership matching","Location zoning and pre-inspection checks","Document prep, submission and renewals"]},
+  th:{h:"ได้ใบอนุญาตโดยไม่ต้องเดา",d:"กฎกัญชาไทยเปลี่ยนเร็ว เราทำให้ใบสมัครของคุณครบ ถูกต้อง และเป็นปัจจุบัน — ผ่านตั้งแต่ครั้งแรก",
+    pts:["ใบอนุญาตคลินิก + ใบอนุญาตจำหน่ายกัญชา","จับคู่แพทย์และเภสัชกรพาร์ทเนอร์","เช็คโซนนิ่งทำเลและเตรียมรับตรวจ","เตรียมเอกสาร ยื่น และต่ออายุ"]}},
+ {n:"02",key:"build",t:"BUILD",s:"A clinic that passes and sells",
+  en:{h:"Build a space that passes inspection — and pulls people in.",d:"From lease to grand opening: layout that meets clinic standards, plus retail design that actually converts walk-ins.",
+    pts:["Location scouting & lease negotiation","Clinic-standard layout and fit-out","Brand, signage and interior design","Equipment: scales, printers, POS hardware"]},
+  th:{h:"สร้างพื้นที่ให้ผ่านตรวจ — และดึงลูกค้าเข้า",d:"ตั้งแต่เซ็นสัญญาเช่าจนวันเปิดร้าน: ผังที่ผ่านมาตรฐานคลินิก บวกดีไซน์ร้านที่เปลี่ยนคนเดินผ่านเป็นลูกค้า",
+    pts:["หาทำเลและต่อรองสัญญาเช่า","ผังร้านตามมาตรฐานคลินิก","แบรนด์ ป้าย และตกแต่งภายใน","อุปกรณ์: เครื่องชั่ง ปริ้นเตอร์ POS"]}},
+ {n:"03",key:"operate",t:"OPERATE",s:"Systems that stop leaks",
+  en:{h:"Run tight. Every gram accounted for.",d:"We install the operating system we use in our own branches — staff clock in and out against a live stock count, and every action leaves an audit trail.",
+    pts:["Our POS with clock-in/out inventory checks","Shift reports, cash counts and audit log","Staff hiring, training and scheduling","Shrinkage control with scale integration"]},
+  th:{h:"ร้านแน่น ทุกกรัมตรวจสอบได้",d:"เราติดตั้งระบบเดียวกับที่ใช้ในสาขาของเราเอง — พนักงานเข้า-ออกงานพร้อมนับสต๊อกสด และทุกการกระทำมี audit trail",
+    pts:["POS ของเรา พร้อมเช็คสต๊อกเข้า-ออกงาน","รายงานกะ นับเงินสด และ audit log","จ้าง ฝึก และจัดตารางพนักงาน","คุมของหายด้วยเครื่องชั่งเชื่อมระบบ"]}},
+ {n:"04",key:"grow",t:"GROW",s:"Scale when numbers say go",
+  en:{h:"Grow on data, not vibes.",d:"Online ordering, memberships, delivery, second branches — we expand what the dashboard proves is working.",
+    pts:["Online storefront synced to live stock","Membership & rewards programs","Delivery and multi-branch playbook","Finance dashboards: real net profit per branch"]},
+  th:{h:"โตด้วยข้อมูล ไม่ใช่ความรู้สึก",d:"สั่งออนไลน์ สมาชิก เดลิเวอรี่ สาขาสอง — เราขยายเฉพาะสิ่งที่แดชบอร์ดพิสูจน์แล้วว่าเวิร์ค",
+    pts:["หน้าร้านออนไลน์ sync สต๊อกสด","ระบบสมาชิกและแต้มสะสม","เดลิเวอรี่และ playbook ขยายสาขา","แดชบอร์ดการเงิน: กำไรสุทธิจริงต่อสาขา"]}}
+];
+var lang="en", stageIdx=0, EN_TEXT={};
+
+function t(k){ return (I18N[lang]&&I18N[lang][k])||EN_TEXT[k]||""; }
+function applyLang(){
+  document.querySelectorAll("[data-i]").forEach(function(el){
+    var k=el.getAttribute("data-i");
+    if(!(k in EN_TEXT)) EN_TEXT[k]=el.textContent;
+    var v=(lang==="en")?EN_TEXT[k]:(I18N.th[k]||EN_TEXT[k]);
+    el.textContent=v;
+  });
+  document.documentElement.lang=(lang==="en")?"en":"th";
+  document.getElementById("langBtn").textContent=(lang==="en")?"ไทย":"EN";
+  buildRail(); renderPanel(false);
+}
+document.getElementById("langBtn").addEventListener("click",function(){ lang=(lang==="en")?"th":"en"; applyLang(); });
+
+/* ---------- theme toggle ---------- */
+document.getElementById("themeBtn").addEventListener("click",function(){
+  var r=document.documentElement;
+  var dark=r.getAttribute("data-theme")==="dark"||(!r.getAttribute("data-theme")&&window.matchMedia("(prefers-color-scheme: dark)").matches);
+  r.setAttribute("data-theme",dark?"light":"dark");
+});
+
+/* ---------- journey ---------- */
+function buildRail(){
+  var rail=document.getElementById("rail"); rail.innerHTML="";
+  STAGES.forEach(function(st,i){
+    var b=document.createElement("button");
+    b.className="stage"; b.setAttribute("role","tab");
+    b.setAttribute("aria-selected",i===stageIdx?"true":"false");
+    var sub=(lang==="th")?(I18N.th["st"+(i+1)+"s"]||st.s):st.s;
+    b.innerHTML='<span class="n">'+st.n+'</span><span><span class="t">'+st.t+'</span><br/><span class="s">'+sub+'</span></span>';
+    b.addEventListener("click",function(){ stageIdx=i; buildRail(); renderPanel(true); });
+    rail.appendChild(b);
+  });
+}
+function renderPanel(animate){
+  var st=STAGES[stageIdx], c=(lang==="th")?st.th:st.en;
+  var p=document.getElementById("panel");
+  p.innerHTML='<span class="eyebrow">'+st.n+' · '+st.t+'</span>'
+    +'<h3 class="disp">'+c.h+'</h3><p class="desc">'+c.d+'</p>'
+    +'<ul class="pts">'+c.pts.map(function(x){return "<li>"+x+"</li>";}).join("")+"</ul>";
+  if(animate){ p.classList.remove("panel-swap"); void p.offsetWidth; p.classList.add("panel-swap"); }
+}
+buildRail(); renderPanel(false);
+
+/* ---------- top bar shows after hero ---------- */
+var bar=document.getElementById("bar");
+window.addEventListener("scroll",function(){ bar.classList.toggle("on",window.scrollY>window.innerHeight*.6); },{passive:true});
+
+/* ---------- scroll reveals ---------- */
+var io=new IntersectionObserver(function(es){ es.forEach(function(e){ if(e.isIntersecting){ e.target.classList.add("in"); io.unobserve(e.target);} }); },{threshold:.12});
+document.querySelectorAll(".reveal").forEach(function(el){ io.observe(el); });
+
+/* ---------- animated counters ---------- */
+var cio=new IntersectionObserver(function(es){
+  es.forEach(function(e){
+    if(!e.isIntersecting) return; cio.unobserve(e.target);
+    var el=e.target, target=+el.getAttribute("data-count"), suf=el.getAttribute("data-suffix")||"", t0=null;
+    function step(ts){ if(!t0)t0=ts; var k=Math.min((ts-t0)/1100,1); k=1-Math.pow(1-k,3);
+      el.textContent=Math.round(target*k)+suf; if(k<1)requestAnimationFrame(step); }
+    requestAnimationFrame(step);
+  });
+},{threshold:.5});
+document.querySelectorAll("[data-count]").forEach(function(el){ cio.observe(el); });
+
+/* ---------- contact form → mailto ---------- */
+document.getElementById("cform").addEventListener("submit",function(ev){
+  ev.preventDefault();
+  var n=document.getElementById("f_name").value.trim(),
+      c=document.getElementById("f_contact").value.trim(),
+      s=document.getElementById("f_stage").value,
+      m=document.getElementById("f_msg").value.trim();
+  if(!n||!c){ document.getElementById("f_name").focus(); return; }
+  var body="Name: "+n+"%0AContact: "+c+"%0AStage: "+encodeURIComponent(s)+"%0A%0A"+encodeURIComponent(m);
+  location.href="mailto:dankclubbkk@gmail.com?subject="+encodeURIComponent("ClinicWorks inquiry — "+n)+"&body="+body;
+  var note=document.querySelector(".formnote");
+  note.className="sent"; note.textContent=(lang==="th")?(I18N.th.sent):"✅ Your email app should open — or message us on LINE.";
+});
+
+/* ---------- video: retry play on tap (mobile autoplay policies) ---------- */
+var vid=document.querySelector(".hero video");
+if(vid){ vid.play&&vid.play().catch(function(){}); document.addEventListener("touchstart",function once(){ vid.play&&vid.play().catch(function(){}); document.removeEventListener("touchstart",once); }); }
+</script>
+</body>
+</html>
