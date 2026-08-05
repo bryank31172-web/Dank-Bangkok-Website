@@ -2839,21 +2839,23 @@ function renderRelated(p){
       <div class="rel-name">${esc(r.name)}</div><div class="rel-price">${isFlower(r)?'from ':''}${money(pr)}</div></div>`;}).join("")}</div>`;
 }
 function selTier(i){ pdTierIdx=i; document.querySelectorAll("#tierOpts .tier").forEach((el,idx)=>el.classList.toggle("active",idx===i)); const t=pdCurrent.priceTiers[i]; $("#pdPrice").textContent=money(memberMode?t.member:t.price); }
-function addFromPD(){ const p=pdCurrent; for(let i=0;i<pdQty;i++) addToCart(p,isFlower(p)?p.priceTiers[pdTierIdx]:null); closeAll(); toast(`${pdQty}× ${p.name} added`); }
+function addFromPD(){ const p=pdCurrent; for(let i=0;i<pdQty;i++) addToCart(p,isFlower(p)?((p.priceTiers&&p.priceTiers[pdTierIdx])||(p.priceTiers&&p.priceTiers[0])||null):null); closeAll(); toast(`${pdQty}× ${p.name} added`); }
 
 /* ---- Cart ---- */
-function quickAdd(id){ const p=DATA.find(x=>x.id===id); if(!p)return; addToCart(p,isFlower(p)?p.priceTiers[0]:null); toast(`${p.name} added`); }
+function quickAdd(id){ const p=DATA.find(x=>x.id===id); if(!p)return; addToCart(p,isFlower(p)?((p.priceTiers&&p.priceTiers[0])||null):null); toast(`${p.name} added`); }
 const FXEMO={Relaxed:"😌",Calm:"😌",Relaxing:"😌",Happy:"😄",Euphoric:"🤩",Uplifted:"🚀",Energetic:"⚡",Energise:"⚡",Energizing:"⚡",Creative:"🎨",Social:"🥳",Focused:"🎯",Sleepy:"😴",Hungry:"🍽️",Giggly:"😆",Tingly:"✨",Aroused:"❤️",Talkative:"💬",Alert:"👀",Dreamy:"💭",Sedated:"💤",Numbing:"🧊","Couch-locked":"🛋️",Refreshing:"🧊","Very Potent":"💥"};
 function fxEmoji(e){ return FXEMO[e]||"🌿"; }
 function addTier(id,idx){ const p=DATA.find(x=>x.id===id); if(!p||!p.priceTiers)return; const t=p.priceTiers[idx]||p.priceTiers[0]; addToCart(p,t); toast(`${p.name} · ${t.label} added`); }
 function repriceCart(){
   cart.forEach(c=>{ if(c.bonus) return; const p=DATA.find(x=>x.id===c.id); if(!p) return;
-    if(isFlower(p)){ const t=p.priceTiers.find(t=>t.label===c.tierLabel); if(t) c.price=memberMode?(t.member||t.price):t.price; }
+    if(isFlower(p)){ const t=p.priceTiers&&p.priceTiers.find(t=>t.label===c.tierLabel); if(t) c.price=memberMode?(t.member||t.price):t.price; }
     else { c.price=memberMode?(p.member!=null?p.member:p.price):p.price; } });
 }
 function addToCart(p,tier){
+  if(!tier&&p&&p.priceTiers&&p.priceTiers.length&&!(+p.price>0)) tier=p.priceTiers[0];   // tier-only product — use first size so price is never NaN
   const key=p.id+(tier?("|"+tier.label):"");
   const price=memberMode?(tier?(tier.member||tier.price):(p.member!=null?p.member:p.price)):(tier?tier.price:p.price);
+  if(!(+price>0)){ toast((p&&p.name?p.name:"Item")+" — please pick a size / เลือกขนาดก่อน"); try{if(p&&typeof openPD==="function")openPD(p.id);}catch(e){} return; }
   const found=cart.find(c=>c.key===key);
   if(found){ found.qty++; }
   else cart.push({key,id:p.id,shId:(tier&&tier.shId)||p.shId||"",name:p.name,tierLabel:tier?tier.label:(p.unit||"each"),price,qty:1,image:p.image,type:p.type,category:p.category});
