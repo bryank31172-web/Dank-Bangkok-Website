@@ -5103,5 +5103,63 @@ async function pushOverrides(){
      party who is looking at their card. -->
 <script src="qr.js"></script>
 <script src="i18n.js"></script>
+
+<!-- ---- interactive layer: smooth anchors, section reveals, tap feedback, back-to-top.
+     Grid cards already animate via cardFX; this covers everything around them.
+     Honours prefers-reduced-motion the same way the card FX does. ---- -->
+<style>
+  @media (prefers-reduced-motion:no-preference){ html{scroll-behavior:smooth} }
+  .sx{opacity:0;transform:translate3d(0,22px,0);transition:opacity .6s ease,transform .6s cubic-bezier(.2,.7,.3,1)}
+  .sx.sx-in{opacity:1;transform:none}
+  @media (prefers-reduced-motion:reduce){ .sx{opacity:1 !important;transform:none !important;transition:none !important} }
+  :where(.btn,.chip){transition:transform .12s ease}
+  :where(.btn,.chip):active{transform:scale(.96)}
+  @media (hover:none){ :where(.card):active{transform:scale(.985);transition:transform .12s ease} }
+  #toTop{position:fixed;left:18px;bottom:18px;z-index:84;width:46px;height:46px;border-radius:50%;
+    border:1px solid var(--line2);background:var(--bg2);color:var(--green);font-size:20px;line-height:1;
+    box-shadow:var(--shadow);opacity:0;transform:translateY(14px);pointer-events:none;transition:.25s;cursor:pointer}
+  #toTop.show{opacity:.92;transform:none;pointer-events:auto}
+</style>
+<script>
+(function(){
+  "use strict";
+  var RM; try{ RM=(typeof FX_OFF!=="undefined")?FX_OFF:matchMedia("(prefers-reduced-motion:reduce)").matches; }catch(e){ RM=false; }
+
+  /* back to top - appears after ~1.5 screens, sits opposite the chat bubble */
+  var b=document.createElement("button");
+  b.id="toTop"; b.type="button"; b.setAttribute("aria-label","Back to top"); b.textContent="\u2191";
+  document.body.appendChild(b);
+  b.addEventListener("click",function(){ window.scrollTo({top:0,behavior:RM?"auto":"smooth"}); });
+  var tick=0;
+  addEventListener("scroll",function(){
+    if(tick) return;
+    tick=requestAnimationFrame(function(){
+      tick=0;
+      b.classList.toggle("show",(window.pageYOffset||0)>innerHeight*1.5);
+      /* instant jumps skip IntersectionObserver - reveal anything already scrolled past */
+      for(var i=pending.length-1;i>=0;i--){
+        if(pending[i].getBoundingClientRect().bottom<=0){ pending[i].classList.add("sx-in"); pending.splice(i,1); }
+      }
+    });
+  },{passive:true});
+  var pending=[];
+
+  /* section reveals - promos rail, shelf title, footer columns */
+  if(RM||!("IntersectionObserver" in window)) return;
+  var targets=document.querySelectorAll(".promos, #ringTitle, .foot-grid > div");
+  if(!targets.length) return;
+  var io=new IntersectionObserver(function(es){
+    es.forEach(function(en){ if(en.isIntersecting){ en.target.classList.add("sx-in"); io.unobserve(en.target); } });
+  },{rootMargin:"0px 0px -6% 0px",threshold:.05});
+  targets.forEach(function(el,i){
+    var r=el.getBoundingClientRect();
+    if(r.top<innerHeight&&r.bottom>0){ return; }   /* already on screen - never blank what the visitor is reading */
+    el.classList.add("sx");
+    el.style.transitionDelay=(Math.min(i,5)*60)+"ms";
+    pending.push(el);
+    io.observe(el);
+  });
+})();
+</script>
 </body>
 </html>
