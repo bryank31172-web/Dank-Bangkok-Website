@@ -160,6 +160,10 @@ export default async function handler(req, res) {
       products: typeof ov.products === "object" && ov.products ? ov.products : {},
       added: Array.isArray(ov.added) ? ov.added.slice(0, 200) : [],
       promos: typeof ov.promos === "object" && ov.promos ? ov.promos : {},
+      site: typeof ov.site === "object" && ov.site
+        ? { hero: typeof ov.site.hero === "object" && ov.site.hero ? ov.site.hero : undefined,
+            slides: Array.isArray(ov.site.slides) ? ov.site.slides.slice(0, 8) : undefined }
+        : null,
     };
     /* A PIN session may rewrite the promotions and nothing else. It does not
        matter what its browser posted — the catalogue half of the payload is
@@ -169,6 +173,7 @@ export default async function handler(req, res) {
       const prev = (await getJSON("admin:overrides")) || {};
       clean.products = typeof prev.products === "object" && prev.products ? prev.products : {};
       clean.added = Array.isArray(prev.added) ? prev.added : [];
+      clean.site = typeof prev.site === "object" && prev.site ? prev.site : null;
     }
     await setJSON("admin:overrides", clean, 60 * 60 * 24 * 365);
     try { await bustMenu(); } catch (e) {}
