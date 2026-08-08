@@ -997,6 +997,18 @@ let SITE_SLIDES=[
  {key:"first", tag:"MEMBERS' FIRST ORDER", kick:"Sign up free \u00b7 10% off every order", title:"First order? 1g + 1g free",
   text:"Join DANK Members, buy your first gram \u2014 a second gram rides along free.",
   btn:"Join & claim", img:"promo-first.jpg", bg:"#181208", detail:""},
+ {key:"happyhour", tag:"HAPPY HOUR", kick:"Sathorn 5\u20137pm \u00b7 Pattanakarn 4\u20137pm", title:"Happy Hour \u2014 buy 3g, get 2g free",
+  text:"Time to buy, time to save: every day during Happy Hour the volume deal is boosted \u2014 the cart adds the free grams itself.",
+  btn:"See Happy Hour", img:"assets/promo-happyhour.jpg", bg:"#0c1408", detail:""},
+ {key:"cards", tag:"COLLECTOR CARDS", kick:"Collect all 9 \u2192 2g free", title:"Collect all 9 Exotic Cards",
+  text:"Buy 1g of any exotic strain and its collector card comes with it. Complete the set of 9 \u2014 cash it in for 2 grams free.",
+  btn:"See the cards", img:"assets/promo-exotic-cards.jpg", bg:"#1a0f24", detail:""},
+ {key:"pt33", tag:"100% LEGAL", kick:"Medical cannabis certificate \u00b7 \u0e3f300", title:"Get your PT33 certificate",
+  text:"\u0e3f300 at the counter \u2014 possession of cannabis from our shop is 100% legal with a PT33. Travel and enjoy with peace of mind.",
+  btn:"Learn more", img:"assets/promo-pt33.jpg", bg:"#0d150c", detail:""},
+ {key:"tiers", tag:"MEMBERSHIP", kick:"Free 10% off \u00b7 Silver 30% \u00b7 Gold 50%", title:"Membership has its perks",
+  text:"Free membership = 10% off every time + free 1g on your birthday. Upgrade to Silver or Gold for bigger savings.",
+  btn:"Join free", img:"assets/promo-membership.jpg", bg:"#101907", detail:""},
 ];
 const DEFAULT_SLIDES=SITE_SLIDES.map(s=>Object.assign({},s));
 let SITE_HERO=null, ORIG_HERO=null;
@@ -1139,6 +1151,31 @@ first:{t:"First order — 1g + 1g free 💚",b:`
      <button class="btn btn-primary btn-block" onclick="closeAll();document.getElementById('menu').scrollIntoView({behavior:'smooth'})">🌿 Claim my free gram</button>`):
     `<button class="btn btn-primary btn-block" onclick="closeAll();openCRM('join')">💚 Join free &amp; claim</button>
      <button class="btn btn-ghost btn-block" style="margin-top:8px" onclick="closeAll();openCRM('login')">👤 Member log in</button>`}`},
+happyhour:{t:"Happy Hour \u2014 buy 3g, get 2g FREE \ud83d\udd25",b:`
+  <p style="color:var(--muted);font-size:14px;margin:0 0 12px">Shop early, save big: during Happy Hour the volume deal is boosted \u2014 <b>buy 3g and get 2g free</b> on every strain. The cart applies it automatically.</p>
+  <div style="background:var(--panel2);border:1px solid var(--line2);border-radius:12px;padding:12px 14px;margin-bottom:14px;font-size:14px;line-height:1.9">
+    \ud83d\udccd <b>DANK Sathorn</b> \u2014 5:00 PM \u2013 7:00 PM<br>\ud83d\udccd <b>DANK Pattanakarn</b> \u2014 4:00 PM \u2013 7:00 PM<br>\ud83d\udef5 First delivery order? <b>Buy 1g get 1g free</b><br>\ud83e\udd64 Free drink over \u0e3f1,500 (Sathorn) \u00b7 \ud83d\udcdc free paper or grinder (Pattanakarn)</div>
+  <button class="btn btn-primary btn-block" onclick="closeAll();document.getElementById('menu').scrollIntoView({behavior:'smooth'})">\ud83c\udf3f Shop flower</button>`},
+cards:{t:"Collect all 9 Exotic Cards \ud83c\udccf",b:`
+  <p style="color:var(--muted);font-size:14px;margin:0 0 12px">Buy 1g of any exotic strain and its collector card comes with it. Complete the set of 9 \u2014 trade it in for <b>2 grams free</b>.</p>
+  <div style="background:var(--panel2);border:1px solid var(--line2);border-radius:12px;padding:12px 14px;margin-bottom:14px;font-size:14px;line-height:1.9">
+    1\ufe0f\u20e3 Buy 1g of any exotic strain<br>2\ufe0f\u20e3 Get the matching collector card with your purchase<br>3\ufe0f\u20e3 Collect all 9 unique cards in the set<br>4\ufe0f\u20e3 Redeem your full set for <b>2 grams FREE</b></div>
+  <p style="color:var(--muted);font-size:12.5px;margin:0 0 14px">One card per 1g purchase, while supplies last. Cards are non-transferable and can\u2019t be combined with other offers. New strains coming soon \u2014 ask your budtender.</p>
+  <button class="btn btn-primary btn-block" onclick="closeAll();setCat('Exotics');document.getElementById('menu').scrollIntoView({behavior:'smooth'})">\ud83d\ude80 Shop Exotics</button>`},
+pt33:{t:"PT33 Medical Cannabis Certificate \ud83e\ude7a",b:`
+  <p style="color:var(--muted);font-size:14px;margin:0 0 12px">Make sure your vacation is safe and free: with a PT33 certificate, cannabis from our shop is <b>100% legal</b> to carry. Official certificate, recognised at airports and checkpoints \u2014 travel around Thailand with confidence.</p>
+  <div style="background:var(--panel2);border:1px solid var(--line2);border-radius:12px;padding:12px 14px;margin-bottom:14px;font-size:14px;line-height:1.9">
+    \ud83d\udcb0 Price: <b>\u0e3f300</b><br>\ud83e\ude7a Doctor consultation for your best experience<br>\ud83d\udcc4 Official certificate, recognised<br>\u2708\ufe0f Valid at airports & checkpoints<br>\ud83d\udc9a Free DANK membership when you get your PT33</div>
+  <a class="btn btn-primary btn-block" href="https://salusbioceutical.co.th/product-category/thai-herbal-products-th/modern-herbal-product-th/salus-polyclinic-th/" target="_blank" rel="noopener noreferrer">\ud83e\ude7a Apply for PT33</a>
+  <button class="btn btn-ghost btn-block" style="margin-top:8px" onclick="closeAll();openAI()">\ud83d\udcac Ask \u0e19\u0e49\u0e2d\u0e07\u0e41\u0e14\u0e07\u0e04\u0e4c about PT33</button>`},
+tiers:{t:"Membership has its perks \ud83d\udc9a",b:`
+  <p style="color:var(--muted);font-size:14px;margin:0 0 12px">Sign up free and save every single time \u2014 then upgrade when you\u2019re ready for bigger savings.</p>
+  <div style="background:var(--panel2);border:1px solid var(--line2);border-radius:12px;padding:12px 14px;margin-bottom:14px;font-size:14px;line-height:1.9">
+    \ud83d\udc9a <b>Free membership</b> \u2014 10% off every time<br>\ud83c\udf82 <b>Free 1g on your birthday</b><br>\ud83e\uddd1\u200d\ud83d\udcbc Staff know your favourites for the best recommendation<br><br>\ud83e\udd48 <b>Silver tier</b> \u2014 30% off \u00b7 yearly subscription<br>\ud83e\udd47 <b>Gold tier</b> \u2014 50% off \u00b7 yearly subscription</div>
+  <p style="color:var(--muted);font-size:12.5px;margin:0 0 14px">Silver & Gold upgrades are arranged at the counter \u2014 ask any budtender.</p>
+  ${isMember()?`<p style="color:var(--green2);font-size:13.5px;font-weight:700;margin:0 0 12px">You\u2019re already a member \u2014 10% off is active \u2b50</p>
+   <button class="btn btn-primary btn-block" onclick="closeAll();document.getElementById('menu').scrollIntoView({behavior:'smooth'})">\ud83c\udf3f Shop with 10% off</button>`:
+  `<button class="btn btn-primary btn-block" onclick="closeAll();openCRM('join')">\ud83d\udc9a Join free</button>`}`},
   }[key];
   /* owner-written details replace the standard body; unknown keys get a
      generic body built from the slide - both fully escaped */
@@ -1297,6 +1334,11 @@ const CONFIG = {
         firstDelayMs:1200, repeatMs:60000 },   // shows on entry, then re-invites every ~60s until they join
   // ---- Volume deal: buy more grams of flower, get grams free (cart-wide total) ----
   gramLadder:[ [3,1],[5,2],[9,3],[12,4],[15,5] ],   // [buy grams, free grams]
+  /* Happy Hour: boosted ladder inside the windows below (Bangkok time).
+     The cart applies it automatically; promoHintsHTML announces it. */
+  happyHour:{ enabled:true, tz:"Asia/Bangkok",
+    windows:[ {name:"Sathorn",from:17,to:19}, {name:"Pattanakarn",from:16,to:19} ],
+    ladder:[ [3,2],[9,3],[12,4],[15,5] ] },
   firstOrder:{ enabled:false, code:"FIRST1G", title:"Buy 1G get 1G FREE 🎁",
     sub:"First order only — register and get a free gram on any 1g flower." },
   wallet:{ enabled:true, bonusPct:10, amounts:[500,1000,2000,5000] },
@@ -1760,8 +1802,32 @@ function gramsOf(line){
   return (g||0)*(line.qty||1);
 }
 function cartFlowerGrams(){ return cart.reduce((s,c)=>s+gramsOf(c),0); }
-function ladderFree(G){ let free=0; (CONFIG.gramLadder||[]).forEach(([buy,f])=>{ if(G>=buy&&f>free) free=f; }); return free; }
-function nextLadder(G){ const L=(CONFIG.gramLadder||[]).slice().sort((a,b)=>a[0]-b[0]);
+/* Auto-recommendation: reads the cart + the clock and surfaces every deal the
+   customer is in (or one tap away from). Rendered in the cart drawer. */
+function promoHintsHTML(){
+  const out=[];
+  const hh=hhActive();
+  if(hh){ out.push('<div class="minorder" style="color:#ff9f43;font-weight:700">\ud83d\udd25 HAPPY HOUR until '+fmtHr(hh.until)+' \u2014 buy 3g get <b>2g FREE</b>, applied automatically</div>'); }
+  else{ const up=hhUpcoming(); const H=CONFIG.happyHour;
+    if(up&&up.startsIn<=3&&H&&H.windows){ out.push('<div class="minorder" style="color:var(--gold)">\u23f0 Happy Hour today \u2014 '+H.windows.map(w=>w.name+" "+fmtHr(w.from)+"\u2013"+fmtHr(w.to)).join(" \u00b7 ")+' \u2014 buy 3g get 2g free</div>'); } }
+  if(cart.some(c=>!c.bonus&&String(c.category)==="Exotics"))
+    out.push('<div class="minorder" style="color:#c9a2ff">\ud83c\udccf Every 1g of Exotics earns a collector card at the counter \u2014 collect all 9 \u2192 <b>2g FREE</b></div>');
+  if(typeof isMember==="function"&&!isMember())
+    out.push('<div class="minorder" style="color:var(--green2)">\ud83d\udc9a <button style="background:none;border:none;color:var(--green2);text-decoration:underline;cursor:pointer;font-size:12.5px;padding:0" onclick="openCRM(\'join\')">Join free membership</button> \u2014 10% off every order + free 1g on your birthday</div>');
+  return out.join("");
+}
+function hhClock(){ try{ const P=new Intl.DateTimeFormat("en-GB",{timeZone:(CONFIG.happyHour&&CONFIG.happyHour.tz)||"Asia/Bangkok",hour:"2-digit",minute:"2-digit",hour12:false}).formatToParts(new Date());
+  return (+P.find(x=>x.type==="hour").value)+(+P.find(x=>x.type==="minute").value)/60; }catch(e){ const t=new Date(); return t.getHours()+t.getMinutes()/60; } }
+function hhActive(){ const H=CONFIG.happyHour; if(!H||!H.enabled) return null;
+  const t=hhClock(); const w=(H.windows||[]).filter(b=>t>=b.from&&t<b.to);
+  return w.length?{windows:w,until:Math.max.apply(null,w.map(b=>b.to))}:null; }
+function hhUpcoming(){ const H=CONFIG.happyHour; if(!H||!H.enabled) return null;
+  const t=hhClock(); const w=(H.windows||[]).filter(b=>t<b.from); if(!w.length) return null;
+  return {startsIn:Math.min.apply(null,w.map(b=>b.from))-t}; }
+function activeLadder(){ const H=CONFIG.happyHour; return (H&&hhActive()&&Array.isArray(H.ladder)&&H.ladder.length)?H.ladder:(CONFIG.gramLadder||[]); }
+function fmtHr(h){ const HH=Math.floor(h),M=Math.round((h-HH)*60); return (((HH+11)%12)+1)+(M?":"+String(M).padStart(2,"0"):"")+(HH>=12?" PM":" AM"); }
+function ladderFree(G){ let free=0; activeLadder().forEach(([buy,f])=>{ if(G>=buy&&f>free) free=f; }); return free; }
+function nextLadder(G){ const L=activeLadder().slice().sort((a,b)=>a[0]-b[0]);
   for(const [buy,f] of L){ if(G<buy) return {need:+(buy-G).toFixed(1),buy,free:f}; } return null; }
 
 /* ---- DANK Custom Box ----------------------------------------------------
@@ -1887,7 +1953,7 @@ function ensureBonus(){
   const free=ladderFree(G);
   const strain=free>0?freeGramStrain():null;
   if(strain) for(let i=0;i<free;i++){
-    cart.push({key:"BONUS|"+strain.id+"|"+i,id:strain.id,name:strain.name,tierLabel:"1g · FREE 🌿",price:0,qty:1,image:strain.image,type:strain.type,category:strain.category,bonus:true});
+    cart.push({key:"BONUS|"+strain.id+"|"+i,id:strain.id,name:strain.name,tierLabel:hhActive()?"1g · HAPPY HOUR FREE 🔥":"1g · FREE 🌿",price:0,qty:1,image:strain.image,type:strain.type,category:strain.category,bonus:true});
   }
   /* Members' first order: buy 1g+, a second gram rides along free. Only when
      the ladder hasn't already granted (3g+ orders get the ladder gram instead),
@@ -3057,6 +3123,7 @@ function renderCart(){
     <div class="cart-total-row grand"><span>Total</span><span>${money(tot)}</span></div>
     ${below?`<div class="minorder">Minimum order ${money(CONFIG.minOrder)} — add ${money(CONFIG.minOrder-sub)} more</div>`:''}
     ${boxHintHTML(box)}
+    ${promoHintsHTML()}
     ${(function(){ const G=cartFlowerGrams(), got=cart.filter(c=>c.bonus).length, nx=nextLadder(G);
       const up=upsellHTML();   // the one-tap "here is the cheapest way to the next rung" card
       // Already earning free grams: keep the status line (it owns the change-strain link) and
@@ -3064,7 +3131,7 @@ function renderCart(){
       if(got>0) return `<div class="minorder" style="color:var(--green2)">🌿 Volume deal: <b>${got}g FREE</b> added${nx?` · add ${nx.need}g more → ${nx.free}g free`:' · max deal reached 🎉'} — <button style="background:none;border:none;color:var(--green2);text-decoration:underline;cursor:pointer;font-size:12.5px" onclick="openFreePicker()">change strain</button></div>`+up;
       if(up) return up;        // the card says everything the plain hint below would have
       if(nx&&G>0) return `<div class="minorder" style="color:var(--gold)">🌿 Add <b>${nx.need}g</b> more flower → get <b>${nx.free}g FREE</b></div>`;
-      if(G===0) return `<div class="minorder" style="color:var(--muted)">🌿 Buy 3g flower get 1g free · up to 15g→5g free</div>`;
+      if(G===0) return `<div class="minorder" style="color:var(--muted)">🌿 ${hhActive()?'Happy Hour: buy 3g flower get 2g free':'Buy 3g flower get 1g free · up to 15g→5g free'}</div>`;
       return ''; })()}
     <button class="btn btn-primary btn-block" style="margin-top:12px${below?';opacity:.5;pointer-events:none':''}" onclick="openCheckout()">Checkout · ${money(tot)}</button>`;
 }
