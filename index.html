@@ -978,21 +978,147 @@
   <div class="promo-dots" id="promoDots"><i class="on"></i><i></i><i></i><i></i></div>
 </section>
 <script>
+/* ---- Promo slides are data now, not markup: the owner edits this list from
+   owner mode (🎬 Homepage) and the same array drives the promo carousel, the
+   hero studio slideshow, the 🎉 Promotions tab and the detail popups. The
+   static HTML above stays as the first paint; renderPromoTrack() redraws it
+   from data. Everything rendered from this array is escaped, because the
+   owner-edited copy comes back from the server for every visitor. ---- */
+let SITE_SLIDES=[
+ {key:"box", tag:"DANK CUSTOMS", kick:"28 g \u00b7 curated or your picks", title:"Build your DANK box",
+  text:"A walnut box, 28 grams of your favourite strains \u2014 free hash, brownie, jelly, Backwoods, papers, tee & hat inside.",
+  btn:"See the box", img:"promo-box.jpg", bg:"#1d130b", detail:""},
+ {key:"joint", tag:"ROLLED FRESH", kick:"Any strain on the menu", title:"Build your joint",
+  text:"Pick the flower, pick the paper \u2014 we roll it fresh. Buy 3g and the 4th gram is free.",
+  btn:"Start building", img:"https://cdn.shopify.com/s/files/1/0812/7053/8528/files/18974187-610E-4BB3-8149-5F9240AEBA54.png?v=1692912822&width=1600", bg:"#14100a", detail:""},
+ {key:"b3g1", tag:"EVERY STRAIN", kick:"Automatic in your cart", title:"Buy 3g, get 1g free",
+  text:"Stack it: 5g \u2192 2 free \u00b7 9g \u2192 3 \u00b7 12g \u2192 4 \u00b7 15g \u2192 5. The cart adds them itself.",
+  btn:"Shop flower", img:"https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-6890.png?v=1782732640&width=1600", bg:"#0f1c12", detail:""},
+ {key:"first", tag:"MEMBERS' FIRST ORDER", kick:"Sign up free \u00b7 10% off every order", title:"First order? 1g + 1g free",
+  text:"Join DANK Members, buy your first gram \u2014 a second gram rides along free.",
+  btn:"Join & claim", img:"promo-first.jpg", bg:"#181208", detail:""},
+ {key:"happyhour", tag:"HAPPY HOUR", kick:"Sathorn 5\u20137pm \u00b7 Pattanakarn 4\u20137pm", title:"Happy Hour \u2014 buy 3g, get 2g free",
+  text:"Time to buy, time to save: every day during Happy Hour the volume deal is boosted \u2014 the cart adds the free grams itself.",
+  btn:"See Happy Hour", img:"assets/promo-happyhour.jpg", bg:"#0c1408", detail:""},
+ {key:"cards", tag:"COLLECTOR CARDS", kick:"Collect all 9 \u2192 2g free", title:"Collect all 9 Exotic Cards",
+  text:"Buy 1g of any exotic strain and its collector card comes with it. Complete the set of 9 \u2014 cash it in for 2 grams free.",
+  btn:"See the cards", img:"assets/promo-exotic-cards.jpg", bg:"#1a0f24", detail:""},
+ {key:"pt33", tag:"100% LEGAL", kick:"Medical cannabis certificate \u00b7 \u0e3f300", title:"Get your PT33 certificate",
+  text:"\u0e3f300 at the counter \u2014 possession of cannabis from our shop is 100% legal with a PT33. Travel and enjoy with peace of mind.",
+  btn:"Learn more", img:"assets/promo-pt33.jpg", bg:"#0d150c", detail:""},
+ {key:"tiers", tag:"MEMBERSHIP", kick:"Free 10% off \u00b7 Silver 30% \u00b7 Gold 50%", title:"Membership has its perks",
+  text:"Free membership = 10% off every time + free 1g on your birthday. Upgrade to Silver or Gold for bigger savings.",
+  btn:"Join free", img:"assets/promo-membership.jpg", bg:"#101907", detail:""},
+];
+const DEFAULT_SLIDES=SITE_SLIDES.map(s=>Object.assign({},s));
+let SITE_HERO=null, ORIG_HERO=null;
+const pEsc=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+/* image/colour values land inside url('') and style="" - strip anything that could break out */
+const pUrl=s=>String(s==null?"":s).replace(/["'<>()\\\s]/g,"");
+const pCol=s=>/^#[0-9a-fA-F]{3,8}$/.test(String(s||""))?s:"#101410";
+
+function renderPromoTrack(){
+  const tr=document.getElementById("promoTrack"), dots=document.getElementById("promoDots");
+  if(!tr||!dots) return;
+  const adm=(typeof adminMode!=="undefined")&&adminMode;
+  tr.innerHTML=SITE_SLIDES.map((s,i)=>
+    '<div class="promo" onclick="openPromoIdx('+i+')" style="background-color:'+pCol(s.bg)+";background-image:url('"+pUrl(s.img)+"')\">"+
+    '<div class="promo-shade"></div><span class="tagchip">'+pEsc(s.tag)+'</span>'+
+    (adm?'<button class="adm-edit-btn" style="top:auto;bottom:16px" onclick="event.stopPropagation();openSiteEditor('+i+')">\u270e Edit slide</button>':'')+
+    '<div class="promo-txt"><div class="promo-kick">'+pEsc(s.kick)+'</div>'+
+    '<h3>'+pEsc(s.title)+'</h3><p>'+pEsc(s.text)+'</p>'+
+    '<span class="promo-btn">'+pEsc(s.btn||"See details")+'</span></div></div>').join("");
+  dots.innerHTML=SITE_SLIDES.map((_,k)=>'<i class="'+(k===0?"on":"")+'"></i>').join("");
+}
+function openPromoIdx(i,back){ const s=SITE_SLIDES[i]; if(s) openPromo(s.key,back); }
+function openPromosAll(){
+  showModal("#infoModal");
+  document.getElementById("infoCard").innerHTML=
+   '<div class="drawer-head" style="border:none;padding:16px 20px 4px"><h2>\ud83c\udf89 Promotions</h2><button class="close-x" onclick="closeAll()">\u00d7</button></div>'+
+   '<div style="padding:8px 16px 20px">'+SITE_SLIDES.map((s,i)=>
+    '<div onclick="openPromoIdx('+i+',1)" style="cursor:pointer;border:1px solid var(--line2);border-radius:14px;overflow:hidden;margin-bottom:12px;background:var(--panel2)">'+
+    '<img src="'+pUrl(s.img)+'" alt="" style="width:100%;height:120px;object-fit:cover;display:block" onerror="this.style.display=\'none\'">'+
+    '<div style="padding:12px 14px">'+
+    '<div style="font-size:11px;font-weight:800;letter-spacing:2px;color:var(--gold);text-transform:uppercase">'+pEsc(s.tag)+'</div>'+
+    '<div style="font-weight:900;font-size:17px;margin:3px 0">'+pEsc(s.title)+'</div>'+
+    '<div style="color:var(--muted);font-size:13px">'+pEsc(s.text)+'</div>'+
+    '<div style="color:var(--green2);font-weight:800;font-size:13px;margin-top:8px">'+pEsc(s.btn||"See details")+' \u2192</div>'+
+    '</div></div>').join("")+'</div>';
+}
+
+/* carousel wiring - listeners live on #promoTrack, which survives re-renders */
+let pIdx=0,pHold=0;
 (function(){
-  const tr=document.getElementById('promoTrack'), dots=[...document.querySelectorAll('#promoDots i')];
-  let idx=0, hold=0;
-  function go(i){ idx=(i+4)%4; tr.scrollTo({left:idx*tr.clientWidth,behavior:'smooth'}); }
+  const tr=document.getElementById('promoTrack'); if(!tr) return;
   tr.addEventListener('scroll',()=>{ const i=Math.round(tr.scrollLeft/Math.max(1,tr.clientWidth));
-    if(i!==idx){ idx=i; } dots.forEach((d,k)=>d.classList.toggle('on',k===idx)); },{passive:true});
-  ['touchstart','pointerdown'].forEach(e=>tr.addEventListener(e,()=>{ hold=Date.now()+12000; },{passive:true}));
-  setInterval(()=>{ if(Date.now()>hold && document.visibilityState==="visible") go(idx+1); },5000);
+    if(i!==pIdx) pIdx=i;
+    document.querySelectorAll('#promoDots i').forEach((d,k)=>d.classList.toggle('on',k===pIdx)); },{passive:true});
+  ['touchstart','pointerdown'].forEach(e=>tr.addEventListener(e,()=>{ pHold=Date.now()+12000; },{passive:true}));
+  setInterval(()=>{ if(Date.now()>pHold && document.visibilityState==="visible" && SITE_SLIDES.length){
+    pIdx=(pIdx+1)%SITE_SLIDES.length; tr.scrollTo({left:pIdx*tr.clientWidth,behavior:'smooth'}); } },5000);
 })();
-function openPromo(key){
-  const img={box:"promo-box.jpg",joint:"https://cdn.shopify.com/s/files/1/0812/7053/8528/files/18974187-610E-4BB3-8149-5F9240AEBA54.png?v=1692912822&width=1200",
-    b3g1:"https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-6890.png?v=1782732640&width=1200",first:"promo-first.jpg"}[key];
+
+/* ---- hero studio slideshow: the hero backdrop crossfades through the promo
+   photos with a tappable pill; slide 0 is the original 3D box render ---- */
+function renderHeroSlides(){
+  const stage=document.getElementById("heroStage"); if(!stage) return;
+  let holder=document.getElementById("heroSlides");
+  if(!holder){ holder=document.createElement("div"); holder.id="heroSlides"; holder.className="hero-slides";
+    stage.insertBefore(holder,stage.querySelector(".hero-floor")||null); }
+  holder.innerHTML=SITE_SLIDES.map(s=>'<div class="hs" style="background-image:url(\''+pUrl(s.img)+'\')"></div>').join("");
+}
+let heroIdx=0, heroOn=true;
+function heroShow(i){
+  const stage=document.getElementById("heroStage"), holder=document.getElementById("heroSlides"), chip=document.getElementById("heroPromoChip");
+  if(!stage||!holder) return;
+  const n=SITE_SLIDES.length; if(!n) return;
+  heroIdx=((i%(n+1))+(n+1))%(n+1);
+  const on=heroIdx>0;
+  stage.classList.toggle("promo",on);
+  Array.prototype.forEach.call(holder.children,(el,k)=>el.classList.toggle("on",on&&k===heroIdx-1));
+  if(chip){ chip.classList.toggle("on",on);
+    if(on) chip.textContent="\ud83c\udf89 "+(SITE_SLIDES[heroIdx-1].title||"Promotion")+" \u2014 tap for details"; }
+}
+(function(){
+  const css=document.createElement("style");
+  css.textContent=
+   ".hero-slides{position:absolute;inset:0}"+
+   ".hero-slides .hs{position:absolute;inset:0;background-size:cover;background-position:center;opacity:0;transition:opacity 1.1s ease;will-change:opacity,transform}"+
+   ".hero-slides .hs.on{opacity:.9;animation:hsKen 14s linear forwards}"+
+   "@keyframes hsKen{from{transform:scale(1)}to{transform:scale(1.09)}}"+
+   ".hero-stage .hero-box,.hero-stage .hero-glow,.hero-stage .hero-floor{transition:opacity .9s}"+
+   ".hero-stage.promo .hero-box,.hero-stage.promo .hero-glow,.hero-stage.promo .hero-floor{opacity:0}"+
+   "#heroPromoChip{display:none;margin:0 0 16px;background:rgba(0,0,0,.55);border:1px solid rgba(255,255,255,.3);color:#ffe9a6;"+
+   "font-size:13px;font-weight:800;border-radius:999px;padding:9px 16px;cursor:pointer;backdrop-filter:blur(4px);max-width:100%;"+
+   "overflow:hidden;text-overflow:ellipsis;white-space:nowrap}"+
+   "#heroPromoChip.on{display:inline-block}"+
+   "@media (prefers-reduced-motion:reduce){.hero-slides .hs{animation:none !important}}";
+  document.head.appendChild(css);
+  ORIG_HERO={
+    eyebrow:(document.getElementById("heroEyebrow")||{}).textContent||"",
+    title:(document.getElementById("heroTitle")||{}).textContent||"",
+    sub:(document.getElementById("heroSub")||{}).textContent||"" };
+  const inner=document.querySelector(".hero-inner");
+  if(inner){ const c=document.createElement("button"); c.id="heroPromoChip"; c.type="button";
+    c.onclick=()=>{ if(heroIdx>0) openPromoIdx(heroIdx-1); };
+    inner.insertBefore(c,inner.firstChild); }
+  renderPromoTrack(); renderHeroSlides();
+  let rm=false; try{ rm=matchMedia("(prefers-reduced-motion:reduce)").matches; }catch(e){}
+  if(!rm){
+    if("IntersectionObserver" in window){
+      const hero=document.getElementById("hero");
+      if(hero) new IntersectionObserver(es=>{ es.forEach(en=>{ heroOn=en.isIntersecting; }); },{rootMargin:"80px"}).observe(hero);
+    }
+    setInterval(()=>{ if(heroOn && document.visibilityState==="visible") heroShow(heroIdx+1); },6000);
+  }
+})();
+function openPromo(key,back){
+  const _sl=SITE_SLIDES.find(s=>s.key===key)||null;
+  const img=pUrl((_sl&&_sl.img)||{box:"promo-box.jpg",joint:"https://cdn.shopify.com/s/files/1/0812/7053/8528/files/18974187-610E-4BB3-8149-5F9240AEBA54.png?v=1692912822&width=1200",
+    b3g1:"https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-6890.png?v=1782732640&width=1200",first:"promo-first.jpg"}[key]||"");
   const ladder=(CONFIG.gramLadder||[[3,1],[5,2],[9,3],[12,4],[15,5]]).slice().sort((a,b)=>a[0]-b[0]);
   const lrows=ladder.map(([b,f])=>`<div style="display:flex;justify-content:space-between;padding:8px 2px;border-bottom:1px solid var(--line2);font-size:14.5px"><span><b>Buy ${b}g</b></span><span style="color:var(--green2);font-weight:800">+${f}g FREE 🌿</span></div>`).join("");
-  const H={
+  let H={
 box:{t:"Build your DANK box 📦",b:`
   <p style="color:var(--muted);font-size:14px;margin:0 0 12px">A dark-walnut DANK box packed with 28 grams — pick every strain yourself, or tell us your vibe and our budtenders curate it.</p>
   <div style="background:var(--panel2);border:1px solid var(--line2);border-radius:12px;padding:12px 14px;margin-bottom:12px">
@@ -1025,13 +1151,44 @@ first:{t:"First order — 1g + 1g free 💚",b:`
      <button class="btn btn-primary btn-block" onclick="closeAll();document.getElementById('menu').scrollIntoView({behavior:'smooth'})">🌿 Claim my free gram</button>`):
     `<button class="btn btn-primary btn-block" onclick="closeAll();openCRM('join')">💚 Join free &amp; claim</button>
      <button class="btn btn-ghost btn-block" style="margin-top:8px" onclick="closeAll();openCRM('login')">👤 Member log in</button>`}`},
+happyhour:{t:"Happy Hour \u2014 buy 3g, get 2g FREE \ud83d\udd25",b:`
+  <p style="color:var(--muted);font-size:14px;margin:0 0 12px">Shop early, save big: during Happy Hour the volume deal is boosted \u2014 <b>buy 3g and get 2g free</b> on every strain. The cart applies it automatically.</p>
+  <div style="background:var(--panel2);border:1px solid var(--line2);border-radius:12px;padding:12px 14px;margin-bottom:14px;font-size:14px;line-height:1.9">
+    \ud83d\udccd <b>DANK Sathorn</b> \u2014 5:00 PM \u2013 7:00 PM<br>\ud83d\udccd <b>DANK Pattanakarn</b> \u2014 4:00 PM \u2013 7:00 PM<br>\ud83d\udef5 First delivery order? <b>Buy 1g get 1g free</b><br>\ud83e\udd64 Free drink over \u0e3f1,500 (Sathorn) \u00b7 \ud83d\udcdc free paper or grinder (Pattanakarn)</div>
+  <button class="btn btn-primary btn-block" onclick="closeAll();document.getElementById('menu').scrollIntoView({behavior:'smooth'})">\ud83c\udf3f Shop flower</button>`},
+cards:{t:"Collect all 9 Exotic Cards \ud83c\udccf",b:`
+  <p style="color:var(--muted);font-size:14px;margin:0 0 12px">Buy 1g of any exotic strain and its collector card comes with it. Complete the set of 9 \u2014 trade it in for <b>2 grams free</b>.</p>
+  <div style="background:var(--panel2);border:1px solid var(--line2);border-radius:12px;padding:12px 14px;margin-bottom:14px;font-size:14px;line-height:1.9">
+    1\ufe0f\u20e3 Buy 1g of any exotic strain<br>2\ufe0f\u20e3 Get the matching collector card with your purchase<br>3\ufe0f\u20e3 Collect all 9 unique cards in the set<br>4\ufe0f\u20e3 Redeem your full set for <b>2 grams FREE</b></div>
+  <p style="color:var(--muted);font-size:12.5px;margin:0 0 14px">One card per 1g purchase, while supplies last. Cards are non-transferable and can\u2019t be combined with other offers. New strains coming soon \u2014 ask your budtender.</p>
+  <button class="btn btn-primary btn-block" onclick="closeAll();setCat('Exotics');document.getElementById('menu').scrollIntoView({behavior:'smooth'})">\ud83d\ude80 Shop Exotics</button>`},
+pt33:{t:"PT33 Medical Cannabis Certificate \ud83e\ude7a",b:`
+  <p style="color:var(--muted);font-size:14px;margin:0 0 12px">Make sure your vacation is safe and free: with a PT33 certificate, cannabis from our shop is <b>100% legal</b> to carry. Official certificate, recognised at airports and checkpoints \u2014 travel around Thailand with confidence.</p>
+  <div style="background:var(--panel2);border:1px solid var(--line2);border-radius:12px;padding:12px 14px;margin-bottom:14px;font-size:14px;line-height:1.9">
+    \ud83d\udcb0 Price: <b>\u0e3f300</b><br>\ud83e\ude7a Doctor consultation for your best experience<br>\ud83d\udcc4 Official certificate, recognised<br>\u2708\ufe0f Valid at airports & checkpoints<br>\ud83d\udc9a Free DANK membership when you get your PT33</div>
+  <a class="btn btn-primary btn-block" href="https://salusbioceutical.co.th/product-category/thai-herbal-products-th/modern-herbal-product-th/salus-polyclinic-th/" target="_blank" rel="noopener noreferrer">\ud83e\ude7a Apply for PT33</a>
+  <button class="btn btn-ghost btn-block" style="margin-top:8px" onclick="closeAll();openAI()">\ud83d\udcac Ask \u0e19\u0e49\u0e2d\u0e07\u0e41\u0e14\u0e07\u0e04\u0e4c about PT33</button>`},
+tiers:{t:"Membership has its perks \ud83d\udc9a",b:`
+  <p style="color:var(--muted);font-size:14px;margin:0 0 12px">Sign up free and save every single time \u2014 then upgrade when you\u2019re ready for bigger savings.</p>
+  <div style="background:var(--panel2);border:1px solid var(--line2);border-radius:12px;padding:12px 14px;margin-bottom:14px;font-size:14px;line-height:1.9">
+    \ud83d\udc9a <b>Free membership</b> \u2014 10% off every time<br>\ud83c\udf82 <b>Free 1g on your birthday</b><br>\ud83e\uddd1\u200d\ud83d\udcbc Staff know your favourites for the best recommendation<br><br>\ud83e\udd48 <b>Silver tier</b> \u2014 30% off \u00b7 yearly subscription<br>\ud83e\udd47 <b>Gold tier</b> \u2014 50% off \u00b7 yearly subscription</div>
+  <p style="color:var(--muted);font-size:12.5px;margin:0 0 14px">Silver & Gold upgrades are arranged at the counter \u2014 ask any budtender.</p>
+  ${isMember()?`<p style="color:var(--green2);font-size:13.5px;font-weight:700;margin:0 0 12px">You\u2019re already a member \u2014 10% off is active \u2b50</p>
+   <button class="btn btn-primary btn-block" onclick="closeAll();document.getElementById('menu').scrollIntoView({behavior:'smooth'})">\ud83c\udf3f Shop with 10% off</button>`:
+  `<button class="btn btn-primary btn-block" onclick="closeAll();openCRM('join')">\ud83d\udc9a Join free</button>`}`},
   }[key];
-  if(!H) return;
+  /* owner-written details replace the standard body; unknown keys get a
+     generic body built from the slide - both fully escaped */
+  const _genBody=()=>'<p style="color:var(--muted);font-size:14px;margin:0 0 12px">'+pEsc(_sl.text||"")+'</p>'+
+    (_sl.detail?'<div style="background:var(--panel2);border:1px solid var(--line2);border-radius:12px;padding:12px 14px;margin-bottom:14px;font-size:14px;line-height:1.8;white-space:pre-line">'+pEsc(_sl.detail)+'</div>':'')+
+    '<button class="btn btn-primary btn-block" onclick="closeAll();document.getElementById(\'menu\').scrollIntoView({behavior:\'smooth\'})">\ud83c\udf3f Shop the menu</button>';
+  if(!H){ if(!_sl) return; H={t:pEsc(_sl.title||"Promotion"),b:_genBody()}; }
+  else if(_sl&&_sl.detail){ H={t:pEsc(_sl.title)||H.t,b:_genBody()}; }
   showModal("#infoModal");
   $("#infoCard").innerHTML=`
     <div style="position:relative"><img src="${img}" alt="" style="width:100%;height:210px;object-fit:cover;border-radius:18px 18px 0 0;display:block" onerror="this.style.display='none'">
       <button class="close-x" style="position:absolute;top:10px;right:10px" onclick="closeAll()">×</button></div>
-    <div style="padding:16px 20px 22px"><h2 style="margin:0 0 10px;font-size:22px">${H.t}</h2>${H.b}</div>`;
+    <div style="padding:16px 20px 22px">${back?'<button class="btn btn-ghost" style="margin:0 0 12px;padding:8px 14px;font-size:13px" onclick="openPromosAll()">\u2190 All promotions</button>':''}<h2 style="margin:0 0 10px;font-size:22px">${H.t}</h2>${H.b}</div>`;
 }
 </script>
 
@@ -1177,6 +1334,11 @@ const CONFIG = {
         firstDelayMs:1200, repeatMs:60000 },   // shows on entry, then re-invites every ~60s until they join
   // ---- Volume deal: buy more grams of flower, get grams free (cart-wide total) ----
   gramLadder:[ [3,1],[5,2],[9,3],[12,4],[15,5] ],   // [buy grams, free grams]
+  /* Happy Hour: boosted ladder inside the windows below (Bangkok time).
+     The cart applies it automatically; promoHintsHTML announces it. */
+  happyHour:{ enabled:true, tz:"Asia/Bangkok",
+    windows:[ {name:"Sathorn",from:17,to:19}, {name:"Pattanakarn",from:16,to:19} ],
+    ladder:[ [3,2],[9,3],[12,4],[15,5] ] },
   firstOrder:{ enabled:false, code:"FIRST1G", title:"Buy 1G get 1G FREE 🎁",
     sub:"First order only — register and get a free gram on any 1g flower." },
   wallet:{ enabled:true, bonusPct:10, amounts:[500,1000,2000,5000] },
@@ -1334,7 +1496,7 @@ let favs=[], appliedPromo=null, pdQty=1;
    address from scratch after topping the cart up. */
 let coDraft={};
 /* ---- owner / admin edit mode ---- */
-let adminMode=false, adminTok=null, ADMIN_OV={products:{},added:[],promos:{}}, adminDirty=false, BASE_PROMOS=null;
+let adminMode=false, adminTok=null, ADMIN_OV={products:{},added:[],promos:{},site:null}, adminDirty=false, BASE_PROMOS=null;
 /* Two doors, one editor. "owner" is the email+password session and may change
    anything. "promo" is the master-PIN session: it opens the promotions editor
    and nothing else — no ✎ Edit on a product, no Add product, and the server
@@ -1640,8 +1802,32 @@ function gramsOf(line){
   return (g||0)*(line.qty||1);
 }
 function cartFlowerGrams(){ return cart.reduce((s,c)=>s+gramsOf(c),0); }
-function ladderFree(G){ let free=0; (CONFIG.gramLadder||[]).forEach(([buy,f])=>{ if(G>=buy&&f>free) free=f; }); return free; }
-function nextLadder(G){ const L=(CONFIG.gramLadder||[]).slice().sort((a,b)=>a[0]-b[0]);
+/* Auto-recommendation: reads the cart + the clock and surfaces every deal the
+   customer is in (or one tap away from). Rendered in the cart drawer. */
+function promoHintsHTML(){
+  const out=[];
+  const hh=hhActive();
+  if(hh){ out.push('<div class="minorder" style="color:#ff9f43;font-weight:700">\ud83d\udd25 HAPPY HOUR until '+fmtHr(hh.until)+' \u2014 buy 3g get <b>2g FREE</b>, applied automatically</div>'); }
+  else{ const up=hhUpcoming(); const H=CONFIG.happyHour;
+    if(up&&up.startsIn<=3&&H&&H.windows){ out.push('<div class="minorder" style="color:var(--gold)">\u23f0 Happy Hour today \u2014 '+H.windows.map(w=>w.name+" "+fmtHr(w.from)+"\u2013"+fmtHr(w.to)).join(" \u00b7 ")+' \u2014 buy 3g get 2g free</div>'); } }
+  if(cart.some(c=>!c.bonus&&String(c.category)==="Exotics"))
+    out.push('<div class="minorder" style="color:#c9a2ff">\ud83c\udccf Every 1g of Exotics earns a collector card at the counter \u2014 collect all 9 \u2192 <b>2g FREE</b></div>');
+  if(typeof isMember==="function"&&!isMember())
+    out.push('<div class="minorder" style="color:var(--green2)">\ud83d\udc9a <button style="background:none;border:none;color:var(--green2);text-decoration:underline;cursor:pointer;font-size:12.5px;padding:0" onclick="openCRM(\'join\')">Join free membership</button> \u2014 10% off every order + free 1g on your birthday</div>');
+  return out.join("");
+}
+function hhClock(){ try{ const P=new Intl.DateTimeFormat("en-GB",{timeZone:(CONFIG.happyHour&&CONFIG.happyHour.tz)||"Asia/Bangkok",hour:"2-digit",minute:"2-digit",hour12:false}).formatToParts(new Date());
+  return (+P.find(x=>x.type==="hour").value)+(+P.find(x=>x.type==="minute").value)/60; }catch(e){ const t=new Date(); return t.getHours()+t.getMinutes()/60; } }
+function hhActive(){ const H=CONFIG.happyHour; if(!H||!H.enabled) return null;
+  const t=hhClock(); const w=(H.windows||[]).filter(b=>t>=b.from&&t<b.to);
+  return w.length?{windows:w,until:Math.max.apply(null,w.map(b=>b.to))}:null; }
+function hhUpcoming(){ const H=CONFIG.happyHour; if(!H||!H.enabled) return null;
+  const t=hhClock(); const w=(H.windows||[]).filter(b=>t<b.from); if(!w.length) return null;
+  return {startsIn:Math.min.apply(null,w.map(b=>b.from))-t}; }
+function activeLadder(){ const H=CONFIG.happyHour; return (H&&hhActive()&&Array.isArray(H.ladder)&&H.ladder.length)?H.ladder:(CONFIG.gramLadder||[]); }
+function fmtHr(h){ const HH=Math.floor(h),M=Math.round((h-HH)*60); return (((HH+11)%12)+1)+(M?":"+String(M).padStart(2,"0"):"")+(HH>=12?" PM":" AM"); }
+function ladderFree(G){ let free=0; activeLadder().forEach(([buy,f])=>{ if(G>=buy&&f>free) free=f; }); return free; }
+function nextLadder(G){ const L=activeLadder().slice().sort((a,b)=>a[0]-b[0]);
   for(const [buy,f] of L){ if(G<buy) return {need:+(buy-G).toFixed(1),buy,free:f}; } return null; }
 
 /* ---- DANK Custom Box ----------------------------------------------------
@@ -1767,7 +1953,7 @@ function ensureBonus(){
   const free=ladderFree(G);
   const strain=free>0?freeGramStrain():null;
   if(strain) for(let i=0;i<free;i++){
-    cart.push({key:"BONUS|"+strain.id+"|"+i,id:strain.id,name:strain.name,tierLabel:"1g · FREE 🌿",price:0,qty:1,image:strain.image,type:strain.type,category:strain.category,bonus:true});
+    cart.push({key:"BONUS|"+strain.id+"|"+i,id:strain.id,name:strain.name,tierLabel:hhActive()?"1g · HAPPY HOUR FREE 🔥":"1g · FREE 🌿",price:0,qty:1,image:strain.image,type:strain.type,category:strain.category,bonus:true});
   }
   /* Members' first order: buy 1g+, a second gram rides along free. Only when
      the ladder hasn't already granted (3g+ orders get the ladder gram instead),
@@ -2063,7 +2249,7 @@ function buildChips(){
      cannot be, and "Flowers') ;alert(1);('" as a category name is a one-line takeover of
      every page view otherwise. */
   CHIP_CATS=cats;
-  $("#catChips").innerHTML=cats.map((c,i)=>`<button class="chip ${c===activeCat?'active':''}" onclick="setCatIdx(${i})">${c==="All"?"🌿 All":c==="❤ Saved"?"❤ Saved":catEmoji(c)+" "+esc(c)}<span class="chip-n">${cnt(c)}</span></button>`).join("");
+  $("#catChips").innerHTML=cats.map((c,i)=>`<button class="chip ${c===activeCat?'active':''}" onclick="setCatIdx(${i})">${c==="All"?"🌿 All":c==="❤ Saved"?"❤ Saved":catEmoji(c)+" "+esc(c)}<span class="chip-n">${cnt(c)}</span></button>`).join("")+'<button class="chip" onclick="openPromosAll()">\ud83c\udf89 Promotions</button>';
 }
 var CHIP_CATS=[];
 function setCatIdx(i){ setCat(CHIP_CATS[i]); }
@@ -2937,6 +3123,7 @@ function renderCart(){
     <div class="cart-total-row grand"><span>Total</span><span>${money(tot)}</span></div>
     ${below?`<div class="minorder">Minimum order ${money(CONFIG.minOrder)} — add ${money(CONFIG.minOrder-sub)} more</div>`:''}
     ${boxHintHTML(box)}
+    ${promoHintsHTML()}
     ${(function(){ const G=cartFlowerGrams(), got=cart.filter(c=>c.bonus).length, nx=nextLadder(G);
       const up=upsellHTML();   // the one-tap "here is the cheapest way to the next rung" card
       // Already earning free grams: keep the status line (it owns the change-strain link) and
@@ -2944,7 +3131,7 @@ function renderCart(){
       if(got>0) return `<div class="minorder" style="color:var(--green2)">🌿 Volume deal: <b>${got}g FREE</b> added${nx?` · add ${nx.need}g more → ${nx.free}g free`:' · max deal reached 🎉'} — <button style="background:none;border:none;color:var(--green2);text-decoration:underline;cursor:pointer;font-size:12.5px" onclick="openFreePicker()">change strain</button></div>`+up;
       if(up) return up;        // the card says everything the plain hint below would have
       if(nx&&G>0) return `<div class="minorder" style="color:var(--gold)">🌿 Add <b>${nx.need}g</b> more flower → get <b>${nx.free}g FREE</b></div>`;
-      if(G===0) return `<div class="minorder" style="color:var(--muted)">🌿 Buy 3g flower get 1g free · up to 15g→5g free</div>`;
+      if(G===0) return `<div class="minorder" style="color:var(--muted)">🌿 ${hhActive()?'Happy Hour: buy 3g flower get 2g free':'Buy 3g flower get 1g free · up to 15g→5g free'}</div>`;
       return ''; })()}
     <button class="btn btn-primary btn-block" style="margin-top:12px${below?';opacity:.5;pointer-events:none':''}" onclick="openCheckout()">Checkout · ${money(tot)}</button>`;
 }
@@ -4820,6 +5007,62 @@ function applyProductOverridesLocal(){
   const have=new Set(DATA.map(p=>p.id));
   sanitizeMenu(ADMIN_OV.added||[]).forEach(a=>{ if(a&&a.id&&!have.has(a.id)){ DATA.push(a); have.add(a.id); } });
 }
+/* Homepage overrides: hero text + promo slides. Stored under overrides.site,
+   applied for every visitor at load, edited from owner mode (\ud83c\udfac Homepage). */
+function applySite(){
+  const s=ADMIN_OV.site; if(!s) return;
+  if(Array.isArray(s.slides)&&s.slides.length){
+    SITE_SLIDES=s.slides.slice(0,8).map((x,i)=>Object.assign({},DEFAULT_SLIDES[i]||{key:"extra"+i},x,{key:(DEFAULT_SLIDES[i]||{}).key||("extra"+i)}));
+  }
+  if(s.hero&&typeof s.hero==="object") SITE_HERO=s.hero;
+  applyHeroText(); renderPromoTrack(); renderHeroSlides(); heroShow(0);
+}
+function applyHeroText(){
+  const h=SITE_HERO||{};
+  if(h.eyebrow) $("#heroEyebrow").textContent=h.eyebrow;
+  if(h.title) $("#heroTitle").textContent=h.title;
+  if(h.sub) $("#heroSub").textContent=h.sub;
+}
+function openSiteEditor(focus){
+  const h=SITE_HERO||{};
+  showModal("#infoModal");
+  $("#infoCard").innerHTML='<div class="drawer-head" style="border:none;padding:16px 20px 4px"><h2>\ud83c\udfac Homepage editor</h2><button class="close-x" onclick="closeAll()">\u00d7</button></div>'+
+   '<div class="adm-form" style="padding:0 20px 20px;max-height:72vh;overflow:auto">'+
+   '<p style="color:var(--muted);font-size:12.5px;margin:0 0 12px">Change the text and photos, press \u2705 Apply, then press \ud83d\udcbe Save changes on the green bar to publish for everyone. Photos: paste any image link, or a file already on the site (e.g. promo-box.jpg).</p>'+
+   '<div style="font-weight:800;color:var(--gold);font-size:13px;letter-spacing:1px;margin:4px 0 8px">HERO TEXT</div>'+
+   '<div class="field"><label>Small line above the title</label><input id="seEyebrow" value="'+admAttr(h.eyebrow||$("#heroEyebrow").textContent)+'"></div>'+
+   '<div class="field"><label>Big title</label><input id="seTitle" value="'+admAttr(h.title||$("#heroTitle").textContent)+'"></div>'+
+   '<div class="field"><label>Paragraph under the title</label><textarea id="seSub" rows="3">'+admAttr(h.sub||$("#heroSub").textContent)+'</textarea></div>'+
+   SITE_SLIDES.map((s,i)=>'<div id="seSlide'+i+'" style="border:1px solid var(--line2);border-radius:12px;padding:12px;margin:14px 0">'+
+    '<div style="font-weight:800;color:var(--gold);font-size:13px;letter-spacing:1px;margin-bottom:8px">PROMO SLIDE '+(i+1)+'</div>'+
+    '<div class="two"><div class="field"><label>Top-left tag</label><input id="seTag'+i+'" value="'+admAttr(s.tag||"")+'"></div>'+
+    '<div class="field"><label>Small line</label><input id="seKick'+i+'" value="'+admAttr(s.kick||"")+'"></div></div>'+
+    '<div class="field"><label>Title</label><input id="seT'+i+'" value="'+admAttr(s.title||"")+'"></div>'+
+    '<div class="field"><label>Text</label><textarea id="seX'+i+'" rows="2">'+admAttr(s.text||"")+'</textarea></div>'+
+    '<div class="two"><div class="field"><label>Button label</label><input id="seB'+i+'" value="'+admAttr(s.btn||"")+'"></div>'+
+    '<div class="field"><label>Photo (image link)</label><input id="seI'+i+'" value="'+admAttr(s.img||"")+'"></div></div>'+
+    '<div class="field"><label>Full details when tapped (blank = keep the standard details)</label><textarea id="seD'+i+'" rows="3">'+admAttr(s.detail||"")+'</textarea></div>'+
+    '</div>').join("")+
+   '<button class="btn btn-primary btn-block" onclick="siteEditorApply()">\u2705 Apply</button>'+
+   '<button class="btn btn-ghost btn-block" style="margin-top:8px" onclick="siteEditorReset()">\u21a9\ufe0f Reset homepage to original</button>'+
+   '</div>';
+  if(focus!=null){ setTimeout(()=>{ const el=document.getElementById("seSlide"+focus); if(el) el.scrollIntoView({block:"start"}); },80); }
+}
+function siteEditorApply(){
+  const v=id=>{ const el=document.getElementById(id); return el?el.value.trim():""; };
+  const slides=SITE_SLIDES.map((s,i)=>Object.assign({},s,{tag:v("seTag"+i),kick:v("seKick"+i),title:v("seT"+i),
+    text:v("seX"+i),btn:v("seB"+i),img:v("seI"+i),detail:v("seD"+i)}));
+  ADMIN_OV.site={hero:{eyebrow:v("seEyebrow"),title:v("seTitle"),sub:v("seSub")},slides:slides};
+  SITE_SLIDES=slides; SITE_HERO=ADMIN_OV.site.hero;
+  applyHeroText(); renderPromoTrack(); renderHeroSlides(); heroShow(0);
+  markDirty(); closeAll(); toast("Homepage updated \u2014 press \ud83d\udcbe Save changes to publish");
+}
+function siteEditorReset(){
+  ADMIN_OV.site=null; SITE_SLIDES=DEFAULT_SLIDES.map(s=>Object.assign({},s)); SITE_HERO=null;
+  if(ORIG_HERO){ $("#heroEyebrow").textContent=ORIG_HERO.eyebrow; $("#heroTitle").textContent=ORIG_HERO.title; $("#heroSub").textContent=ORIG_HERO.sub; }
+  renderPromoTrack(); renderHeroSlides(); heroShow(0);
+  markDirty(); closeAll(); toast("Homepage reset \u2014 press \ud83d\udcbe Save changes to publish");
+}
 async function loadAdmin(silent){
   if(BASE_PROMOS===null) BASE_PROMOS=Object.assign({},CONFIG.promos);
   if(!adminTok){ const t=LS.get("admintok",null); if(t) adminTok=t; }
@@ -4829,9 +5072,10 @@ async function loadAdmin(silent){
     if(r.ok){ const j=await r.json(); const ov=j.overrides||{};
       ADMIN_OV={ products:(ov.products&&typeof ov.products==="object")?ov.products:{},
                  added:Array.isArray(ov.added)?ov.added:[],
-                 promos:(ov.promos&&typeof ov.promos==="object")?ov.promos:{} };
+                 promos:(ov.promos&&typeof ov.promos==="object")?ov.promos:{},
+                 site:(ov.site&&typeof ov.site==="object")?ov.site:null };
       ADMIN_OV.added.forEach(a=>{ if(a) a._added=true; });
-      applyPromos(); applyProductOverridesLocal();
+      applyPromos(); applyProductOverridesLocal(); applySite();
       if(!silent){ buildChips(); render(); if(await verifyAdminTok()){ if(adminScope==="promo") enterPromo(); else enterAdmin(); } }
     }
   }catch(e){}
@@ -4868,7 +5112,7 @@ function adminInjectCSS(){ if(document.getElementById("admCss")) return;
    ".adm-tier-row{display:flex;gap:8px;align-items:center;margin-bottom:7px}.adm-tier-row .tl{flex:1;font-size:13px;color:var(--muted)}.adm-tier-row input{width:88px}";
   document.head.appendChild(s);
 }
-function enterAdmin(){ adminScope="owner"; adminMode=true; adminInjectCSS(); buildAdminBar(); buildChips(); render(); }
+function enterAdmin(){ adminScope="owner"; adminMode=true; adminInjectCSS(); buildAdminBar(); buildChips(); render(); renderPromoTrack(); }
 /* The PIN session deliberately does NOT set adminMode. adminMode is what puts
    ✎ Edit on every product card and shows hidden lines; a promotions PIN has no
    business with either, and leaving it off means the restriction is visible on
@@ -4883,6 +5127,7 @@ function buildAdminBar(){ let bar=document.getElementById("adminBar");
      '<button class="ab-out" onclick="ownerLogout()">Done</button>'
    : '<span class="ab-t">🔧 Owner mode</span>'+
      '<button onclick="openAddProduct()">＋ Add product</button>'+
+     '<button onclick="openSiteEditor()">🎬 Homepage</button>'+
      '<button onclick="openPromoMgr()">🏷️ Promotions</button>'+
      '<button class="ab-save" id="abSave" onclick="pushOverrides()">💾 Save changes</button>'+
      '<button class="ab-out" onclick="ownerLogout()">Log out</button>';
@@ -4921,7 +5166,7 @@ async function doOwnerLogin(){
     else { toast(j.error||"Wrong email or password"); if(btn){ btn.textContent="Log in"; btn.style.pointerEvents="auto"; } }
   }catch(e){ toast("Login failed — check connection"); if(btn){ btn.textContent="Log in"; btn.style.pointerEvents="auto"; } }
 }
-function ownerLogout(){ const t=adminTok; adminTok=null; adminMode=false; adminScope="owner"; adminDirty=false; LS.set("admintok",null);
+function ownerLogout(){ const t=adminTok; adminTok=null; adminMode=false; adminScope="owner"; adminDirty=false; LS.set("admintok",null); renderPromoTrack();
   const bar=document.getElementById("adminBar"); if(bar) bar.style.display="none";
   buildChips(); render();
   if(t){ fetch("/api/admin",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"logout",token:t})}).catch(()=>{}); }
