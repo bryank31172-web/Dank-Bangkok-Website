@@ -1,15 +1,9 @@
 {
   "_readme": "DANK BKK food & drinks menu. EDIT THIS FILE to change what customers see on food.html. Price is in baht. 'cat' must be one of the ids in 'categories'. Set \"out\": true to grey an item out as sold out. Staff can also edit live from the POS.",
-  "updated": "2026-07-30",
+  "updated": "2026-08-09",
   "currency": "THB",
   "serviceChargePct": 0,
   "categories": [
-    {
-      "id": "food",
-      "name": "Food",
-      "nameTh": "อาหาร",
-      "emoji": "🍜"
-    },
     {
       "id": "snacks",
       "name": "Munchies",
@@ -124,34 +118,6 @@
       "img": "https://images.unsplash.com/photo-1600213903598-25be92abde40?auto=format&fit=crop&w=640&h=480&q=70"
     },
     {
-      "id": "bd4",
-      "emoji": "🍽",
-      "badge": "FOR 2",
-      "name": "Thai Feast for Two",
-      "nameTh": "เซ็ตอาหารไทย 2 ท่าน",
-      "desc": "Pad Thai, green curry, som tam and two waters.",
-      "price": 420,
-      "parts": [
-        {
-          "id": "f01",
-          "qty": 1
-        },
-        {
-          "id": "f05",
-          "qty": 1
-        },
-        {
-          "id": "f08",
-          "qty": 1
-        },
-        {
-          "id": "d04",
-          "qty": 2
-        }
-      ],
-      "img": "https://images.unsplash.com/photo-1637806930600-37fa8892069d?auto=format&fit=crop&w=640&h=480&q=70"
-    },
-    {
       "id": "bd5",
       "emoji": "☕",
       "badge": "SLOW START",
@@ -201,115 +167,6 @@
     }
   ],
   "items": [
-    {
-      "id": "f01",
-      "cat": "food",
-      "name": "Pad Thai Shrimp",
-      "nameTh": "ผัดไทยกุ้งสด",
-      "price": 150,
-      "emoji": "🍜",
-      "desc": "Wok rice noodles, tamarind, peanuts, lime",
-      "img": "https://images.unsplash.com/photo-1637806930600-37fa8892069d?auto=format&fit=crop&w=640&h=480&q=70",
-      "ing": "Rice noodles, prawns, egg, tamarind, bean sprouts, peanuts, lime",
-      "alg": "Shellfish · Peanut · Egg · Fish sauce"
-    },
-    {
-      "id": "f02",
-      "cat": "food",
-      "name": "Pad Krapao Moo + Egg",
-      "nameTh": "กะเพราหมูไข่ดาว",
-      "price": 130,
-      "emoji": "🍛",
-      "desc": "Holy basil pork over rice, crispy fried egg",
-      "tags": [
-        "spicy"
-      ],
-      "img": "https://images.unsplash.com/photo-1562565651-7d4948f339eb?auto=format&fit=crop&w=640&h=480&q=70",
-      "ing": "Minced pork, holy basil, chilli, garlic, jasmine rice, crispy fried egg",
-      "alg": "Egg · Soy · Fish sauce"
-    },
-    {
-      "id": "f03",
-      "cat": "food",
-      "name": "Chicken Fried Rice",
-      "nameTh": "ข้าวผัดไก่",
-      "price": 120,
-      "emoji": "🍚",
-      "desc": "Jasmine rice, egg, spring onion, cucumber",
-      "img": "https://images.unsplash.com/photo-1512058564366-18510be2db19?auto=format&fit=crop&w=640&h=480&q=70",
-      "ing": "Jasmine rice, chicken, egg, spring onion, soy, cucumber, lime",
-      "alg": "Egg · Soy"
-    },
-    {
-      "id": "f04",
-      "cat": "food",
-      "name": "Tom Yum Goong",
-      "nameTh": "ต้มยำกุ้ง",
-      "price": 180,
-      "emoji": "🍲",
-      "desc": "Hot & sour prawn soup, lemongrass, chilli",
-      "tags": [
-        "spicy"
-      ],
-      "img": "https://images.unsplash.com/photo-1777828827870-92e3069424bd?auto=format&fit=crop&w=640&h=480&q=70",
-      "ing": "Prawns, lemongrass, galangal, kaffir lime, chilli, mushroom, lime",
-      "alg": "Shellfish · Fish sauce"
-    },
-    {
-      "id": "f05",
-      "cat": "food",
-      "name": "Green Curry Chicken",
-      "nameTh": "แกงเขียวหวานไก่",
-      "price": 160,
-      "emoji": "🍛",
-      "desc": "Coconut green curry with rice",
-      "img": "https://images.unsplash.com/photo-1594756202469-9ff9799b2e4e?auto=format&fit=crop&w=640&h=480&q=70",
-      "ing": "Chicken, green curry paste, coconut milk, Thai aubergine, basil",
-      "alg": "Fish sauce · Shellfish (paste)"
-    },
-    {
-      "id": "f06",
-      "cat": "food",
-      "name": "Beef Burger + Fries",
-      "nameTh": "เบอร์เกอร์เนื้อ",
-      "price": 220,
-      "emoji": "🍔",
-      "desc": "180g patty, cheddar, house sauce, fries",
-      "img": "https://images.unsplash.com/photo-1561758033-d89a9ad46330?auto=format&fit=crop&w=640&h=480&q=70",
-      "ing": "180g beef patty, cheddar, lettuce, tomato, brioche bun, fries",
-      "alg": "Gluten · Dairy · Egg · Sesame"
-    },
-    {
-      "id": "f07",
-      "cat": "food",
-      "name": "Margherita Pizza",
-      "nameTh": "พิซซ่ามาการิต้า",
-      "price": 240,
-      "emoji": "🍕",
-      "desc": "10 inch, mozzarella, basil",
-      "tags": [
-        "veg"
-      ],
-      "img": "https://images.unsplash.com/photo-1574071318508-1cdbab80d002?auto=format&fit=crop&w=640&h=480&q=70",
-      "ing": "Tomato, fior di latte mozzarella, fresh basil, olive oil",
-      "alg": "Gluten · Dairy"
-    },
-    {
-      "id": "f08",
-      "cat": "food",
-      "name": "Som Tam Thai",
-      "nameTh": "ส้มตำไทย",
-      "price": 110,
-      "emoji": "🥗",
-      "desc": "Green papaya salad, peanuts, lime",
-      "tags": [
-        "spicy",
-        "veg"
-      ],
-      "img": "https://images.unsplash.com/photo-1648421331147-9fcfab29536e?auto=format&fit=crop&w=640&h=480&q=70",
-      "ing": "Green papaya, tomato, long bean, chilli, lime, peanuts, dried shrimp",
-      "alg": "Peanut · Shellfish · Fish sauce"
-    },
     {
       "id": "s01",
       "cat": "snacks",
