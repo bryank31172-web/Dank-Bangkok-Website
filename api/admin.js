@@ -162,7 +162,8 @@ export default async function handler(req, res) {
       promos: typeof ov.promos === "object" && ov.promos ? ov.promos : {},
       site: typeof ov.site === "object" && ov.site
         ? { hero: typeof ov.site.hero === "object" && ov.site.hero ? ov.site.hero : undefined,
-            slides: Array.isArray(ov.site.slides) ? ov.site.slides.slice(0, 8) : undefined }
+            slides: Array.isArray(ov.site.slides) ? ov.site.slides.slice(0, 12) : undefined,
+            tour: typeof ov.site.tour === "object" && ov.site.tour ? ov.site.tour : undefined }
         : null,
     };
     /* A PIN session may rewrite the promotions and nothing else. It does not

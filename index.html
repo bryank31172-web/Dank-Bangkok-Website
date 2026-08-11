@@ -1009,7 +1009,41 @@ let SITE_SLIDES=[
  {key:"tiers", tag:"MEMBERSHIP", kick:"Free 10% off \u00b7 Silver 30% \u00b7 Gold 50%", title:"Membership has its perks",
   text:"Free membership = 10% off every time + free 1g on your birthday. Upgrade to Silver or Gold for bigger savings.",
   btn:"Join free", img:"assets/promo-membership.jpg", bg:"#101907", detail:""},
+ {key:"tour", tag:"VISIT US", kick:"Video tour \u00b7 360\u00b0 walk-around", title:"Take a tour of the shop",
+  text:"Step inside DANK before you visit \u2014 watch the video tour or look around the shop in 360\u00b0.",
+  btn:"Start the tour", img:"assets/promo-bags.jpg", bg:"#0b130e", detail:""},
 ];
+/* Tour links live in site overrides too - the owner pastes a YouTube link and a
+   360 link in the Homepage editor and both players light up. Empty = coming soon. */
+let SITE_TOUR={video:"",pano:""};
+function ytId(u){ const m=String(u||"").match(/(?:youtu\.be\/|[?&]v=|shorts\/|embed\/|live\/)([\w-]{6,20})/); return m?m[1]:""; }
+function panoSrc(u){ u=String(u||"").trim(); if(!/^https:\/\//.test(u)) return "";
+  try{ const h=new URL(u).hostname;
+    if(/(^|\.)google\.[a-z.]+$/.test(h)&&u.indexOf("/maps/embed")>=0) return u;
+    if(/(^|\.)kuula\.co$/.test(h)) return u;
+    if(/(^|\.)matterport\.com$/.test(h)) return u;
+    if(/(^|\.)momento360\.com$/.test(h)) return u;
+  }catch(e){}
+  return "";
+}
+function openTourVideo(){
+  const id=ytId(SITE_TOUR.video);
+  if(!id){ toast("\ud83c\udfa5 Video tour coming soon"); return; }
+  showModal("#infoModal");
+  document.getElementById("infoCard").innerHTML=
+   '<div class="drawer-head" style="border:none;padding:16px 20px 8px"><h2>\ud83c\udfa5 Shop tour</h2><button class="close-x" onclick="closeAll()">\u00d7</button></div>'+
+   '<div style="padding:0 14px 18px"><div style="position:relative;width:100%;aspect-ratio:16/9;border-radius:14px;overflow:hidden;background:#000">'+
+   '<iframe src="https://www.youtube-nocookie.com/embed/'+pEsc(id)+'?rel=0&playsinline=1" style="position:absolute;inset:0;width:100%;height:100%;border:0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture; fullscreen" allowfullscreen loading="lazy"></iframe></div></div>';
+}
+function openTour360(){
+  const src=panoSrc(SITE_TOUR.pano);
+  if(!src){ toast("\ud83e\udded 360\u00b0 tour coming soon"); return; }
+  showModal("#infoModal");
+  document.getElementById("infoCard").innerHTML=
+   '<div class="drawer-head" style="border:none;padding:16px 20px 8px"><h2>\ud83e\udded 360\u00b0 walk-around</h2><button class="close-x" onclick="closeAll()">\u00d7</button></div>'+
+   '<div style="padding:0 14px 18px"><div style="position:relative;width:100%;height:min(62vh,520px);border-radius:14px;overflow:hidden;background:#000">'+
+   '<iframe src="'+pEsc(src)+'" style="position:absolute;inset:0;width:100%;height:100%;border:0" allow="accelerometer; gyroscope; fullscreen" allowfullscreen loading="lazy"></iframe></div></div>';
+}
 const DEFAULT_SLIDES=SITE_SLIDES.map(s=>Object.assign({},s));
 let SITE_HERO=null, ORIG_HERO=null;
 const pEsc=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -1168,6 +1202,11 @@ pt33:{t:"PT33 Medical Cannabis Certificate \ud83e\ude7a",b:`
     \ud83d\udcb0 Price: <b>\u0e3f300</b><br>\ud83e\ude7a Doctor consultation for your best experience<br>\ud83d\udcc4 Official certificate, recognised<br>\u2708\ufe0f Valid at airports & checkpoints<br>\ud83d\udc9a Free DANK membership when you get your PT33</div>
   <a class="btn btn-primary btn-block" href="https://salusbioceutical.co.th/product-category/thai-herbal-products-th/modern-herbal-product-th/salus-polyclinic-th/" target="_blank" rel="noopener noreferrer">\ud83e\ude7a Apply for PT33</a>
   <button class="btn btn-ghost btn-block" style="margin-top:8px" onclick="closeAll();openAI()">\ud83d\udcac Ask \u0e19\u0e49\u0e2d\u0e07\u0e41\u0e14\u0e07\u0e04\u0e4c about PT33</button>`},
+tour:{t:"Take a tour of the shop \ud83c\udfec",b:`
+  <p style="color:var(--muted);font-size:14px;margin:0 0 12px">Step inside DANK before you visit \u2014 watch the walkthrough video, or look around the shop yourself in 360\u00b0.</p>
+  <button class="btn btn-primary btn-block" onclick="openTourVideo()">\ud83c\udfa5 Watch the video tour</button>
+  <button class="btn btn-gold btn-block" style="margin-top:8px" onclick="openTour360()">\ud83e\udded 360\u00b0 walk-around</button>
+  <p style="color:var(--muted);font-size:12.5px;margin:14px 0 0">\ud83d\udccd Pattanakarn 1st Alley \u00b7 Sathorn \u00b7 Bars \u2014 open late, delivery 24 hrs</p>`},
 tiers:{t:"Membership has its perks \ud83d\udc9a",b:`
   <p style="color:var(--muted);font-size:14px;margin:0 0 12px">Sign up free and save every single time \u2014 then upgrade when you\u2019re ready for bigger savings.</p>
   <div style="background:var(--panel2);border:1px solid var(--line2);border-radius:12px;padding:12px 14px;margin-bottom:14px;font-size:14px;line-height:1.9">
@@ -5012,9 +5051,10 @@ function applyProductOverridesLocal(){
 function applySite(){
   const s=ADMIN_OV.site; if(!s) return;
   if(Array.isArray(s.slides)&&s.slides.length){
-    SITE_SLIDES=s.slides.slice(0,8).map((x,i)=>Object.assign({},DEFAULT_SLIDES[i]||{key:"extra"+i},x,{key:(DEFAULT_SLIDES[i]||{}).key||("extra"+i)}));
+    SITE_SLIDES=s.slides.slice(0,12).map((x,i)=>Object.assign({},DEFAULT_SLIDES[i]||{key:"extra"+i},x,{key:(DEFAULT_SLIDES[i]||{}).key||("extra"+i)}));
   }
   if(s.hero&&typeof s.hero==="object") SITE_HERO=s.hero;
+  if(s.tour&&typeof s.tour==="object") SITE_TOUR=Object.assign({video:"",pano:""},s.tour);
   applyHeroText(); renderPromoTrack(); renderHeroSlides(); heroShow(0);
 }
 function applyHeroText(){
@@ -5029,6 +5069,9 @@ function openSiteEditor(focus){
   $("#infoCard").innerHTML='<div class="drawer-head" style="border:none;padding:16px 20px 4px"><h2>\ud83c\udfac Homepage editor</h2><button class="close-x" onclick="closeAll()">\u00d7</button></div>'+
    '<div class="adm-form" style="padding:0 20px 20px;max-height:72vh;overflow:auto">'+
    '<p style="color:var(--muted);font-size:12.5px;margin:0 0 12px">Change the text and photos, press \u2705 Apply, then press \ud83d\udcbe Save changes on the green bar to publish for everyone. Photos: paste any image link, or a file already on the site (e.g. promo-box.jpg).</p>'+
+   '<div style="font-weight:800;color:var(--gold);font-size:13px;letter-spacing:1px;margin:4px 0 8px">\ud83c\udfa5 SHOP TOUR LINKS</div>'+
+   '<div class="field"><label>YouTube video tour link (paste and it goes live)</label><input id="seVideo" placeholder="https://youtu.be/..." value="'+admAttr(SITE_TOUR.video||"")+'"></div>'+
+   '<div class="field"><label>360\u00b0 tour link (Google Maps embed / Kuula / Matterport)</label><input id="sePano" placeholder="https://..." value="'+admAttr(SITE_TOUR.pano||"")+'"></div>'+
    '<div style="font-weight:800;color:var(--gold);font-size:13px;letter-spacing:1px;margin:4px 0 8px">HERO TEXT</div>'+
    '<div class="field"><label>Small line above the title</label><input id="seEyebrow" value="'+admAttr(h.eyebrow||$("#heroEyebrow").textContent)+'"></div>'+
    '<div class="field"><label>Big title</label><input id="seTitle" value="'+admAttr(h.title||$("#heroTitle").textContent)+'"></div>'+
@@ -5052,13 +5095,14 @@ function siteEditorApply(){
   const v=id=>{ const el=document.getElementById(id); return el?el.value.trim():""; };
   const slides=SITE_SLIDES.map((s,i)=>Object.assign({},s,{tag:v("seTag"+i),kick:v("seKick"+i),title:v("seT"+i),
     text:v("seX"+i),btn:v("seB"+i),img:v("seI"+i),detail:v("seD"+i)}));
-  ADMIN_OV.site={hero:{eyebrow:v("seEyebrow"),title:v("seTitle"),sub:v("seSub")},slides:slides};
+  ADMIN_OV.site={hero:{eyebrow:v("seEyebrow"),title:v("seTitle"),sub:v("seSub")},slides:slides,tour:{video:v("seVideo"),pano:v("sePano")}};
+  SITE_TOUR={video:v("seVideo"),pano:v("sePano")};
   SITE_SLIDES=slides; SITE_HERO=ADMIN_OV.site.hero;
   applyHeroText(); renderPromoTrack(); renderHeroSlides(); heroShow(0);
   markDirty(); closeAll(); toast("Homepage updated \u2014 press \ud83d\udcbe Save changes to publish");
 }
 function siteEditorReset(){
-  ADMIN_OV.site=null; SITE_SLIDES=DEFAULT_SLIDES.map(s=>Object.assign({},s)); SITE_HERO=null;
+  ADMIN_OV.site=null; SITE_SLIDES=DEFAULT_SLIDES.map(s=>Object.assign({},s)); SITE_HERO=null; SITE_TOUR={video:"",pano:""};
   if(ORIG_HERO){ $("#heroEyebrow").textContent=ORIG_HERO.eyebrow; $("#heroTitle").textContent=ORIG_HERO.title; $("#heroSub").textContent=ORIG_HERO.sub; }
   renderPromoTrack(); renderHeroSlides(); heroShow(0);
   markDirty(); closeAll(); toast("Homepage reset \u2014 press \ud83d\udcbe Save changes to publish");
