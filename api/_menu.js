@@ -19,6 +19,7 @@ import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { getJSON, setJSON } from "./_store.js";
 import { shConfigured, fetchStoreHubProducts } from "./_storehub.js";
+import { posSyncKey } from "./_auth.js";
 
 const TTL = Number(process.env.MENU_TTL_SECONDS || 30) * 1000;
 const FEED = process.env.MENU_FEED_URL || "";
@@ -94,7 +95,16 @@ async function fetchPOS() {
     const ctl = new AbortController();
     const timer = setTimeout(() => ctl.abort(), 3500);
     try {
-      const r = await fetch(POS_BASE + path, { headers: { Accept: "application/json" }, signal: ctl.signal });
+      /* The pull used to go out anonymous. If the POS protects its catalogue
+         with the very key the shop just generated for this purpose, every
+         path 401s, the whole probe looks like "POS serves no JSON" and backs
+         off for five minutes - with nothing anywhere saying it was refused.
+         Sent as a header, never as a query string: a secret in a URL ends up
+         in access logs. */
+      const key = posSyncKey();
+      const headers = { Accept: "application/json" };
+      if (key) { headers["x-api-key"] = key; headers["Authorization"] = "Bearer " + key; }
+      const r = await fetch(POS_BASE + path, { headers, signal: ctl.signal });
       if (!r.ok) return null;
       if (!/json/i.test(r.headers.get("content-type") || "")) return null; // HTML shell ≠ feed
       const items = normalizePOS(await r.json());

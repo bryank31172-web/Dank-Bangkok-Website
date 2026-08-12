@@ -25,6 +25,19 @@ export function staffConfigured() {
   return Boolean(staffKey());
 }
 
+/* The shared key between the website and BRYAN POS.
+
+   Two names, one secret. The website has always called it POS_SYNC_KEY, but
+   the POS's own "🔑 Generate" button (Settings → Website / E-commerce) tells
+   the shop to save the value it just made as WEBSITE_API_KEY - so an owner who
+   follows the POS's own instructions ends up with a key the website never
+   reads, a menu that never syncs, and nothing anywhere saying why. Accepting
+   both names costs nothing: neither has a default, so an unset deployment is
+   still an unauthenticated one. POS_SYNC_KEY wins if somehow both are set. */
+export function posSyncKey() {
+  return process.env.POS_SYNC_KEY || process.env.WEBSITE_API_KEY || "";
+}
+
 /* Constant-time compare, so the key can't be rebuilt one character at a time by
    timing the 401s. timingSafeEqual throws on a length mismatch, hence the
    length test first — that leaks the length only, which is not the secret. */

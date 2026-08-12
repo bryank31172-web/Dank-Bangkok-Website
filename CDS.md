@@ -97,7 +97,9 @@ Anything else is dropped at the relay and again in the page.
 ## Setup
 
 1. Set `POS_SYNC_KEY` in Vercel and paste the same value into the POS. (This is
-   the key the menu push already uses — one key for both.)
+   the key the menu push already uses — one key for both.) The POS's own
+   🔑 Generate button calls it `WEBSITE_API_KEY`; the website accepts either
+   name, so whichever the POS wrote down will work.
 2. Open `customer-display.html` on the customer-facing screen.
 3. Type its pairing code into `POS → Settings → Customer display`, or run both
    windows on one machine and skip the code entirely.

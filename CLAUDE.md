@@ -73,7 +73,7 @@ in the code. Any unset variable makes its endpoint answer `503 not configured`.
 | `ADMIN_PASSWORD` | already set | stored as a SHA-256 hash in source |
 | `ADMIN_SECRET` | already set | signs the admin session tokens |
 | `MASTER_PIN` | **needs setting** | see security note below |
-| `POS_SYNC_KEY` | **needs setting** | generate in BRYAN POS → Settings → 🌐 Website / E-commerce connection |
+| `POS_SYNC_KEY` | **needs setting** | press 🔑 Generate in BRYAN POS → Settings → 🌐 Website / E-commerce, copy the `dank_…` value. The POS's own toast tells you to save it as `WEBSITE_API_KEY`, so the website accepts **either** name |
 | `UPSTASH_REDIS_REST_URL` | **needs setting** | without it, storage is in-memory only |
 | `UPSTASH_REDIS_REST_TOKEN` | **needs setting** | Upstash has a free tier |
 

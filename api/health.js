@@ -4,6 +4,7 @@
    status so you can confirm the StoreHub link right after deploying.           */
 import { getMenu } from "./_menu.js";
 import { shConfigured } from "./_storehub.js";
+import { posSyncKey } from "./_auth.js";
 
 export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
@@ -51,7 +52,7 @@ export default async function handler(req, res) {
       model: process.env.GROK_MODEL || "grok-4",
     };
     const wired = {
-      posSync: Boolean(process.env.POS_SYNC_KEY),
+      posSync: Boolean(posSyncKey()),
       storage: Boolean(process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN),
       staffKey: Boolean(process.env.STAFF_KEY),
       ownerLogin: Boolean(process.env.ADMIN_EMAIL && process.env.ADMIN_PASSWORD && process.env.ADMIN_SECRET),
@@ -72,7 +73,7 @@ export default async function handler(req, res) {
        site is healthy, because nothing else about the site looks broken. */
     const warnings = [];
     if (!wired.storage) warnings.push("⚠️ No Upstash Redis — orders, members, wallets and homepage edits are in memory only and will be lost when the server restarts. Set UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN.");
-    if (!wired.posSync) warnings.push("⚠️ POS_SYNC_KEY not set — BRYAN POS cannot push its menu or drive the customer display.");
+    if (!wired.posSync) warnings.push("⚠️ POS_SYNC_KEY not set (WEBSITE_API_KEY also accepted) — BRYAN POS cannot push its menu or drive the customer display.");
 
     return res.status(200).json({
       ok: true,
