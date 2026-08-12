@@ -140,6 +140,15 @@ folded to `0`.
 - **Monthly sales report**: staff.html → Sales tab → Month view. It opens on
   last month by default and offers the last six months as chips, with a CSV
   button.
+- **Customer display (CDS)**: `customer-display.html` — the screen that faces
+  the customer at the counter. Live scale reading, the order as it is rung up,
+  totals, payment QR, and the promo posters between customers. Driven by the
+  POS over a `BroadcastChannel` (same machine) or `POST /api/cds` with a
+  pairing code (separate tablet). The contract the POS has to send is in
+  `CDS.md`; it needs `POS_SYNC_KEY` for the network path only.
+- **Homepage editor**: Owner mode → `🎬 Homepage` on the green bar. Edits the
+  hero text, all promo slides and the shop-tour links; publishes with
+  `💾 Save changes`. Stored in `admin:overrides` under `site`.
 
 ## Open work, roughly in priority order
 
