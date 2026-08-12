@@ -222,7 +222,7 @@
       rgba(4,7,5,.86) calc(var(--btop) + var(--bh) * .94),
       var(--bg) calc(var(--btop) + var(--bh) + 8px))}
   .hero-inner{position:relative;z-index:2;
-    padding:calc(var(--btop) + var(--bh) + 38px) 0 clamp(28px,4.5vw,52px);
+    padding:calc(var(--btop) + var(--bh) + 46px) 0 clamp(28px,4.5vw,52px);
     transform:translate3d(0,calc(var(--sp,0) * -22px),0)}
   .hero .eyebrow{color:var(--green);font-weight:700;letter-spacing:2px;font-size:12.5px;text-transform:uppercase}
   .hero h1{font-size:clamp(32px,7.4vw,62px);line-height:.98;margin:12px 0 14px;max-width:16ch;
@@ -305,7 +305,7 @@
   .ring-fade{position:absolute;inset:0;pointer-events:none;
     background:linear-gradient(90deg,var(--bg),transparent 9%,transparent 91%,var(--bg))}
   .ring-ui{display:flex;align-items:center;justify-content:center;gap:12px;margin-top:8px}
-  .ring-ui button{width:42px;height:42px;border-radius:999px;background:var(--panel2);
+  .ring-ui button{width:44px;height:44px;border-radius:999px;background:var(--panel2);
     border:1px solid var(--line2);color:var(--txt);font-size:18px;line-height:1}
   .ring-ui button:hover{border-color:var(--green)}
   .ring-now{min-width:auto;max-width:min(58vw,340px);text-align:center;font-size:13px;color:var(--muted);
@@ -449,8 +449,11 @@
     padding:9px 14px;font-size:13.5px;font-weight:600;color:var(--txt)}
   .promo-banner b{color:var(--green2)}
   .promo-banner button{background:linear-gradient(135deg,var(--green),var(--deep));color:#04180d;
-    font-weight:800;font-size:12.5px;padding:7px 14px;border-radius:9px}
-  .promo-banner .pb-x{background:none;color:var(--muted2);font-size:16px;padding:0 4px}
+    font-weight:800;font-size:12.5px;padding:7px 14px;border-radius:9px;min-height:44px}
+  /* Was 21x19 - a dismiss control small enough to miss twice before hitting.
+     The cross still looks the same size; the button around it is 44x44. */
+  .promo-banner .pb-x{background:none;color:var(--muted2);font-size:16px;padding:0;
+    width:44px;height:44px;display:inline-flex;align-items:center;justify-content:center}
   .cart-line.bonus{background:rgba(61,220,132,.07);border-radius:10px;padding:10px;border:1px dashed var(--line2)}
   .gift-badge{font-size:11px;font-weight:800;color:#04180d;background:var(--green2);border-radius:6px;padding:2px 7px}
   .wallet-chip{display:none;align-items:center;gap:6px;background:linear-gradient(135deg,#123020,#0c1a12);border:1px solid var(--line2);color:var(--green2);font-weight:800;font-size:13px;padding:8px 12px;border-radius:11px;white-space:nowrap}
@@ -819,7 +822,7 @@
      wraps here instead of overflowing; the cart stays on screen either way. */
   @media(max-width:400px){
     .top-actions{flex-wrap:wrap;justify-content:flex-end;gap:6px;row-gap:6px}
-    .icon-btn{width:42px;height:42px}
+    .icon-btn{width:44px;height:44px}
   }
 </style>
 </head>
@@ -1232,17 +1235,25 @@ function heroShow(i,manual){
    ".hfs-arrow:focus-visible{outline:2px solid var(--green);outline-offset:3px}"+
    ".hfs-prev{left:8px}.hfs-next{right:8px}"+
    ".hfs-tap{position:absolute;inset:0;pointer-events:auto;cursor:pointer;background:transparent;border:0;padding:0}"+
-   ".hfs-dots{position:absolute;left:0;right:0;bottom:-22px;display:flex;gap:6px;justify-content:center;"+
-     "flex-wrap:wrap;padding:0 12px;pointer-events:auto}"+
-   ".hfs-dots button{display:block;width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,.28);"+
-     "cursor:pointer;transition:.25s;border:0;padding:0}"+
-   ".hfs-dots button.on{background:#fff;width:20px;border-radius:99px}"+
+   ".hfs-dots{position:absolute;left:0;right:0;bottom:-32px;display:flex;gap:2px;justify-content:center;"+
+     "flex-wrap:wrap;padding:0 10px;pointer-events:auto}"+
+   /* The dot you see is 8px; the button you hit is 22x28. A page indicator
+      cannot give every dot a 44px box - ten of them would need 440px on a
+      390px phone - so the pitch is what protects against mis-taps, and the
+      arrows remain the primary control. */
+   ".hfs-dots button{position:relative;width:22px;height:28px;background:none;border:0;padding:0;"+
+     "cursor:pointer;-webkit-tap-highlight-color:transparent}"+
+   ".hfs-dots button::before{content:'';position:absolute;left:50%;top:50%;width:8px;height:8px;"+
+     "border-radius:50%;background:rgba(255,255,255,.3);transform:translate(-50%,-50%);transition:.25s}"+
+   ".hfs-dots button.on::before{background:#fff;width:20px;border-radius:99px}"+
+   ".hfs-dots button:focus-visible{outline:2px solid var(--green);outline-offset:-2px;border-radius:8px}"+
    "@media (min-width:900px){.hfs-arrow{width:52px;height:52px;font-size:25px}.hfs-prev{left:-4px}.hfs-next{right:-4px}}"+
    "@media (hover:none){.hfs-arrow{background:rgba(6,10,7,.5)}}"+
    "#heroPromoChip{display:none;margin:0 0 16px;background:rgba(0,0,0,.55);border:1px solid rgba(255,255,255,.3);color:#ffe9a6;"+
-   "font-size:13px;font-weight:800;border-radius:999px;padding:9px 16px;cursor:pointer;backdrop-filter:blur(4px);max-width:100%;"+
+   "font-size:13px;font-weight:800;border-radius:999px;padding:0 18px;min-height:44px;cursor:pointer;backdrop-filter:blur(4px);max-width:100%;"+
    "overflow:hidden;text-overflow:ellipsis;white-space:nowrap}"+
-   "#heroPromoChip.on{display:inline-block}"+
+   "#heroPromoChip.on{display:inline-flex;align-items:center}"+
+   "#heroPromoChip:focus-visible{outline:2px solid var(--green);outline-offset:3px}"+
    "@media (prefers-reduced-motion:reduce){.hero-slides .hs,.hfs-bg{animation:none !important;transition:none !important}}";
   document.head.appendChild(css);
   ORIG_HERO={
