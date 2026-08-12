@@ -43,6 +43,37 @@ export default async function handler(req, res) {
       price: p.price ?? p.priceTiers?.[0]?.price ?? null,
     }));
 
+    /* Booleans only. Whether a key is set is a deployment fact worth being
+       able to check from a phone; the key itself is not, and this endpoint is
+       public. Never widen this to echo a value. */
+    const ai = {
+      brain: Boolean(process.env.XAI_API_KEY),
+      model: process.env.GROK_MODEL || "grok-4",
+    };
+    const wired = {
+      posSync: Boolean(process.env.POS_SYNC_KEY),
+      storage: Boolean(process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN),
+      staffKey: Boolean(process.env.STAFF_KEY),
+      ownerLogin: Boolean(process.env.ADMIN_EMAIL && process.env.ADMIN_PASSWORD && process.env.ADMIN_SECRET),
+      promoPin: Boolean(process.env.MASTER_PIN),
+      payments: {
+        omise: Boolean(process.env.OMISE_PUBLIC_KEY && process.env.OMISE_SECRET_KEY),
+        twoc2p: Boolean(process.env.TWOC2P_MERCHANT_ID && process.env.TWOC2P_SECRET),
+        gbp: Boolean(process.env.GBP_SECRET_KEY),
+      },
+      notify: {
+        telegram: Boolean(process.env.TELEGRAM_BOT_TOKEN && process.env.TELEGRAM_CHAT_ID),
+        email: Boolean(process.env.RESEND_API_KEY),
+      },
+    };
+    /* Without Upstash every order, member and wallet balance lives in one
+       serverless instance's memory and disappears when Vercel recycles it.
+       That is worth saying out loud on the page people check to see if the
+       site is healthy, because nothing else about the site looks broken. */
+    const warnings = [];
+    if (!wired.storage) warnings.push("⚠️ No Upstash Redis — orders, members, wallets and homepage edits are in memory only and will be lost when the server restarts. Set UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN.");
+    if (!wired.posSync) warnings.push("⚠️ POS_SYNC_KEY not set — BRYAN POS cannot push its menu or drive the customer display.");
+
     return res.status(200).json({
       ok: true,
       connected,
@@ -51,6 +82,9 @@ export default async function handler(req, res) {
       source,
       products: count,
       storehubConfigured: shSet,
+      ai,
+      wired,
+      warnings,
       updated: new Date(menu.at || Date.now()).toISOString(),
       sample,
     });

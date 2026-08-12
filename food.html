@@ -451,9 +451,20 @@ function isAdultItem(i){
   return false;
 }
 function restrictMenu(){
+  /* Fail closed. With a hand-kept menu the adult categories are known by id,
+     but a POS category is whatever the shop typed, so an unrecognised name is
+     treated as adult rather than assumed safe - the cost of hiding a plate of
+     fries from a fifteen-year-old is nothing next to the cost of the reverse. */
+  var safe = {};
+  (MENU.categories || []).forEach(function(c){
+    var known = ADULT_CATS.indexOf(c.id) < 0 && c.id.indexOf("pos-") !== 0;
+    var posSafe = c.id.indexOf("pos-") === 0 &&
+                  (CAT_KITCHEN.test(c.name) || CAT_DRINKS.test(c.name)) && !CAT_BAR.test(c.name);
+    if (known || posSafe) safe[c.id] = 1;
+  });
   var gone = {};
-  (MENU.items || []).forEach(function(i){ if (isAdultItem(i)) gone[i.id] = 1; });
-  MENU.categories = (MENU.categories || []).filter(function(c){ return ADULT_CATS.indexOf(c.id) < 0; });
+  (MENU.items || []).forEach(function(i){ if (!safe[i.cat] || isAdultItem(i)) gone[i.id] = 1; });
+  MENU.categories = (MENU.categories || []).filter(function(c){ return safe[c.id]; });
   MENU.items = (MENU.items || []).filter(function(i){ return !gone[i.id]; });
   MENU.bundles = (MENU.bundles || []).filter(function(b){
     return !(b.parts || []).some(function(p){ return gone[p.id]; });
@@ -468,19 +479,96 @@ function exitU20(){
   location.href = "food.html?u20=0";
 }
 
+/* ---------- where the menu comes from --------------------------------------
+   food-menu.json is a hand-kept file, and a hand-kept menu drifts from the
+   till the first time somebody changes a price at the counter. So the POS is
+   asked first: /api/products carries whatever BRYAN POS last pushed, with its
+   own category names intact, and the kitchen and bar half of that catalogue
+   is exactly this page's menu. The JSON stays as the fallback for a shop with
+   no feed configured yet, and for the minutes when the feed is down.
+
+   Which POS categories belong on this page is decided by the category NAME,
+   because a POS category list is whatever the shop typed into it. Three
+   buckets, and the cannabis one is excluded outright - flower, vapes and
+   merch belong on the storefront, not the food menu.                        */
+var CAT_KITCHEN = /(food|kitchen|snack|munch|bakery|dessert|noodle|rice|burger|pizza|salad|soup|side)/i;
+var CAT_DRINKS  = /(drink|beverage|coffee|tea|juice|shake|smoothie|water|soda|soft|mocktail|latte)/i;
+var CAT_BAR     = /(beer|alcohol|liquor|wine|spirit|cocktail|\bbar\b|whisky|vodka|gin|rum)/i;
+var CAT_CANNA   = /(edible|cannabis|weed|thc|hash|exotic|topshelf|midgrade|premium|joint|vape|flower|pre-?roll|merch|accessor|gram)/i;
+
+function catEmojiFor(name){
+  var s = String(name || "").toLowerCase();
+  if (CAT_BAR.test(s)) return "\ud83c\udf7a";
+  if (/coffee|tea|latte/.test(s)) return "\u2615";
+  if (/shake|smoothie|juice/.test(s)) return "\ud83e\uddcb";
+  if (CAT_DRINKS.test(s)) return "\ud83e\udd64";
+  if (/bakery|dessert/.test(s)) return "\ud83c\udf70";
+  return "\ud83c\udf5f";
+}
+
+/* A POS product becomes a menu item. Prices come off the product or its first
+   tier; anything without a usable price is dropped rather than shown at ฿0. */
+function posToItem(p, catId){
+  var price = Number(p.price);
+  if (!(price > 0) && p.priceTiers && p.priceTiers.length) price = Number(p.priceTiers[0].price);
+  if (!(price > 0)) return null;
+  /* A POS that stores a net price and adds VAT arithmetically sends 140.187
+     (131 x 1.07); printed straight onto a menu card that is what it says. */
+  price = Math.round(price);
+  var tags = [];
+  if (CAT_BAR.test(String(p.category || ""))) tags.push("21+");
+  if (CAT_CANNA.test(String(p.name || ""))) tags.push("edible");
+  return { id: String(p.id || p.sku || p.name), name: String(p.name), cat: catId,
+           price: price, tags: tags, img: p.image || p.img || "",
+           out: p.stock !== undefined && Number(p.stock) <= 0 };
+}
+
+function menuFromPOS(list){
+  var cats = [], byCat = {}, items = [];
+  (list || []).forEach(function(p){
+    if (!p || !p.name) return;
+    var cname = String(p.category || "").trim();
+    if (!cname) return;
+    if (CAT_CANNA.test(cname)) return;                                  // storefront's, not ours
+    if (!(CAT_KITCHEN.test(cname) || CAT_DRINKS.test(cname) || CAT_BAR.test(cname))) return;
+    var id = "pos-" + cname.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+    if (!byCat[id]) { byCat[id] = true; cats.push({ id: id, name: cname, emoji: catEmojiFor(cname) }); }
+    var it = posToItem(p, id);
+    if (it) items.push(it);
+  });
+  if (!items.length) return null;                                        // POS has no kitchen yet
+  /* Bundles are a website idea, not a POS one - there is nothing to map. */
+  return { categories: cats, items: items, bundles: [] };
+}
+
+function applyMenu(m, source){
+  MENU = m;
+  MENU.items = (MENU.items || []).filter(function(i){ return i && i.name && i.price != null; });
+  MENU.source = source;
+  if (U20) restrictMenu();
+  renderTabs(); render();
+}
+
 function loadMenu(){
-  fetch("food-menu.json", { cache: "no-store" })
+  var done = false;
+  var fallback = function(){
+    if (done) return;
+    fetch("food-menu.json", { cache: "no-store" })
+      .then(function(r){ if(!r.ok) throw new Error("http"); return r.json(); })
+      .then(function(j){ if (!done) { done = true; applyMenu(j || MENU, "bundled"); } })
+      .catch(function(){
+        if (done) return;
+        document.getElementById("menuBody").innerHTML =
+          '<div class="warn" style="margin-top:20px">Menu could not load. Pull down to refresh, or ask a staff member — they can take your order at the table.</div>';
+      });
+  };
+  fetch("/api/products", { cache: "no-store" })
     .then(function(r){ if(!r.ok) throw new Error("http"); return r.json(); })
-    .then(function(j){
-      MENU = j || MENU;
-      MENU.items = (MENU.items || []).filter(function(i){ return i && i.name && i.price != null; });
-      if (U20) restrictMenu();
-      renderTabs(); render();
+    .then(function(list){
+      var m = menuFromPOS(list);
+      if (m) { done = true; applyMenu(m, "pos"); } else fallback();
     })
-    .catch(function(){
-      document.getElementById("menuBody").innerHTML =
-        '<div class="warn" style="margin-top:20px">Menu could not load. Pull down to refresh, or ask a staff member — they can take your order at the table.</div>';
-    });
+    .catch(fallback);
 }
 
 function esc(s){ return String(s == null ? "" : s).replace(/[&<>"]/g, function(c){ return ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"})[c]; }); }

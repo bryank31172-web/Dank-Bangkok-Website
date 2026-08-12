@@ -30,6 +30,13 @@ import { normPhone as digits } from "./_phone.js";
 const MAX_ITEMS = 1000;
 
 const num = (v) => { const n = Number(v); return isFinite(n) ? n : 0; };
+/* Money is rounded to the baht on the way in. A POS that stores a net price
+   and adds VAT arithmetically hands over things like 140.187 (131 x 1.07),
+   and that lands on a menu card verbatim as "฿140.187". Rounding here rather
+   than at each render means the cart, the checkout total and the order posted
+   back all agree on the same number. Stock is NOT rounded - flower stock is
+   legitimately fractional grams. */
+const baht = (v) => Math.round(num(v));
 const looksLikeImg = (s) => /^(https?:|data:image)/.test(String(s || ""));
 
 function normalize(list) {
@@ -37,8 +44,8 @@ function normalize(list) {
   for (let i = 0; i < Math.min(list.length, MAX_ITEMS); i++) {
     const p = list[i];
     if (!p || typeof p !== "object" || !p.name) continue;
-    const price = num(p.price);
-    const member = num(p.member) || Math.round(price * 0.9);
+    const price = baht(p.price);
+    const member = baht(p.member) || Math.round(price * 0.9);
     const item = {
       id: String(p.id ?? p.sku ?? "pos-" + i),
       name: String(p.name),
@@ -59,7 +66,7 @@ function normalize(list) {
       item.priceTiers = [
         { label: "½g", price: Math.round(price / 2), member: Math.round(member / 2) },
         { label: "1g", price, member },
-        { label: "3.5g bulk", price: price * 3, member: member * 3 },
+        { label: "3.5g bulk", price: Math.round(price * 3), member: Math.round(member * 3) },
       ];
     } else {
       item.price = price;
