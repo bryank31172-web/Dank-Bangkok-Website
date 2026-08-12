@@ -160,14 +160,28 @@ folded to `0`.
    build and confuses which deployment is live).
 6. `staff.html#box` — Bryan needs to pick a POS product on each of the 7 gift
    rows and enter stock numbers, or the custom-box free items never decrement.
-7. Food menu: chrome and category names are translated into th/zh/ru/ja/es, but
-   the 40 items, 6 bundles and their prices are still placeholder text.
-8. Four SKUs share two photographs (`ztupid`+`zkittles`,
-   `sherb-tank`+`baby-cake`) and `crispyboy` is on a stock lager photo.
-9. Add an `ai: { brain: Boolean(process.env.XAI_API_KEY), model: ... }` block to
-   `api/health.js` — booleans only, never the key itself.
-10. Investigate a ÷1.07 VAT artifact in some prices (e.g. onion rings at
-    ฿140.187).
+7. `crispyboy` still uses a stock Unsplash lager photo. Only a real photograph
+   of the can fixes this, so it needs Bryan with a camera.
+8. Photograph the food and drinks. Once the POS pushes them, `food.html` shows
+   whatever the POS has, but POS products carry no images.
+
+Done, kept here so nobody redoes them:
+
+- **Food menu placeholder data** — `food.html` now reads `/api/products` first
+  and builds its tabs from the POS's own category names, so the menu matches
+  the till by construction. `food-menu.json` is only the fallback.
+- **The ÷1.07 VAT artifact** (onion rings at ฿140.187) — a POS that stores a
+  net price and adds VAT arithmetically was handing over `131 * 1.07`, and
+  nothing on the way in rounded it. `api/pos-feed.js`, `api/_menu.js` and
+  `food.html` all round money to the baht at the boundary now. Stock is
+  deliberately not rounded: flower stock is legitimately fractional grams.
+- **`ai` block in `api/health.js`** — plus a `wired` block (booleans for every
+  key the site needs) and a `warnings` list that says out loud when Upstash is
+  missing, since nothing else about the site looks broken when it is.
+- **Four SKUs sharing two photographs** — stale as of Aug 2026: `ztupid`,
+  `zkittles`, `sherb-tank` and `baby-cake` each have their own photo. The
+  remaining shared URLs in `product-images.json` are alias groups pointing one
+  product's several spellings at one picture, which is what that file is for.
 
 Bryan has explicitly declined two items — do not do them unless he asks again:
 fixing the Snow Brands Pineapple Express 60% THC figure, and hardening the

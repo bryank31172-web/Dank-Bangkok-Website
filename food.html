@@ -512,6 +512,9 @@ function posToItem(p, catId){
   var price = Number(p.price);
   if (!(price > 0) && p.priceTiers && p.priceTiers.length) price = Number(p.priceTiers[0].price);
   if (!(price > 0)) return null;
+  /* A POS that stores a net price and adds VAT arithmetically sends 140.187
+     (131 x 1.07); printed straight onto a menu card that is what it says. */
+  price = Math.round(price);
   var tags = [];
   if (CAT_BAR.test(String(p.category || ""))) tags.push("21+");
   if (CAT_CANNA.test(String(p.name || ""))) tags.push("edible");

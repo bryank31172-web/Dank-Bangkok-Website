@@ -64,11 +64,16 @@ function normItem(x, i) {
     effects: Array.isArray(x.effects) ? x.effects : [],
     flavors: Array.isArray(x.flavors) ? x.flavors : [],
   };
-  const price = posNum(x.price ?? x.salePrice ?? x.sale_price ?? x.unitPrice ?? x.unit_price ?? x.retailPrice);
-  const member = posNum(x.member ?? x.memberPrice ?? x.member_price ?? x.wholesale);
+  /* Same rounding as api/pos-feed.js, for the sources that do not go through
+     it (MENU_FEED_URL, a POS serving its own JSON, StoreHub). A net price with
+     VAT applied arithmetically arrives as 140.187 and would be printed that
+     way on a menu card. */
+  const bahtOf = (v) => { const n = posNum(v); return n === undefined ? undefined : Math.round(n); };
+  const price = bahtOf(x.price ?? x.salePrice ?? x.sale_price ?? x.unitPrice ?? x.unit_price ?? x.retailPrice);
+  const member = bahtOf(x.member ?? x.memberPrice ?? x.member_price ?? x.wholesale);
   if (Array.isArray(x.priceTiers) && x.priceTiers.length) {
     out.priceTiers = x.priceTiers
-      .map((t) => ({ label: String(t.label ?? t.size ?? ""), price: posNum(t.price) ?? 0, member: posNum(t.member ?? t.memberPrice) ?? posNum(t.price) ?? 0 }))
+      .map((t) => ({ label: String(t.label ?? t.size ?? ""), price: bahtOf(t.price) ?? 0, member: bahtOf(t.member ?? t.memberPrice) ?? bahtOf(t.price) ?? 0 }))
       .filter((t) => t.label);
   } else {
     out.price = price ?? 0;
