@@ -143,14 +143,14 @@
 
   /* ---------- Header ---------- */
   header.top{position:sticky;top:0;z-index:40;background:rgba(6,10,7,.92);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
-  .top-inner{display:flex;align-items:center;gap:12px;height:64px}
+  .top-inner{display:flex;align-items:center;gap:12px;height:64px;min-width:0}
   .brand{display:flex;align-items:center;gap:9px;font-weight:800;font-size:20px;letter-spacing:.5px;white-space:nowrap}
   .brand .dot{color:var(--green)}
   .search{flex:1;position:relative;max-width:460px}
   .search input{width:100%;background:var(--panel);border:1px solid var(--line2);color:var(--txt);padding:11px 14px 11px 40px;border-radius:12px;font-size:14.5px;outline:none}
   .search input:focus{border-color:var(--green)}
   .search svg{position:absolute;left:13px;top:50%;transform:translateY(-50%);opacity:.5}
-  .top-actions{display:flex;align-items:center;gap:8px;margin-left:auto}
+  .top-actions{display:flex;align-items:center;gap:8px;margin-left:auto;min-width:0;max-width:100%}
   .branch-sel{background:var(--panel);border:1px solid var(--line2);color:var(--txt);padding:10px 10px;border-radius:11px;font-size:13px;outline:none;max-width:150px}
   .branch-sel:focus{border-color:var(--green)}
   .member-toggle{display:flex;align-items:center;gap:7px;background:var(--panel);border:1px solid var(--line2);padding:8px 12px;border-radius:11px;font-size:12.5px;color:var(--muted);white-space:nowrap}
@@ -805,6 +805,17 @@
     .branch-sel{max-width:120px}
     .member-toggle span.mt-label{display:none}
     #aiPanel{right:0;bottom:0;width:100vw;height:100vh;border-radius:0}
+  }
+  /* An iPhone with Display Zoom on reports a 320pt viewport. The header action row
+     is a fixed-width flex line: at that width it measured 390px inside a 288px
+     content box and dragged the whole page into a horizontal scroll - which is why
+     the site could be swiped sideways and the headline sat half off-screen. It
+     wraps here instead of overflowing; the cart stays on screen either way. */
+  @media(max-width:400px){
+    .top-actions{flex-wrap:wrap;justify-content:flex-end;gap:6px;row-gap:6px}
+    .branch-sel{max-width:104px;padding:9px 8px}
+    .icon-btn{width:40px;height:40px}
+    .member-toggle{padding:7px 9px}
   }
 </style>
 </head>
