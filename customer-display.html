@@ -1,0 +1,428 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<title>DANK · Customer Display</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='26' font-size='26'>🌿</text></svg>">
+<style>
+  /* Same tokens as the storefront so the counter screen and the website are
+     recognisably one brand. */
+  :root{
+    --bg:#060a07; --bg2:#0b120d; --panel:#101a12; --panel2:#16241a;
+    --line:#1f3325; --line2:#294634;
+    --txt:#e8f5ec; --muted:#8fae9a; --muted2:#6d8a78;
+    --green:#3ddc84; --green2:#7be389; --deep:#1db960; --gold:#d9b25b;
+    --font:'Segoe UI',system-ui,-apple-system,Roboto,Helvetica,Arial,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;height:100%;background:var(--bg);color:var(--txt);font-family:var(--font);
+    overflow:hidden;-webkit-font-smoothing:antialiased;user-select:none;-webkit-user-select:none}
+  body{display:flex;flex-direction:column}
+  /* A customer reads this from about a metre away across a counter, so the
+     type scales with the screen rather than sitting at a fixed size. */
+  .wrap{flex:1;min-height:0;position:relative}
+  .scene{position:absolute;inset:0;opacity:0;pointer-events:none;transition:opacity .45s ease;
+    display:flex;flex-direction:column}
+  .scene.on{opacity:1;pointer-events:auto}
+
+  /* ---- chrome ---- */
+  .bar{display:flex;align-items:center;gap:14px;padding:14px clamp(16px,2.4vw,34px);
+    border-bottom:1px solid var(--line);background:rgba(6,10,7,.75);backdrop-filter:blur(8px);flex:0 0 auto}
+  .logo{display:flex;align-items:center;gap:10px;font-weight:900;letter-spacing:.5px;
+    font-size:clamp(17px,2vw,25px)}
+  .logo i{font-style:normal;font-size:1.15em}
+  .bar .sp{margin-left:auto;display:flex;align-items:center;gap:12px;
+    color:var(--muted);font-size:clamp(12px,1.15vw,15px)}
+  .dot{width:9px;height:9px;border-radius:50%;background:#c0392b;box-shadow:0 0 10px currentColor;transition:.3s}
+  .dot.live{background:var(--green)}
+  .iconbtn{background:var(--panel);border:1px solid var(--line2);color:var(--muted);border-radius:10px;
+    padding:7px 11px;font-size:14px;cursor:pointer}
+  .iconbtn:hover{border-color:var(--green);color:var(--txt)}
+
+  /* ---- idle: the shop's own posters, full bleed ---- */
+  #idle{align-items:center;justify-content:center}
+  .idle-bg{position:absolute;inset:-6%;background-size:cover;background-position:center;
+    filter:blur(46px) saturate(1.4) brightness(.5);opacity:0;transition:opacity .9s ease}
+  .idle-bg.on{opacity:1}
+  .idle-poster{position:absolute;inset:clamp(16px,3vh,40px);background-size:contain;background-position:center;
+    background-repeat:no-repeat;opacity:0;transition:opacity .9s ease;filter:drop-shadow(0 22px 60px rgba(0,0,0,.7))}
+  .idle-poster.on{opacity:1}
+  .idle-fall{position:relative;text-align:center;padding:24px}
+  .idle-fall h1{font-size:clamp(34px,7vw,86px);margin:0 0 10px;font-weight:900;letter-spacing:-1px}
+  .idle-fall p{color:var(--muted);font-size:clamp(15px,2vw,24px);margin:0}
+
+  /* ---- order ---- */
+  #order{flex-direction:row}
+  .lines{flex:1;min-width:0;overflow:hidden;padding:clamp(10px,1.6vh,22px) clamp(14px,2vw,30px);
+    display:flex;flex-direction:column;gap:clamp(6px,1vh,12px)}
+  .line{display:flex;align-items:center;gap:clamp(10px,1.4vw,18px);background:var(--panel);
+    border:1px solid var(--line);border-radius:14px;padding:clamp(8px,1.2vh,15px) clamp(10px,1.4vw,18px);
+    animation:pop .32s cubic-bezier(.2,.8,.3,1)}
+  @keyframes pop{from{opacity:0;transform:translateY(14px) scale(.985)}to{opacity:1;transform:none}}
+  .line.free{border-color:var(--gold);background:rgba(217,178,91,.09)}
+  .line .th{width:clamp(42px,4.6vw,74px);aspect-ratio:1;border-radius:11px;background:var(--panel2) center/cover;
+    flex:0 0 auto;display:flex;align-items:center;justify-content:center;font-size:1.6em}
+  .line .nm{flex:1;min-width:0}
+  .line .nm b{display:block;font-size:clamp(16px,1.75vw,27px);font-weight:800;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .line .nm span{color:var(--muted);font-size:clamp(12px,1.2vw,18px)}
+  .line .pr{font-size:clamp(17px,1.9vw,29px);font-weight:900;white-space:nowrap}
+  .line.free .pr{color:var(--gold)}
+  .more{color:var(--muted);font-size:clamp(12px,1.2vw,17px);padding-left:6px}
+
+  .totals{flex:0 0 clamp(230px,30vw,430px);border-left:1px solid var(--line);background:var(--bg2);
+    padding:clamp(14px,2vh,28px) clamp(14px,1.8vw,28px);display:flex;flex-direction:column;gap:10px}
+  .who{background:var(--panel);border:1px solid var(--line2);border-radius:14px;padding:12px 14px;margin-bottom:4px}
+  .who b{display:block;font-size:clamp(15px,1.5vw,22px)}
+  .who span{color:var(--gold);font-size:clamp(12px,1.15vw,16px);font-weight:800}
+  .trow{display:flex;justify-content:space-between;align-items:baseline;gap:12px;
+    color:var(--muted);font-size:clamp(13px,1.3vw,19px)}
+  .trow.disc{color:var(--gold)}
+  .grand{margin-top:auto;border-top:1px solid var(--line2);padding-top:14px}
+  .grand span{display:block;color:var(--muted);font-size:clamp(12px,1.2vw,17px);
+    text-transform:uppercase;letter-spacing:2px}
+  .grand b{display:block;font-size:clamp(38px,6vw,86px);font-weight:900;line-height:1;letter-spacing:-2px;
+    color:var(--green2)}
+  .note{background:rgba(61,220,132,.1);border:1px solid var(--line2);border-radius:12px;padding:10px 13px;
+    color:var(--green2);font-size:clamp(12px,1.25vw,18px);font-weight:700}
+  .empty{margin:auto;text-align:center;color:var(--muted);font-size:clamp(16px,2.2vw,30px)}
+
+  /* ---- weigh: the moment the customer is actually watching ---- */
+  #weigh{align-items:center;justify-content:center;text-align:center;padding:clamp(14px,3vh,40px);gap:clamp(8px,1.6vh,20px)}
+  #wImg{width:clamp(90px,14vw,210px);aspect-ratio:1;border-radius:24px;background:var(--panel2) center/cover;
+    display:flex;align-items:center;justify-content:center;font-size:3.4em;box-shadow:0 18px 50px rgba(0,0,0,.55)}
+  #wName{font-size:clamp(26px,4.4vw,64px);font-weight:900;letter-spacing:-1px;margin:0}
+  #wMeta{color:var(--muted);font-size:clamp(14px,1.7vw,25px)}
+  .gram{display:flex;align-items:baseline;justify-content:center;gap:.12em;
+    font-size:clamp(74px,17vw,230px);font-weight:900;line-height:.88;letter-spacing:-6px;
+    font-variant-numeric:tabular-nums;color:var(--green2);text-shadow:0 0 70px rgba(61,220,132,.3)}
+  .gram u{text-decoration:none;font-size:.28em;letter-spacing:0;color:var(--muted);font-weight:800}
+  .gram.settled{color:#fff;text-shadow:0 0 80px rgba(255,255,255,.28)}
+  #wPrice{font-size:clamp(24px,3.4vw,52px);font-weight:900}
+  .stable{font-size:clamp(12px,1.2vw,17px);letter-spacing:3px;text-transform:uppercase;color:var(--muted)}
+  .stable.ok{color:var(--green)}
+
+  /* ---- pay / thanks ---- */
+  #pay,#thanks{align-items:center;justify-content:center;text-align:center;gap:clamp(10px,2vh,24px);padding:24px}
+  #payAmt{font-size:clamp(46px,9vw,150px);font-weight:900;line-height:1;letter-spacing:-3px;color:var(--green2)}
+  #payQr{width:clamp(180px,32vh,360px);aspect-ratio:1;background:#fff center/contain no-repeat;border-radius:20px;padding:12px}
+  #payWhat{color:var(--muted);font-size:clamp(15px,2vw,26px);text-transform:uppercase;letter-spacing:3px}
+  .tick{font-size:clamp(64px,13vw,190px);line-height:1}
+  #thanks h1{font-size:clamp(30px,6vw,86px);margin:0;font-weight:900;letter-spacing:-1px}
+  #thanks p{color:var(--muted);font-size:clamp(15px,2.1vw,28px);margin:0}
+
+  /* ---- pairing ---- */
+  #pairScene{align-items:center;justify-content:center;text-align:center;gap:18px;padding:26px}
+  #pairScene h1{font-size:clamp(20px,2.6vw,34px);margin:0;font-weight:800}
+  .code{font-size:clamp(52px,13vw,170px);font-weight:900;letter-spacing:.16em;color:var(--green2);
+    font-variant-numeric:tabular-nums;line-height:1}
+  #pairScene ol{text-align:left;color:var(--muted);font-size:clamp(13px,1.5vw,20px);line-height:1.85;
+    max-width:min(660px,92vw);margin:0;padding-left:1.3em}
+  #pairScene code{background:var(--panel);border:1px solid var(--line2);border-radius:7px;padding:2px 7px;color:var(--txt)}
+
+  @media (max-width:820px){ #order{flex-direction:column}
+    .totals{flex:0 0 auto;border-left:0;border-top:1px solid var(--line)}
+    .grand{margin-top:6px} }
+  @media (prefers-reduced-motion:reduce){ *{animation:none !important;transition:none !important} }
+</style>
+</head>
+<body>
+
+<div class="bar">
+  <div class="logo"><i>🌿</i><span>DANK</span><span style="color:var(--muted);font-weight:600">Cannabis Club</span></div>
+  <div class="sp">
+    <span id="branch"></span>
+    <span id="codeTag" style="letter-spacing:2px"></span>
+    <span class="dot" id="dot" title="connection"></span>
+    <button class="iconbtn" id="fsBtn" title="Full screen">⛶</button>
+  </div>
+</div>
+
+<div class="wrap">
+  <!-- waiting to be paired -->
+  <section class="scene on" id="pairScene">
+    <h1>Pair this screen with the till</h1>
+    <div class="code" id="pairCode">------</div>
+    <ol>
+      <li>In BRYAN POS open <code>Settings → Customer display</code>.</li>
+      <li>Type this code and save. The screen pairs within a second or two.</li>
+      <li>If the till and this screen are two windows on the <b>same computer</b>, no code is needed — they find each other on their own.</li>
+    </ol>
+    <button class="iconbtn" onclick="newCode()">Get a different code</button>
+  </section>
+
+  <!-- between customers -->
+  <section class="scene" id="idle">
+    <div class="idle-bg" id="idleBg"></div>
+    <div class="idle-poster" id="idlePoster"></div>
+    <div class="idle-fall" id="idleFall">
+      <h1>DANK Cannabis Club</h1>
+      <p>We sell what we smoke · Members save 10% every order</p>
+    </div>
+  </section>
+
+  <!-- ringing an order up -->
+  <section class="scene" id="order">
+    <div class="lines" id="lines"></div>
+    <div class="totals">
+      <div class="who" id="who" hidden></div>
+      <div class="trow"><span>Subtotal</span><span id="tSub">฿0</span></div>
+      <div class="trow disc" id="tDiscRow" hidden><span id="tDiscLabel">Discount</span><span id="tDisc">−฿0</span></div>
+      <div class="trow" id="tDelRow" hidden><span>Delivery</span><span id="tDel">฿0</span></div>
+      <div class="note" id="note" hidden></div>
+      <div class="grand"><span>Total</span><b id="tTotal">฿0</b></div>
+    </div>
+  </section>
+
+  <!-- on the scale -->
+  <section class="scene" id="weigh">
+    <div id="wImg">🌿</div>
+    <h2 id="wName">—</h2>
+    <div id="wMeta"></div>
+    <div class="gram" id="wGram">0.00<u>g</u></div>
+    <div class="stable" id="wStable">weighing…</div>
+    <div id="wPrice"></div>
+  </section>
+
+  <!-- paying -->
+  <section class="scene" id="pay">
+    <div id="payWhat">Scan to pay</div>
+    <div id="payAmt">฿0</div>
+    <div id="payQr" hidden></div>
+  </section>
+
+  <!-- done -->
+  <section class="scene" id="thanks">
+    <div class="tick">💚</div>
+    <h1>Thank you!</h1>
+    <p id="thanksSub">See you next time</p>
+  </section>
+</div>
+
+<script>
+"use strict";
+/* ===========================================================================
+   DANK Customer Display
+
+   Draws whatever state the till sends. It never decides anything itself: no
+   prices, no discounts, no stock. That keeps the till the single source of
+   truth and means this screen can be reloaded, unplugged or replaced mid-sale
+   without affecting the order.
+
+   Two inputs, and it does not care which one it hears from:
+     1. BroadcastChannel "dank-cds" - same browser, no network, instant. This is
+        the path when the counter screen is a second window on the till machine,
+        and it keeps working when the internet is down.
+     2. GET /api/cds?code=XXXX - a separate tablet, polled about once a second.
+   =========================================================================== */
+var $ = function (s) { return document.querySelector(s); };
+var LS = {
+  get: function (k, d) { try { var v = localStorage.getItem("dankcds_" + k); return v === null ? d : JSON.parse(v); } catch (e) { return d; } },
+  set: function (k, v) { try { localStorage.setItem("dankcds_" + k, JSON.stringify(v)); } catch (e) {} }
+};
+var esc = function (s) {
+  return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
+    return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+  });
+};
+/* Pictures are pushed in from the till, so only shapes a browser treats as an
+   image get near a url(). The server filters too; this is the second wall. */
+var safeImg = function (u) { return /^(https:\/\/|\/|data:image\/)[^\s"'<>()]*$/i.test(String(u || "")) ? String(u) : ""; };
+var money = function (n) {
+  n = Number(n) || 0;
+  return "฿" + n.toLocaleString("en-US", { maximumFractionDigits: n % 1 ? 2 : 0 });
+};
+
+/* ---- pairing code ------------------------------------------------------
+   Sticky, so a screen that reboots at 6am comes back on the same code the
+   staff already typed into the till. ?code= in the URL wins, for a display
+   that is set up once with a bookmark.                                    */
+var CODE = (new URLSearchParams(location.search).get("code") || "").toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 12);
+function makeCode() {
+  var A = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789", s = "";   // no O/0/I/1 - staff read these aloud
+  var r = new Uint32Array(6);
+  (window.crypto || window.msCrypto).getRandomValues(r);
+  for (var i = 0; i < 6; i++) s += A[r[i] % A.length];
+  return s;
+}
+if (!CODE) { CODE = LS.get("code", "") || makeCode(); LS.set("code", CODE); }
+function newCode() { CODE = makeCode(); LS.set("code", CODE); paint(); lastAt = 0; }
+$("#pairCode").textContent = CODE;
+$("#codeTag").textContent = CODE;
+
+/* ---- scenes ---- */
+var SCENES = ["pairScene", "idle", "order", "weigh", "pay", "thanks"];
+var scene = "pairScene";
+function show(id) {
+  if (scene === id) return;
+  scene = id;
+  SCENES.forEach(function (s) { $("#" + s).classList.toggle("on", s === id); });
+  if (id === "idle") idleStart(); else idleStop();
+}
+
+/* ---- idle: the shop's promo posters --------------------------------------
+   Pulled from the same owner-edited list the website uses, so a poster Bryan
+   changes on the homepage changes on the counter screen too. If the endpoint
+   is unreachable (no internet at the counter) the built-in list still plays. */
+var POSTERS = ["assets/promo-happyhour.jpg", "assets/promo-exotic-cards.jpg", "assets/promo-pt33.jpg",
+               "assets/promo-membership.jpg", "promo-box.jpg", "promo-first.jpg"];
+fetch("/api/admin", { cache: "no-store" }).then(function (r) { return r.ok ? r.json() : null; }).then(function (j) {
+  var sl = j && j.overrides && j.overrides.site && j.overrides.site.slides;
+  if (!Array.isArray(sl) || !sl.length) return;
+  var imgs = sl.map(function (s) { return safeImg(s && s.img); }).filter(Boolean);
+  if (imgs.length) POSTERS = imgs;
+}).catch(function () {});
+
+var idleI = 0, idleT = 0;
+function idleTick() {
+  if (!POSTERS.length) return;
+  var u = POSTERS[idleI % POSTERS.length];
+  idleI++;
+  $("#idlePoster").style.backgroundImage = "url('" + u + "')";
+  $("#idleBg").style.backgroundImage = "url('" + u + "')";
+  $("#idlePoster").classList.add("on"); $("#idleBg").classList.add("on");
+  $("#idleFall").style.display = "none";
+}
+function idleStart() { if (idleT) return; idleTick(); idleT = setInterval(idleTick, 8000); }
+function idleStop() { clearInterval(idleT); idleT = 0; }
+
+/* ---- painting a state ---- */
+var STATE = { mode: "idle" };
+function paint() {
+  var s = STATE || { mode: "idle" };
+  $("#branch").textContent = s.branch || "";
+
+  if (s.mode === "weigh" && s.weigh) {
+    var w = s.weigh;
+    $("#wName").textContent = w.name || "—";
+    $("#wImg").style.backgroundImage = safeImg(w.img) ? "url('" + safeImg(w.img) + "')" : "";
+    $("#wImg").textContent = safeImg(w.img) ? "" : "🌿";
+    var meta = [];
+    if (w.type) meta.push(w.type);
+    if (w.thc) meta.push("THC " + w.thc);
+    if (w.target) meta.push("target " + w.target + "g");
+    $("#wMeta").textContent = meta.join("  ·  ");
+    var g = Number(w.grams) || 0;
+    $("#wGram").innerHTML = esc(g.toFixed(2)) + "<u>g</u>";
+    $("#wGram").classList.toggle("settled", !!w.stable);
+    $("#wStable").textContent = w.stable ? "stable" : "weighing…";
+    $("#wStable").classList.toggle("ok", !!w.stable);
+    $("#wPrice").textContent = w.price ? money(w.price) : "";
+    show("weigh"); return;
+  }
+
+  if (s.mode === "pay" && s.pay) {
+    $("#payAmt").textContent = money(s.pay.amount);
+    var qr = safeImg(s.pay.qr);
+    $("#payQr").hidden = !qr;
+    if (qr) $("#payQr").style.backgroundImage = "url('" + qr + "')";
+    $("#payWhat").textContent = s.pay.paid ? "Paid — thank you"
+      : s.pay.method ? "Scan to pay · " + s.pay.method : "Scan to pay";
+    show("pay"); return;
+  }
+
+  if (s.mode === "thanks") {
+    var bits = [];
+    if (s.member && s.member.points) bits.push(s.member.points.toLocaleString() + " points");
+    if (s.pay && s.pay.change) bits.push("Change " + money(s.pay.change));
+    $("#thanksSub").textContent = bits.length ? bits.join("  ·  ") : "See you next time";
+    show("thanks"); return;
+  }
+
+  if (s.mode === "order") {
+    var lines = Array.isArray(s.lines) ? s.lines : [];
+    /* Only the tail fits on a screen, and the tail is what just happened -
+       the budtender has usually only added the last item. */
+    var room = 7, shown = lines.slice(-room), hidden = lines.length - shown.length;
+    $("#lines").innerHTML =
+      (hidden > 0 ? '<div class="more">+ ' + hidden + ' more item' + (hidden > 1 ? "s" : "") + '</div>' : "") +
+      (shown.length ? shown.map(function (l) {
+        var im = safeImg(l.img);
+        return '<div class="line' + (l.free ? " free" : "") + '">' +
+          '<div class="th"' + (im ? ' style="background-image:url(\'' + esc(im) + '\')"' : "") + '>' + (im ? "" : "🌿") + '</div>' +
+          '<div class="nm"><b>' + esc(l.name) + '</b><span>' +
+            (l.qty > 1 ? l.qty + " × " : "") + esc(l.unit || "") + '</span></div>' +
+          '<div class="pr">' + (l.free ? "FREE" : money(l.price * (l.qty || 1))) + '</div></div>';
+      }).join("") : '<div class="empty">Ready when you are 🌿</div>');
+
+    var m = s.member;
+    $("#who").hidden = !m;
+    if (m) $("#who").innerHTML = '<b>' + esc(m.name || "Member") + '</b><span>' +
+      esc(m.tier || "Member") + (m.discountPct ? " · " + m.discountPct + "% off" : "") + '</span>';
+    $("#tSub").textContent = money(s.subtotal);
+    $("#tDiscRow").hidden = !(s.discount > 0);
+    $("#tDisc").textContent = "−" + money(s.discount);
+    $("#tDelRow").hidden = !(s.delivery > 0);
+    $("#tDel").textContent = money(s.delivery);
+    $("#note").hidden = !s.note;
+    $("#note").textContent = s.note || "";
+    $("#tTotal").textContent = money(s.total);
+    show("order"); return;
+  }
+
+  show(paired ? "idle" : "pairScene");
+}
+
+/* ---- transport ---- */
+var paired = false, lastAt = 0, lastSeen = 0;
+function accept(state, at) {
+  STATE = state || { mode: "idle" };
+  paired = true; lastSeen = Date.now(); if (at) lastAt = at;
+  $("#dot").classList.add("live");
+  paint();
+}
+
+/* same machine: instant, and works with the line down */
+try {
+  var bc = new BroadcastChannel("dank-cds");
+  bc.onmessage = function (e) {
+    var d = e && e.data;
+    if (!d || typeof d !== "object") return;
+    if (d.code && CODE && String(d.code).toUpperCase() !== CODE) return;  // two tills, one machine
+    accept(d.state || d, 0);
+  };
+} catch (e) {}
+
+/* separate tablet: poll. `since` keeps the reply to a few bytes when the till
+   has not moved, which is most of the time. */
+function poll() {
+  fetch("/api/cds?code=" + encodeURIComponent(CODE) + (lastAt ? "&since=" + lastAt : ""), { cache: "no-store" })
+    .then(function (r) { return r.ok ? r.json() : null; })
+    .then(function (j) {
+      if (!j || !j.ok) return;
+      if (j.paired === false) { if (Date.now() - lastSeen > 8000) { paired = false; $("#dot").classList.remove("live"); paint(); } return; }
+      if (j.unchanged) { lastSeen = Date.now(); $("#dot").classList.add("live"); return; }
+      accept(j.state, j.at);
+    })
+    .catch(function () {
+      /* Offline is normal at a counter. Do not blank the screen mid-sale -
+         just drop the live dot and keep showing the last known order. */
+      if (Date.now() - lastSeen > 8000) $("#dot").classList.remove("live");
+    });
+}
+setInterval(poll, 1200);
+poll();
+
+/* ---- screen housekeeping ---------------------------------------------------
+   A counter display that dims halfway through a sale is worse than no display,
+   so hold a wake lock and re-take it when the tablet comes back from sleep. */
+var lock = null;
+function keepAwake() {
+  if (!("wakeLock" in navigator)) return;
+  navigator.wakeLock.request("screen").then(function (l) {
+    lock = l; l.addEventListener("release", function () { lock = null; });
+  }).catch(function () {});
+}
+keepAwake();
+document.addEventListener("visibilitychange", function () { if (document.visibilityState === "visible") { keepAwake(); poll(); } });
+$("#fsBtn").addEventListener("click", function () {
+  if (document.fullscreenElement) document.exitFullscreen();
+  else if (document.documentElement.requestFullscreen) document.documentElement.requestFullscreen().catch(function () {});
+});
+
+paint();
+</script>
+</body>
+</html>
