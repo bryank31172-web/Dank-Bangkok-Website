@@ -147,6 +147,8 @@
      standing between a minor and a cannabis page. */
   .gate-jump-t{margin-top:12px;font-size:11.5px;font-weight:800;letter-spacing:.4px;color:var(--green2)}
   .gate-jump{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px}
+  .gate-jump.one{grid-template-columns:1fr}
+  .gate-jump-t.u20{margin-top:14px;color:#ffd9a8}
   .gate-jump button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
     min-height:64px;padding:9px 8px;border-radius:14px;background:var(--panel2);
     border:1px solid var(--line2);color:var(--txt);font-weight:800;font-size:13px;cursor:pointer;
@@ -871,17 +873,29 @@
     <p style="margin-top:12px;font-size:11px;color:var(--muted2)">By entering you agree to our terms & to consume responsibly.</p>
     <div class="gate-jump-t">✅ I am 20+ · take me straight to</div>
     <div class="gate-jump">
-      <button type="button" class="gj-food" onclick="gateJump('food.html')"
-              aria-label="I am 20 or over — order food and drinks">
-        <span class="gj-e" aria-hidden="true">🍜</span>
-        <span>Order food &amp; drinks</span>
-        <span class="gj-s">สั่งอาหาร · เครื่องดื่ม</span>
-      </button>
       <button type="button" onclick="gateJump('build-your-joint.html')"
               aria-label="I am 20 or over — build your joint">
         <span class="gj-e" aria-hidden="true">🚬</span>
         <span>Build your joint</span>
         <span class="gj-s">มวนเองตามสั่ง</span>
+      </button>
+      <button type="button" onclick="gateJump('food.html')"
+              aria-label="I am 20 or over — order food and drinks">
+        <span class="gj-e" aria-hidden="true">🍜</span>
+        <span>Order food &amp; drinks</span>
+        <span class="gj-s">สั่งอาหาร · เครื่องดื่ม</span>
+      </button>
+    </div>
+    <!-- Under 20 is not turned away: they get the kitchen, with the beer and
+         the Cannabis Bar taken out of it. Separate heading on purpose - this
+         path must not sit under an "I am 20+" claim. -->
+    <div class="gate-jump-t u20">🧃 Under 20? · อายุต่ำกว่า 20 ปี</div>
+    <div class="gate-jump one">
+      <button type="button" class="gj-food" onclick="gateJump('food.html?u20=1')"
+              aria-label="I am under 20 — food and soft drinks only">
+        <span class="gj-e" aria-hidden="true">🍜</span>
+        <span>Food &amp; soft drinks only</span>
+        <span class="gj-s">อาหาร · เครื่องดื่มไม่มีแอลกอฮอล์</span>
       </button>
     </div>
   </div>
