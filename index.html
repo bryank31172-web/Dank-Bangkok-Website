@@ -1098,7 +1098,7 @@ function renderHeroSlides(){
   const stage=document.getElementById("heroStage"); if(!stage) return;
   let holder=document.getElementById("heroSlides");
   if(!holder){ holder=document.createElement("div"); holder.id="heroSlides"; holder.className="hero-slides";
-    stage.insertBefore(holder,stage.querySelector(".hero-floor")||null); }
+    stage.appendChild(holder); /* above the vignette, so posters keep full brightness */ }
   holder.innerHTML=SITE_SLIDES.map(s=>'<div class="hs" style="background-image:url(\''+pUrl(s.img)+'\')"></div>').join("");
 }
 let heroIdx=0, heroOn=true;
@@ -1108,7 +1108,7 @@ function heroShow(i){
   const n=SITE_SLIDES.length; if(!n) return;
   heroIdx=((i%(n+1))+(n+1))%(n+1);
   const on=heroIdx>0;
-  stage.classList.toggle("promo",on);
+  stage.classList.toggle("hpromo",on);
   Array.prototype.forEach.call(holder.children,(el,k)=>el.classList.toggle("on",on&&k===heroIdx-1));
   if(chip){ chip.classList.toggle("on",on);
     if(on) chip.textContent="\ud83c\udf89 "+(SITE_SLIDES[heroIdx-1].title||"Promotion")+" \u2014 tap for details"; }
@@ -1116,12 +1116,12 @@ function heroShow(i){
 (function(){
   const css=document.createElement("style");
   css.textContent=
-   ".hero-slides{position:absolute;inset:0}"+
-   ".hero-slides .hs{position:absolute;inset:0;background-size:cover;background-position:center;opacity:0;transition:opacity 1.1s ease;will-change:opacity,transform}"+
-   ".hero-slides .hs.on{opacity:.9;animation:hsKen 14s linear forwards}"+
-   "@keyframes hsKen{from{transform:scale(1)}to{transform:scale(1.09)}}"+
-   ".hero-stage .hero-box,.hero-stage .hero-glow,.hero-stage .hero-floor{transition:opacity .9s}"+
-   ".hero-stage.promo .hero-box,.hero-stage.promo .hero-glow,.hero-stage.promo .hero-floor{opacity:0}"+
+   ".hero-slides{position:absolute;left:var(--boxx,50%);top:var(--boxy);width:var(--bw);height:var(--bh);transform:translate3d(-50%,var(--byo),0);pointer-events:none}"+
+   ".hero-slides .hs{position:absolute;inset:0;background-size:contain;background-position:center;background-repeat:no-repeat;opacity:0;transition:opacity 1.1s ease;will-change:opacity,transform;filter:drop-shadow(0 18px 40px rgba(0,0,0,.55))}"+
+   ".hero-slides .hs.on{opacity:1;animation:hsKen 14s ease-in-out forwards}"+
+   "@keyframes hsKen{from{transform:scale(.97)}to{transform:scale(1.02)}}"+
+   ".hero-stage .hero-box{transition:opacity .9s}"+
+   ".hero-stage.hpromo .hero-box{opacity:0}"+
    "#heroPromoChip{display:none;margin:0 0 16px;background:rgba(0,0,0,.55);border:1px solid rgba(255,255,255,.3);color:#ffe9a6;"+
    "font-size:13px;font-weight:800;border-radius:999px;padding:9px 16px;cursor:pointer;backdrop-filter:blur(4px);max-width:100%;"+
    "overflow:hidden;text-overflow:ellipsis;white-space:nowrap}"+
