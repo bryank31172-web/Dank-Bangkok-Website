@@ -32,7 +32,7 @@
    email or member id is never stored here even if the POS sends it, so the
    worst a guessed code can show is somebody's cart and its total.            */
 import { getJSON, setJSON } from "./_store.js";
-import { requireEnv, safeEq } from "./_auth.js";
+import { safeEq, posSyncKey } from "./_auth.js";
 import { requireRate } from "./_ratelimit.js";
 
 const MAX_LINES = 60;
@@ -125,10 +125,11 @@ export default async function handler(req, res) {
 
   if (req.method !== "POST") return res.status(405).json({ error: "method" });
 
-  if (!requireEnv(res, ["POS_SYNC_KEY"])) return;
+  const secret = posSyncKey();
+  if (!secret) return res.status(503).json({ error: "not configured", missing: ["POS_SYNC_KEY"] });
   const b = req.body || {};
   const key = b.key || req.headers["x-api-key"] || "";
-  if (!safeEq(key, process.env.POS_SYNC_KEY)) return res.status(401).json({ error: "bad key" });
+  if (!safeEq(key, secret)) return res.status(401).json({ error: "bad key" });
   const code = String(b.code || "");
   if (!okCode(code)) return res.status(400).json({ error: "bad code" });
   /* Weighing streams: a scale settling can push several times a second, and

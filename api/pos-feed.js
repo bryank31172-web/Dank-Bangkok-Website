@@ -24,7 +24,7 @@
    member prices from the POS mPrice (≈10% off).                             */
 import { getJSON, setJSON } from "./_store.js";
 import { bustMenu } from "./_menu.js";
-import { requireEnv, safeEq } from "./_auth.js";
+import { safeEq, posSyncKey } from "./_auth.js";
 import { normPhone as digits } from "./_phone.js";
 
 const MAX_ITEMS = 1000;
@@ -95,10 +95,11 @@ export default async function handler(req, res) {
   }
   if (req.method !== "POST") return res.status(405).json({ error: "method" });
 
-  if (!requireEnv(res, ["POS_SYNC_KEY"])) return;
+  const secret = posSyncKey();
+  if (!secret) return res.status(503).json({ error: "not configured", missing: ["POS_SYNC_KEY"] });
   const b = req.body || {};
   const key = b.key || req.headers["x-api-key"] || "";
-  if (!safeEq(key, process.env.POS_SYNC_KEY)) return res.status(401).json({ error: "bad key" });
+  if (!safeEq(key, secret)) return res.status(401).json({ error: "bad key" });
 
   if (!Array.isArray(b.products) || !b.products.length) {
     return res.status(400).json({ error: "products must be a non-empty array" });
