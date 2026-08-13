@@ -2249,7 +2249,7 @@ function openFreePicker(){
     <div style="padding:6px 20px 22px"><p style="color:var(--muted);font-size:13px;margin:0 0 12px">Your volume-deal free grams — pick which strain you'd like them in.</p>
     <div class="grid" style="grid-template-columns:repeat(2,1fr);gap:12px;padding:0">${opts.map(p=>`
       <article class="card" onclick="pickFree('${p.id}')" style="cursor:pointer">
-        <div class="thumb">${imgTag(p,true)}<span class="type-tag" style="background:${typeColor(p.type)}">${esc(p.type)}</span></div>
+        <div class="thumb">${imgTag(p,true)}${typeTagHTML(p)}</div>
         <div class="body" style="padding:11px 12px 13px"><h3 style="font-size:14.5px">${esc(p.name)}</h3>
         <div class="potency">THC <b>${thcTxt(p)}</b></div>
         <button class="add-btn" style="margin-top:8px;width:100%">Pick this 🌿</button></div>
@@ -2434,6 +2434,20 @@ const esc=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;'
 const oid=s=>String(s==null?"":s).replace(/[^A-Za-z0-9_-]/g,"");
 const money=n=>CONFIG.currency+Number(n).toLocaleString("en-US");
 const typeColor=t=>/^indica/i.test(t||"")?"var(--indica)":/^sativa/i.test(t||"")?"var(--sativa)":"var(--hybrid)";
+/* What the little corner badge should say. A strain type only means something
+   on flower, so anything else names its category — an onion ring labelled
+   HYBRID is worse than no badge at all. Returns "" when there is nothing
+   worth saying, and the caller then draws no badge. */
+const TAG_BY_CAT=["Beer","Accessories","Merch","Joints","Food","Drinks","Nicotine","Rolling Papers"];
+function typeTag(p){
+  const c=String(p.category||"");
+  if(TAG_BY_CAT.includes(c)) return c;
+  return String(p.type||"")||c;
+}
+function typeTagHTML(p){
+  const t=typeTag(p);
+  return t?`<span class="type-tag" style="background:${typeColor(p.type)}">${esc(t)}</span>`:"";
+}
 /* Exact names first (the bundled catalogue), then a pattern pass so a POS
    category spelled its own way - "Pre-roll", "Equipment", "Rolling Papers" -
    still gets its own icon rather than the generic leaf every other shelf
@@ -2693,7 +2707,7 @@ function cardHTML(p){
   return `<article class="card${adminMode&&p._hidden?' adm-hidden':''}">
     <button class="fav-btn ${isFav(p.id)?'on':''}" onclick="toggleFav('${p.id}',event)" title="Save">${isFav(p.id)?'❤':'♡'}</button>
     ${adminMode?`<button class="adm-edit-btn" onclick="openEdit('${p.id}',event)" title="Edit product">✎ Edit</button>`:''}
-      <div class="thumb" data-pid="${p.id}" onclick="openPD('${p.id}')"><span class="type-tag" style="background:${typeColor(p.type)}">${esc(["Beer","Accessories","Merch","Joints"].includes(p.category)?p.category:p.type)}</span>${p.isNew?'<span class="new-tag">🔥 NEW</span>':''}${adminMode&&p._hidden?'<span class="new-tag" style="background:#b23">🚫 HIDDEN</span>':''}${stockTag}${thumb}</div>
+      <div class="thumb" data-pid="${p.id}" onclick="openPD('${p.id}')">${typeTagHTML(p)}${p.isNew?'<span class="new-tag">🔥 NEW</span>':''}${adminMode&&p._hidden?'<span class="new-tag" style="background:#b23">🚫 HIDDEN</span>':''}${stockTag}${thumb}</div>
     <div class="body">
       <h3 onclick="openPD('${p.id}')">${esc(p.name)}</h3>
       <div class="potency">${potency}</div>
@@ -3321,10 +3335,10 @@ function openPD(id){
   const out=p.stock<=0;
   const price=memberMode?(isFlower(p)?p.priceTiers[0].member:p.member):(isFlower(p)?p.priceTiers[0].price:p.price);
   $("#pdCard").innerHTML=`<div class="pd-grid">
-    <div class="pd-media stage" id="pdStage" style="--pa:${psAccent(p)}"><span class="type-tag" style="background:${typeColor(p.type)}">${esc(["Beer","Accessories","Merch","Joints"].includes(p.category)?p.category:p.type)}</span>${psStageHTML(p)}</div>
+    <div class="pd-media stage" id="pdStage" style="--pa:${psAccent(p)}">${typeTagHTML(p)}${psStageHTML(p)}</div>
     <div class="pd-info">
       <button class="close-x pd-close" onclick="closeAll()">×</button>
-      <div class="pd-sub">${catEmoji(p.category)} ${esc(p.category)} · ${esc(p.type)} · ${esc(branch)}</div>
+      <div class="pd-sub">${[catEmoji(p.category)+" "+esc(p.category),esc(p.type),esc(branch)].filter(s=>s.trim()).join(" · ")}</div>
       <h2>${esc(p.name)}</h2>
       <div class="pd-stats">${potStat}<div class="stat"><div class="k">Stock</div><div class="v" style="font-size:${Number.isFinite(+p.stock)?'19px':'15px'};color:${out?'var(--danger)':(Number.isFinite(+p.stock)&&p.stock<=5)?'var(--gold)':'var(--green2)'}">${out?'0':(Number.isFinite(+p.stock)?p.stock:'In stock')}</div></div></div>
       <div id="pdStrainX">${strainSectionsHTML(p)}</div>
@@ -4870,7 +4884,7 @@ function quizResults(){
     <div style="padding:6px 20px 22px"><p style="color:var(--muted);font-size:13px;margin:0 0 12px">ตรงกับที่คุณเลือกที่สุดค่ะ · Your best matches:</p>
     <div class="grid" style="grid-template-columns:repeat(2,1fr);gap:12px;padding:0">${list.map(p=>{
       const pr=isFlower(p)?(memberMode?p.priceTiers[0].member:p.priceTiers[0].price):(memberMode?p.member:p.price);
-      return `<article class="card"><div class="thumb" onclick="closeAll();openPD('${p.id}')">${imgTag(p,true)}<span class="type-tag" style="background:${typeColor(p.type)}">${esc(p.type)}</span></div>
+      return `<article class="card"><div class="thumb" onclick="closeAll();openPD('${p.id}')">${imgTag(p,true)}${typeTagHTML(p)}</div>
         <div class="body" style="padding:11px 12px 13px"><h3 style="font-size:14px" onclick="closeAll();openPD('${p.id}')">${esc(p.name)}</h3>
         <div class="potency">THC <b>${thcTxt(p)}</b></div>
         <div class="foot"><div class="price" style="font-size:15px">${isFlower(p)?'<small>from </small>':''}${money(pr)}</div>
