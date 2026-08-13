@@ -37,6 +37,25 @@ const POS_PATHS = (process.env.POS_FEED_PATHS ||
 ).split(",").map((s) => s.trim()).filter(Boolean);
 let posNeg = 0; // skip POS probing until this timestamp after a total miss
 
+/* The POS writes the category into the product NAME: "( Bar ) Tequila shot",
+   "( Beer ) Crispy Boy lager Can", "( Edible) Devours Nano Gummies 500mg".
+   Left alone every card on the site reads "( Bar ) Tequila shot", and the
+   food page has no category to filter on. Split the leading bracket off and
+   use it as the category.
+
+   Only the LEADING group is touched, and only when it is short enough to be a
+   category word: "( Equipment ) Bong XL ( 50 cm" keeps its stray bracket, and
+   a name that is nothing but a bracket is left alone rather than emptied. */
+const NAME_CAT_RE = /^\s*[(\uFF08]\s*([^)\uFF09]{1,24}?)\s*[)\uFF09]\s*/;
+function splitNameCat(raw) {
+  const s = String(raw ?? "").trim();
+  const m = s.match(NAME_CAT_RE);
+  if (!m) return { name: s, cat: "" };
+  const rest = s.slice(m[0].length).trim();
+  if (!rest) return { name: s, cat: "" };
+  return { name: rest, cat: m[1].trim() };
+}
+
 function posNum(v) {
   if (v === undefined || v === null) return undefined;
   const cleaned = String(v).replace(/[^0-9.]/g, "");
@@ -44,17 +63,48 @@ function posNum(v) {
   const n = Number(cleaned);
   return isFinite(n) ? n : undefined;
 }
+/* Bookkeeping lines. The till keeps its tender types and account adjustments
+   in the same product list as the stock - "Delivery", "Visa", "TF to Cash",
+   "Pay In Advance", "pay old bill" - and they arrived on the storefront as
+   ฿0 HYBRID cards a customer could try to add to a basket.
+
+   Matched on whole words, never substrings: the shop sells Papaya Fuel,
+   Payload OG, Paydirt, Cash Crop and Purple Payback, and a naive /pay|cash/
+   would have deleted all five. */
+const LEDGER_EXACT = /^(delivery|deposit|visa|mastercard|master ?card|credit ?card|debit ?card|cash|change|tip|tips|discount|refund|void|test|misc|service ?charge|vat|tax|promptpay|qr|bank ?transfer|transfer|wallet|top ?up|topup)$/i;
+const LEDGER_PHRASE = /^(pay|paid|tf|transfer|settle|charge|adjust)\b|(\bold bill\b|\bin advance\b|\bto cash\b|\bon account\b)/i;
+function isLedgerLine(n) {
+  const s = String(n ?? "").trim();
+  return LEDGER_EXACT.test(s) || LEDGER_PHRASE.test(s);
+}
+
+const GENERIC_CAT = /^(specials?|general|other|misc|uncategori[sz]ed|none|n\/a|-|default)$/i;
+function pickCat(candidates, fromName) {
+  const feed = candidates.map((v) => String(v ?? "").trim()).find(Boolean) || "";
+  const named = String(fromName ?? "").trim();
+  if (feed && !GENERIC_CAT.test(feed)) return feed;
+  return named || feed || "Specials";
+}
+
 function normItem(x, i) {
   if (!x || typeof x !== "object") return null;
-  const name = x.name ?? x.title ?? x.productName ?? x.product_name ?? "";
-  if (!name) return null;
+  const rawName = x.name ?? x.title ?? x.productName ?? x.product_name ?? "";
+  if (!rawName) return null;
+  const nc = splitNameCat(rawName);
+  const name = nc.name;
+  if (isLedgerLine(name)) return null;
   const id = String(x.id ?? x.sku ?? x._id ?? x.productId ?? x.code ?? "pos-" + i);
   let stock = x.stock ?? x.quantity ?? x.qty ?? x.inventory ?? x.available ?? x.onHand;
   if (typeof stock === "boolean") stock = stock ? 99 : 0;
   stock = posNum(stock); if (stock === undefined) stock = 99;
   const out = {
     id, name: String(name),
-    category: String(x.category ?? x.categoryName ?? x.category_name ?? x.group ?? "Specials"),
+    /* ?? is the wrong operator here: the POS sends category:"" rather than
+       omitting it, and an empty string is not null, so it sailed through and
+       every product arrived uncategorised. Take the first non-blank value,
+       and let the bracket the shop typed into the name beat a placeholder
+       category - "Specials" on all 393 products is not a taxonomy. */
+    category: pickCat([x.category, x.categoryName, x.category_name, x.group], nc.cat),
     type: String(x.strainType ?? x.strain_type ?? x.type ?? x.variety ?? "Hybrid"),
     thc: posNum(x.thc) ?? 0,
     thcLabel: String(x.thcLabel ?? x.thc_label ?? (x.thc != null ? x.thc + "%" : "")),
@@ -80,6 +130,10 @@ function normItem(x, i) {
     out.price = price ?? 0;
     out.member = member ?? price ?? 0;
   }
+  /* Same rule as the push path: no positive price anywhere means there is
+     nothing to sell, so there is nothing to put on a shelf. */
+  const anyPrice = (out.priceTiers || []).some((t) => t.price > 0) || out.price > 0;
+  if (!anyPrice) return null;
   return out;
 }
 function normalizePOS(j) {

@@ -39,17 +39,57 @@ const num = (v) => { const n = Number(v); return isFinite(n) ? n : 0; };
 const baht = (v) => Math.round(num(v));
 const looksLikeImg = (s) => /^(https?:|data:image)/.test(String(s || ""));
 
+/* The POS writes the category into the product NAME: "( Bar ) Tequila shot",
+   "( Beer ) Crispy Boy lager Can", "( Edible) Devours Nano Gummies 500mg".
+   Left alone every card on the site reads "( Bar ) Tequila shot", and the
+   food page has no category to filter on. Split the leading bracket off and
+   use it as the category.
+
+   Only the LEADING group is touched, and only when it is short enough to be a
+   category word: "( Equipment ) Bong XL ( 50 cm" keeps its stray bracket, and
+   a name that is nothing but a bracket is left alone rather than emptied. */
+const NAME_CAT_RE = /^\s*[(\uFF08]\s*([^)\uFF09]{1,24}?)\s*[)\uFF09]\s*/;
+function splitNameCat(raw) {
+  const s = String(raw ?? "").trim();
+  const m = s.match(NAME_CAT_RE);
+  if (!m) return { name: s, cat: "" };
+  const rest = s.slice(m[0].length).trim();
+  if (!rest) return { name: s, cat: "" };
+  return { name: rest, cat: m[1].trim() };
+}
+
+
+/* Bookkeeping lines. The till keeps its tender types and account adjustments
+   in the same product list as the stock - "Delivery", "Visa", "TF to Cash",
+   "Pay In Advance", "pay old bill" - and they arrived on the storefront as
+   ฿0 HYBRID cards a customer could try to add to a basket.
+
+   Matched on whole words, never substrings: the shop sells Papaya Fuel,
+   Payload OG, Paydirt, Cash Crop and Purple Payback, and a naive /pay|cash/
+   would have deleted all five. */
+const LEDGER_EXACT = /^(delivery|deposit|visa|mastercard|master ?card|credit ?card|debit ?card|cash|change|tip|tips|discount|refund|void|test|misc|service ?charge|vat|tax|promptpay|qr|bank ?transfer|transfer|wallet|top ?up|topup)$/i;
+const LEDGER_PHRASE = /^(pay|paid|tf|transfer|settle|charge|adjust)\b|(\bold bill\b|\bin advance\b|\bto cash\b|\bon account\b)/i;
+function isLedgerLine(n) {
+  const s = String(n ?? "").trim();
+  return LEDGER_EXACT.test(s) || LEDGER_PHRASE.test(s);
+}
+
 function normalize(list) {
   const out = [];
   for (let i = 0; i < Math.min(list.length, MAX_ITEMS); i++) {
     const p = list[i];
     if (!p || typeof p !== "object" || !p.name) continue;
+    const nc = splitNameCat(p.name);
+    if (isLedgerLine(nc.name)) continue;
     const price = baht(p.price);
+    /* Nothing sellable has no price. The cart already refuses a ฿0 line, so
+       showing one is a card that can only disappoint. */
+    if (!(price > 0)) continue;
     const member = baht(p.member) || Math.round(price * 0.9);
     const item = {
       id: String(p.id ?? p.sku ?? "pos-" + i),
-      name: String(p.name),
-      category: String(p.category || "Other"),
+      name: nc.name,
+      category: String(p.category || nc.cat || "Other"),
       type: ["Indica", "Sativa", "Hybrid"].includes(p.type) ? p.type : "Hybrid",
       thc: num(p.thc),
       thcLabel: num(p.thc) > 0 ? num(p.thc) + "%" : "",
