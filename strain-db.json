@@ -1150,6 +1150,28 @@
    "lineage": "",
    "desc": "Dessert-style exotic — creamy and sweet, the Gelato family at its most indulgent.",
    "card": true
+  },
+  "limehooties": {
+   "name": "Lime Hooties",
+   "known": true,
+   "type": "Hybrid",
+   "thc": "",
+   "cbd": "<1%",
+   "terpene": "Limonene",
+   "effects": [
+    "Relaxed",
+    "Creative",
+    "Balanced",
+    "Social"
+   ],
+   "flavors": [
+    "Lime",
+    "Citrus",
+    "Funky"
+   ],
+   "lineage": "",
+   "desc": "Zesty lime and citrus over a funky base. A balanced hybrid that relaxes without flattening you — the one that suits any hour and any company.",
+   "card": true
   }
  },
  "alias": {
@@ -1181,6 +1203,8 @@
   "bluenerd": "bluenerdz",
   "lemoncherrygelatojoint": "lemoncherrygelato",
   "zootie": "zooties",
-  "redhotz": "redhot"
+  "redhotz": "redhot",
+  "limezooties": "limehooties",
+  "limezootiesjoint": "limehooties"
  }
 }
