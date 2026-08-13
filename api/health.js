@@ -5,7 +5,59 @@
 import { getMenu } from "./_menu.js";
 import { shConfigured } from "./_storehub.js";
 import { posSyncKey } from "./_auth.js";
-import { usingRedis, storageConfigured, storageUrlUsable, storageFault } from "./_store.js";
+import {
+  usingRedis, storageConfigured, storageUrlUsable, storageFault, storageMode,
+  supabaseConfigured, supabaseKeyIsPublishable,
+} from "./_store.js";
+
+/* Every variable name the code actually reads, aliases included. Anything in
+   the environment that is nearly one of these — but not one of these — is a
+   typo, and a typo is invisible: the site behaves exactly as if the variable
+   were never set, and the dashboard shows a row that looks perfectly correct.
+   SUPABASE_SERVICE_ROLE_KRY cost an evening. Names only are compared and
+   reported; a value is never read or echoed. */
+const KNOWN_VARS = [
+  "SUPABASE_URL", "NEXT_PUBLIC_SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY",
+  "SUPABASE_SECRET_KEY", "SUPABASE_SERVICE_KEY", "SUPABASE_KEY",
+  "UPSTASH_REDIS_REST_URL", "UPSTASH_REDIS_REST_TOKEN", "KV_REST_API_URL",
+  "KV_REST_API_TOKEN", "KV_REST_API_READ_ONLY_TOKEN", "KV_URL", "REDIS_URL",
+  "REDIS_REST_URL", "REDIS_REST_TOKEN",
+  "POS_SYNC_KEY", "WEBSITE_API_KEY", "STAFF_KEY", "MASTER_PIN",
+  "ADMIN_EMAIL", "ADMIN_PASSWORD", "ADMIN_SECRET",
+  "STOREHUB_STORE", "STOREHUB_TOKEN", "MENU_FEED_URL", "POS_FEED_MAX_AGE_H",
+  "XAI_API_KEY", "GROK_MODEL", "RESEND_API_KEY",
+  "TELEGRAM_BOT_TOKEN", "TELEGRAM_CHAT_ID",
+  "OMISE_PUBLIC_KEY", "OMISE_SECRET_KEY", "TWOC2P_MERCHANT_ID",
+  "TWOC2P_SECRET", "GBP_SECRET_KEY",
+];
+
+function editDistance(a, b) {
+  let prev = Array.from({ length: b.length + 1 }, (_, i) => i);
+  for (let i = 1; i <= a.length; i++) {
+    const row = [i];
+    for (let j = 1; j <= b.length; j++) {
+      row[j] = Math.min(prev[j] + 1, row[j - 1] + 1, prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+    }
+    prev = row;
+  }
+  return prev[b.length];
+}
+
+function misspeltVars() {
+  const known = new Set(KNOWN_VARS);
+  const out = [];
+  for (const name of Object.keys(process.env)) {
+    if (known.has(name) || name.length < 8) continue;
+    for (const want of KNOWN_VARS) {
+      if (Math.abs(name.length - want.length) > 2) continue;
+      if (editDistance(name, want) <= 2 && !process.env[want]) {
+        out.push({ found: name, meant: want });
+        break;
+      }
+    }
+  }
+  return out;
+}
 
 export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
@@ -60,7 +112,8 @@ export default async function handler(req, res) {
     };
     const wired = {
       posSync: Boolean(posSyncKey()),
-      storage: usingRedis(),   // true for the Upstash names OR Vercel's KV_ ones
+      storage: usingRedis(),   // is anything remembering things across restarts?
+      storageOn: storageMode(), // "supabase" | "redis" | "memory"
       staffKey: Boolean(process.env.STAFF_KEY),
       ownerLogin: Boolean(process.env.ADMIN_EMAIL && process.env.ADMIN_PASSWORD && process.env.ADMIN_SECRET),
       promoPin: Boolean(process.env.MASTER_PIN),
@@ -79,25 +132,49 @@ export default async function handler(req, res) {
        That is worth saying out loud on the page people check to see if the
        site is healthy, because nothing else about the site looks broken. */
     const warnings = [];
+    /* First, because a misspelt name explains every other warning below it. */
+    for (const { found, meant } of misspeltVars()) {
+      warnings.push(
+        `⚠️ ${found} is set but nothing reads it — did you mean ${meant}? That one is not set, so the ` +
+        "site is behaving as though you never added it. Rename the variable in Vercel, then redeploy.",
+      );
+    }
     if (!wired.storage) {
-      /* "No Redis" and "Redis set up wrong" need different next actions, and
-         the second one is the one that looks like success from the dashboard,
-         so name the actual failure rather than repeating the setup advice. */
-      if (storageConfigured() && !storageUrlUsable()) {
+      /* "No database" and "database set up wrong" need different next actions,
+         and the second one is the one that looks like success from the
+         dashboard, so name the actual failure rather than repeating the setup
+         advice. */
+      if (supabaseKeyIsPublishable()) {
+        /* The nastiest of the three, because nothing errors: site_kv has RLS
+           on with no policies, so the publishable key reads back 200 OK and
+           empty forever and the site looks perfectly connected. */
         warnings.push(
-          "⚠️ The Redis URL is not a REST URL — it looks like KV_URL / REDIS_URL (rediss://…), which " +
-          "only a Redis client can use. Copy the value labelled KV_REST_API_URL (or UPSTASH_REDIS_REST_URL) " +
-          "instead — it starts with https:// — then redeploy. Storage is in memory until then.",
+          "⚠️ SUPABASE_SERVICE_ROLE_KEY holds the publishable (anon) key, which cannot see the site's " +
+          "data at all — storage is in memory only. Supabase → Project Settings → API Keys → copy the " +
+          "secret / service_role key instead (it is the hidden one, starting sb_secret_ or a long token " +
+          "ending in a random-looking string). Never put that key in a page — it is server-side only.",
+        );
+      } else if (storageConfigured() && !storageUrlUsable()) {
+        warnings.push(
+          supabaseConfigured()
+            ? "⚠️ SUPABASE_URL is not a web address — it should start with https:// and end in .supabase.co. " +
+              "A postgres:// connection string goes in a different setting; this one wants the Project URL."
+            : "⚠️ The Redis URL is not a REST URL — it looks like KV_URL / REDIS_URL (rediss://…), which " +
+              "only a Redis client can use. Copy the value labelled KV_REST_API_URL (or UPSTASH_REDIS_REST_URL) " +
+              "instead — it starts with https:// — then redeploy. Storage is in memory until then.",
         );
       } else if (storageConfigured() && storageFault()) {
         warnings.push(
-          `⚠️ Redis is configured but rejecting this site (${storageFault()}) — storage is in memory only. ` +
-          "A 401 means the token is wrong: check that KV_REST_API_TOKEN (or UPSTASH_REDIS_REST_TOKEN) was " +
-          "pasted without the surrounding quotes, is the full value, and belongs to the same database as the URL. " +
-          "The site retries every 30 seconds, so fixing the value heals it without a redeploy.",
+          `⚠️ The database is configured but rejecting this site (${storageFault()}) — storage is in memory only. ` +
+          (supabaseConfigured()
+            ? "A 401 or 404 means the key is wrong or the site_kv table is missing. Check SUPABASE_SERVICE_ROLE_KEY " +
+              "was pasted without the surrounding quotes and belongs to the same project as SUPABASE_URL."
+            : "A 401 means the token is wrong: check that KV_REST_API_TOKEN (or UPSTASH_REDIS_REST_TOKEN) was " +
+              "pasted without the surrounding quotes, is the full value, and belongs to the same database as the URL.") +
+          " The site retries every 30 seconds, so fixing the value heals it without a redeploy.",
         );
       } else {
-        warnings.push("⚠️ No Redis — orders, members, wallets and homepage edits are in memory only and will be lost when the server restarts. Set UPSTASH_REDIS_REST_URL + UPSTASH_REDIS_REST_TOKEN, or install Upstash from the Vercel Marketplace (KV_REST_API_URL + KV_REST_API_TOKEN are accepted too).");
+        warnings.push("⚠️ No database — orders, members, wallets and homepage edits are in memory only and will be lost when the server restarts. Set SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY, or the Upstash Redis pair.");
       }
     }
     /* Without Redis the POS's pushed catalogue lives in one instance's memory,

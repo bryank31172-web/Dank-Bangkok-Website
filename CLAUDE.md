@@ -74,21 +74,42 @@ in the code. Any unset variable makes its endpoint answer `503 not configured`.
 | `ADMIN_SECRET` | already set | signs the admin session tokens |
 | `MASTER_PIN` | **needs setting** | see security note below |
 | `POS_SYNC_KEY` | **needs setting** | press 🔑 Generate in BRYAN POS → Settings → 🌐 Website / E-commerce, copy the `dank_…` value. The POS's own toast tells you to save it as `WEBSITE_API_KEY`, so the website accepts **either** name |
-| `UPSTASH_REDIS_REST_URL` | **needs setting** | without it, storage is in-memory only |
-| `UPSTASH_REDIS_REST_TOKEN` | **needs setting** | Upstash has a free tier |
-
-Easiest route for Upstash is Vercel → Storage → Marketplace → Upstash, which
-wires the project up with no copying. It injects `KV_REST_API_URL` /
-`KV_REST_API_TOKEN` rather than the `UPSTASH_` names, so `api/_store.js`
-accepts either pair (and `REDIS_REST_*`). Check which landed at
-`/api/health` → `wired.storage`.
+| `SUPABASE_URL` | **needs setting** | `https://xqxdnarcrdocssjfvuvw.supabase.co` — Bryan's project, Tokyo region |
+| `SUPABASE_SERVICE_ROLE_KEY` | **needs setting** | the **secret** key, not the publishable one — see below |
 
 After adding any variable: Vercel → Deployments → top one → `···` → Redeploy.
 Environment variables are not picked up until a redeploy.
 
-Without the two Upstash values, every order, member record and wallet balance
-lives in one server instance's memory and vanishes whenever Vercel restarts or
-scales. That is the single most valuable thing left to fix.
+Without these two, every order, member record and wallet balance lives in one
+server instance's memory and vanishes whenever Vercel restarts or scales.
+
+## Storage — Supabase
+
+Bryan chose Supabase over Upstash Redis in Aug 2026. Both still work;
+`api/_store.js` prefers Supabase and falls back to Redis, then to memory.
+`/api/health` → `wired.storageOn` says which one is actually live.
+
+The website's data lives in `public.site_kv` (key / value jsonb / expires_at),
+created by the `site_kv_store_for_website` migration. It is deliberately
+separate from `kv_state` and `audit_log`, which belong to BRYAN POS — do not
+merge them.
+
+`site_kv` has RLS **on with no policies**, so only the service role key can
+reach it, and `site_kv_bump()` (the atomic counter behind the rate limiters and
+the gift ledger) is `SECURITY DEFINER` with execute revoked from `anon` and
+`authenticated`. Keep both that way; orders and member records are in there.
+
+**The one trap:** the publishable/anon key and the secret key sit side by side
+on the API settings page. Because RLS denies rather than errors, the
+publishable key returns `200 OK` and an empty list forever — the site looks
+connected and remembers nothing. `_store.js` detects a publishable key by its
+`sb_publishable_` prefix or its JWT `role` claim, refuses to use it, and
+`/api/health` names it. Do not "fix" that check by removing it.
+
+Nothing throws when the database is unreachable: a failing backend is treated
+as an absent one, the request falls through to memory, and the fault is
+retried every 30s. A wrong credential must never take the shop down again —
+it did on 13 Aug 2026, when a Redis 401 made `/api/products` answer 500.
 
 ## Security rules — non-negotiable
 
