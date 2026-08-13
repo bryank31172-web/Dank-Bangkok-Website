@@ -86,6 +86,24 @@ function pickCat(candidates, fromName) {
   return named || feed || "Specials";
 }
 
+/* A strain type is a fact about flower. The POS carries one type field for
+   every product and the website defaulted it to "Hybrid", which stamped a
+   green HYBRID badge on onion rings, lighters, beer and t-shirts. Only
+   flower-shaped categories get the default; everywhere else an absent type
+   stays absent, and the card shows the category instead. */
+const STRAIN_CAT = /\b(exotics?|top\s?shelf|mid\s?grade|flowers?|buds?|pre[\s-]?rolls?|joints?|shake|smalls?|hash|rosin|concentrates?|indoor|outdoor|greenhouse)\b/i;
+
+export function strainType(raw, category) {
+  const v = String(raw == null ? "" : raw).trim();
+  /* A bare "Hybrid" is the POS's own default for every product it holds, so it
+     is not evidence of anything — that is how the badge reached the onion
+     rings in the first place. Naming indica or sativa is a real answer,
+     including a compound one like "Indica-dominant Hybrid", and is kept
+     whatever the category says. */
+  if (/\b(indica|sativa)\b/i.test(v)) return v;
+  return STRAIN_CAT.test(String(category || "")) ? "Hybrid" : "";
+}
+
 function normItem(x, i) {
   if (!x || typeof x !== "object") return null;
   const rawName = x.name ?? x.title ?? x.productName ?? x.product_name ?? "";
@@ -97,6 +115,7 @@ function normItem(x, i) {
   let stock = x.stock ?? x.quantity ?? x.qty ?? x.inventory ?? x.available ?? x.onHand;
   if (typeof stock === "boolean") stock = stock ? 99 : 0;
   stock = posNum(stock); if (stock === undefined) stock = 99;
+  const category = pickCat([x.category, x.categoryName, x.category_name, x.group], nc.cat);
   const out = {
     id, name: String(name),
     /* ?? is the wrong operator here: the POS sends category:"" rather than
@@ -104,8 +123,8 @@ function normItem(x, i) {
        every product arrived uncategorised. Take the first non-blank value,
        and let the bracket the shop typed into the name beat a placeholder
        category - "Specials" on all 393 products is not a taxonomy. */
-    category: pickCat([x.category, x.categoryName, x.category_name, x.group], nc.cat),
-    type: String(x.strainType ?? x.strain_type ?? x.type ?? x.variety ?? "Hybrid"),
+    category,
+    type: strainType(x.strainType ?? x.strain_type ?? x.type ?? x.variety, category),
     thc: posNum(x.thc) ?? 0,
     thcLabel: String(x.thcLabel ?? x.thc_label ?? (x.thc != null ? x.thc + "%" : "")),
     cbd: posNum(x.cbd) ?? 0,
@@ -324,6 +343,20 @@ const WEEDISH = /\bweed\b|\bflowers?\b|\bexotics?\b|\btop\s*shelf\b|\bmid\s*grad
    format, so rolled goods keep their generic pictures. */
 const ROLLED = /joint|pre-?roll|blunt|cone/i;
 
+/* A product-images entry is either one URL or a list of them. A list is shown
+   in order: the shop's own Botanical Legends card leads, the photographs of
+   the actual jar follow. `image` stays a single string so every existing
+   caller — cards, cart lines, the customer display, the AI chat — keeps
+   working untouched, and `images` carries the rest for the gallery. */
+function shot(hit) {
+  if (Array.isArray(hit)) {
+    const list = hit.map((s) => String(s || "").trim()).filter(Boolean);
+    if (!list.length) return {};
+    return list.length > 1 ? { image: list[0], images: list } : { image: list[0] };
+  }
+  return { image: hit };
+}
+
 export async function fillImages(data) {
   if (!Array.isArray(data) || !data.length) return data;
   const m = await imgMap();
@@ -335,7 +368,7 @@ export async function fillImages(data) {
     const flat = flatName(p.name);
     const words = wordsOf(p.name);
     const hit = m.byName[flat];
-    if (hit) return { ...p, image: hit, _imgFrom: "name" };
+    if (hit) return { ...p, ...shot(hit), _imgFrom: "name" };
     const nameCat = String(p.name || "") + " " + String(p.category || "");
     /* A POS category is often just "Specials", so the category word cannot be
        relied on to say "this is flower". A name that IS a strain we know says
@@ -402,18 +435,25 @@ export async function fillStrainInfo(data) {
     const s = findStrain(db, flatName(p.name));
     if (!s) return p;
     const q = { ...p };
-    if (!String(q.description || "").trim() && s.desc) q.description = s.desc;
-    if (!(Array.isArray(q.effects) && q.effects.length) && s.effects && s.effects.length) q.effects = s.effects;
-    if (!(Array.isArray(q.flavors) && q.flavors.length) && s.flavors && s.flavors.length) q.flavors = s.flavors;
-    if (!(Number(q.thc) > 0) && s.thc) {
+    /* `card: true` marks a strain whose numbers come off the shop's own
+       printed Botanical Legends card. That card is what hangs on the wall and
+       what the budtender reads out, so it wins outright — otherwise the site
+       would keep showing a stale THC from the till or from the bundled
+       catalogue and disagree with the counter. Every other strain still only
+       fills gaps. */
+    const own = s.card === true;
+    if ((own || !String(q.description || "").trim()) && s.desc) q.description = s.desc;
+    if ((own || !(Array.isArray(q.effects) && q.effects.length)) && s.effects && s.effects.length) q.effects = s.effects;
+    if ((own || !(Array.isArray(q.flavors) && q.flavors.length)) && s.flavors && s.flavors.length) q.flavors = s.flavors;
+    if ((own || !(Number(q.thc) > 0)) && s.thc) {
       const mnum = String(s.thc).match(/[\d.]+/g);
       if (mnum) q.thc = Number(mnum[mnum.length - 1]);
-      if (!String(q.thcLabel || "").trim()) q.thcLabel = s.thc;
+      if (own || !String(q.thcLabel || "").trim()) q.thcLabel = s.thc;
     }
     /* "Hybrid" is the POS default, not information — a researched
        "Indica-dominant Hybrid" is allowed to replace it, an explicit POS
-       "Sativa" is not touched. */
-    if (s.type && (!q.type || /^hybrid$/i.test(String(q.type).trim()))) q.type = s.type;
+       "Sativa" is not touched. A card overrides both. */
+    if (s.type && (own || !q.type || /^hybrid$/i.test(String(q.type).trim()))) q.type = s.type;
     q.strain = { name: s.name || "", terpene: s.terpene || "", lineage: s.lineage || "" };
     return q;
   });

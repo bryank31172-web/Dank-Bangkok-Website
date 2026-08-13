@@ -380,6 +380,12 @@
   .card:hover{border-color:var(--line2);transform:translateY(-3px);box-shadow:var(--shadow)}
   .card .thumb{aspect-ratio:1/1;position:relative;overflow:hidden;cursor:pointer}
   .card .thumb img{width:100%;height:100%;object-fit:cover}
+  /* The shop's own Botanical Legends cards are finished 3:2 artwork with the
+     strain name down the left and the THC strip along the bottom. Cropping
+     them to a square throws away both, so these letterbox instead — on a
+     backdrop matched to the cards' own purple-black so the bars read as part
+     of the design rather than as a gap. */
+  .thumb img.art,.rel-thumb img.art,.pd-media img.art,.ci-thumb img.art{object-fit:contain;background:#0d0616}
   .ph{width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:60px;position:relative}
   .ph::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,transparent,rgba(0,0,0,.35))}
   .type-tag{position:absolute;top:10px;left:10px;z-index:2;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;color:#06120b}
@@ -399,6 +405,11 @@
   .price small{font-size:12px;color:var(--muted);font-weight:600}
   .price .mem{display:block;font-size:11.5px;color:var(--gold);font-weight:700}
   .price.mem-active{color:var(--gold)}
+  /* With member prices switched on the number simply changed, and nothing on
+     the card or in the popup said why. A member saw ฿135 where the shop's own
+     menu says ฿150 and had no way to tell which one the till would charge. */
+  .price .was{font-weight:700;color:var(--muted);text-decoration:line-through;margin-left:7px;font-size:.72em}
+  .price .memtag{display:block;font-size:11px;color:var(--gold);font-weight:700;letter-spacing:.02em}
   .add-btn{background:var(--panel2);border:1px solid var(--line2);color:var(--green2);padding:9px 13px;border-radius:10px;font-weight:700;font-size:13px}
   .add-btn:hover{background:var(--green);color:#04180d;border-color:var(--green)}
   .price-line{margin-bottom:2px}
@@ -502,6 +513,17 @@
   .pd-media{aspect-ratio:1/1;position:relative;align-self:start;min-width:0}
   .pd-media img{width:100%;height:100%;object-fit:cover}
   .pd-media .ph{font-size:110px}
+  /* Shot strip. A strain leads with the shop's own Botanical Legends card and
+     then shows photographs of the actual jar, so the popup needs a way to move
+     between them. Sits under the stage, scrolls sideways if there are many. */
+  .pd-shots{display:flex;gap:8px;padding:10px 12px 0;overflow-x:auto;scrollbar-width:none}
+  .pd-shots::-webkit-scrollbar{display:none}
+  .pd-shots button{flex:0 0 auto;width:60px;height:44px;padding:0;border-radius:9px;overflow:hidden;
+    border:2px solid var(--line2);background:#0d0616;cursor:pointer;transition:.14s;opacity:.62}
+  .pd-shots button img{width:100%;height:100%;object-fit:cover;display:block}
+  .pd-shots button.on{border-color:var(--green);opacity:1}
+  .pd-shots button:hover{opacity:1}
+  .pd-shots button:focus-visible{outline:2px solid var(--green);outline-offset:2px}
 
   /* ---- Animated product stage ----------------------------------------
      The clip Bryan sent was an AI product film: the jar hangs in the middle of
@@ -2249,7 +2271,7 @@ function openFreePicker(){
     <div style="padding:6px 20px 22px"><p style="color:var(--muted);font-size:13px;margin:0 0 12px">Your volume-deal free grams — pick which strain you'd like them in.</p>
     <div class="grid" style="grid-template-columns:repeat(2,1fr);gap:12px;padding:0">${opts.map(p=>`
       <article class="card" onclick="pickFree('${p.id}')" style="cursor:pointer">
-        <div class="thumb">${imgTag(p,true)}<span class="type-tag" style="background:${typeColor(p.type)}">${esc(p.type)}</span></div>
+        <div class="thumb">${imgTag(p,true)}${typeTagHTML(p)}</div>
         <div class="body" style="padding:11px 12px 13px"><h3 style="font-size:14.5px">${esc(p.name)}</h3>
         <div class="potency">THC <b>${thcTxt(p)}</b></div>
         <button class="add-btn" style="margin-top:8px;width:100%">Pick this 🌿</button></div>
@@ -2434,6 +2456,20 @@ const esc=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;'
 const oid=s=>String(s==null?"":s).replace(/[^A-Za-z0-9_-]/g,"");
 const money=n=>CONFIG.currency+Number(n).toLocaleString("en-US");
 const typeColor=t=>/^indica/i.test(t||"")?"var(--indica)":/^sativa/i.test(t||"")?"var(--sativa)":"var(--hybrid)";
+/* What the little corner badge should say. A strain type only means something
+   on flower, so anything else names its category — an onion ring labelled
+   HYBRID is worse than no badge at all. Returns "" when there is nothing
+   worth saying, and the caller then draws no badge. */
+const TAG_BY_CAT=["Beer","Accessories","Merch","Joints","Food","Drinks","Nicotine","Rolling Papers"];
+function typeTag(p){
+  const c=String(p.category||"");
+  if(TAG_BY_CAT.includes(c)) return c;
+  return String(p.type||"")||c;
+}
+function typeTagHTML(p){
+  const t=typeTag(p);
+  return t?`<span class="type-tag" style="background:${typeColor(p.type)}">${esc(t)}</span>`:"";
+}
 /* Exact names first (the bundled catalogue), then a pattern pass so a POS
    category spelled its own way - "Pre-roll", "Equipment", "Rolling Papers" -
    still gets its own icon rather than the generic leaf every other shelf
@@ -2635,11 +2671,13 @@ function genPhoto(p,bare){
    became markup, on every page that lists a product. The generated fallback no longer sits
    inside an onerror string either: it rides on data-fb and a real function reads it, so
    nothing untrusted ends up inside an inline handler. */
+/* Finished artwork is shown whole rather than cropped — see .art in the CSS. */
+const isArtCard=src=>/assets\/strains\//.test(String(src||""));
 function imgTag(p,lazy,bare){
   const gp=genPhoto(p,bare);
   const lz=lazy?' loading="lazy"':'';
-  if(!p.image) return '<img src="'+esc(gp)+'"'+lz+'>';
-  return '<img src="'+esc(p.image)+'"'+lz+' data-fb="'+esc(gp)+'" onerror="imgFallback(this)">';
+  if(!p.image) return '<img src="'+esc(gp)+'"'+lz+(isArtCard(gp)?' class="art"':'')+'>';
+  return '<img src="'+esc(p.image)+'"'+lz+(isArtCard(p.image)?' class="art"':'')+' data-fb="'+esc(gp)+'" onerror="imgFallback(this)">';
 }
 function imgFallback(el){ el.onerror=null; const fb=el.getAttribute("data-fb"); if(fb) el.src=fb; }
 
@@ -2693,7 +2731,7 @@ function cardHTML(p){
   return `<article class="card${adminMode&&p._hidden?' adm-hidden':''}">
     <button class="fav-btn ${isFav(p.id)?'on':''}" onclick="toggleFav('${p.id}',event)" title="Save">${isFav(p.id)?'❤':'♡'}</button>
     ${adminMode?`<button class="adm-edit-btn" onclick="openEdit('${p.id}',event)" title="Edit product">✎ Edit</button>`:''}
-      <div class="thumb" data-pid="${p.id}" onclick="openPD('${p.id}')"><span class="type-tag" style="background:${typeColor(p.type)}">${esc(["Beer","Accessories","Merch","Joints"].includes(p.category)?p.category:p.type)}</span>${p.isNew?'<span class="new-tag">🔥 NEW</span>':''}${adminMode&&p._hidden?'<span class="new-tag" style="background:#b23">🚫 HIDDEN</span>':''}${stockTag}${thumb}</div>
+      <div class="thumb" data-pid="${p.id}" onclick="openPD('${p.id}')">${typeTagHTML(p)}${p.isNew?'<span class="new-tag">🔥 NEW</span>':''}${adminMode&&p._hidden?'<span class="new-tag" style="background:#b23">🚫 HIDDEN</span>':''}${stockTag}${thumb}</div>
     <div class="body">
       <h3 onclick="openPD('${p.id}')">${esc(p.name)}</h3>
       <div class="potency">${potency}</div>
@@ -2710,7 +2748,7 @@ function potencyHTML(p){
 function priceBlock(p){
   const list=listPrice(p), mem=tiers(p)?tiers(p)[0].member:p.member;
   const pre=tiers(p)?'<small>from </small>':'';
-  if(memberMode) return `<div class="price mem-active">${pre}${money(mem)}</div>`;
+  if(memberMode) return `<div class="price mem-active">${pre}${money(mem)}${mem&&mem<list?`<span class="was">${money(list)}</span><span class="memtag">⭐ member price</span>`:''}</div>`;
   return `<div class="price">${pre}${money(list)}${mem&&mem<list?`<span class="mem">⭐ ${money(mem)} member</span>`:''}</div>`;
 }
 function resetFilters(){ activeCat="All"; $("#searchInput").value=""; $("#typeFilter").value=""; $("#sortBy").value="featured"; $("#branchSel").value="All branches"; buildChips(); render(); }
@@ -2748,12 +2786,16 @@ function hydrateStrain(p){
     fetch("/api/strain-info?name="+encodeURIComponent(p.name||"")).then(r=>r&&r.ok?r.json():null).then(j=>{
       if(!j||!j.found||!j.strain||pdCurrent!==p) return;
       const s=j.strain;
-      if(!(p.description&&p.description.trim())&&s.desc) p.description=s.desc;
-      if(!(p.effects&&p.effects.length)&&s.effects&&s.effects.length) p.effects=s.effects;
-      if(!(p.flavors&&p.flavors.length)&&s.flavors&&s.flavors.length) p.flavors=s.flavors;
+      /* s.card marks the shop's own printed Botanical Legends card. That is
+         what hangs on the wall, so it overrides rather than fills a gap —
+         the popup must not disagree with the counter. */
+      const own=s.card===true;
+      if((own||!(p.description&&p.description.trim()))&&s.desc) p.description=s.desc;
+      if((own||!(p.effects&&p.effects.length))&&s.effects&&s.effects.length) p.effects=s.effects;
+      if((own||!(p.flavors&&p.flavors.length))&&s.flavors&&s.flavors.length) p.flavors=s.flavors;
       p.strain={name:s.name||"",terpene:s.terpene||"",lineage:s.lineage||"",site:s.site||""};
-      if(s.type&&/^hybrid$/i.test(p.type||"")) p.type=s.type;
-      if(!thcTxt(p)&&s.thc){
+      if(s.type&&(own||/^hybrid$/i.test(p.type||""))) p.type=s.type;
+      if((own||!thcTxt(p))&&s.thc){
         p.thcLabel=s.thc;
         const tn=String(s.thc).match(/[\d.]+/g); if(tn) p.thc=Number(tn[tn.length-1]);
         const tv=$("#pdThcV");
@@ -3320,17 +3362,19 @@ function openPD(id){
   else potStat=`<div class="stat"><div class="k">THC</div><div class="v" id="pdThcV" style="font-size:${(p.thcLabel||'').length>6?'14px':'19px'}">${thcTxt(p)||'—'}</div></div>${p.cbd>0&&p.cbd<50?`<div class="stat"><div class="k">CBD</div><div class="v">${p.cbd}%</div></div>`:''}`;
   const out=p.stock<=0;
   const price=memberMode?(isFlower(p)?p.priceTiers[0].member:p.member):(isFlower(p)?p.priceTiers[0].price:p.price);
+  const listP=isFlower(p)?p.priceTiers[0].price:p.price;
   $("#pdCard").innerHTML=`<div class="pd-grid">
-    <div class="pd-media stage" id="pdStage" style="--pa:${psAccent(p)}"><span class="type-tag" style="background:${typeColor(p.type)}">${esc(["Beer","Accessories","Merch","Joints"].includes(p.category)?p.category:p.type)}</span>${psStageHTML(p)}</div>
+    <div class="pd-media stage" id="pdStage" style="--pa:${psAccent(p)}">${typeTagHTML(p)}${psStageHTML(p)}</div>
+    ${pdShotsHTML(p)}
     <div class="pd-info">
       <button class="close-x pd-close" onclick="closeAll()">×</button>
-      <div class="pd-sub">${catEmoji(p.category)} ${esc(p.category)} · ${esc(p.type)} · ${esc(branch)}</div>
+      <div class="pd-sub">${[catEmoji(p.category)+" "+esc(p.category),esc(p.type),esc(branch)].filter(s=>s.trim()).join(" · ")}</div>
       <h2>${esc(p.name)}</h2>
       <div class="pd-stats">${potStat}<div class="stat"><div class="k">Stock</div><div class="v" style="font-size:${Number.isFinite(+p.stock)?'19px':'15px'};color:${out?'var(--danger)':(Number.isFinite(+p.stock)&&p.stock<=5)?'var(--gold)':'var(--green2)'}">${out?'0':(Number.isFinite(+p.stock)?p.stock:'In stock')}</div></div></div>
       <div id="pdStrainX">${strainSectionsHTML(p)}</div>
       ${tierBlock}
       <div class="pd-add-row">
-        <div class="price" id="pdPrice">${money(price)}</div>
+        <div class="price${memberMode?' mem-active':''}" id="pdPrice">${money(price)}${memberMode&&price<listP?`<span class="was">${money(listP)}</span><span class="memtag">⭐ member price</span>`:''}</div>
         ${out?'':`<div class="stepper"><button onclick="pdStep(-1)">−</button><span id="pdQtyN">1</span><button onclick="pdStep(1)">+</button></div>`}
         ${out?`<button class="btn btn-ghost" disabled style="flex:1;opacity:.5">Sold out</button>`:`<button class="btn btn-primary" style="flex:1" onclick="addFromPD()">Add to cart</button>`}
       </div>
@@ -3345,6 +3389,25 @@ function openPD(id){
   hydrateStrain(p);
   labRender(p);
 }
+/* A product may carry several shots — its Botanical Legends card first, then
+   photographs of the actual jar. One image needs no strip. */
+function shotsOf(p){ const a=Array.isArray(p&&p.images)?p.images.filter(Boolean):[]; return a.length>1?a:[]; }
+function pdShotsHTML(p){
+  const a=shotsOf(p); if(!a.length) return "";
+  return `<div class="pd-shots" role="tablist" aria-label="Product images">${a.map((src,i)=>
+    `<button role="tab" aria-selected="${i===0}" aria-label="Image ${i+1} of ${a.length}" class="${i===0?'on':''}" onclick="pdShot(${i})"><img src="${esc(src)}" alt="" loading="lazy"></button>`
+  ).join("")}</div>`;
+}
+function pdShot(i){
+  const a=shotsOf(pdCurrent); const src=a[i]; if(!src) return;
+  const img=document.querySelector("#pdStage .ps-prod img"); if(!img) return;
+  img.src=src;
+  /* Finished artwork letterboxes, a photograph fills — see .art in the CSS. */
+  img.classList.toggle("art",isArtCard(src));
+  document.querySelectorAll(".pd-shots button").forEach((b,n)=>{
+    b.classList.toggle("on",n===i); b.setAttribute("aria-selected",n===i);
+  });
+}
 function pdStep(d){ pdQty=Math.max(1,pdQty+d); const el=$("#pdQtyN"); if(el) el.textContent=pdQty; }
 function renderRelated(p){
   const box=$("#pdRelated"); if(!box) return;
@@ -3356,7 +3419,13 @@ function renderRelated(p){
       <div class="rel-thumb">${imgTag(r,true)}</div>
       <div class="rel-name">${esc(r.name)}</div><div class="rel-price">${isFlower(r)?'from ':''}${money(pr)}</div></div>`;}).join("")}</div>`;
 }
-function selTier(i){ pdTierIdx=i; document.querySelectorAll("#tierOpts .tier").forEach((el,idx)=>el.classList.toggle("active",idx===i)); const t=pdCurrent.priceTiers[i]; $("#pdPrice").textContent=money(memberMode?t.member:t.price); }
+function selTier(i){ pdTierIdx=i; document.querySelectorAll("#tierOpts .tier").forEach((el,idx)=>el.classList.toggle("active",idx===i)); const t=pdCurrent.priceTiers[i]; const el=$("#pdPrice"); if(!el) return;
+  /* Rewriting textContent here used to strip the member markup the popup was
+     opened with, so switching weight silently dropped the ⭐ label. */
+  el.className="price"+(memberMode?" mem-active":"");
+  el.innerHTML=memberMode&&t.member&&t.member<t.price
+    ? `${money(t.member)}<span class="was">${money(t.price)}</span><span class="memtag">⭐ member price</span>`
+    : money(memberMode?(t.member||t.price):t.price); }
 function addFromPD(){ const p=pdCurrent; for(let i=0;i<pdQty;i++) addToCart(p,isFlower(p)?((p.priceTiers&&p.priceTiers[pdTierIdx])||(p.priceTiers&&p.priceTiers[0])||null):null); closeAll(); toast(`${pdQty}× ${p.name} added`); }
 
 /* ---- Cart ---- */
@@ -4870,7 +4939,7 @@ function quizResults(){
     <div style="padding:6px 20px 22px"><p style="color:var(--muted);font-size:13px;margin:0 0 12px">ตรงกับที่คุณเลือกที่สุดค่ะ · Your best matches:</p>
     <div class="grid" style="grid-template-columns:repeat(2,1fr);gap:12px;padding:0">${list.map(p=>{
       const pr=isFlower(p)?(memberMode?p.priceTiers[0].member:p.priceTiers[0].price):(memberMode?p.member:p.price);
-      return `<article class="card"><div class="thumb" onclick="closeAll();openPD('${p.id}')">${imgTag(p,true)}<span class="type-tag" style="background:${typeColor(p.type)}">${esc(p.type)}</span></div>
+      return `<article class="card"><div class="thumb" onclick="closeAll();openPD('${p.id}')">${imgTag(p,true)}${typeTagHTML(p)}</div>
         <div class="body" style="padding:11px 12px 13px"><h3 style="font-size:14px" onclick="closeAll();openPD('${p.id}')">${esc(p.name)}</h3>
         <div class="potency">THC <b>${thcTxt(p)}</b></div>
         <div class="foot"><div class="price" style="font-size:15px">${isFlower(p)?'<small>from </small>':''}${money(pr)}</div>

@@ -23,7 +23,7 @@
    ½g = price/2 · 1g = price · 3.5g bulk = 3×price (the 3+1 deal), with
    member prices from the POS mPrice (≈10% off).                             */
 import { getJSON, setJSON } from "./_store.js";
-import { bustMenu } from "./_menu.js";
+import { bustMenu, strainType } from "./_menu.js";
 import { safeEq, posSyncKey } from "./_auth.js";
 import { normPhone as digits } from "./_phone.js";
 
@@ -90,7 +90,7 @@ function normalize(list) {
       id: String(p.id ?? p.sku ?? "pos-" + i),
       name: nc.name,
       category: String(p.category || nc.cat || "Other"),
-      type: ["Indica", "Sativa", "Hybrid"].includes(p.type) ? p.type : "Hybrid",
+      type: strainType(p.type, String(p.category || nc.cat || "")),
       thc: num(p.thc),
       thcLabel: num(p.thc) > 0 ? num(p.thc) + "%" : "",
       cbd: num(p.cbd),
