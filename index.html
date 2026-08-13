@@ -1739,7 +1739,23 @@ let DATA = sanitizeMenu(PRODUCTS.slice());
    that read DATA raw, so anything the owner pulled (sold out at the branch, not for sale
    online, half-finished) was still being described, recommended, priced and added to the
    cart from chat. Owner mode keeps seeing everything, exactly as the grid does. */
-function shopData(){ return adminMode?DATA:DATA.filter(p=>!p._hidden); }
+/* Shelves the till carries that this shop front does not sell. The bar's
+   spirits and cocktails are a counter product at the venue, not something to
+   put in a cannabis delivery basket - they live on food.html, behind its own
+   20+ gate. Beer is deliberately NOT in here: Bryan sells it here, he only
+   asked for it to be ordered last.
+
+   Applied in shopData() because that is the one chokepoint every part of the
+   storefront reads - the grid, the category chips and their counts, search,
+   the quiz, the 3D shelf and the menu handed to the AI - so น้องแดงค์ cannot
+   offer a customer a tequila either. */
+/* Plurals matter: \b after "cocktail" refuses "Cocktails", because there is no
+   word boundary between the l and the s. Every alternative takes an optional s. */
+const SHOP_HIDE_CAT=/^(bars?|cocktails?|liquors?|spirits?|whisk(e)?ys?|vodkas?|gins?|rums?|tequilas?|wines?|sake|soju)\b/i;
+function shopData(){
+  const base=adminMode?DATA:DATA.filter(p=>!p._hidden);
+  return base.filter(p=>!SHOP_HIDE_CAT.test(String(p.category||"")));
+}
 let activeCat="All", memberMode=false, branch="All branches";
 let cart=[], pdCurrent=null, pdTierIdx=0, coFulfill="delivery", coPay="Cash";
 let favs=[], appliedPromo=null, pdQty=1;
