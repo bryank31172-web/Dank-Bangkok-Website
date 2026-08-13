@@ -19,11 +19,42 @@
    Reading only the first pair meant the easy path silently did nothing: the
    database exists, the integration says connected, and the site quietly keeps
    losing every order to memory. Accept both. */
-const URL_ = process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL || process.env.REDIS_REST_URL || "";
-const TOK = process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN || process.env.REDIS_REST_TOKEN || "";
+/* Values are read through here rather than off process.env directly, because
+   the quickstart panel these get copied out of prints them as
+   KV_REST_API_TOKEN="AX4…" — quotes included. Paste that whole thing into a
+   dashboard field and the token silently carries two extra characters, which
+   Upstash answers with a flat 401 and no hint as to why. Trim the wrapper. */
+const env = (name) => String(process.env[name] || "").trim().replace(/^(["'])([\s\S]*)\1$/, "$2").trim();
+
+const URL_ = env("UPSTASH_REDIS_REST_URL") || env("KV_REST_API_URL") || env("REDIS_REST_URL");
+const TOK = env("UPSTASH_REDIS_REST_TOKEN") || env("KV_REST_API_TOKEN") || env("REDIS_REST_TOKEN");
 const mem = globalThis.__dankMem || (globalThis.__dankMem = new Map());
 
-export const usingRedis = () => Boolean(URL_ && TOK);
+/* KV_URL and REDIS_URL sit right next to the REST pair in that same panel and
+   look just as much like "the database address", but they are rediss:// socket
+   URLs for a Redis client, not something fetch() can talk to. */
+const REST_OK = /^https?:\/\//i.test(URL_);
+export const storageConfigured = () => Boolean(URL_ && TOK);
+export const storageUrlUsable = () => REST_OK;
+
+/* A wrong token used to take the whole site down: every getJSON threw, so
+   /api/products answered 500 and the shop showed nothing at all. That is a
+   worse failure than having no Redis, which the site is built to survive. So a
+   Redis that errors is treated as a Redis that is absent — the request falls
+   through to memory and serves the customer — and the fault is remembered so
+   /api/health can say out loud what is wrong. It is re-tried every 30s, which
+   means fixing the credential in the dashboard heals the site on its own,
+   without a redeploy. */
+const FAULT_COOLDOWN = 30_000;
+let fault = null; // { at, msg }
+
+export const storageFault = () => (fault ? fault.msg : "");
+
+export function usingRedis() {
+  if (!storageConfigured() || !REST_OK) return false;
+  if (fault && Date.now() - fault.at < FAULT_COOLDOWN) return false;
+  return true;
+}
 
 async function redis(cmd) {
   const r = await fetch(URL_, {
@@ -35,17 +66,36 @@ async function redis(cmd) {
   return (await r.json()).result;
 }
 
+/* {ok:true, v} on success; {ok:false} after recording the fault. Never throws,
+   so every caller below can fall through to the in-memory path. */
+async function tryRedis(cmd) {
+  try {
+    const v = await redis(cmd);
+    fault = null;
+    return { ok: true, v };
+  } catch (e) {
+    fault = { at: Date.now(), msg: String((e && e.message) || e) };
+    return { ok: false };
+  }
+}
+
 export async function getJSON(key) {
   if (usingRedis()) {
-    const v = await redis(["GET", key]);
-    return v ? JSON.parse(v) : null;
+    const r = await tryRedis(["GET", key]);
+    if (r.ok) {
+      if (!r.v) return null;
+      try { return JSON.parse(r.v); } catch (_) { return null; }
+    }
   }
   return mem.has(key) ? JSON.parse(mem.get(key)) : null;
 }
 
 export async function setJSON(key, val, ttlSeconds = 60 * 60 * 24 * 14) {
   const s = JSON.stringify(val);
-  if (usingRedis()) return redis(["SET", key, s, "EX", String(ttlSeconds)]);
+  if (usingRedis()) {
+    const r = await tryRedis(["SET", key, s, "EX", String(ttlSeconds)]);
+    if (r.ok) return r.v;
+  }
   mem.set(key, s);
 }
 
@@ -58,9 +108,12 @@ const counts = globalThis.__dankCounts || (globalThis.__dankCounts = new Map());
 
 export async function bump(key, ttlSeconds) {
   if (usingRedis()) {
-    const n = Number(await redis(["INCR", key]));
-    if (n === 1) await redis(["EXPIRE", key, String(Math.max(1, Math.round(ttlSeconds)))]);
-    return n;
+    const r = await tryRedis(["INCR", key]);
+    if (r.ok) {
+      const n = Number(r.v);
+      if (n === 1) await tryRedis(["EXPIRE", key, String(Math.max(1, Math.round(ttlSeconds)))]);
+      return n;
+    }
   }
   const now = Date.now();
   if (counts.size > 5000) for (const [k, v] of counts) if (v.exp <= now) counts.delete(k);
@@ -90,9 +143,12 @@ export async function bump(key, ttlSeconds) {
 export async function bumpBy(key, n = 1, ttlSeconds = 60 * 60 * 24 * 365) {
   const by = Math.round(Number(n) || 0);
   if (usingRedis()) {
-    const v = Number(await redis(["INCRBY", key, String(by)]));
-    if (v === by) await redis(["EXPIRE", key, String(Math.max(1, Math.round(ttlSeconds)))]);
-    return v;
+    const r = await tryRedis(["INCRBY", key, String(by)]);
+    if (r.ok) {
+      const v = Number(r.v);
+      if (v === by) await tryRedis(["EXPIRE", key, String(Math.max(1, Math.round(ttlSeconds)))]);
+      return v;
+    }
   }
   let cur = 0;
   try {
