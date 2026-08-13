@@ -59,13 +59,32 @@ function splitNameCat(raw) {
 }
 
 
+/* Bookkeeping lines. The till keeps its tender types and account adjustments
+   in the same product list as the stock - "Delivery", "Visa", "TF to Cash",
+   "Pay In Advance", "pay old bill" - and they arrived on the storefront as
+   ฿0 HYBRID cards a customer could try to add to a basket.
+
+   Matched on whole words, never substrings: the shop sells Papaya Fuel,
+   Payload OG, Paydirt, Cash Crop and Purple Payback, and a naive /pay|cash/
+   would have deleted all five. */
+const LEDGER_EXACT = /^(delivery|deposit|visa|mastercard|master ?card|credit ?card|debit ?card|cash|change|tip|tips|discount|refund|void|test|misc|service ?charge|vat|tax|promptpay|qr|bank ?transfer|transfer|wallet|top ?up|topup)$/i;
+const LEDGER_PHRASE = /^(pay|paid|tf|transfer|settle|charge|adjust)\b|(\bold bill\b|\bin advance\b|\bto cash\b|\bon account\b)/i;
+function isLedgerLine(n) {
+  const s = String(n ?? "").trim();
+  return LEDGER_EXACT.test(s) || LEDGER_PHRASE.test(s);
+}
+
 function normalize(list) {
   const out = [];
   for (let i = 0; i < Math.min(list.length, MAX_ITEMS); i++) {
     const p = list[i];
     if (!p || typeof p !== "object" || !p.name) continue;
     const nc = splitNameCat(p.name);
+    if (isLedgerLine(nc.name)) continue;
     const price = baht(p.price);
+    /* Nothing sellable has no price. The cart already refuses a ฿0 line, so
+       showing one is a card that can only disappoint. */
+    if (!(price > 0)) continue;
     const member = baht(p.member) || Math.round(price * 0.9);
     const item = {
       id: String(p.id ?? p.sku ?? "pos-" + i),
