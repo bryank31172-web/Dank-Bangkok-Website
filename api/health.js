@@ -5,7 +5,10 @@
 import { getMenu } from "./_menu.js";
 import { shConfigured } from "./_storehub.js";
 import { posSyncKey } from "./_auth.js";
-import { usingRedis, storageConfigured, storageUrlUsable, storageFault } from "./_store.js";
+import {
+  usingRedis, storageConfigured, storageUrlUsable, storageFault, storageMode,
+  supabaseConfigured, supabaseKeyIsPublishable,
+} from "./_store.js";
 
 export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
@@ -60,7 +63,8 @@ export default async function handler(req, res) {
     };
     const wired = {
       posSync: Boolean(posSyncKey()),
-      storage: usingRedis(),   // true for the Upstash names OR Vercel's KV_ ones
+      storage: usingRedis(),   // is anything remembering things across restarts?
+      storageOn: storageMode(), // "supabase" | "redis" | "memory"
       staffKey: Boolean(process.env.STAFF_KEY),
       ownerLogin: Boolean(process.env.ADMIN_EMAIL && process.env.ADMIN_PASSWORD && process.env.ADMIN_SECRET),
       promoPin: Boolean(process.env.MASTER_PIN),
@@ -80,24 +84,41 @@ export default async function handler(req, res) {
        site is healthy, because nothing else about the site looks broken. */
     const warnings = [];
     if (!wired.storage) {
-      /* "No Redis" and "Redis set up wrong" need different next actions, and
-         the second one is the one that looks like success from the dashboard,
-         so name the actual failure rather than repeating the setup advice. */
-      if (storageConfigured() && !storageUrlUsable()) {
+      /* "No database" and "database set up wrong" need different next actions,
+         and the second one is the one that looks like success from the
+         dashboard, so name the actual failure rather than repeating the setup
+         advice. */
+      if (supabaseKeyIsPublishable()) {
+        /* The nastiest of the three, because nothing errors: site_kv has RLS
+           on with no policies, so the publishable key reads back 200 OK and
+           empty forever and the site looks perfectly connected. */
         warnings.push(
-          "⚠️ The Redis URL is not a REST URL — it looks like KV_URL / REDIS_URL (rediss://…), which " +
-          "only a Redis client can use. Copy the value labelled KV_REST_API_URL (or UPSTASH_REDIS_REST_URL) " +
-          "instead — it starts with https:// — then redeploy. Storage is in memory until then.",
+          "⚠️ SUPABASE_SERVICE_ROLE_KEY holds the publishable (anon) key, which cannot see the site's " +
+          "data at all — storage is in memory only. Supabase → Project Settings → API Keys → copy the " +
+          "secret / service_role key instead (it is the hidden one, starting sb_secret_ or a long token " +
+          "ending in a random-looking string). Never put that key in a page — it is server-side only.",
+        );
+      } else if (storageConfigured() && !storageUrlUsable()) {
+        warnings.push(
+          supabaseConfigured()
+            ? "⚠️ SUPABASE_URL is not a web address — it should start with https:// and end in .supabase.co. " +
+              "A postgres:// connection string goes in a different setting; this one wants the Project URL."
+            : "⚠️ The Redis URL is not a REST URL — it looks like KV_URL / REDIS_URL (rediss://…), which " +
+              "only a Redis client can use. Copy the value labelled KV_REST_API_URL (or UPSTASH_REDIS_REST_URL) " +
+              "instead — it starts with https:// — then redeploy. Storage is in memory until then.",
         );
       } else if (storageConfigured() && storageFault()) {
         warnings.push(
-          `⚠️ Redis is configured but rejecting this site (${storageFault()}) — storage is in memory only. ` +
-          "A 401 means the token is wrong: check that KV_REST_API_TOKEN (or UPSTASH_REDIS_REST_TOKEN) was " +
-          "pasted without the surrounding quotes, is the full value, and belongs to the same database as the URL. " +
-          "The site retries every 30 seconds, so fixing the value heals it without a redeploy.",
+          `⚠️ The database is configured but rejecting this site (${storageFault()}) — storage is in memory only. ` +
+          (supabaseConfigured()
+            ? "A 401 or 404 means the key is wrong or the site_kv table is missing. Check SUPABASE_SERVICE_ROLE_KEY " +
+              "was pasted without the surrounding quotes and belongs to the same project as SUPABASE_URL."
+            : "A 401 means the token is wrong: check that KV_REST_API_TOKEN (or UPSTASH_REDIS_REST_TOKEN) was " +
+              "pasted without the surrounding quotes, is the full value, and belongs to the same database as the URL.") +
+          " The site retries every 30 seconds, so fixing the value heals it without a redeploy.",
         );
       } else {
-        warnings.push("⚠️ No Redis — orders, members, wallets and homepage edits are in memory only and will be lost when the server restarts. Set UPSTASH_REDIS_REST_URL + UPSTASH_REDIS_REST_TOKEN, or install Upstash from the Vercel Marketplace (KV_REST_API_URL + KV_REST_API_TOKEN are accepted too).");
+        warnings.push("⚠️ No database — orders, members, wallets and homepage edits are in memory only and will be lost when the server restarts. Set SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY, or the Upstash Redis pair.");
       }
     }
     /* Without Redis the POS's pushed catalogue lives in one instance's memory,
