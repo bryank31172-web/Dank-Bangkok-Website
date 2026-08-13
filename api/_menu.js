@@ -343,6 +343,20 @@ const WEEDISH = /\bweed\b|\bflowers?\b|\bexotics?\b|\btop\s*shelf\b|\bmid\s*grad
    format, so rolled goods keep their generic pictures. */
 const ROLLED = /joint|pre-?roll|blunt|cone/i;
 
+/* A product-images entry is either one URL or a list of them. A list is shown
+   in order: the shop's own Botanical Legends card leads, the photographs of
+   the actual jar follow. `image` stays a single string so every existing
+   caller — cards, cart lines, the customer display, the AI chat — keeps
+   working untouched, and `images` carries the rest for the gallery. */
+function shot(hit) {
+  if (Array.isArray(hit)) {
+    const list = hit.map((s) => String(s || "").trim()).filter(Boolean);
+    if (!list.length) return {};
+    return list.length > 1 ? { image: list[0], images: list } : { image: list[0] };
+  }
+  return { image: hit };
+}
+
 export async function fillImages(data) {
   if (!Array.isArray(data) || !data.length) return data;
   const m = await imgMap();
@@ -354,7 +368,7 @@ export async function fillImages(data) {
     const flat = flatName(p.name);
     const words = wordsOf(p.name);
     const hit = m.byName[flat];
-    if (hit) return { ...p, image: hit, _imgFrom: "name" };
+    if (hit) return { ...p, ...shot(hit), _imgFrom: "name" };
     const nameCat = String(p.name || "") + " " + String(p.category || "");
     /* A POS category is often just "Specials", so the category word cannot be
        relied on to say "this is flower". A name that IS a strain we know says
@@ -421,18 +435,25 @@ export async function fillStrainInfo(data) {
     const s = findStrain(db, flatName(p.name));
     if (!s) return p;
     const q = { ...p };
-    if (!String(q.description || "").trim() && s.desc) q.description = s.desc;
-    if (!(Array.isArray(q.effects) && q.effects.length) && s.effects && s.effects.length) q.effects = s.effects;
-    if (!(Array.isArray(q.flavors) && q.flavors.length) && s.flavors && s.flavors.length) q.flavors = s.flavors;
-    if (!(Number(q.thc) > 0) && s.thc) {
+    /* `card: true` marks a strain whose numbers come off the shop's own
+       printed Botanical Legends card. That card is what hangs on the wall and
+       what the budtender reads out, so it wins outright — otherwise the site
+       would keep showing a stale THC from the till or from the bundled
+       catalogue and disagree with the counter. Every other strain still only
+       fills gaps. */
+    const own = s.card === true;
+    if ((own || !String(q.description || "").trim()) && s.desc) q.description = s.desc;
+    if ((own || !(Array.isArray(q.effects) && q.effects.length)) && s.effects && s.effects.length) q.effects = s.effects;
+    if ((own || !(Array.isArray(q.flavors) && q.flavors.length)) && s.flavors && s.flavors.length) q.flavors = s.flavors;
+    if ((own || !(Number(q.thc) > 0)) && s.thc) {
       const mnum = String(s.thc).match(/[\d.]+/g);
       if (mnum) q.thc = Number(mnum[mnum.length - 1]);
-      if (!String(q.thcLabel || "").trim()) q.thcLabel = s.thc;
+      if (own || !String(q.thcLabel || "").trim()) q.thcLabel = s.thc;
     }
     /* "Hybrid" is the POS default, not information — a researched
        "Indica-dominant Hybrid" is allowed to replace it, an explicit POS
-       "Sativa" is not touched. */
-    if (s.type && (!q.type || /^hybrid$/i.test(String(q.type).trim()))) q.type = s.type;
+       "Sativa" is not touched. A card overrides both. */
+    if (s.type && (own || !q.type || /^hybrid$/i.test(String(q.type).trim()))) q.type = s.type;
     q.strain = { name: s.name || "", terpene: s.terpene || "", lineage: s.lineage || "" };
     return q;
   });

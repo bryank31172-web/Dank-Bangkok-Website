@@ -347,7 +347,8 @@
     "Citrus"
    ],
    "lineage": "",
-   "desc": "Coconut and vanilla with a citrus lift — the most easy-going jar on the shelf. Sativa-leaning at 70%, so the euphoria stays sociable instead of racy. Beach days and long conversations."
+   "desc": "Coconut and vanilla with a citrus lift — the most easy-going jar on the shelf. Sativa-leaning at 70%, so the euphoria stays sociable instead of racy. Beach days and long conversations.",
+   "card": true
   },
   "sherbtang": {
    "name": "Sherb Tang",
@@ -652,7 +653,8 @@
     "Ripe fruit"
    ],
    "lineage": "",
-   "desc": "Ripe grape over a sweet diesel base, and the body goes first. A true indica for winding down at the end of the night rather than starting anything."
+   "desc": "Ripe grape over a sweet diesel base, and the body goes first. A true indica for winding down at the end of the night rather than starting anything.",
+   "card": true
   },
   "lemoncherrybx2": {
    "name": "Lemon Cherry BX2",
@@ -996,7 +998,8 @@
     "Funk"
    ],
    "lineage": "",
-   "desc": "Grape candy over a hard fuel funk, and it arrives fast. A sativa-leaning exotic the shop keeps for daytime — the one to reach for before a workout rather than after one."
+   "desc": "Grape candy over a hard fuel funk, and it arrives fast. A sativa-leaning exotic the shop keeps for daytime — the one to reach for before a workout rather than after one.",
+   "card": true
   },
   "wilsonzero": {
    "name": "Wilson Zero",
@@ -1017,7 +1020,8 @@
     "Cool"
    ],
    "lineage": "",
-   "desc": "Bright citrus with a cool menthol finish, at the highest THC on the shelf. The high is spacey but stays pointed — made for late-night gaming and music."
+   "desc": "Bright citrus with a cool menthol finish, at the highest THC on the shelf. The high is spacey but stays pointed — made for late-night gaming and music.",
+   "card": true
   },
   "strawberrydrip": {
    "name": "Strawberry Drip",
@@ -1038,7 +1042,8 @@
     "Sweet"
    ],
    "lineage": "",
-   "desc": "Fresh strawberry and candy sweetness on a true sativa. Bright, lifting energy with no heaviness behind it — a weekend-adventure strain."
+   "desc": "Fresh strawberry and candy sweetness on a true sativa. Bright, lifting energy with no heaviness behind it — a weekend-adventure strain.",
+   "card": true
   },
   "whitegarlic": {
    "name": "White Garlic",
@@ -1059,7 +1064,8 @@
     "Spice"
    ],
    "lineage": "",
-   "desc": "Savoury garlic over herb and spice, indica-leaning and heavy-lidded. The slow rainy-afternoon end of the menu."
+   "desc": "Savoury garlic over herb and spice, indica-leaning and heavy-lidded. The slow rainy-afternoon end of the menu.",
+   "card": true
   },
   "garlicman": {
    "name": "Garlic Man",
@@ -1080,7 +1086,8 @@
     "Savoury"
    ],
    "lineage": "",
-   "desc": "Pungent garlic and savoury diesel — one of the loudest jars in the shop. A playful, giggly buzz that stays clear rather than couch-locking."
+   "desc": "Pungent garlic and savoury diesel — one of the loudest jars in the shop. A playful, giggly buzz that stays clear rather than couch-locking.",
+   "card": true
   },
   "papayafuel": {
    "name": "Papaya Fuel",
@@ -1101,7 +1108,8 @@
     "Diesel"
    ],
    "lineage": "",
-   "desc": "Tropical papaya cut with diesel, and the strongest flower in the shop at 33.5%. An energising rush with a creative edge — a morning strain, not an evening one."
+   "desc": "Tropical papaya cut with diesel, and the strongest flower in the shop at 33.5%. An energising rush with a creative edge — a morning strain, not an evening one.",
+   "card": true
   },
   "granddaddypurple": {
    "name": "Granddaddy Purple",
@@ -1122,7 +1130,8 @@
     "Earthy"
    ],
    "lineage": "Purple Urkle x Big Bud",
-   "desc": "The classic purple indica — grape and berry over damp earth, and full-body sedation behind it. Movie nights, then deep sleep."
+   "desc": "The classic purple indica — grape and berry over damp earth, and full-body sedation behind it. Movie nights, then deep sleep.",
+   "card": true
   }
  },
  "alias": {

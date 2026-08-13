@@ -513,6 +513,17 @@
   .pd-media{aspect-ratio:1/1;position:relative;align-self:start;min-width:0}
   .pd-media img{width:100%;height:100%;object-fit:cover}
   .pd-media .ph{font-size:110px}
+  /* Shot strip. A strain leads with the shop's own Botanical Legends card and
+     then shows photographs of the actual jar, so the popup needs a way to move
+     between them. Sits under the stage, scrolls sideways if there are many. */
+  .pd-shots{display:flex;gap:8px;padding:10px 12px 0;overflow-x:auto;scrollbar-width:none}
+  .pd-shots::-webkit-scrollbar{display:none}
+  .pd-shots button{flex:0 0 auto;width:60px;height:44px;padding:0;border-radius:9px;overflow:hidden;
+    border:2px solid var(--line2);background:#0d0616;cursor:pointer;transition:.14s;opacity:.62}
+  .pd-shots button img{width:100%;height:100%;object-fit:cover;display:block}
+  .pd-shots button.on{border-color:var(--green);opacity:1}
+  .pd-shots button:hover{opacity:1}
+  .pd-shots button:focus-visible{outline:2px solid var(--green);outline-offset:2px}
 
   /* ---- Animated product stage ----------------------------------------
      The clip Bryan sent was an AI product film: the jar hangs in the middle of
@@ -2775,12 +2786,16 @@ function hydrateStrain(p){
     fetch("/api/strain-info?name="+encodeURIComponent(p.name||"")).then(r=>r&&r.ok?r.json():null).then(j=>{
       if(!j||!j.found||!j.strain||pdCurrent!==p) return;
       const s=j.strain;
-      if(!(p.description&&p.description.trim())&&s.desc) p.description=s.desc;
-      if(!(p.effects&&p.effects.length)&&s.effects&&s.effects.length) p.effects=s.effects;
-      if(!(p.flavors&&p.flavors.length)&&s.flavors&&s.flavors.length) p.flavors=s.flavors;
+      /* s.card marks the shop's own printed Botanical Legends card. That is
+         what hangs on the wall, so it overrides rather than fills a gap —
+         the popup must not disagree with the counter. */
+      const own=s.card===true;
+      if((own||!(p.description&&p.description.trim()))&&s.desc) p.description=s.desc;
+      if((own||!(p.effects&&p.effects.length))&&s.effects&&s.effects.length) p.effects=s.effects;
+      if((own||!(p.flavors&&p.flavors.length))&&s.flavors&&s.flavors.length) p.flavors=s.flavors;
       p.strain={name:s.name||"",terpene:s.terpene||"",lineage:s.lineage||"",site:s.site||""};
-      if(s.type&&/^hybrid$/i.test(p.type||"")) p.type=s.type;
-      if(!thcTxt(p)&&s.thc){
+      if(s.type&&(own||/^hybrid$/i.test(p.type||""))) p.type=s.type;
+      if((own||!thcTxt(p))&&s.thc){
         p.thcLabel=s.thc;
         const tn=String(s.thc).match(/[\d.]+/g); if(tn) p.thc=Number(tn[tn.length-1]);
         const tv=$("#pdThcV");
@@ -3350,6 +3365,7 @@ function openPD(id){
   const listP=isFlower(p)?p.priceTiers[0].price:p.price;
   $("#pdCard").innerHTML=`<div class="pd-grid">
     <div class="pd-media stage" id="pdStage" style="--pa:${psAccent(p)}">${typeTagHTML(p)}${psStageHTML(p)}</div>
+    ${pdShotsHTML(p)}
     <div class="pd-info">
       <button class="close-x pd-close" onclick="closeAll()">×</button>
       <div class="pd-sub">${[catEmoji(p.category)+" "+esc(p.category),esc(p.type),esc(branch)].filter(s=>s.trim()).join(" · ")}</div>
@@ -3372,6 +3388,25 @@ function openPD(id){
   renderRelated(p);
   hydrateStrain(p);
   labRender(p);
+}
+/* A product may carry several shots — its Botanical Legends card first, then
+   photographs of the actual jar. One image needs no strip. */
+function shotsOf(p){ const a=Array.isArray(p&&p.images)?p.images.filter(Boolean):[]; return a.length>1?a:[]; }
+function pdShotsHTML(p){
+  const a=shotsOf(p); if(!a.length) return "";
+  return `<div class="pd-shots" role="tablist" aria-label="Product images">${a.map((src,i)=>
+    `<button role="tab" aria-selected="${i===0}" aria-label="Image ${i+1} of ${a.length}" class="${i===0?'on':''}" onclick="pdShot(${i})"><img src="${esc(src)}" alt="" loading="lazy"></button>`
+  ).join("")}</div>`;
+}
+function pdShot(i){
+  const a=shotsOf(pdCurrent); const src=a[i]; if(!src) return;
+  const img=document.querySelector("#pdStage .ps-prod img"); if(!img) return;
+  img.src=src;
+  /* Finished artwork letterboxes, a photograph fills — see .art in the CSS. */
+  img.classList.toggle("art",isArtCard(src));
+  document.querySelectorAll(".pd-shots button").forEach((b,n)=>{
+    b.classList.toggle("on",n===i); b.setAttribute("aria-selected",n===i);
+  });
 }
 function pdStep(d){ pdQty=Math.max(1,pdQty+d); const el=$("#pdQtyN"); if(el) el.textContent=pdQty; }
 function renderRelated(p){

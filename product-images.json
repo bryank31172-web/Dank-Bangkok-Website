@@ -1,5 +1,5 @@
 {
- "_readme": "Photo backfill for products that arrive from the POS without an image. 'byName' is matched on the product name with punctuation, spaces and any (bracketed) words removed and letters lower-cased, so '( weed ) Crispy Boy Lager Can' matches 'crispyboylagercan'. Add your own entries here: key = the flattened name, value = an image URL or a path like 'assets/crunchberrie.jpg'. 'generic' supplies a category-style photo for anything with no name match; set GENERIC_PRODUCT_IMAGES=0 in Vercel to turn those off and fall back to the leaf placeholder instead.",
+ "_readme": "Photo backfill for products that arrive from the POS without an image. 'byName' is matched on the product name with punctuation, spaces and any (bracketed) words removed and letters lower-cased, so '( weed ) Crispy Boy Lager Can' matches 'crispyboylagercan'. Add your own entries here: key = the flattened name, value = an image URL or a path like 'assets/crunchberrie.jpg'. 'generic' supplies a category-style photo for anything with no name match; set GENERIC_PRODUCT_IMAGES=0 in Vercel to turn those off and fall back to the leaf placeholder instead. A value may also be a LIST of URLs instead of one: the first is the main picture and the rest appear as a shot strip in the product popup. That is how a strain leads with its Botanical Legends card and then shows photographs of the actual jar — put the card first, the photos after.",
  "byName": {
   "crunchberrie": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-6890.png?v=1782732640",
   "alienmint": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-6888.png?v=1782731863",
@@ -11,7 +11,10 @@
   "bluenerdz": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-6875.jpg?v=1782723699",
   "thaiorangetea": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-6873.jpg?v=1782722872",
   "redhot": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-6090.jpg?v=1781096752",
-  "cocochanel": "assets/strains/coco-chanel.jpg",
+  "cocochanel": [
+   "assets/strains/coco-chanel.jpg",
+   "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/CB952B9D-5F70-4968-B268-A766D1893BCE.png?v=1780143593"
+  ],
   "pinkzugar": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-5581.png?v=1780144311",
   "lcgrx11": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-5253.png?v=1779642559",
   "toadvenom": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-5254.png?v=1779642336",
@@ -100,7 +103,10 @@
   "exoredhot": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-6090.jpg?v=1781096752",
   "exococochanel": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/CB952B9D-5F70-4968-B268-A766D1893BCE.png?v=1780143593",
   "exococochanelthc2628": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/CB952B9D-5F70-4968-B268-A766D1893BCE.png?v=1780143593",
-  "cocochanelthc2628": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/CB952B9D-5F70-4968-B268-A766D1893BCE.png?v=1780143593",
+  "cocochanelthc2628": [
+   "assets/strains/coco-chanel.jpg",
+   "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/CB952B9D-5F70-4968-B268-A766D1893BCE.png?v=1780143593"
+  ],
   "sherbtankthc25": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-5575.png?v=1780144807",
   "topshelfsherbtankthc25": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-5575.png?v=1780144807",
   "topshelfsherbtank": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-5575.png?v=1780144807",
@@ -184,7 +190,10 @@
   "whitegarlic": "assets/strains/white-garlic.jpg",
   "grapestank": "assets/strains/grape-stank.jpg",
   "grapestankjoint": "assets/strains/grape-stank.jpg",
-  "cocochaneljoint": "assets/strains/coco-chanel.jpg",
+  "cocochaneljoint": [
+   "assets/strains/coco-chanel.jpg",
+   "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/CB952B9D-5F70-4968-B268-A766D1893BCE.png?v=1780143593"
+  ],
   "papayafuel": "assets/strains/papaya-fuel.jpg",
   "granddaddypurple": "assets/strains/granddaddy-purple.jpg",
   "grandaddypurple": "assets/strains/granddaddy-purple.jpg",
