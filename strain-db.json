@@ -975,6 +975,111 @@
    ],
    "lineage": "Animal Mints x Kush Mints",
    "desc": "A cross of Animal Mints with Kush Mints; a clean, energizing smoke with an unusual perfume of mint, rose, and tea."
+  },
+  "grapegasoline": {
+   "name": "Grape Gasoline",
+   "known": true,
+   "type": "Sativa-Hybrid",
+   "thc": "32.3%",
+   "cbd": "<1%",
+   "terpene": "Limonene",
+   "effects": [
+    "Energetic",
+    "Motivated",
+    "Fast-acting",
+    "Uplifted"
+   ],
+   "flavors": [
+    "Grape candy",
+    "Fuel",
+    "Funk"
+   ],
+   "lineage": "",
+   "desc": "Grape candy over a hard fuel funk, and it arrives fast. A sativa-leaning exotic the shop keeps for daytime — the one to reach for before a workout rather than after one."
+  },
+  "wilsonzero": {
+   "name": "Wilson Zero",
+   "known": true,
+   "type": "Hybrid",
+   "thc": "33.1%",
+   "cbd": "<1%",
+   "terpene": "Limonene",
+   "effects": [
+    "Euphoric",
+    "Floaty",
+    "Focused",
+    "Spacey"
+   ],
+   "flavors": [
+    "Citrus",
+    "Menthol",
+    "Cool"
+   ],
+   "lineage": "",
+   "desc": "Bright citrus with a cool menthol finish, at the highest THC on the shelf. The high is spacey but stays pointed — made for late-night gaming and music."
+  },
+  "strawberrydrip": {
+   "name": "Strawberry Drip",
+   "known": true,
+   "type": "Sativa",
+   "thc": "31.8%",
+   "cbd": "<1%",
+   "terpene": "Terpinolene",
+   "effects": [
+    "Uplifted",
+    "Energetic",
+    "Happy",
+    "Creative"
+   ],
+   "flavors": [
+    "Strawberry",
+    "Candy",
+    "Sweet"
+   ],
+   "lineage": "",
+   "desc": "Fresh strawberry and candy sweetness on a true sativa. Bright, lifting energy with no heaviness behind it — a weekend-adventure strain."
+  },
+  "whitegarlic": {
+   "name": "White Garlic",
+   "known": true,
+   "type": "Indica-Hybrid",
+   "thc": "32.6%",
+   "cbd": "<1%",
+   "terpene": "Caryophyllene",
+   "effects": [
+    "Relaxed",
+    "Mellow",
+    "Sleepy",
+    "Calm"
+   ],
+   "flavors": [
+    "Garlic",
+    "Herbal",
+    "Spice"
+   ],
+   "lineage": "",
+   "desc": "Savoury garlic over herb and spice, indica-leaning and heavy-lidded. The slow rainy-afternoon end of the menu."
+  },
+  "garlicman": {
+   "name": "Garlic Man",
+   "known": true,
+   "type": "Hybrid",
+   "thc": "29%",
+   "cbd": "<1%",
+   "terpene": "Caryophyllene",
+   "effects": [
+    "Giggly",
+    "Talkative",
+    "Happy",
+    "Clear-headed"
+   ],
+   "flavors": [
+    "Garlic",
+    "Diesel",
+    "Savoury"
+   ],
+   "lineage": "",
+   "desc": "Pungent garlic and savoury diesel — one of the loudest jars in the shop. A playful, giggly buzz that stays clear rather than couch-locking."
   }
  },
  "alias": {
@@ -994,6 +1099,9 @@
   "permanentmarkerbx1": "permanentbx1",
   "sourz": "zourz",
   "whitelotusshake": "whitelotus",
-  "lemoncherry": "lemoncherrygelato"
+  "lemoncherry": "lemoncherrygelato",
+  "grapegasolin": "grapegasoline",
+  "galicman": "garlicman",
+  "wilson0": "wilsonzero"
  }
 }
