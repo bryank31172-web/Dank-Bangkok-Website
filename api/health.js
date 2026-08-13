@@ -10,6 +10,55 @@ import {
   supabaseConfigured, supabaseKeyIsPublishable,
 } from "./_store.js";
 
+/* Every variable name the code actually reads, aliases included. Anything in
+   the environment that is nearly one of these — but not one of these — is a
+   typo, and a typo is invisible: the site behaves exactly as if the variable
+   were never set, and the dashboard shows a row that looks perfectly correct.
+   SUPABASE_SERVICE_ROLE_KRY cost an evening. Names only are compared and
+   reported; a value is never read or echoed. */
+const KNOWN_VARS = [
+  "SUPABASE_URL", "NEXT_PUBLIC_SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY",
+  "SUPABASE_SECRET_KEY", "SUPABASE_SERVICE_KEY", "SUPABASE_KEY",
+  "UPSTASH_REDIS_REST_URL", "UPSTASH_REDIS_REST_TOKEN", "KV_REST_API_URL",
+  "KV_REST_API_TOKEN", "KV_REST_API_READ_ONLY_TOKEN", "KV_URL", "REDIS_URL",
+  "REDIS_REST_URL", "REDIS_REST_TOKEN",
+  "POS_SYNC_KEY", "WEBSITE_API_KEY", "STAFF_KEY", "MASTER_PIN",
+  "ADMIN_EMAIL", "ADMIN_PASSWORD", "ADMIN_SECRET",
+  "STOREHUB_STORE", "STOREHUB_TOKEN", "MENU_FEED_URL", "POS_FEED_MAX_AGE_H",
+  "XAI_API_KEY", "GROK_MODEL", "RESEND_API_KEY",
+  "TELEGRAM_BOT_TOKEN", "TELEGRAM_CHAT_ID",
+  "OMISE_PUBLIC_KEY", "OMISE_SECRET_KEY", "TWOC2P_MERCHANT_ID",
+  "TWOC2P_SECRET", "GBP_SECRET_KEY",
+];
+
+function editDistance(a, b) {
+  let prev = Array.from({ length: b.length + 1 }, (_, i) => i);
+  for (let i = 1; i <= a.length; i++) {
+    const row = [i];
+    for (let j = 1; j <= b.length; j++) {
+      row[j] = Math.min(prev[j] + 1, row[j - 1] + 1, prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+    }
+    prev = row;
+  }
+  return prev[b.length];
+}
+
+function misspeltVars() {
+  const known = new Set(KNOWN_VARS);
+  const out = [];
+  for (const name of Object.keys(process.env)) {
+    if (known.has(name) || name.length < 8) continue;
+    for (const want of KNOWN_VARS) {
+      if (Math.abs(name.length - want.length) > 2) continue;
+      if (editDistance(name, want) <= 2 && !process.env[want]) {
+        out.push({ found: name, meant: want });
+        break;
+      }
+    }
+  }
+  return out;
+}
+
 export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Cache-Control", "no-store");
@@ -83,6 +132,13 @@ export default async function handler(req, res) {
        That is worth saying out loud on the page people check to see if the
        site is healthy, because nothing else about the site looks broken. */
     const warnings = [];
+    /* First, because a misspelt name explains every other warning below it. */
+    for (const { found, meant } of misspeltVars()) {
+      warnings.push(
+        `⚠️ ${found} is set but nothing reads it — did you mean ${meant}? That one is not set, so the ` +
+        "site is behaving as though you never added it. Rename the variable in Vercel, then redeploy.",
+      );
+    }
     if (!wired.storage) {
       /* "No database" and "database set up wrong" need different next actions,
          and the second one is the one that looks like success from the
