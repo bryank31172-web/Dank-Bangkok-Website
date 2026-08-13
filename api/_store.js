@@ -8,8 +8,19 @@
    Upstash before going live with staff chat.
    ============================================================ */
 
-const URL_ = process.env.UPSTASH_REDIS_REST_URL || "";
-const TOK = process.env.UPSTASH_REDIS_REST_TOKEN || "";
+/* Two ways a shop ends up with Redis, and they use different variable names.
+
+   Copying the two values out of the Upstash dashboard by hand gives you
+   UPSTASH_REDIS_REST_URL / UPSTASH_REDIS_REST_TOKEN. Installing Upstash from
+   the Vercel Marketplace instead - one click, nothing to copy, which is the
+   route anyone setting this up on a phone will take - injects KV_REST_API_URL
+   / KV_REST_API_TOKEN and never creates the UPSTASH_ names at all.
+
+   Reading only the first pair meant the easy path silently did nothing: the
+   database exists, the integration says connected, and the site quietly keeps
+   losing every order to memory. Accept both. */
+const URL_ = process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL || process.env.REDIS_REST_URL || "";
+const TOK = process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN || process.env.REDIS_REST_TOKEN || "";
 const mem = globalThis.__dankMem || (globalThis.__dankMem = new Map());
 
 export const usingRedis = () => Boolean(URL_ && TOK);

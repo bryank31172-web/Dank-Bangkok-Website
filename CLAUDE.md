@@ -77,6 +77,12 @@ in the code. Any unset variable makes its endpoint answer `503 not configured`.
 | `UPSTASH_REDIS_REST_URL` | **needs setting** | without it, storage is in-memory only |
 | `UPSTASH_REDIS_REST_TOKEN` | **needs setting** | Upstash has a free tier |
 
+Easiest route for Upstash is Vercel → Storage → Marketplace → Upstash, which
+wires the project up with no copying. It injects `KV_REST_API_URL` /
+`KV_REST_API_TOKEN` rather than the `UPSTASH_` names, so `api/_store.js`
+accepts either pair (and `REDIS_REST_*`). Check which landed at
+`/api/health` → `wired.storage`.
+
 After adding any variable: Vercel → Deployments → top one → `···` → Redeploy.
 Environment variables are not picked up until a redeploy.
 
