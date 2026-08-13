@@ -89,6 +89,13 @@
 
   <div id="sections"></div>
 
+  <h2>📸 Shooting list — take these to the shop with a camera</h2>
+  <div class="bar">
+    <button class="p" id="copyShoot">Copy shooting list</button>
+    <button class="g" id="dlShoot">Download as .txt</button>
+  </div>
+  <pre id="shootlist">Run the audit first.</pre>
+
   <h2>Image prompts for everything that needs a real picture</h2>
   <div class="bar">
     <button class="p" id="copy">Copy all prompts</button>
@@ -284,6 +291,13 @@ function render(){
   tile.forEach(function(r){ needs.push([r, "no photograph of its own — currently a drawn placeholder tile"]); });
   dup.forEach(function(r){ needs.push([r, "shares its photo with " + r.shared.filter(function(n){ return n !== r.p.name; }).join(", ")]); });
   stock.forEach(function(r){ needs.push([r, "generic stock photo, not the real product"]); });
+  /* The prompts below are for generating artwork. This is the other half of
+     the job: the same products as a plain checklist, grouped by category and
+     carrying stock counts, so somebody can walk the shop with a phone and
+     photograph what is physically on the shelf. Stock first - you cannot
+     photograph a product that is not there. */
+  buildShootList(needs);
+
   var seen = {}, txt = "";
   needs.forEach(function(pair){
     var k = pair[0].p.id || pair[0].p.name;
@@ -307,6 +321,42 @@ function section(title, rows, cls, tag){
   return h + '</div>';
 }
 function esc(s){ return String(s == null ? "" : s).replace(/[&<>"']/g, function(c){ return ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" })[c]; }); }
+
+function priceOf(p){
+  if (p.price > 0) return p.price;
+  if (p.priceTiers && p.priceTiers.length) { for (var i=0;i<p.priceTiers.length;i++){ if(p.priceTiers[i].price > 0) return p.priceTiers[i].price; } }
+  return 0;
+}
+var SHOOT = "";
+function buildShootList(needs){
+  var seen = {}, byCat = {}, n = 0;
+  needs.forEach(function(pair){
+    var p = pair[0].p, k = p.id || p.name;
+    if (seen[k]) return; seen[k] = 1; n++;
+    var c = p.category || "Uncategorised";
+    (byCat[c] = byCat[c] || []).push({ p: p, why: pair[1] });
+  });
+  if (!n) { SHOOT = "Nothing to photograph — every product already has a real picture of its own."; $("shootlist").textContent = SHOOT; return; }
+  var cats = Object.keys(byCat).sort();
+  var out = "DANK — photograph these " + n + " products\n" +
+            "From " + $("src").value + "\n" +
+            "Generated " + new Date().toLocaleString() + "\n" +
+            "\nTip: shoot on the shop counter, same angle and light each time. Square (1:1) crops best.\n";
+  cats.forEach(function(c){
+    var list = byCat[c].slice().sort(function(a,b){ return (b.p.stock||0) - (a.p.stock||0); });
+    out += "\n== " + c + "  (" + list.length + ") ==\n";
+    list.forEach(function(r){
+      var pr = priceOf(r.p), st = r.p.stock;
+      var bits = [];
+      if (pr) bits.push("\u0e3f" + pr);
+      if (st !== undefined && st !== null) bits.push(st > 0 ? (st + " in stock") : "OUT OF STOCK");
+      out += "  [ ] " + (r.p.name || r.p.id) + (bits.length ? "   (" + bits.join(" \u00b7 ") + ")" : "") + "\n";
+      out += "        why: " + r.why + "\n";
+    });
+  });
+  SHOOT = out;
+  $("shootlist").textContent = out;
+}
 
 /* ---- review mode -------------------------------------------------------- */
 function openReview(){ if(!ORDER.length) return; $("review").style.display = "block"; document.body.style.overflow = "hidden"; paint(); }
@@ -343,6 +393,15 @@ document.addEventListener("keydown", function(e){
   else if(e.key === "Escape") closeReview();
 });
 
+$("copyShoot").addEventListener("click", function(){
+  navigator.clipboard.writeText(SHOOT).then(function(){
+    $("copyShoot").textContent = "Copied \u2713"; setTimeout(function(){ $("copyShoot").textContent = "Copy shooting list"; }, 1600);
+  }, function(){ $("copyShoot").textContent = "Select the text and copy"; });
+});
+$("dlShoot").addEventListener("click", function(){
+  var b = new Blob([SHOOT], { type: "text/plain" }), a = document.createElement("a");
+  a.href = URL.createObjectURL(b); a.download = "dank-photos-needed.txt"; a.click();
+});
 $("copy").addEventListener("click", function(){
   var t = $("prompts").textContent;
   navigator.clipboard.writeText(t).then(function(){ $("copy").textContent = "Copied ✓"; setTimeout(function(){ $("copy").textContent = "Copy all prompts"; }, 1600); },
