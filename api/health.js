@@ -5,7 +5,7 @@
 import { getMenu } from "./_menu.js";
 import { shConfigured } from "./_storehub.js";
 import { posSyncKey } from "./_auth.js";
-import { usingRedis } from "./_store.js";
+import { usingRedis, storageConfigured, storageUrlUsable, storageFault } from "./_store.js";
 
 export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
@@ -73,7 +73,27 @@ export default async function handler(req, res) {
        That is worth saying out loud on the page people check to see if the
        site is healthy, because nothing else about the site looks broken. */
     const warnings = [];
-    if (!wired.storage) warnings.push("⚠️ No Redis — orders, members, wallets and homepage edits are in memory only and will be lost when the server restarts. Set UPSTASH_REDIS_REST_URL + UPSTASH_REDIS_REST_TOKEN, or install Upstash from the Vercel Marketplace (KV_REST_API_URL + KV_REST_API_TOKEN are accepted too).");
+    if (!wired.storage) {
+      /* "No Redis" and "Redis set up wrong" need different next actions, and
+         the second one is the one that looks like success from the dashboard,
+         so name the actual failure rather than repeating the setup advice. */
+      if (storageConfigured() && !storageUrlUsable()) {
+        warnings.push(
+          "⚠️ The Redis URL is not a REST URL — it looks like KV_URL / REDIS_URL (rediss://…), which " +
+          "only a Redis client can use. Copy the value labelled KV_REST_API_URL (or UPSTASH_REDIS_REST_URL) " +
+          "instead — it starts with https:// — then redeploy. Storage is in memory until then.",
+        );
+      } else if (storageConfigured() && storageFault()) {
+        warnings.push(
+          `⚠️ Redis is configured but rejecting this site (${storageFault()}) — storage is in memory only. ` +
+          "A 401 means the token is wrong: check that KV_REST_API_TOKEN (or UPSTASH_REDIS_REST_TOKEN) was " +
+          "pasted without the surrounding quotes, is the full value, and belongs to the same database as the URL. " +
+          "The site retries every 30 seconds, so fixing the value heals it without a redeploy.",
+        );
+      } else {
+        warnings.push("⚠️ No Redis — orders, members, wallets and homepage edits are in memory only and will be lost when the server restarts. Set UPSTASH_REDIS_REST_URL + UPSTASH_REDIS_REST_TOKEN, or install Upstash from the Vercel Marketplace (KV_REST_API_URL + KV_REST_API_TOKEN are accepted too).");
+      }
+    }
     if (!wired.posSync) warnings.push("⚠️ POS_SYNC_KEY not set (WEBSITE_API_KEY also accepted) — BRYAN POS cannot push its menu or drive the customer display.");
 
     return res.status(200).json({
