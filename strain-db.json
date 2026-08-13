@@ -329,25 +329,25 @@
    "desc": "Sativa-leaning cross of Tropicanna Cookies with a red-flowering Tangie phenotype. Juicy citrus-berry flavor carries a bright, motivating lift that suits daytime sessions."
   },
   "cocochanel": {
-   "name": "Coco Chanel",
+   "name": "CoCo Chanel",
    "known": true,
-   "type": "Indica-dominant Hybrid",
-   "thc": "21%",
+   "type": "Hybrid - Sativa 70%",
+   "thc": "29.4%",
    "cbd": "<1%",
    "terpene": "Limonene",
    "effects": [
-    "Uplifted",
-    "Creative",
     "Euphoric",
-    "Relaxed"
+    "Social",
+    "Balanced",
+    "Talkative"
    ],
    "flavors": [
-    "Grape",
-    "Plum",
-    "Diesel"
+    "Coconut",
+    "Vanilla",
+    "Citrus"
    ],
-   "lineage": "Grape Gasoline x Cocomer Gelatti",
-   "desc": "Designer-named indica-leaning cross pairing dark grape and plum notes with a diesel finish. The effect is a composed, clear-headed calm that still sparks creative energy."
+   "lineage": "",
+   "desc": "Coconut and vanilla with a citrus lift — the most easy-going jar on the shelf. Sativa-leaning at 70%, so the euphoria stays sociable instead of racy. Beach days and long conversations."
   },
   "sherbtang": {
    "name": "Sherb Tang",
@@ -636,22 +636,23 @@
   "grapestank": {
    "name": "Grape Stank",
    "known": true,
-   "type": "Sativa-dominant Hybrid",
-   "thc": "20%",
+   "type": "Indica",
+   "thc": "31.2%",
    "cbd": "<1%",
    "terpene": "Myrcene",
    "effects": [
-    "Euphoric",
-    "Happy",
-    "Relaxed"
+    "Relaxed",
+    "Sleepy",
+    "Calm",
+    "Heavy"
    ],
    "flavors": [
-    "Diesel",
     "Grape",
-    "Berry"
+    "Sweet diesel",
+    "Ripe fruit"
    ],
-   "lineage": "Garlic Grove x Grape Gasoline",
-   "desc": "Garlic Grove crossed into Grape Gasoline makes an award-winning hybrid where grape candy meets savory diesel funk and an upbeat, mellow high."
+   "lineage": "",
+   "desc": "Ripe grape over a sweet diesel base, and the body goes first. A true indica for winding down at the end of the night rather than starting anything."
   },
   "lemoncherrybx2": {
    "name": "Lemon Cherry BX2",
@@ -1080,6 +1081,48 @@
    ],
    "lineage": "",
    "desc": "Pungent garlic and savoury diesel — one of the loudest jars in the shop. A playful, giggly buzz that stays clear rather than couch-locking."
+  },
+  "papayafuel": {
+   "name": "Papaya Fuel",
+   "known": true,
+   "type": "Sativa",
+   "thc": "33.5%",
+   "cbd": "<1%",
+   "terpene": "Terpinolene",
+   "effects": [
+    "Energetic",
+    "Creative",
+    "Focused",
+    "Uplifted"
+   ],
+   "flavors": [
+    "Papaya",
+    "Tropical",
+    "Diesel"
+   ],
+   "lineage": "",
+   "desc": "Tropical papaya cut with diesel, and the strongest flower in the shop at 33.5%. An energising rush with a creative edge — a morning strain, not an evening one."
+  },
+  "granddaddypurple": {
+   "name": "Granddaddy Purple",
+   "known": true,
+   "type": "Indica",
+   "thc": "30.1%",
+   "cbd": "<1%",
+   "terpene": "Myrcene",
+   "effects": [
+    "Sedated",
+    "Sleepy",
+    "Dreamy",
+    "Relaxed"
+   ],
+   "flavors": [
+    "Grape",
+    "Berry",
+    "Earthy"
+   ],
+   "lineage": "Purple Urkle x Big Bud",
+   "desc": "The classic purple indica — grape and berry over damp earth, and full-body sedation behind it. Movie nights, then deep sleep."
   }
  },
  "alias": {
@@ -1102,6 +1145,13 @@
   "lemoncherry": "lemoncherrygelato",
   "grapegasolin": "grapegasoline",
   "galicman": "garlicman",
-  "wilson0": "wilsonzero"
+  "wilson0": "wilsonzero",
+  "grandaddypurple": "granddaddypurple",
+  "gdp": "granddaddypurple",
+  "grapestankjoint": "grapestank",
+  "cocochaneljoint": "cocochanel",
+  "whitegalic": "whitegarlic",
+  "bluenerd": "bluenerdz",
+  "lemoncherrygelatojoint": "lemoncherrygelato"
  }
 }
