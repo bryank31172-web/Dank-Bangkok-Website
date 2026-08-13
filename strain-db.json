@@ -291,22 +291,24 @@
   "thaiorangetea": {
    "name": "Thai Orange Tea",
    "known": true,
-   "type": "Hybrid",
+   "type": "Sativa",
    "thc": "29-30%",
    "cbd": "<1%",
    "terpene": "",
    "effects": [
     "Uplifted",
-    "Relaxed",
-    "Happy"
+    "Focused",
+    "Social",
+    "Creative"
    ],
    "flavors": [
+    "Thai tea",
     "Orange",
-    "Tea",
-    "Sweet"
+    "Creamy"
    ],
    "lineage": "",
-   "desc": "A Thai-grown exotic named for its aroma of sweet iced orange tea. Smooth, fragrant smoke with a balanced, feel-good lift."
+   "desc": "Thai iced tea in a jar — orange and cream over a sweet base. Sativa, and it lifts without racing: the daytime pick for getting things done or making something.",
+   "card": true
   },
   "redhotcookies": {
    "name": "Red Hot Cookies",
@@ -1131,6 +1133,22 @@
    ],
    "lineage": "Purple Urkle x Big Bud",
    "desc": "The classic purple indica — grape and berry over damp earth, and full-body sedation behind it. Movie nights, then deep sleep.",
+   "card": true
+  },
+  "gelato41": {
+   "name": "Gelato 41",
+   "known": true,
+   "type": "Hybrid",
+   "thc": "",
+   "cbd": "<1%",
+   "terpene": "",
+   "effects": [],
+   "flavors": [
+    "Creamy",
+    "Sweet"
+   ],
+   "lineage": "",
+   "desc": "Dessert-style exotic — creamy and sweet, the Gelato family at its most indulgent.",
    "card": true
   }
  },

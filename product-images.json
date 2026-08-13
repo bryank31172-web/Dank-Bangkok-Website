@@ -9,7 +9,10 @@
   "orangez": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-6878.jpg?v=1782729032",
   "giraffepuzzy": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-6876.jpg?v=1782725629",
   "bluenerdz": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-6875.jpg?v=1782723699",
-  "thaiorangetea": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-6873.jpg?v=1782722872",
+  "thaiorangetea": [
+   "assets/strains/thai-orange-tea.jpg",
+   "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-6873.jpg?v=1782722872"
+  ],
   "redhot": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-6090.jpg?v=1781096752",
   "cocochanel": [
    "assets/strains/coco-chanel.jpg",
@@ -206,7 +209,9 @@
   "cookiezmonster": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-6884.jpg?v=1782730860",
   "bluenerd": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-6875.jpg?v=1782723699",
   "lemoncherrygelatojoint": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/48E8E325-A1F7-43F4-8777-6520094BA6C9.png?v=1780151539",
-  "lcgxrs11": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-5253.png?v=1779642559"
+  "lcgxrs11": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-5253.png?v=1779642559",
+  "gelato41": "assets/strains/gelato-41.jpg",
+  "thaiorangeteajoint": "assets/strains/thai-orange-tea.jpg"
  },
  "generic": {
   "flower": "https://images.unsplash.com/photo-1518469669531-9b8c528f909d?auto=format&fit=crop&w=640&h=480&q=70",
