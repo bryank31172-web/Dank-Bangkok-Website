@@ -357,10 +357,24 @@ function shot(hit) {
   return { image: hit };
 }
 
+/* "zkittlesjoint" -> "zkittles". Only a trailing rolling word is stripped: the
+   shop writes the strain first and the format last, and stripping anywhere
+   else would turn "Joint Venture OG" into "Venture OG". Returns "" when the
+   name is not a rolled one, or is nothing but the rolling word. */
+const ROLL_SUFFIX = /(joints?|blunts?|prerolls?|cones?)$/;
+function rolledStem(flat) {
+  const s = String(flat || "").replace(ROLL_SUFFIX, "");
+  return s && s !== flat ? s : "";
+}
+
 export async function fillImages(data) {
   if (!Array.isArray(data) || !data.length) return data;
   const m = await imgMap();
   const sdb = await strainDb();
+  /* Keywords that describe a rolled thing. Checked before the rest of the
+     list for a rolled product, because "chocolate" sits ahead of "joint" in
+     the general order and "chocolate chip joint" is a joint, not a dessert. */
+  const rollKeys = m.keys.filter((k) => ROLLED.test(k));
   return data.map((p) => {
     if (!p || typeof p !== "object") return p;
     if (p.image && String(p.image).trim()) return p;
@@ -369,6 +383,17 @@ export async function fillImages(data) {
     const words = wordsOf(p.name);
     const hit = m.byName[flat];
     if (hit) return { ...p, ...shot(hit), _imgFrom: "name" };
+    /* 1b. a rolled product wears its own strain's picture. "Zkittles Joint" is
+       Zkittles, so it gets the Zkittles card rather than a stock photograph of
+       somebody else's joint. Done by rule rather than by listing every rolled
+       line, so a pre-roll added to the till next week is covered too. The
+       alias table catches the near-misses — the shop writes "Zootie Joint" for
+       Zooties and "OG Kush x Zkittles" for the Zkittlez cross. */
+    const stem = rolledStem(flat);
+    if (stem) {
+      const key = m.byName[stem] ? stem : (sdb.alias[stem] && m.byName[sdb.alias[stem]] ? sdb.alias[stem] : "");
+      if (key) return { ...p, ...shot(m.byName[key]), _imgFrom: "rolled:" + key };
+    }
     const nameCat = String(p.name || "") + " " + String(p.category || "");
     /* A POS category is often just "Specials", so the category word cannot be
        relied on to say "this is flower". A name that IS a strain we know says
@@ -376,12 +401,22 @@ export async function fillImages(data) {
        of Thai food or a teapot because the POS filed it under Specials. */
     const known = !!(sdb.strains[flat] || sdb.strains[sdb.alias[flat]]);
     const weedish = (WEEDISH.test(nameCat) || known) && !ROLLED.test(nameCat);
+    const isRolled = ROLLED.test(nameCat);
     if (GENERIC_ON) {
       /* 2. a real photo of what it plainly is — "(Beer) Wila weizen" is a
          wheat beer, "(Food) Chicken Karaage" is fried chicken. The shop's own
-         photos scan first; strains scan ONLY those. */
-      for (const k of (weedish ? m.keysOwn : m.keys)) {
-        if (kwHit(k, flat, words)) return { ...p, image: m.byKeyword[k], _imgFrom: "keyword:" + k };
+         photos scan first; strains scan ONLY those.
+
+         A rolled product is a strain first and a joint second, so it takes the
+         same two passes as flower does: the shop's own strain photographs, and
+         only then everything else — which is where the picture of a rolled
+         joint lives. Scanning the whole list in one go handed "chocolate chip
+         joint" a photograph of chocolate. */
+      const passes = weedish ? [m.keysOwn] : isRolled ? [m.keysOwn, rollKeys, m.keys] : [m.keys];
+      for (const pass of passes) {
+        for (const k of pass) {
+          if (kwHit(k, flat, words)) return { ...p, image: m.byKeyword[k], _imgFrom: "keyword:" + k };
+        }
       }
       /* 3. a photo of its category — never for flower */
       if (!weedish) {
