@@ -409,6 +409,8 @@
   .size-btn:hover{border-color:var(--green);background:rgba(61,220,132,.12)}
   .size-btn:hover span,.size-btn:hover b{color:var(--txt)}
   .size-btn:active{transform:scale(.95)}
+  .chip-promo{background:linear-gradient(135deg,#3a2a08,#1d1706);border-color:var(--gold);color:#ffe9a6}
+  .chip-promo:hover{border-color:#ffd166}
   .chip-n{opacity:.55;font-weight:700;font-size:11px;margin-left:4px}
   .chip.active .chip-n{opacity:.9}
   .empty{text-align:center;padding:70px 20px;color:var(--muted)}
@@ -2416,7 +2418,27 @@ const esc=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;'
 const oid=s=>String(s==null?"":s).replace(/[^A-Za-z0-9_-]/g,"");
 const money=n=>CONFIG.currency+Number(n).toLocaleString("en-US");
 const typeColor=t=>/^indica/i.test(t||"")?"var(--indica)":/^sativa/i.test(t||"")?"var(--sativa)":"var(--hybrid)";
-const catEmoji=c=>({Exotics:"🚀",Topshelf:"⭐",Midgrade:"💚",Premium:"💎",Joints:"🚬",Edibles:"🍬",Vapes:"💨",Beer:"🍺",Accessories:"🛠️",Merch:"👕",Flowers:"🌿",Edible:"🍬"}[c]||"🌿");
+/* Exact names first (the bundled catalogue), then a pattern pass so a POS
+   category spelled its own way - "Pre-roll", "Equipment", "Rolling Papers" -
+   still gets its own icon rather than the generic leaf every other shelf
+   would share. */
+const CAT_EMO={Exotics:"🚀",Topshelf:"⭐",Midgrade:"💚",Premium:"💎",Joints:"🚬",Edibles:"🍬",Vapes:"💨",Beer:"🍺",Accessories:"🛠️",Merch:"👕",Flowers:"🌿",Edible:"🍬"};
+const CAT_EMO_RE=[
+  [/^(promotion|promo|deal|special)/i,"🎉"],[/^exotic/i,"🚀"],[/^top[\s-]?shelf/i,"⭐"],
+  [/^mid[\s-]?grade/i,"💚"],[/^premium/i,"💎"],[/^(pre[\s-]?roll|joint)/i,"🚬"],
+  [/^edible/i,"🍬"],[/^(rolling\s*)?paper/i,"📜"],[/^(accessor|equipment)/i,"🛠️"],
+  [/^cbd/i,"🧴"],[/^(merch|apparel|clothing)/i,"👕"],[/^(nicotine|tobacco|cigarette)/i,"🚬"],
+  [/^vape/i,"💨"],[/^(beer|alcohol|liquor|wine|spirit|cocktail|bar)/i,"🍺"],
+  [/^(coffee|tea)/i,"☕"],[/^(shake|smoothie|juice)/i,"🧋"],[/^(soft|soda|water|drink|beverage)/i,"🥤"],
+  [/^(food|kitchen|noodle|rice)/i,"🍜"],[/^(snack|munch)/i,"🍟"],[/^(bakery|dessert)/i,"🍰"],
+  [/^(weed|flower|cannabis|bud)/i,"🌿"],[/^(hash|rosin|wax|concentrate)/i,"🍯"],
+];
+const catEmoji=c=>{
+  if(CAT_EMO[c]) return CAT_EMO[c];
+  const s=String(c||"");
+  for(const [re,e] of CAT_EMO_RE) if(re.test(s)) return e;
+  return "🌿";
+};
 const FLOWER_CATS=["Exotics","Topshelf","Midgrade","Premium","Flowers","Flower"];   // incl. BRYAN POS category names
 const isFlowerCat=p=>FLOWER_CATS.includes(p.category);
 const thcTxt=p=>esc(p.thcLabel||(p.thc?p.thc+"%":""));   // goes straight into innerHTML at four call sites
@@ -2498,9 +2520,42 @@ function toggleMember(){
   if(memberMode) toast("Member prices on ⭐"); repriceCart(); render(); if($("#cartDrawer")?.classList.contains("show")) renderCart(); }
 
 /* ---- Chips ---- */
+/* ---- Shelf order -----------------------------------------------------------
+   Categories arrive in whatever order the POS happens to list its products,
+   which put Beer second on the storefront. This is the order the shop wants
+   walked: the flower ladder first, then the things bought alongside it, then
+   the bar and the kitchen at the very end.
+
+   Matched by pattern, not by exact string, because the same shelf is spelled
+   several ways across the POS and the bundled catalogue - "Joints" and
+   "Pre-roll", "Accessories" and "Equipment", "Top shelf" and "Topshelf".
+   A category nobody listed still gets a place: after the named ones and
+   before the bar, so a new POS category appears on the shelf instead of
+   silently landing last. */
+const CAT_ORDER=[
+  /^(promotion|promo|deal|special)s?\b/i,
+  /^exotics?\b/i,
+  /^top[\s-]?shelf\b/i,
+  /^mid[\s-]?grade\b/i,
+  /^(pre[\s-]?roll|joint)s?\b/i,
+  /^edibles?\b/i,
+  /^(rolling\s*)?papers?\b/i,
+  /^(accessor(y|ies)|equipment)\b/i,
+  /^cbd\b/i,
+  /^(merch|merchandise|apparel|clothing)\b/i,
+  /^(nicotine|tobacco|cigarette)/i,
+];
+const CAT_LAST=/^(beer|bar|alcohol|liquor|wine|spirit|cocktail|drink|beverage|soft|soda|juice|shake|smoothie|coffee|tea|water|food|kitchen|snack|munch|bakery|dessert)/i;
+function catRank(c){
+  for(let i=0;i<CAT_ORDER.length;i++) if(CAT_ORDER[i].test(c)) return i;
+  return CAT_LAST.test(c) ? 900 : 500;
+}
 function buildChips(){
   const VD=shopData();
-  const cats=["All",...Array.from(new Set(VD.map(p=>p.category)))];
+  const seen=Array.from(new Set(VD.map(p=>p.category)));
+  /* Stable: equal ranks keep the order the feed gave them. */
+  seen.sort((a,b)=>catRank(a)-catRank(b)||seen.indexOf(a)-seen.indexOf(b));
+  const cats=["All",...seen];
   if(favs.length) cats.push("❤ Saved");
   const cnt=c=> c==="All"?VD.length : c==="❤ Saved"?VD.filter(p=>isFav(p.id)).length : VD.filter(p=>p.category===c).length;
   /* A category name is free text out of the product feed, so it goes nowhere near an
@@ -2509,7 +2564,8 @@ function buildChips(){
      cannot be, and "Flowers') ;alert(1);('" as a category name is a one-line takeover of
      every page view otherwise. */
   CHIP_CATS=cats;
-  $("#catChips").innerHTML=cats.map((c,i)=>`<button class="chip ${c===activeCat?'active':''}" onclick="setCatIdx(${i})">${c==="All"?"🌿 All":c==="❤ Saved"?"❤ Saved":catEmoji(c)+" "+esc(c)}<span class="chip-n">${cnt(c)}</span></button>`).join("")+'<button class="chip" onclick="openPromosAll()">\ud83c\udf89 Promotions</button>';
+  $("#catChips").innerHTML='<button class="chip chip-promo" onclick="openPromosAll()">\ud83c\udf89 Promotions</button>'+
+    cats.map((c,i)=>`<button class="chip ${c===activeCat?'active':''}" onclick="setCatIdx(${i})">${c==="All"?"🌿 All":c==="❤ Saved"?"❤ Saved":catEmoji(c)+" "+esc(c)}<span class="chip-n">${cnt(c)}</span></button>`).join("");
 }
 var CHIP_CATS=[];
 function setCatIdx(i){ setCat(CHIP_CATS[i]); }
