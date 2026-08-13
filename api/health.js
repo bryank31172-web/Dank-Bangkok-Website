@@ -15,10 +15,16 @@ export default async function handler(req, res) {
     const source = menu.source; // "storehub" | "feed" | "bundled" | "empty"
     const count = (menu.data || []).length;
     const shSet = shConfigured();
-    const connected = source === "storehub" || source === "feed";
+    /* "pos" is BRYAN POS's own push feed — the freshest source there is, and
+       the one actually in use. It was missing from this list, so a perfectly
+       healthy site reported itself as not connected and blamed StoreHub. */
+    const connected = source === "pos" || source === "storehub" || source === "feed";
 
     let status, detail;
-    if (source === "storehub") {
+    if (source === "pos") {
+      status = "connected";
+      detail = `✅ Connected to BRYAN POS — ${count} live products pushed from the till.`;
+    } else if (source === "storehub") {
       status = "connected";
       detail = `✅ Connected to StoreHub — ${count} live products loading from your POS backend.`;
     } else if (source === "feed") {
@@ -93,6 +99,16 @@ export default async function handler(req, res) {
       } else {
         warnings.push("⚠️ No Redis — orders, members, wallets and homepage edits are in memory only and will be lost when the server restarts. Set UPSTASH_REDIS_REST_URL + UPSTASH_REDIS_REST_TOKEN, or install Upstash from the Vercel Marketplace (KV_REST_API_URL + KV_REST_API_TOKEN are accepted too).");
       }
+    }
+    /* Without Redis the POS's pushed catalogue lives in one instance's memory,
+       so whether a shopper sees the till's 383 products or the older bundled
+       list depends on which server happens to answer them. That looks like the
+       shop randomly losing stock, so it is worth naming separately. */
+    if (!wired.storage && source === "pos") {
+      warnings.push(
+        "⚠️ The POS catalogue is only held in memory, so some visitors will see the built-in " +
+        "list instead of the till's live one. Fixing Redis above fixes this too.",
+      );
     }
     if (!wired.posSync) warnings.push("⚠️ POS_SYNC_KEY not set (WEBSITE_API_KEY also accepted) — BRYAN POS cannot push its menu or drive the customer display.");
 
