@@ -5,6 +5,7 @@
 import { getMenu } from "./_menu.js";
 import { shConfigured } from "./_storehub.js";
 import { posSyncKey } from "./_auth.js";
+import { usingRedis } from "./_store.js";
 
 export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
@@ -53,7 +54,7 @@ export default async function handler(req, res) {
     };
     const wired = {
       posSync: Boolean(posSyncKey()),
-      storage: Boolean(process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN),
+      storage: usingRedis(),   // true for the Upstash names OR Vercel's KV_ ones
       staffKey: Boolean(process.env.STAFF_KEY),
       ownerLogin: Boolean(process.env.ADMIN_EMAIL && process.env.ADMIN_PASSWORD && process.env.ADMIN_SECRET),
       promoPin: Boolean(process.env.MASTER_PIN),
@@ -72,7 +73,7 @@ export default async function handler(req, res) {
        That is worth saying out loud on the page people check to see if the
        site is healthy, because nothing else about the site looks broken. */
     const warnings = [];
-    if (!wired.storage) warnings.push("⚠️ No Upstash Redis — orders, members, wallets and homepage edits are in memory only and will be lost when the server restarts. Set UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN.");
+    if (!wired.storage) warnings.push("⚠️ No Redis — orders, members, wallets and homepage edits are in memory only and will be lost when the server restarts. Set UPSTASH_REDIS_REST_URL + UPSTASH_REDIS_REST_TOKEN, or install Upstash from the Vercel Marketplace (KV_REST_API_URL + KV_REST_API_TOKEN are accepted too).");
     if (!wired.posSync) warnings.push("⚠️ POS_SYNC_KEY not set (WEBSITE_API_KEY also accepted) — BRYAN POS cannot push its menu or drive the customer display.");
 
     return res.status(200).json({
