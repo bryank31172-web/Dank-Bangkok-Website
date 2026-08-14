@@ -443,6 +443,67 @@ const FLOWERS = [
   {id:"ssh",      name:"Super Silver Haze",  type:"Sativa", thc:23, cbd:1, price:620, hue:70,  tone:"#a6b062"},
 ];
 
+/* The six above are a fallback, kept for when the POS is unreachable — the
+   builder must still work with the internet down at the counter. In normal
+   operation the list is replaced by what the till is actually selling, so a
+   customer cannot build a joint out of a strain the shop ran out of.
+
+   The id is the product name flattened to letters and digits, which is the
+   same key the storefront uses for photographs, so "roll this one" can link
+   here with ?strain=<key> and the right flower is already chosen. It is also
+   interpolated into an inline onclick, and [a-z0-9] only keeps that safe. */
+const strainKey = s => String(s||"").toLowerCase().replace(/\([^)]*\)/g," ").replace(/[^a-z0-9]+/g,"");
+
+/* The grind is drawn from a hue and a tone, so every strain needs a colour.
+   Taken from what the strain tastes of, which is how it actually looks: grape
+   and berry run purple, citrus runs lime, cherry runs red. */
+function colourFor(p){
+  const s=((p.flavors||[]).join(" ")+" "+(p.name||"")).toLowerCase();
+  if(/grape|purple|berry|zoot|granddaddy|gdp/.test(s))   return {hue:280, tone:"#7c6a9c"};
+  if(/cherry|strawberr|red|hot/.test(s))                 return {hue:355, tone:"#9c6a72"};
+  if(/lemon|lime|citrus|orange|pineapple|papaya|haze/.test(s)) return {hue:70, tone:"#a6b062"};
+  if(/mint|menthol|cool/.test(s))                        return {hue:160, tone:"#6f9a8b"};
+  if(/garlic|diesel|gas|fuel|funk/.test(s))              return {hue:95,  tone:"#8a9a62"};
+  return {hue:110, tone:"#7d9a52"};
+}
+
+/* Per-gram price. Flower arrives from the POS with weight tiers, so prefer the
+   1 g tier and fall back to the flat price. */
+function perGram(p){
+  const t=Array.isArray(p.priceTiers)?p.priceTiers:[];
+  const one=t.find(x=>/^1\s*g/i.test(String(x.label||"")));
+  const n=Number(one?one.price:(t[0]?t[0].price:p.price));
+  return Number.isFinite(n)&&n>0?Math.round(n):0;
+}
+
+const FLOWER_CAT=/exotic|top\s?shelf|mid\s?grade|flower|weed|bud/i;
+const NOT_FLOWER=/joint|blunt|pre[\s-]?roll|cone|edible|drink|food|vape|cart|seed|hash|rosin|concentrate|accessor|merch|nicotine|paper/i;
+
+async function loadPosFlowers(){
+  const r=await fetch("/api/products",{cache:"no-store"});
+  if(!r||!r.ok) throw new Error("products "+(r&&r.status));
+  const j=await r.json();
+  const list=Array.isArray(j)?j:(j.products||j.data||[]);
+  const out=[];
+  const seen=new Set();
+  for(const p of list){
+    const nameCat=String(p.name||"")+" "+String(p.category||"");
+    if(!FLOWER_CAT.test(nameCat)||NOT_FLOWER.test(nameCat)) continue;
+    if(!(Number(p.stock)>0)) continue;           // never offer what the shop has run out of
+    const price=perGram(p); if(!price) continue;
+    const id=strainKey(p.name); if(!id||seen.has(id)) continue;
+    seen.add(id);
+    const c=colourFor(p);
+    out.push({id,name:String(p.name||"").replace(/^\s*[(（][^)）]*[)）]\s*/,"").trim()||p.name,
+      /* 33.5 stays 33.5 — the card on the wall says 33.5% and rounding it to
+         34 here would put the two out of step. */
+      type:String(p.type||"Hybrid"),thc:Math.round((Number(p.thc)||0)*10)/10,cbd:Number(p.cbd)||0,
+      price,hue:c.hue,tone:c.tone,img:p.image||""});
+  }
+  out.sort((a,b)=>b.thc-a.thc||a.name.localeCompare(b.name));
+  return out;
+}
+
 const WEIGHTS = [
   {id:"0.5", g:0.5, label:"0.5 G", note:"Solo"},
   {id:"1",   g:1,   label:"1 G",   note:"Classic"},
@@ -1206,12 +1267,50 @@ function showToast(msg){
 }
 
 /* ---------- init ---------- */
-function init(){
+function drawAll(){
   renderSelFlower(); renderFlowerList(); renderWeights();
   renderOpts('resin',RESIN,'resinId'); renderOpts('hash',HASH,'hashId'); renderOpts('filter',FILTER,'filterId');
   renderPaper(); renderSummary(); renderJoint();
+}
+
+/* ?strain=<key> — "roll this one" on a flower's page lands here. Also accepts
+   the strain's display name, so a link written by hand still works. Returns
+   true when the wanted strain is on the list. */
+function applyWantedStrain(){
+  const want=strainKey(new URLSearchParams(location.search).get("strain")||"");
+  if(!want) return false;
+  const hit=FLOWERS.find(f=>f.id===want)||FLOWERS.find(f=>strainKey(f.name)===want);
+  if(!hit) return false;
+  state.flowerId=hit.id;
+  return true;
+}
+
+function init(){
+  /* Paint with the fallback list first: the page is usable in the moment the
+     HTML lands, and a slow or dead /api/products costs nothing but freshness. */
+  applyWantedStrain();
+  /* Arriving from "Roll it into a joint" — that row advertises a price for
+     half a gram, so open on half a gram. Landing on 1 G would double the
+     figure the customer just tapped. Only on the first paint: the reload
+     below must not undo a weight they have since chosen. */
+  if(new URLSearchParams(location.search).get("strain")&&WEIGHTS.some(w=>w.id==="0.5")) state.weightId="0.5";
+  drawAll();
   priceAnim.cur=0; animateTotal(calc().total);
   refreshCartBadge();   // show anything already in the shop's basket
+
+  loadPosFlowers().then(list=>{
+    if(!list.length) return;
+    FLOWERS.length=0; FLOWERS.push(...list);
+    /* Keep whatever the customer had chosen if the till still sells it —
+       reloading must not silently move them onto a different strain. */
+    if(!applyWantedStrain()&&!FLOWERS.some(f=>f.id===state.flowerId)) state.flowerId=FLOWERS[0].id;
+    drawAll();
+    animateTotal(calc().total);
+    const miss=new URLSearchParams(location.search).get("strain");
+    if(miss&&!FLOWERS.some(f=>f.id===strainKey(miss))){
+      showToast("That strain is out of stock right now — pick another");
+    }
+  }).catch(()=>{ /* offline at the counter: the fallback list stands */ });
 }
 init();
 </script>

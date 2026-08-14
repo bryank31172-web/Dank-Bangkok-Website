@@ -386,6 +386,10 @@
      backdrop matched to the cards' own purple-black so the bars read as part
      of the design rather than as a gap. */
   .thumb img.art,.rel-thumb img.art,.pd-media img.art,.ci-thumb img.art{object-fit:contain;background:#0d0616}
+  /* The animated stage sets object-fit on a longer selector than the one
+     above, so it won the cascade and cropped the card anyway — the strain
+     name was cut off the left edge in the popup. Match its specificity. */
+  .pd-media.stage .ps-prod img.art{object-fit:contain;background:#0d0616}
   .ph{width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:60px;position:relative}
   .ph::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,transparent,rgba(0,0,0,.35))}
   .type-tag{position:absolute;top:10px;left:10px;z-index:2;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;color:#06120b}
@@ -524,6 +528,20 @@
   .pd-shots button.on{border-color:var(--green);opacity:1}
   .pd-shots button:hover{opacity:1}
   .pd-shots button:focus-visible{outline:2px solid var(--green);outline-offset:2px}
+  /* "Roll it into a joint" — sits under the weight tiers, because by then the
+     customer has already decided they want this strain and is only choosing
+     the shape it arrives in. A link, not a button: it leaves for the builder. */
+  .roll-row{display:flex;align-items:center;gap:11px;margin-top:11px;padding:11px 13px;border-radius:13px;
+    text-decoration:none;color:var(--txt);background:linear-gradient(135deg,rgba(61,220,132,.11),rgba(217,178,91,.09));
+    border:1px solid var(--line2);transition:.15s;min-height:44px}
+  .roll-row:hover{border-color:var(--green);transform:translateY(-1px)}
+  .roll-row:focus-visible{outline:2px solid var(--green);outline-offset:2px}
+  .roll-ico{font-size:21px;flex:none}
+  .roll-t{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px}
+  .roll-t b{font-size:13.5px;font-weight:800}
+  .roll-t small{font-size:11px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .roll-p{flex:none;text-align:right;display:flex;flex-direction:column;gap:1px;font-size:13px;font-weight:800;color:var(--green2)}
+  .roll-p small{font-size:10.5px;color:var(--muted);font-weight:700}
 
   /* ---- Animated product stage ----------------------------------------
      The clip Bryan sent was an AI product film: the jar hangs in the middle of
@@ -3356,7 +3374,7 @@ function psMount(){
 /* ---- Product detail ---- */
 function openPD(id){
   const p=DATA.find(x=>x.id===id); if(!p)return; pdCurrent=p; pdTierIdx=0; pdQty=1;
-  const tierBlock=isFlower(p)?`<div class="pd-section-t">Choose weight</div><div class="tier-opts" id="tierOpts">${p.priceTiers.map((t,i)=>`<button class="tier ${i===0?'active':''}" onclick="selTier(${i})">${esc(t.label)}<small>${money(memberMode?t.member:t.price)}</small></button>`).join("")}</div>`:"";
+  const tierBlock=isFlower(p)?`<div class="pd-section-t">Choose weight</div><div class="tier-opts" id="tierOpts">${p.priceTiers.map((t,i)=>`<button class="tier ${i===0?'active':''}" onclick="selTier(${i})">${esc(t.label)}<small>${money(memberMode?t.member:t.price)}</small></button>`).join("")}</div>${rollRowHTML(p)}`:"";
   let potStat;
   if(["Beer","Accessories","Merch"].includes(p.category)) potStat=`<div class="stat"><div class="k">Category</div><div class="v" style="font-size:15px">${esc(p.category)}</div></div>`;
   else potStat=`<div class="stat"><div class="k">THC</div><div class="v" id="pdThcV" style="font-size:${(p.thcLabel||'').length>6?'14px':'19px'}">${thcTxt(p)||'—'}</div></div>${p.cbd>0&&p.cbd<50?`<div class="stat"><div class="k">CBD</div><div class="v">${p.cbd}%</div></div>`:''}`;
@@ -3389,6 +3407,29 @@ function openPD(id){
   hydrateStrain(p);
   labRender(p);
 }
+/* Buy it as a joint instead. Every flower can be rolled, from half a gram, and
+   the builder is a page of its own — so this hands the chosen strain over in
+   the URL rather than trying to rebuild the roller inside this popup. The key
+   is the flattened product name, the same one the photo lookup uses, so the
+   builder can find the strain whatever bracket the till put in front of it. */
+const strainKeyOf=s=>String(s||"").toLowerCase().replace(/\([^)]*\)/g," ").replace(/[^a-z0-9]+/g,"");
+function rollPrice(p){
+  /* Half of the 1g tier, which is what half a gram of it costs. Shown as a
+     "from" so the builder's papers and add-ons cannot make this a lie. */
+  const t=(p.priceTiers||[]).find(x=>/^1\s*g/i.test(String(x.label||"")))||(p.priceTiers||[])[0];
+  const per=Number(t&&(memberMode?(t.member||t.price):t.price));
+  return Number.isFinite(per)&&per>0?Math.round(per/2):0;
+}
+function rollRowHTML(p){
+  if(!isFlower(p)||!(p.stock>0)) return "";
+  const from=rollPrice(p);
+  return `<a class="roll-row" href="build-your-joint.html?strain=${encodeURIComponent(strainKeyOf(p.name))}">
+    <span class="roll-ico">🚬</span>
+    <span class="roll-t"><b>Roll it into a joint</b><small>Papers, resin, hash, filter — built your way</small></span>
+    <span class="roll-p">${from?`from ${money(from)}`:""}<small>0.5 g up</small></span>
+  </a>`;
+}
+
 /* A product may carry several shots — its Botanical Legends card first, then
    photographs of the actual jar. One image needs no strip. */
 function shotsOf(p){ const a=Array.isArray(p&&p.images)?p.images.filter(Boolean):[]; return a.length>1?a:[]; }
