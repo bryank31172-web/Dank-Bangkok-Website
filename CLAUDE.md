@@ -179,20 +179,62 @@ folded to `0`.
 
 ## Open work, roughly in priority order
 
-1. Set the two Upstash variables so data survives restarts.
-2. Set `MASTER_PIN` to a new 6-digit number (see the security note above).
-3. Set `POS_SYNC_KEY` so BRYAN POS and the website can talk.
-4. Buy `dankbangkok.com` and point it at the `dankbkk-site` Vercel project.
-5. Delete the duplicate Vercel project `dankbkk-site-4jrn` (it has a failed
-   build and confuses which deployment is live).
-6. `staff.html#box` — Bryan needs to pick a POS product on each of the 7 gift
+As of 14 Aug 2026, `/api/health` reports every wired flag true and an empty
+`warnings` list. Nothing below is breaking the shop.
+
+1. **Product photographs — the big one.** 271 products still show a borrowed
+   stand-in. `IMAGE-QUEUE.csv` is the work list (in-stock first),
+   `CHATGPT-START.md` drives an image generator, `CODEX-HANDOVER.md` explains
+   wiring the results back in. Flower is better photographed than generated.
+2. **The Gelato 41 card is wrong.** Its TASTE / FEELING / BEST FOR lines are
+   word for word the Granddaddy Purple card. Only the header (creamy, sweet)
+   went into `strain-db.json`; the card needs redrawing before the rest can.
+3. Delete the duplicate Vercel project `dankbkk-site-4jrn` (failed build,
+   confuses which deployment is live), and the now-unused `KV_*`, `KV_URL`,
+   `REDIS_URL` variables left over from Upstash.
+4. `staff.html#box` — Bryan needs to pick a POS product on each of the 7 gift
    rows and enter stock numbers, or the custom-box free items never decrement.
-7. `crispyboy` still uses a stock Unsplash lager photo. Only a real photograph
-   of the can fixes this, so it needs Bryan with a camera.
-8. Photograph the food and drinks. Once the POS pushes them, `food.html` shows
-   whatever the POS has, but POS products carry no images.
+5. Shop tour: Bryan has an Insta360 and wanted both a video tour and a 360°
+   one. Nothing has been shot yet.
+6. Not set, so their features are dark: `XAI_API_KEY` (AI chat),
+   `TELEGRAM_BOT_TOKEN`/`TELEGRAM_CHAT_ID` and `RESEND_API_KEY` (order
+   notifications), `OMISE_*`/`TWOC2P_*`/`GBP_SECRET_KEY` (card payments).
+
+Things for Bryan to fix in the POS rather than in code:
+
+- `Gin tonic` 321 and `vodka` 214 are 300 and 200 with 7% applied a second
+  time. Both are bar items, which the storefront hides, so customers never
+  see them — but the till's totals are wrong.
+- Eight bar lines carry negative stock.
+- Three `onion ring` products, one holding 4999. Cappuccino, Latte, Mocha and
+  Strawberry are each in there three times.
+- `(cbd product) ขิงผง โชคดี เขาค้อ` can never have a photograph: the image
+  key keeps letters and digits only, so a Thai-only name flattens to an empty
+  string. Rename it in the POS.
+- Two spellings worth correcting, though both are mapped either way:
+  "Grape Gasolin" (no e), "Galic Man" and "White Galic" (no r).
 
 Done, kept here so nobody redoes them:
+
+- **Storage** — Supabase, Aug 2026. See the section above.
+- **`MASTER_PIN`, `POS_SYNC_KEY`, domain** — all set. `dankbangkok.com` is
+  live, bought through Vercel, with `.co` and `.shop` also owned.
+- **The HYBRID badge on everything** — the POS sends `type` for every product
+  and the site filled an empty one with "Hybrid", so onion rings and lighters
+  wore a strain badge. `strainType()` in `api/_menu.js` now only defaults for
+  flower-shaped categories; the badge falls back to the category.
+- **Member prices looked like list prices** — with member mode on, the popup
+  printed the discounted number bare. It now shows the list price struck
+  through and a ⭐ label.
+- **Botanical Legends cards** — 12 of them in `assets/strains/`, wired in
+  `product-images.json` and `strain-db.json`. Cards are marked `card: true`,
+  which makes their THC/type/flavour override the POS rather than fill a gap.
+  Anything under `assets/strains/` letterboxes instead of cropping; generated
+  photographs belong in `assets/products/`, which crops to fill.
+- **Roll it into a joint** — every in-stock flower links to
+  `build-your-joint.html?strain=<key>` and opens on 0.5 g. That builder used
+  to offer six invented strains hard-coded in the page; it loads the till's
+  own flower now, with the six kept only as an offline fallback.
 
 - **Food menu placeholder data** — `food.html` now reads `/api/products` first
   and builds its tabs from the POS's own category names, so the menu matches
