@@ -13,7 +13,7 @@
 body{background:var(--bg);color:var(--txt);font-family:var(--font);display:flex;flex-direction:column}
 button{font-family:inherit;cursor:pointer;border:none;color:inherit;background:none}
 header{display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--line);background:var(--bg2)}
-header h1{font-size:17px;margin:0}
+header h1{font-size:17px;margin:0;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 header .st{margin-left:auto;font-size:12px;color:var(--muted2)}
 .pill{font-size:11px;font-weight:800;padding:3px 9px;border-radius:999px;border:1px solid var(--line2);color:var(--green2)}
 .pill.warn{color:var(--gold);border-color:var(--gold)}
@@ -68,7 +68,14 @@ main{flex:1;display:flex;min-height:0}
 #chatHead .actions{margin-left:auto;display:flex;gap:8px}
 .ghost{border:1px solid var(--line2);color:var(--muted);padding:8px 13px;border-radius:10px;font-size:12.5px;font-weight:700}
 .ghost:hover{border-color:var(--green);color:var(--green2)}
+.ghost.active{border-color:var(--green);color:var(--green2);background:rgba(61,220,132,.1)}
 .ghost.danger:hover{border-color:var(--danger);color:var(--danger)}
+.order-pop{position:fixed;right:16px;top:68px;z-index:250;width:min(360px,calc(100vw - 32px));
+  background:var(--panel2);border:1px solid var(--gold);border-radius:14px;padding:13px 15px;
+  box-shadow:0 12px 32px rgba(0,0,0,.55);display:none;text-align:left}
+.order-pop.on{display:block;animation:orderIn .18s ease-out}
+.order-pop b{display:block;color:var(--gold);margin-bottom:3px}.order-pop span{font-size:12.5px;color:var(--txt)}
+@keyframes orderIn{from{transform:translateY(-8px);opacity:0}to{transform:translateY(0);opacity:1}}
 #msgs{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px}
 .m{max-width:70%;padding:10px 13px;border-radius:14px;font-size:14px;line-height:1.45;white-space:pre-wrap;word-wrap:break-word}
 .m.customer{background:var(--panel);border:1px solid var(--line);align-self:flex-start;border-bottom-left-radius:4px}
@@ -89,13 +96,15 @@ main{flex:1;display:flex;min-height:0}
    after logging in and its "Select a conversation" placeholder hung 90px past
    the right edge of every tab, leaving the whole console swipeable sideways
    into empty space. The media query has to win. */
-@media(max-width:760px){ #listWrap{width:100%} #chatWrap{display:none!important} body.chatting #listWrap{display:none!important} body.chatting #chatWrap{display:flex!important} }
+@media(max-width:760px){ header .st{display:none} #alertBtn,#logoutBtn{flex-shrink:0;padding:8px 9px}
+  #listWrap{width:100%} #chatWrap{display:none!important} body.chatting #listWrap{display:none!important} body.chatting #chatWrap{display:flex!important} }
 </style>
 </head>
 <body>
 <header>
   <span style="font-size:22px">🌿</span><h1>DANK BKK · Staff Console</h1>
   <span class="st" id="storeStat"></span>
+  <button class="ghost" id="alertBtn" style="display:none" type="button">🔕 Alerts off</button>
   <button class="ghost" id="logoutBtn" style="display:none" onclick="logout()">Log out</button>
 </header>
 <main id="main">
@@ -129,6 +138,8 @@ const API='/api/thread';
 let KEY=localStorage.getItem('dankStaffKey')||'';
 let cur=null, curSeq=0, pollT=null, listT=null, ordersT=null, lastSeen={};   // threadId -> last seq seen
 let TAB='chats', ORDERS=[], knownOrders=new Set(), firstOrderLoad=true, LIVE=false;
+let alertEnabled=localStorage.getItem('dankOrderAlerts')==='1', audioCtx=null, orderPopT=null;
+const BASE_TITLE='🌿 DANK BKK — Staff Console';
 const $=s=>document.querySelector(s);
 
 /* Everything this console displays on the Orders and Chats tabs arrives from
@@ -191,8 +202,38 @@ function authPost(url,body,legacy){
 }
 
 const ago=t=>{const s=(Date.now()-t)/1e3; if(s<60)return 'now'; if(s<3600)return Math.floor(s/60)+'m'; if(s<86400)return Math.floor(s/3600)+'h'; return Math.floor(s/86400)+'d';};
-function beep(){ try{ const a=new (window.AudioContext||window.webkitAudioContext)(); const o=a.createOscillator(),g=a.createGain();
-  o.connect(g); g.connect(a.destination); o.frequency.value=880; g.gain.value=.06; o.start(); o.stop(a.currentTime+.15);}catch(e){} }
+function updateAlertButton(){ const b=$('#alertBtn'); if(!b)return;
+  b.textContent=alertEnabled?'🔔 Alerts on':'🔕 Alerts off'; b.classList.toggle('active',alertEnabled); }
+function warmAudio(){ try{ if(!audioCtx){ const AC=window.AudioContext||window.webkitAudioContext; if(AC)audioCtx=new AC(); }
+  if(audioCtx?.state==='suspended') audioCtx.resume(); }catch(e){} }
+function beep(){ try{ warmAudio(); if(!audioCtx)return; const o=audioCtx.createOscillator(),g=audioCtx.createGain();
+  o.connect(g); g.connect(audioCtx.destination); o.frequency.value=880; g.gain.setValueAtTime(.07,audioCtx.currentTime);
+  g.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+.25); o.start(); o.stop(audioCtx.currentTime+.26);}catch(e){} }
+async function toggleAlerts(){
+  if(alertEnabled){ alertEnabled=false; localStorage.removeItem('dankOrderAlerts'); updateAlertButton(); return; }
+  warmAudio();
+  if('Notification' in window&&Notification.permission==='default'){ try{ await Notification.requestPermission(); }catch(e){} }
+  alertEnabled=true; localStorage.setItem('dankOrderAlerts','1'); updateAlertButton();
+  boxToast('Order alerts are on — sound, vibration and phone notifications when available');
+}
+function showOrderAlert(fresh){
+  if(!fresh.length)return;
+  const first=fresh[0], count=fresh.length;
+  if(alertEnabled){ beep(); try{ navigator.vibrate?.([180,100,180]); }catch(e){} }
+  document.title=`(${count}) New order · DANK BKK`;
+  let pop=$('#orderPop');
+  if(!pop){ pop=document.createElement('button'); pop.id='orderPop'; pop.type='button'; pop.className='order-pop';
+    const title=document.createElement('b'), detail=document.createElement('span'); pop.append(title,detail);
+    pop.addEventListener('click',()=>{ setTab('orders'); pop.classList.remove('on'); }); document.body.appendChild(pop); }
+  pop.querySelector('b').textContent=count===1?'🛒 New order':`🛒 ${count} new orders`;
+  pop.querySelector('span').textContent=`${first.orderId||''} · ฿${first.total??first.subtotal??0} · tap to open Orders`;
+  pop.classList.add('on'); clearTimeout(orderPopT); orderPopT=setTimeout(()=>pop.classList.remove('on'),10000);
+  if(alertEnabled&&'Notification' in window&&Notification.permission==='granted'){
+    try{ const n=new Notification(count===1?'DANK BKK · New order':`DANK BKK · ${count} new orders`,{
+      body:`${first.orderId||''} · ฿${first.total??first.subtotal??0} · ${first.customer?.name||'Customer'}`,tag:'dank-new-order'});
+      n.onclick=()=>{ window.focus(); setTab('orders'); n.close(); }; }catch(e){}
+  }
+}
 
 async function login(){
   const k=$('#keyInput').value.trim()||KEY; if(!k){$('#loginErr').textContent='Enter the key';return;}
@@ -204,6 +245,7 @@ async function login(){
   const j=await r.json();
   $('#storeStat').innerHTML=j.redis?'<span class="pill">● storage: redis</span>':'<span class="pill warn">● storage: memory (set up Upstash for production)</span>';
   $('#login').style.display='none'; $('#listWrap').style.display='flex'; $('#chatWrap').style.display='flex'; $('#logoutBtn').style.display='';
+  $('#alertBtn').style.display=''; updateAlertButton();
   renderList(j.threads); startListPoll(); pollOrders(); startOrderPoll();
   /* The Telegram and LINE alerts link back here as staff.html#orders and
      staff.html#count. These were two separate ifs, so #orders matched the tab
@@ -228,7 +270,7 @@ async function login(){
 function logout(){ localStorage.removeItem('dankStaffKey'); LIVE=false; location.reload(); }
 
 function setTab(t){ if(typeof stopCamScan==='function') stopCamScan(); TAB=t; $('#tabChats').classList.toggle('active',t==='chats'); $('#tabOrders').classList.toggle('active',t==='orders'); $('#tabGifts').classList.toggle('active',t==='gifts'); $('#tabCount').classList.toggle('active',t==='count'); $('#tabBox').classList.toggle('active',t==='box'); $('#tabLab').classList.toggle('active',t==='lab'); $('#tabMember').classList.toggle('active',t==='member'); $('#tabSales').classList.toggle('active',t==='sales');
-  if(t==='orders'){ renderOrders(); $('#ordCnt').style.display='none'; knownOrders=new Set(ORDERS.map(o=>o.orderId)); }
+  if(t==='orders'){ renderOrders(); $('#ordCnt').style.display='none'; knownOrders=new Set(ORDERS.map(o=>o.orderId)); document.title=BASE_TITLE; $('#orderPop')?.classList.remove('on'); }
   else if(t==='gifts'){ loadGifts(); }
   else if(t==='count'){ loadCount(); }
   else if(t==='box'){ loadBoxGifts(); }
@@ -623,7 +665,8 @@ async function pollOrders(){
   try{ const r=await authGet('/api/orders'); if(!r.ok) return;
     ORDERS=(await r.json()).orders||[];
     const fresh=ORDERS.filter(o=>!knownOrders.has(o.orderId)&&o.status!=='done');
-    if(!firstOrderLoad && fresh.length){ beep(); const c=$('#ordCnt'); if(TAB!=='orders'){ c.textContent=fresh.length; c.style.display='flex'; } }
+    if(!firstOrderLoad && fresh.length){ showOrderAlert(fresh); fresh.forEach(o=>knownOrders.add(o.orderId));
+      const c=$('#ordCnt'); if(TAB!=='orders'){ c.textContent=fresh.length; c.style.display='flex'; } }
     if(firstOrderLoad){ knownOrders=new Set(ORDERS.map(o=>o.orderId)); firstOrderLoad=false;
       const n=ORDERS.filter(o=>o.status!=='done').length; if(n&&TAB!=='orders'){ $('#ordCnt').textContent=n; $('#ordCnt').style.display='flex'; } }
     if(TAB==='orders') renderOrders();
@@ -710,18 +753,21 @@ function startListPoll(){ clearInterval(listT); listT=setInterval(async()=>{ if(
    stacked a second timer on the first, so a console left open all shift ended
    up asking /api/orders several times a second without anyone noticing. Each
    of the three polls now has exactly one live handle, cleared before it is
-   replaced, and they all stop while the tab is in the background: a phone in a
-   pocket has no reason to keep the API busy. */
-function startOrderPoll(){ clearInterval(ordersT); ordersT=setInterval(pollOrders,5000); }
+   replaced. Chat and thread polls stop while the tab is in the background. If
+   staff explicitly enable alerts, only the order poll continues at a slower
+   30-second interval; external LINE/Telegram/WhatsApp pushes remain the
+   reliable path when a mobile browser suspends the page completely. */
+function startOrderPoll(ms=5000){ clearInterval(ordersT); ordersT=setInterval(pollOrders,ms); }
 function startThreadPoll(){ clearInterval(pollT); pollT=setInterval(()=>pull(false),3000); }
 function stopPolls(){ clearInterval(ordersT); clearInterval(listT); clearInterval(pollT); ordersT=listT=pollT=null; }
 document.addEventListener('visibilitychange',()=>{
-  if(document.hidden){ stopPolls(); return; }
+  if(document.hidden){ stopPolls(); if(LIVE&&alertEnabled) startOrderPoll(30000); return; }
   if(!LIVE) return;
   pollOrders(); startOrderPoll(); startListPoll();
   if(TAB==='chats') refreshChats();
   if(cur){ pull(false); startThreadPoll(); }
 });
+$('#alertBtn').addEventListener('click',toggleAlerts);
 
 function renderList(threads){
   const el=$('#list');
