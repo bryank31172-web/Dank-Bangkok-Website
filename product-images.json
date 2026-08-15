@@ -30,6 +30,22 @@
   "chocolate": "assets/products/chocolate.jpg",
   "cookiesncream": "assets/products/cookiesncream.jpg",
   "gummies100mg": "assets/products/gummies100mg.jpg",
+  "reesespeanutbutter": "assets/products/reesespeanutbutter.jpg",
+  "espresso": [
+   "assets/products/espresso.jpg",
+   "https://images.unsplash.com/photo-1579992357154-faf4bde95b3d?auto=format&fit=crop&w=640&h=480&q=70"
+  ],
+  "mango": "assets/products/mango.jpg",
+  "rawwidetips": "assets/products/rawwidetips.jpg",
+  "blueberry": "assets/products/blueberry.jpg",
+  "wildcherry": "assets/products/wildcherry.jpg",
+  "backwoodpack": "assets/products/backwoodpack.jpg",
+  "americano": [
+   "assets/products/americano.jpg",
+   "https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?auto=format&fit=crop&w=640&h=480&q=70"
+  ],
+  "lemoncherrybx2": "assets/products/lemoncherrybx2.jpg",
+  "brownie50mg": "assets/products/brownie50mg.jpg",
   "crunchberrie": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-6890.png?v=1782732640",
   "alienmint": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-6888.png?v=1782731863",
   "cookiemonster": "https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-6884.jpg?v=1782730860",
