@@ -27,6 +27,9 @@ const KNOWN_VARS = [
   "STOREHUB_STORE", "STOREHUB_TOKEN", "MENU_FEED_URL", "POS_FEED_MAX_AGE_H",
   "XAI_API_KEY", "GROK_MODEL", "RESEND_API_KEY",
   "TELEGRAM_BOT_TOKEN", "TELEGRAM_CHAT_ID",
+  "LINE_CHANNEL_ACCESS_TOKEN", "LINE_CHANNEL_SECRET", "LINE_TO",
+  "WHATSAPP_ACCESS_TOKEN", "WHATSAPP_PHONE_NUMBER_ID", "WHATSAPP_TO",
+  "WHATSAPP_API_VERSION", "WHATSAPP_TEMPLATE_NAME", "WHATSAPP_TEMPLATE_LANGUAGE",
   "OMISE_PUBLIC_KEY", "OMISE_SECRET_KEY", "TWOC2P_MERCHANT_ID",
   "TWOC2P_SECRET", "GBP_SECRET_KEY",
 ];
@@ -123,7 +126,15 @@ export default async function handler(req, res) {
         gbp: Boolean(process.env.GBP_SECRET_KEY),
       },
       notify: {
+        inApp: Boolean(process.env.STAFF_KEY),
+        line: Boolean(process.env.LINE_CHANNEL_ACCESS_TOKEN && process.env.LINE_TO),
         telegram: Boolean(process.env.TELEGRAM_BOT_TOKEN && process.env.TELEGRAM_CHAT_ID),
+        whatsapp: Boolean(
+          process.env.WHATSAPP_ACCESS_TOKEN &&
+          process.env.WHATSAPP_PHONE_NUMBER_ID &&
+          process.env.WHATSAPP_TO
+        ),
+        whatsappTemplate: Boolean(process.env.WHATSAPP_TEMPLATE_NAME),
         email: Boolean(process.env.RESEND_API_KEY),
       },
     };
@@ -188,6 +199,22 @@ export default async function handler(req, res) {
       );
     }
     if (!wired.posSync) warnings.push("⚠️ POS_SYNC_KEY not set (WEBSITE_API_KEY also accepted) — BRYAN POS cannot push its menu or drive the customer display.");
+    const whatsappParts = [
+      process.env.WHATSAPP_ACCESS_TOKEN,
+      process.env.WHATSAPP_PHONE_NUMBER_ID,
+      process.env.WHATSAPP_TO,
+    ];
+    if (whatsappParts.some(Boolean) && !whatsappParts.every(Boolean)) {
+      warnings.push(
+        "⚠️ WhatsApp order alerts are only partly configured — set WHATSAPP_ACCESS_TOKEN, " +
+        "WHATSAPP_PHONE_NUMBER_ID and WHATSAPP_TO together, then redeploy.",
+      );
+    } else if (wired.notify.whatsapp && !wired.notify.whatsappTemplate) {
+      warnings.push(
+        "⚠️ WhatsApp order alerts are using plain text, which Meta accepts only during an open " +
+        "customer-service window. Add an approved utility WHATSAPP_TEMPLATE_NAME for reliable staff alerts.",
+      );
+    }
 
     return res.status(200).json({
       ok: true,

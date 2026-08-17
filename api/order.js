@@ -19,6 +19,7 @@ import { pushTransaction } from "./_storehub.js";
 import { boxesInOrder, issueGifts, giftAlertLines, getGiftConfig } from "./_boxgifts.js";
 import { getMenu } from "./_menu.js";
 import { notifyStaffLine } from "./_line.js";
+import { notifyStaffWhatsApp } from "./_whatsapp.js";
 import { requireRate } from "./_ratelimit.js";
 
 const OWNER_EMAIL = process.env.ORDER_EMAIL_TO || "dankclubbkk@gmail.com";
@@ -180,6 +181,26 @@ export default async function handler(req, res) {
       ).replace(/\n/g, "<br>")}</p>`
     : "";
 
+  /* One staff-facing message for every push channel. Keeping the text in one
+     place prevents Telegram, LINE and WhatsApp from slowly disagreeing about
+     the total, table/delivery destination or notes. */
+  const host = req.headers?.["x-forwarded-host"] || req.headers?.host || "dankbkk.com";
+  const itemLines = o.items
+    .map((i) => `• ${i.name} (${i.option || ""}) ×${i.qty} — ฿${i.lineTotal}`)
+    .join("\n");
+  const where = matchedTable
+    ? `🪑 TABLE ${matchedTable} — bring it over`
+    : o.fulfilment === "delivery"
+    ? `🚚 Delivery — ${o.delivery?.zone || ""}\n${o.delivery?.address || ""}`
+    : `🏬 Pickup — ${o.pickup?.branch || ""}${o.pickup?.time ? " at " + o.pickup.time : ""}`;
+  const staffAlert =
+    `🛒 NEW ORDER ${orderId} — dankbkk.com\n\n${itemLines}${giftBlock}\n\n` +
+    `Total: ฿${o.total ?? o.subtotal}${o.member ? " (member ⭐)" : ""}\n` +
+    `Pay: ${o.payment}\n${where}\n` +
+    `Customer: ${o.customer?.name || "-"} · ${o.customer?.phone}\n` +
+    `${o.notes ? "Notes: " + o.notes + "\n" : ""}\n` +
+    `➡️ Open: https://${host}/staff.html#orders`;
+
   const results = [];
 
   // 0) ALWAYS save the order so it shows in the staff console's Orders tab
@@ -200,21 +221,10 @@ export default async function handler(req, res) {
   // 0b) Telegram ping — staff phones buzz instantly (same bot as chat handoffs)
   if (process.env.TELEGRAM_BOT_TOKEN && process.env.TELEGRAM_CHAT_ID) {
     try {
-      const host = req.headers?.["x-forwarded-host"] || req.headers?.host || "dankbkk.com";
-      const lines = o.items.map((i) => `• ${i.name} (${i.option}) ×${i.qty} — ฿${i.lineTotal}`).join("\n");
-      const where = matchedTable
-        ? `🪑 TABLE ${matchedTable} — bring it over`
-        : o.fulfilment === "delivery"
-        ? `🚚 Delivery — ${o.delivery?.zone || ""}\n${o.delivery?.address || ""}`
-        : `🏬 Pickup — ${o.pickup?.branch || ""} ${o.pickup?.time ? "at " + o.pickup.time : ""}`;
-      const text =
-        `🛒 NEW ORDER ${orderId} — dankbkk.com\n\n${lines}${giftBlock}\n\nTotal: ฿${o.total ?? o.subtotal}${o.member ? " (member ⭐)" : ""}\nPay: ${o.payment}\n${where}\n` +
-        `Customer: ${o.customer?.name || "-"} · ${o.customer?.phone}\n${o.notes ? "Notes: " + o.notes + "\n" : ""}` +
-        `\n➡️ Open: https://${host}/staff.html#orders`;
       const r = await fetch(`https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/sendMessage`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ chat_id: process.env.TELEGRAM_CHAT_ID, text }),
+        body: JSON.stringify({ chat_id: process.env.TELEGRAM_CHAT_ID, text: staffAlert }),
       });
       results.push(r.ok);
     } catch (e) { results.push(false); }
@@ -222,17 +232,14 @@ export default async function handler(req, res) {
 
   // 0b-LINE) Same alert pushed to LINE (Bryan / staff group) if LINE_TO is set
   try {
-    const host = req.headers?.["x-forwarded-host"] || req.headers?.host || "dankbkk.com";
-    const lines = o.items.map((i) => `• ${i.name} (${i.option}) ×${i.qty} — ฿${i.lineTotal}`).join("\n");
-    const where = matchedTable
-      ? `🪑 TABLE ${matchedTable} — bring it over`
-      : o.fulfilment === "delivery"
-      ? `🚚 Delivery — ${o.delivery?.zone || ""} ${o.delivery?.address || ""}`
-      : `🏬 Pickup — ${o.pickup?.branch || ""} ${o.pickup?.time || ""}`;
-    const r = await notifyStaffLine(
-      `🛒 NEW ORDER ${orderId} — dankbkk.com\n\n${lines}${giftBlock}\n\nTotal: ฿${o.total ?? o.subtotal}\nPay: ${o.payment}\n${where}\nCustomer: ${o.customer?.name || "-"} · ${o.customer?.phone}\n➡️ https://${host}/staff.html#orders`
-    );
-    if (r.ok) results.push(true);
+    const r = await notifyStaffLine(staffAlert);
+    if (!r.skipped) results.push(r.ok);
+  } catch (e) { /* non-fatal */ }
+
+  // 0b-WhatsApp) Meta Cloud API alert to one or more staff phones
+  try {
+    const r = await notifyStaffWhatsApp(staffAlert);
+    if (!r.skipped) results.push(r.ok);
   } catch (e) { /* non-fatal */ }
 
   /* 0c) Push into StoreHub as an online transaction (optional; STOREHUB_PUSH_ORDERS=1).
