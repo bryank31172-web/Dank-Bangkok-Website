@@ -2106,7 +2106,7 @@ function submitMemberLead(name,phone){
    Ladder from CONFIG.gramLadder: 3g→1g, 5g→2g, 9g→3g, 12g→4g, 15g→5g free. */
 function gramsOf(line){
   if(!line||line.bonus) return 0;
-  if(!FLOWER_CATS.includes(line.category)) return 0;
+  if(!isFlowerCatName(line.category)) return 0;
   const L=String(line.tierLabel||"").toLowerCase().replace(/½/g,"0.5");
   const m=L.match(/([\d.]+)\s*g/);
   const g=m?parseFloat(m[1]):(L.includes("joint")?1:0);   // count a joint as ~1g
@@ -2192,7 +2192,7 @@ function orderBoxes(items){
   (items||[]).forEach(i=>{
     if(!i||i.bonus) return;
     const cat=i.category==null?"":String(i.category).trim();
-    if(cat&&!FLOWER_CATS.includes(cat)) return;
+    if(cat&&!isFlowerCatName(cat)) return;
     const L=String(i.option||i.tierLabel||"").toLowerCase().replace(/\u00BD/g,"0.5");
     const m=L.match(/([\d.]+)\s*g/);
     const w=m?parseFloat(m[1]):(L.includes("joint")?1:0);
@@ -2494,6 +2494,9 @@ function typeTagHTML(p){
    would share. */
 const CAT_EMO={Exotics:"🚀",Topshelf:"⭐",Midgrade:"💚",Premium:"💎",Joints:"🚬",Edibles:"🍬",Vapes:"💨",Beer:"🍺",Accessories:"🛠️",Merch:"👕",Flowers:"🌿",Edible:"🍬"};
 const CAT_EMO_RE=[
+  /* "Special / Merch" is a merch shelf, not a promotion - read it first, the
+     same way the shelf order does, or it wears a party popper. */
+  [/^special\s*[\/,&]\s*merch/i,"👕"],
   [/^(promotion|promo|deal|special)/i,"🎉"],[/^exotic/i,"🚀"],[/^top[\s-]?shelf/i,"⭐"],
   [/^mid[\s-]?grade/i,"💚"],[/^premium/i,"💎"],[/^(pre[\s-]?roll|joint)/i,"🚬"],
   [/^edible/i,"🍬"],[/^(rolling\s*)?paper/i,"📜"],[/^(accessor|equipment)/i,"🛠️"],
@@ -2509,8 +2512,14 @@ const catEmoji=c=>{
   for(const [re,e] of CAT_EMO_RE) if(re.test(s)) return e;
   return "🌿";
 };
-const FLOWER_CATS=["Exotics","Topshelf","Midgrade","Premium","Flowers","Flower"];   // incl. BRYAN POS category names
-const isFlowerCat=p=>FLOWER_CATS.includes(p.category);
+/* The flower shelves. A pattern rather than a list of exact names because the
+   POS writes "Top Shelf" and "Mid Grade" with a space and files loose bud
+   under "Weed" - spellings an exact-match list missed, which quietly left
+   most of the flower in the shop invisible to the free-gram ladder and to
+   the AI picker. Same patterns the shelf order uses. */
+const FLOWER_RE=/^(exotics?|top[\s-]?shelf|premium|mid[\s-]?grade|weed|flowers?|bud|cannabis)\b/i;
+const isFlowerCatName=c=>FLOWER_RE.test(c||"");
+const isFlowerCat=p=>isFlowerCatName(p&&p.category);
 const thcTxt=p=>esc(p.thcLabel||(p.thc?p.thc+"%":""));   // goes straight into innerHTML at four call sites
 const tiers=p=>p.priceTiers;
 const basePrice=p=>memberMode?(tiers(p)?tiers(p)[0].member:p.member):(tiers(p)?tiers(p)[0].price:p.price);
@@ -2598,27 +2607,55 @@ function toggleMember(){
 
    Matched by pattern, not by exact string, because the same shelf is spelled
    several ways across the POS and the bundled catalogue - "Joints" and
-   "Pre-roll", "Accessories" and "Equipment", "Top shelf" and "Topshelf".
+   "Pre-Roll", "Accessories" and "Equipment", "Top Shelf" and "Topshelf".
    A category nobody listed still gets a place: after the named ones and
    before the bar, so a new POS category appears on the shelf instead of
-   silently landing last. */
+   silently landing last.
+
+   Grouped into families - flower, then the rest of the cannabis, then the
+   merch and hardware - because this same rank orders the grid as well as the
+   chips, so a shelf can never sit in one order on the chips and another in
+   the products below them.
+
+   Rank is carried on each entry rather than being the array position, so a
+   narrow pattern can be tested early without that position deciding where its
+   shelf lands: the POS category "Special / Merch" has to be read before the
+   promotions pattern claims it, but it belongs with the merch. */
 const CAT_ORDER=[
-  /^(promotion|promo|deal|special)s?\b/i,
-  /^exotics?\b/i,
-  /^top[\s-]?shelf\b/i,
-  /^mid[\s-]?grade\b/i,
-  /^(pre[\s-]?roll|joint)s?\b/i,
-  /^edibles?\b/i,
-  /^(rolling\s*)?papers?\b/i,
-  /^(accessor(y|ies)|equipment)\b/i,
-  /^cbd\b/i,
-  /^(merch|merchandise|apparel|clothing)\b/i,
-  /^(nicotine|tobacco|cigarette)/i,
+  { re:/^special\s*[\/,&]\s*merch/i,                    rank:40 },   // read before the promo pattern below
+  { re:/^(promotion|promo|deal|special)s?\b/i,          rank:0  },
+  /* cannabis flower, strongest shelf first */
+  { re:/^exotics?\b/i,                                  rank:10 },
+  { re:/^top[\s-]?shelf\b/i,                            rank:11 },
+  { re:/^premium\b/i,                                   rank:12 },
+  { re:/^mid[\s-]?grade\b/i,                            rank:13 },
+  { re:/^(weed|flowers?|bud|cannabis)\b/i,              rank:14 },
+  /* everything else made from cannabis */
+  { re:/^(pre[\s-]?roll|joint|blunt)s?\b/i,             rank:20 },
+  { re:/^edibles?\b/i,                                  rank:21 },
+  { re:/^(concentrates?|hash|rosin|extracts?|wax)\b/i,  rank:22 },
+  { re:/^(vapes?|carts?|cartridges?)\b/i,               rank:23 },
+  { re:/^cbd\b/i,                                       rank:24 },
+  { re:/^seeds?\b/i,                                    rank:25 },
+  /* merch and hardware */
+  { re:/^(rolling\s*)?papers?\b/i,                      rank:41 },
+  { re:/^(accessor(y|ies)|equipment)\b/i,               rank:42 },
+  { re:/^(merch|merchandise|apparel|clothing)\b/i,      rank:43 },
+  { re:/^cigars?\b/i,                                   rank:44 },
+  { re:/^(nicotine|tobacco|cigarette)/i,                rank:45 },
 ];
 const CAT_LAST=/^(beer|bar|alcohol|liquor|wine|spirit|cocktail|drink|beverage|soft|soda|juice|shake|smoothie|coffee|tea|water|food|kitchen|snack|munch|bakery|dessert)/i;
 function catRank(c){
-  for(let i=0;i<CAT_ORDER.length;i++) if(CAT_ORDER[i].test(c)) return i;
+  for(const e of CAT_ORDER) if(e.re.test(c)) return e.rank;
   return CAT_LAST.test(c) ? 900 : 500;
+}
+/* The same ranks collapsed to the four groups the shop is walked in. The grid
+   sorts by this so the flower stays together as one block; the finer catRank
+   still orders the chips and the default view inside each group. */
+function catFamily(c){
+  const r=catRank(c);
+  return r<10?0 : r<20?1 : r<30?2 : r<100?3 : r<900?4 : 5;
+  //     promo   flower  cannabis  merch   unlisted  bar & kitchen
 }
 function buildChips(){
   const VD=shopData();
@@ -2713,12 +2750,25 @@ function render(){
     if(q){ const hay=(p.name+" "+p.type+" "+p.category+" "+(p.effects||[]).join(" ")+" "+(p.flavors||[]).join(" ")).toLowerCase(); if(!hay.includes(q)) return false; }
     return true;
   });
+  /* Family decides the order before anything the customer picked does: the
+     flower, then the rest of the cannabis, then the merch, then the kitchen.
+     This is a weed shop, so the weed opens it whichever sort is chosen - left
+     to "Featured" alone a well-stocked plate of onion rings was the first
+     thing on the page.
+
+     Family, not the individual shelf, because a customer who asks for lowest
+     price wants the cheapest flower in the shop - not the cheapest Exotics,
+     then the cheapest Top Shelf. The shelf ladder is still what orders the
+     default view, as the last key below. Picking a single category makes the
+     family constant, so the chip views sort exactly as they did. */
   list.sort((a,b)=>{
+    const fam=catFamily(a.category)-catFamily(b.category); if(fam) return fam;
     if(sort==="price-asc") return basePrice(a)-basePrice(b);
     if(sort==="price-desc") return basePrice(b)-basePrice(a);
     if(sort==="thc-desc") return b.thc-a.thc;
     if(sort==="name") return a.name.localeCompare(b.name);
-    return (b.featured?1:0)-(a.featured?1:0)||b.stock-a.stock;
+    return catRank(a.category)-catRank(b.category)
+        || (b.featured?1:0)-(a.featured?1:0) || b.stock-a.stock;
   });
   $("#resultCount").textContent=`${list.length} item${list.length!==1?"s":""}${branch!=="All branches"?" · "+branch:""}`;
   const g=$("#grid");
@@ -4967,7 +5017,7 @@ function quizPick(v){ quizAns[QUIZ[quizStep].k]=v; quizStep++; renderQuiz(); }
 function quizResults(){
   let list=DATA.filter(p=>p.stock>0&&!p._hidden);
   const cat=quizAns.cat;
-  if(cat==="flower") list=list.filter(p=>FLOWER_CATS.includes(p.category));
+  if(cat==="flower") list=list.filter(p=>isFlowerCat(p));
   else if(cat==="Edibles"||cat==="Vapes") list=list.filter(p=>p.category===cat);
   if(quizAns.budget&&quizAns.budget!=="any"){ const b=list.filter(p=>p.category===quizAns.budget); if(b.length) list=b; }
   const typeFor={relax:"Indica",energy:"Sativa",happy:"Hybrid"};
