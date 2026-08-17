@@ -18,7 +18,7 @@
 </script>
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
 <meta name="theme-color" content="#060a07" />
-<link rel="preload" as="image" href="hero-box.jpg" fetchpriority="high" />
+<link rel="preload" as="image" href="assets/products/toadvenom.jpg" fetchpriority="high" />
 <meta name="description" content="DANK BKK — premium cannabis in Bangkok. Live menu, member prices, PromptPay & card checkout, delivery & pickup across Pattanakarn & Sathorn. Ask DANK AI 24/7." />
 <meta property="og:type" content="website"/>
 <meta property="og:title" content="🌿 DANK BKK — Premium Cannabis Bangkok"/>
@@ -228,7 +228,7 @@
      it; centred on a wide screen (--byo:-50%) where it sits beside the copy. */
   .hero-box{position:absolute;left:var(--boxx,50%);top:var(--boxy);
     width:var(--bw);height:var(--bh);
-    background:url(hero-box.jpg) center/contain no-repeat;
+    background:url(assets/products/toadvenom.jpg) center/contain no-repeat;
     mix-blend-mode:screen;will-change:transform;
     transform:translate3d(-50%,var(--byo),0)
       rotateX(calc(var(--py,0) * -5deg + var(--sp,0) * 13deg))
@@ -1055,14 +1055,14 @@
 </style>
 <section class="promos" id="promos" aria-label="Promotions">
   <div class="promo-track" id="promoTrack">
-    <div class="promo" onclick="openPromo('box')" style="background-color:#1d130b;background-image:url('promo-box.jpg')">
-      <div class="promo-shade"></div><span class="tagchip">DANK CUSTOMS</span>
-      <div class="promo-txt"><div class="promo-kick">28 g · curated or your picks</div>
-        <h3>Build your DANK box</h3>
-        <p>A walnut box, 28 grams of your favourite strains — free hash, brownie, jelly, Backwoods, papers, tee &amp; hat inside.</p>
-        <span class="promo-btn">See the box</span></div>
+    <div class="promo" onclick="openPromo('shops')" style="background-color:#07110b;background-image:url('assets/promo-all-shops.png')">
+      <div class="promo-shade"></div><span class="tagchip">4 DANK LOCATIONS</span>
+      <div class="promo-txt"><div class="promo-kick">Bangkok · Sathorn · Pattanakarn · Lomsak</div>
+        <h3>Find your nearest DANK</h3>
+        <p>See every shop, contact details and one-tap Google Maps directions.</p>
+        <span class="promo-btn">View all shops</span></div>
     </div>
-    <div class="promo" onclick="openPromo('joint')" style="background-color:#14100a;background-image:url('https://cdn.shopify.com/s/files/1/0812/7053/8528/files/18974187-610E-4BB3-8149-5F9240AEBA54.png?v=1692912822&width=1600')">
+    <div class="promo" onclick="openPromo('joint')" style="background-color:#14100a;background-image:url('assets/products/alienmint.jpg')">
       <div class="promo-shade"></div><span class="tagchip">ROLLED FRESH</span>
       <div class="promo-txt"><div class="promo-kick">Any strain on the menu</div>
         <h3>Build your joint</h3>
@@ -1094,12 +1094,12 @@
    from data. Everything rendered from this array is escaped, because the
    owner-edited copy comes back from the server for every visitor. ---- */
 let SITE_SLIDES=[
- {key:"box", tag:"DANK CUSTOMS", kick:"28 g \u00b7 curated or your picks", title:"Build your DANK box",
-  text:"A walnut box, 28 grams of your favourite strains \u2014 free hash, brownie, jelly, Backwoods, papers, tee & hat inside.",
-  btn:"See the box", img:"promo-box.jpg", bg:"#1d130b", detail:""},
+ {key:"shops", tag:"4 DANK LOCATIONS", kick:"Bangkok · Sathorn · Pattanakarn · Lomsak", title:"Find your nearest DANK",
+  text:"See every shop, contact details and one-tap Google Maps directions.",
+  btn:"View all shops", img:"assets/promo-all-shops.png", bg:"#07110b", detail:""},
  {key:"joint", tag:"ROLLED FRESH", kick:"Any strain on the menu", title:"Build your joint",
   text:"Pick the flower, pick the paper \u2014 we roll it fresh. Buy 3g and the 4th gram is free.",
-  btn:"Start building", img:"https://cdn.shopify.com/s/files/1/0812/7053/8528/files/18974187-610E-4BB3-8149-5F9240AEBA54.png?v=1692912822&width=1600", bg:"#14100a", detail:""},
+  btn:"Start building", img:"assets/products/alienmint.jpg", bg:"#0f1c12", detail:""},
  {key:"b3g1", tag:"EVERY STRAIN", kick:"Automatic in your cart", title:"Buy 3g, get 1g free",
   text:"Stack it: 5g \u2192 2 free \u00b7 9g \u2192 3 \u00b7 12g \u2192 4 \u00b7 15g \u2192 5. The cart adds them itself.",
   btn:"Shop flower", img:"https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-6890.png?v=1782732640&width=1600", bg:"#0f1c12", detail:""},
@@ -1401,11 +1401,21 @@ function heroShow(i,manual){
 })();
 function openPromo(key,back){
   const _sl=SITE_SLIDES.find(s=>s.key===key)||null;
-  const img=pUrl((_sl&&_sl.img)||{box:"promo-box.jpg",joint:"https://cdn.shopify.com/s/files/1/0812/7053/8528/files/18974187-610E-4BB3-8149-5F9240AEBA54.png?v=1692912822&width=1200",
+  const img=pUrl((_sl&&_sl.img)||{box:"assets/products/toadvenom.jpg",joint:"assets/products/alienmint.jpg",
     b3g1:"https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-6890.png?v=1782732640&width=1200",first:"promo-first.jpg"}[key]||"");
   const ladder=(CONFIG.gramLadder||[[3,1],[5,2],[9,3],[12,4],[15,5]]).slice().sort((a,b)=>a[0]-b[0]);
   const lrows=ladder.map(([b,f])=>`<div style="display:flex;justify-content:space-between;padding:8px 2px;border-bottom:1px solid var(--line2);font-size:14.5px"><span><b>Buy ${b}g</b></span><span style="color:var(--green2);font-weight:800">+${f}g FREE 🌿</span></div>`).join("");
   let H={
+shops:{t:"All DANK shops 📍",b:`
+  <p style="color:var(--muted);font-size:14px;margin:0 0 14px">Choose a location to view it in Google Maps, call ahead, or message the DANK team.</p>
+  <div style="display:grid;gap:10px;margin-bottom:14px">
+    <a class="btn btn-ghost btn-block" style="justify-content:space-between;text-align:left" target="_blank" rel="noopener noreferrer" href="https://maps.app.goo.gl/zivxFn4nf6RpBysC6?g_st=ic"><span>📍 <b>DANK Cannabis Club — Pattanakarn</b><br><small style="color:var(--muted)">223 Phatthanakan Rd · Bangkok 10250</small></span><span>Maps ↗</span></a>
+    <a class="btn btn-ghost btn-block" style="justify-content:space-between;text-align:left" target="_blank" rel="noopener noreferrer" href="https://maps.app.goo.gl/X2j67wBR3q4ueNEU8?g_st=ic"><span>📍 <b>DANK — Sathorn</b><br><small style="color:var(--muted)">76/10 Nang Linchi Rd · Bangkok 10120</small></span><span>Maps ↗</span></a>
+    <a class="btn btn-ghost btn-block" style="justify-content:space-between;text-align:left" target="_blank" rel="noopener noreferrer" href="https://maps.app.goo.gl/ZxrDoRr3iUxJmUWFA?g_st=ic"><span>📍 <b>DANK Lomsak Phetchabun</b><br><small style="color:var(--muted)">56/2 Khotchaseni Rd · Phetchabun 67110</small></span><span>Maps ↗</span></a>
+    <a class="btn btn-ghost btn-block" style="justify-content:space-between;text-align:left" target="_blank" rel="noopener noreferrer" href="https://maps.app.goo.gl/QgbvTmwEQ3GzFvVo8?g_st=ic"><span>📍 <b>DANK Speakeasy — Pattanakarn</b><br><small style="color:var(--muted)">Phatthanakan 1 Alley · Bangkok 10250</small></span><span>Maps ↗</span></a>
+  </div>
+  <a class="btn btn-primary btn-block" href="tel:+66841620610">📞 Call +66 84 162 0610</a>
+  <a class="btn btn-ghost btn-block" style="margin-top:8px" target="_blank" rel="noopener noreferrer" href="https://linktr.ee/dankbkk">💬 Message DANK</a>`},
 box:{t:"Build your DANK box 📦",b:`
   <p style="color:var(--muted);font-size:14px;margin:0 0 12px">A dark-walnut DANK box packed with 28 grams — pick every strain yourself, or tell us your vibe and our budtenders curate it.</p>
   <div style="background:var(--panel2);border:1px solid var(--line2);border-radius:12px;padding:12px 14px;margin-bottom:12px">
@@ -5454,7 +5464,13 @@ function applyProductOverridesLocal(){
 function applySite(){
   const s=ADMIN_OV.site; if(!s) return;
   if(Array.isArray(s.slides)&&s.slides.length){
-    SITE_SLIDES=s.slides.slice(0,12).map((x,i)=>Object.assign({},DEFAULT_SLIDES[i]||{key:"extra"+i},x,{key:(DEFAULT_SLIDES[i]||{}).key||("extra"+i)}));
+    /* Keep the locations card first and prevent retired box artwork from
+       returning through an older saved homepage override. */
+    const saved=s.slides.filter(x=>x&&x.key!=="shops"&&x.key!=="box").slice(0,11);
+    SITE_SLIDES=[Object.assign({},DEFAULT_SLIDES[0])].concat(saved.map((x,i)=>{
+      const fallback=DEFAULT_SLIDES.find(d=>d.key===x.key)||DEFAULT_SLIDES[i+1]||{key:"extra"+i};
+      return Object.assign({},fallback,x,{key:fallback.key||("extra"+i)});
+    }));
   }
   if(s.hero&&typeof s.hero==="object") SITE_HERO=s.hero;
   if(s.tour&&typeof s.tour==="object") SITE_TOUR=Object.assign({video:"",pano:""},s.tour);
