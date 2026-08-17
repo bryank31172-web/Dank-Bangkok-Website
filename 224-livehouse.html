@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0b0b0d">
+<title>224 LIVEHOUSE Bangkok · Bar &amp; Cafe</title>
+<meta name="description" content="224 LIVEHOUSE Bangkok — bar and cafe. Kitchen, drinks and table ordering." />
+<link rel="icon" href="assets/224-livehouse-logo.jpg">
+<meta property="og:title" content="224 LIVEHOUSE Bangkok · Bar &amp; Cafe">
+<meta property="og:description" content="Kitchen, drinks and table ordering.">
+<meta property="og:image" content="assets/224-livehouse-logo.jpg">
+<style>
+  /* 224 LIVEHOUSE is the shop's bar and cafe, and a separate destination from
+     the DANK cannabis storefront on purpose. It keeps the red of its own logo
+     rather than DANK's green, so a customer can tell at a glance which of the
+     two they are looking at. */
+  :root{
+    --bg:#0b0b0d; --panel:#141416; --line:#26262b; --txt:#f4f4f5; --muted:#a0a0a8;
+    --red:#c9151e; --red-soft:rgba(201,21,30,.14);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;min-height:100%}
+  body{
+    background:
+      radial-gradient(1100px 620px at 50% -8%, rgba(201,21,30,.16), transparent 62%),
+      var(--bg);
+    color:var(--txt);
+    font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",sans-serif;
+    display:flex; flex-direction:column; align-items:center;
+    padding:26px 18px calc(26px + env(safe-area-inset-bottom));
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{width:min(560px,100%);margin:auto;text-align:center}
+  /* The logo artwork is red on white, so it needs its own white field to sit
+     on — dropping it straight onto the dark background would grey it out. */
+  .logo{background:#fff;border-radius:22px;padding:14px 18px;box-shadow:0 24px 70px rgba(0,0,0,.6);margin-bottom:22px}
+  .logo img{display:block;width:100%;height:auto;border-radius:10px}
+  .tag{display:inline-block;font-size:11px;letter-spacing:.26em;text-transform:uppercase;
+       color:#ff8a90;background:var(--red-soft);border:1px solid rgba(201,21,30,.4);
+       padding:6px 13px;border-radius:999px;margin-bottom:14px}
+  .lede{color:var(--muted);font-size:15px;line-height:1.6;margin:0 0 24px}
+  .actions{display:grid;gap:11px}
+  .btn{display:flex;align-items:center;justify-content:center;gap:9px;min-height:54px;
+       border-radius:14px;text-decoration:none;font-weight:800;font-size:15.5px;
+       border:1px solid transparent;transition:transform .14s,filter .14s,border-color .14s}
+  .btn:hover{transform:translateY(-1px)}
+  .btn:focus-visible{outline:2px solid #ff8a90;outline-offset:3px}
+  .primary{background:var(--red);color:#fff}
+  .primary:hover{filter:brightness(1.08)}
+  .ghost{background:var(--panel);color:var(--txt);border-color:var(--line)}
+  .ghost:hover{border-color:#3a3a42}
+  .note{margin:22px 0 0;font-size:12.5px;color:#7c7c86;line-height:1.65}
+  .note b{color:var(--muted);font-weight:700}
+  .back{display:inline-flex;align-items:center;gap:7px;margin-top:26px;font-size:13px;
+        color:var(--muted);text-decoration:none;padding:8px 12px;border-radius:10px}
+  .back:hover{color:var(--txt);background:#151517}
+  .back .leaf{color:#3ddc84}
+  @media(min-width:520px){ .actions{grid-template-columns:1fr 1fr} .actions .wide{grid-column:1/-1} }
+</style>
+</head>
+<body>
+  <main class="wrap">
+    <div class="logo">
+      <img src="assets/224-livehouse-logo.jpg"
+           alt="224 LIVEHOUSE Bangkok — Bar &amp; Cafe" width="1158" height="813">
+    </div>
+
+    <div class="tag">Bangkok</div>
+    <p class="lede">
+      The kitchen, the bar and the cafe — cocktails, beer, coffee and food,
+      served in the room. Order from your table and we bring it over.
+    </p>
+
+    <div class="actions">
+      <a class="btn primary wide" href="food.html">🍽️ View menu &amp; order</a>
+      <a class="btn ghost" href="food.html?u20=1">🧃 Food &amp; soft drinks</a>
+      <a class="btn ghost" href="table-qr.html">🪑 Table QR codes</a>
+    </div>
+
+    <p class="note">
+      Alcohol is served to <b>20+</b> only, with ID.
+      The food and soft-drink menu is open to everyone.
+    </p>
+
+    <a class="back" href="index.html"><span class="leaf">🌿</span> Back to DANK BKK — cannabis shop</a>
+  </main>
+</body>
+</html>
