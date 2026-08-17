@@ -1391,7 +1391,7 @@ function heroShow(i,manual){
 })();
 function openPromo(key,back){
   const _sl=SITE_SLIDES.find(s=>s.key===key)||null;
-  const img=pUrl((_sl&&_sl.img)||{box:"promo-box.jpg",joint:"https://cdn.shopify.com/s/files/1/0812/7053/8528/files/18974187-610E-4BB3-8149-5F9240AEBA54.png?v=1692912822&width=1200",
+  const img=pUrl((_sl&&_sl.img)||{box:"assets/products/toadvenom.jpg",joint:"assets/products/alienmint.jpg",
     b3g1:"https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-6890.png?v=1782732640&width=1200",first:"promo-first.jpg"}[key]||"");
   const ladder=(CONFIG.gramLadder||[[3,1],[5,2],[9,3],[12,4],[15,5]]).slice().sort((a,b)=>a[0]-b[0]);
   const lrows=ladder.map(([b,f])=>`<div style="display:flex;justify-content:space-between;padding:8px 2px;border-bottom:1px solid var(--line2);font-size:14.5px"><span><b>Buy ${b}g</b></span><span style="color:var(--green2);font-weight:800">+${f}g FREE 🌿</span></div>`).join("");
