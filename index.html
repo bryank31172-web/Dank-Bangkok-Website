@@ -390,6 +390,19 @@
      above, so it won the cascade and cropped the card anyway — the strain
      name was cut off the left edge in the popup. Match its specificity. */
   .pd-media.stage .ps-prod img.art{object-fit:contain;background:#0d0616}
+  /* A card carries its own composition. The drifting sprites are there to give
+     a plain photograph some depth; over artwork they only wander across the
+     strain name and the THC panel, so they come off. imgFit() sets data-art
+     once it has measured the picture. */
+  .thumb[data-art="1"] .pc-o,.thumb[data-art="1"] .pc-glow,
+  .pd-media[data-art="1"] .ps-o{display:none}
+  /* The popup holds the product in a square slot at 68% of the stage height,
+     which is right for a photograph but letterboxed a 3:2 card down to a
+     stamp with the strain name too small to read. Artwork gets the width of
+     the stage and takes its height from its own shape, so a card is read at
+     the size it was drawn. The float, the glow and the shadow all stay. */
+  .pd-media.stage[data-art="1"] .ps-prod{height:auto;width:92%;max-width:92%;aspect-ratio:auto;background:#0d0616}
+  .pd-media.stage[data-art="1"] .ps-prod img.art{position:relative;inset:auto;width:100%;height:auto;object-fit:contain}
   .ph{width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:60px;position:relative}
   .ph::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,transparent,rgba(0,0,0,.35))}
   .type-tag{position:absolute;top:10px;left:10px;z-index:2;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:800;letter-spacing:.5px;text-transform:uppercase;color:#06120b}
@@ -657,6 +670,14 @@
   .pd-close{position:absolute;top:14px;right:14px}
   .pd-info h2{margin:6px 0 4px;font-size:26px}
   .pd-sub{color:var(--muted);font-size:13.5px;margin-bottom:14px}
+  /* Gold on the earned stars, the shop's own line colour on the rest, so the
+     grade reads at a glance without shouting over the price beside it. */
+  .stars{display:inline-flex;gap:1px;font-size:12px;line-height:1;color:var(--gold);letter-spacing:.5px;vertical-align:middle}
+  .stars .off{color:var(--line2);opacity:.55}
+  .potency .stars{margin-left:8px}
+  .pd-stars{display:flex;align-items:center;gap:8px;margin:2px 0 -4px}
+  .pd-stars .stars{font-size:17px;gap:2px}
+  .pd-stars .lbl{font-size:11.5px;color:var(--muted);letter-spacing:.3px}
   .pd-stats{display:flex;gap:10px;margin:14px 0}
   .stat{flex:1;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:11px;text-align:center}
   .stat .k{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
@@ -2726,15 +2747,46 @@ function genPhoto(p,bare){
    became markup, on every page that lists a product. The generated fallback no longer sits
    inside an onerror string either: it rides on data-fb and a real function reads it, so
    nothing untrusted ends up inside an inline handler. */
-/* Finished artwork is shown whole rather than cropped — see .art in the CSS. */
+/* Finished artwork is shown whole rather than cropped — see .art in the CSS.
+   The path is only the first guess: it catches the twelve cards kept in the
+   repo before their pixels have loaded, so they never flash cropped. */
 const isArtCard=src=>/assets\/strains\//.test(String(src||""));
 function imgTag(p,lazy,bare){
   const gp=genPhoto(p,bare);
   const lz=lazy?' loading="lazy"':'';
-  if(!p.image) return '<img src="'+esc(gp)+'"'+lz+(isArtCard(gp)?' class="art"':'')+'>';
-  return '<img src="'+esc(p.image)+'"'+lz+(isArtCard(p.image)?' class="art"':'')+' data-fb="'+esc(gp)+'" onerror="imgFallback(this)">';
+  if(!p.image) return '<img src="'+esc(gp)+'"'+lz+(isArtCard(gp)?' class="art"':'')+' onload="imgFit(this)">';
+  return '<img src="'+esc(p.image)+'"'+lz+(isArtCard(p.image)?' class="art"':'')+' data-fb="'+esc(gp)+'" onload="imgFit(this)" onerror="imgFallback(this)">';
 }
 function imgFallback(el){ el.onerror=null; const fb=el.getAttribute("data-fb"); if(fb) el.src=fb; }
+
+/* Whether a picture is a finished card is decided by the picture itself, not
+   by where it happens to be hosted. Every one of the 270 photographs in
+   assets/products is square; every Botanical Legends card is 3:2 or wider.
+   The path test above can only see the cards kept in the repo, and most of
+   Bryan's are served from the Shopify CDN - which is how the ztupid card came
+   to be cropped through the middle, losing its name, its THC panel and its
+   effects list, while the square photograph beside it looked right.
+
+   So: square fills the tile, anything else is artwork - shown whole, and with
+   the drifting sprites switched off, because a card is already a finished
+   composition and a leaf tumbling across its THC figure is just in the way.
+   Re-read on every load, so the generated fallback re-decides for itself. */
+function imgFit(el){
+  const w=el.naturalWidth, h=el.naturalHeight;
+  if(!w||!h) return;
+  const art=Math.abs(w/h-1)>0.07;
+  el.classList.toggle("art",art);
+  const box=el.closest(".thumb,.pd-media,.rel-thumb,.ci-thumb");
+  if(!box) return;
+  if(art) box.dataset.art="1"; else delete box.dataset.art;
+  /* Let a shop-grid tile take the card's own shape. Letterboxing a 3:2 card
+     inside the square tile left a third of the tile as dead purple below the
+     artwork; matching the tile to the picture removes the bars entirely and
+     costs nothing, because each card in the grid is sized on its own. Only
+     the grid tiles - the popup's stage is a fixed set piece with lighting and
+     a floor, and resizing it would pull all of that out of shape. */
+  if(box.classList.contains("thumb")) box.style.aspectRatio = art ? w+"/"+h : "";
+}
 
 /* ---- Render grid ---- */
 function render(){
@@ -2802,10 +2854,41 @@ function cardHTML(p){
       <div class="thumb" data-pid="${p.id}" onclick="openPD('${p.id}')">${typeTagHTML(p)}${p.isNew?'<span class="new-tag">🔥 NEW</span>':''}${adminMode&&p._hidden?'<span class="new-tag" style="background:#b23">🚫 HIDDEN</span>':''}${stockTag}${thumb}</div>
     <div class="body">
       <h3 onclick="openPD('${p.id}')">${esc(p.name)}</h3>
-      <div class="potency">${potency}</div>
+      <div class="potency">${potency}${starsHTML(p)}</div>
       <div class="tags">${fx}</div>
       ${foot}
     </div></article>`;
+}
+/* A quality rating for the flower, read off the price per gram. The shelf a
+   jar sits on and what it costs are the same judgement, and the price is the
+   one number the POS always has right - a shelf gets renamed, a THC figure
+   goes in as a guess, but nothing sells at the wrong price for long.
+
+   Flower only, by Bryan's call: a lighter has no shelf, and stars on the
+   onion rings would read as a customer review rather than a grade. */
+const STAR_STEPS=[[900,5],[700,4],[400,3]];      // baht per gram, high to low
+function pricePerGram(p){
+  const ts=(p.priceTiers||[]).map(t=>({g:tierGrams(t.label),price:t.price})).filter(t=>t.g>0&&t.price>0);
+  if(!ts.length) return 0;
+  /* The 1g jar is the shelf price everyone quotes. Bulk tiers are discounted,
+     so costing one of those would drop a jar a whole star for nothing more
+     than being sold in a bigger bag. List price, not the member price, or the
+     grade would change under the customer when they turn member mode on. */
+  ts.sort((a,b)=>Math.abs(a.g-1)-Math.abs(b.g-1));
+  return ts[0].price/ts[0].g;
+}
+function starRating(p){
+  if(!isFlowerCat(p)||!isFlower(p)) return 0;
+  const ppg=pricePerGram(p);
+  if(!ppg) return 0;
+  for(const [min,n] of STAR_STEPS) if(ppg>=min) return n;
+  return 2;
+}
+function starsHTML(p){
+  const n=starRating(p);
+  if(!n) return "";
+  return '<span class="stars" title="'+n+' / 5" aria-label="'+n+' out of 5">'
+    +'★'.repeat(n)+'<span class="off">'+'★'.repeat(5-n)+'</span></span>';
 }
 function potencyHTML(p){
   if(["Accessories","Merch"].includes(p.category)) return `<span>${esc(p.thcLabel||"")}</span>`;
@@ -3438,6 +3521,7 @@ function openPD(id){
       <button class="close-x pd-close" onclick="closeAll()">×</button>
       <div class="pd-sub">${[catEmoji(p.category)+" "+esc(p.category),esc(p.type),esc(branch)].filter(s=>s.trim()).join(" · ")}</div>
       <h2>${esc(p.name)}</h2>
+      ${starRating(p)?`<div class="pd-stars">${starsHTML(p)}<span class="lbl">${starRating(p)} / 5 · ${money(Math.round(pricePerGram(p)))} per gram</span></div>`:''}
       <div class="pd-stats">${potStat}<div class="stat"><div class="k">Stock</div><div class="v" style="font-size:${Number.isFinite(+p.stock)?'19px':'15px'};color:${out?'var(--danger)':(Number.isFinite(+p.stock)&&p.stock<=5)?'var(--gold)':'var(--green2)'}">${out?'0':(Number.isFinite(+p.stock)?p.stock:'In stock')}</div></div></div>
       <div id="pdStrainX">${strainSectionsHTML(p)}</div>
       ${tierBlock}
