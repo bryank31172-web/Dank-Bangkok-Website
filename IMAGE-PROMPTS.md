@@ -1,12 +1,23 @@
 # Product photo prompts — `IMAGE-PROMPTS.csv`
 
-**คู่มือสั้นๆ / short guide.** One finished, ready-to-paste image prompt per
-product. 296 of them. Nothing else is needed — each prompt stands on its own,
-so it can be handed to Codex, ChatGPT or any image tool one row at a time.
+**เหลือ 26 ตัว ไม่ใช่ 296.** The catalogue is almost photographed already: 270
+of the 296 products have their own picture in `assets/products/`, wired to the
+product and showing on the site. Only what is genuinely missing is listed here.
 
-This replaces nothing: `IMAGE-QUEUE.csv` and `CHATGPT-START.md` still work if
-you would rather drive the generator by hand. This file is the same work with
-the house recipe already written into every row.
+`IMAGE-PROMPTS-ALL.csv` keeps all 296 rows for reference. Nothing needs to be
+run from it.
+
+---
+
+## เหลืออะไรบ้าง / What is actually left
+
+| | จำนวน | |
+|---|---|---|
+| **`A-missing`** | **1** | Kamagra — ไม่มีรูปเลย และ**ขายอยู่** 👈 ทำอันนี้ก่อน |
+| `B-replace-card` | 25 | ดอกที่ตอนนี้ใช้การ์ด Botanical Legends — **ไม่รีบ** |
+
+การ์ด 25 ใบยังใช้งานได้ปกติและแสดงเต็มใบสวยแล้ว จะเปลี่ยนเป็นรูปถ่ายหรือไม่เปลี่ยนก็ได้
+ถ้าชอบการ์ดมากกว่า **ข้ามทั้ง 25 ตัวได้เลย เหลืองานจริงแค่ตัวเดียว**
 
 ---
 
@@ -18,8 +29,8 @@ A real photograph on matte charcoal-black, one soft light from the upper left,
 a faint green rim light, deep shadows, shallow depth of field, square 1:1.
 Photorealistic, and no text, logos, hands or people anywhere in the frame.
 
-**อย่าเปลี่ยนสไตล์ระหว่างทาง** — ถ้าแสงกับพื้นหลังไม่นิ่ง รูป 296 ใบจะดูเหมือนมาจาก
-296 ร้าน ซึ่งเป็นเหตุผลทั้งหมดที่ต้องมีสูตรตายตัว.
+**อย่าเปลี่ยนสไตล์ระหว่างทาง** — ถ้าแสงกับพื้นหลังไม่นิ่ง รูปจะดูเหมือนมาจากคนละร้าน
+ซึ่งเป็นเหตุผลทั้งหมดที่ต้องมีสูตรตายตัว.
 
 ---
 
@@ -30,16 +41,10 @@ Photorealistic, and no text, logos, hands or people anywhere in the frame.
 | `no` | ลำดับ |
 | `filename` | **ชื่อไฟล์ที่ต้องใช้ ห้ามเปลี่ยน** — เว็บหารูปจากชื่อนี้ |
 | `product` | ชื่อสินค้าใน POS |
-| `category` · `kind` | หมวด และชนิด (flower, gear, drink, …) |
-| `in_stock` | `YES` = มีของขายอยู่ตอนนี้ · `no` = หมดสต็อก · ว่าง = กลุ่ม B |
-| `group` | `A-missing` = ยังไม่มีรูปเลย · `B-replace-card` = มีการ์ดโปสเตอร์อยู่ อยากเปลี่ยนเป็นรูปถ่าย |
+| `category` · `kind` | หมวด และชนิด |
+| `in_stock` | `YES` = มีของขายอยู่ตอนนี้ |
+| `group` | `A-missing` = ไม่มีรูปเลย · `B-replace-card` = มีการ์ดอยู่แล้ว |
 | `prompt` | **prompt เต็ม พร้อมวาง** |
-
-### ทำอันไหนก่อน / Order of work
-
-1. **`in_stock = YES`** — 171 ตัว ของที่ขายอยู่จริง ลูกค้าเห็นทุกวัน
-2. `group = A-missing` ที่เหลือ — ของหมดสต็อก รอได้
-3. `group = B-replace-card` — 25 ตัว ตอนนี้เป็นการ์ดโปสเตอร์ ยังใช้ได้อยู่ ไม่รีบ
 
 ---
 
@@ -54,8 +59,6 @@ Photorealistic, and no text, logos, hands or people anywhere in the frame.
   วางไว้ที่  assets/products/
 ```
 
-ทำทีละ 10 แถวแล้วเช็คก่อนไปต่อ จะคุมคุณภาพง่ายกว่าปล่อยยาว
-
 **สี่เหลี่ยมจัตุรัสเท่านั้น** — เว็บใช้สัดส่วนรูปแยกว่าอะไรเป็นรูปถ่าย อะไรเป็นการ์ด
 รูปจัตุรัสจะเต็มกรอบสวย รูปไม่จัตุรัสจะถูกแสดงเป็นการ์ดแทน
 
@@ -66,7 +69,7 @@ Photorealistic, and no text, logos, hands or people anywhere in the frame.
 รูปที่วางใน `assets/products/` ยังไม่ขึ้นเว็บทันที ต้องผูกชื่อสินค้าเข้ากับไฟล์ใน
 `product-images.json` ก่อน — `CODEX-HANDOVER.md` อธิบายวิธีไว้แล้ว
 
-**หรือส่งรูปมาให้ผมผูกให้ก็ได้ครับ** บอกมาว่าเจนเสร็จกี่ตัว เดี๋ยวจัดการต่อให้
+**หรือส่งรูปมาให้ผมผูกให้ก็ได้ครับ**
 
 ---
 
@@ -75,4 +78,11 @@ Photorealistic, and no text, logos, hands or people anywhere in the frame.
 - ห้ามลอกรูปจาก **leafly.com** และ **weed.com** — มีลิขสิทธิ์ทั้งคู่ ต้องสร้างใหม่เท่านั้น
 - ห้ามมีตัวหนังสือ โลโก้ หรือแบรนด์ในรูป
 - ห้ามมีคน มือ หรือส่วนของร่างกาย
-- ดอกกัญชาถ่ายเองสวยกว่าเจน — ถ้ามีเวลาถ่ายเอง ให้ใช้ AI กับไฟแช็ก กระดาษ น้ำอัดลม จะคุ้มกว่า
+- ดอกกัญชาถ่ายเองสวยกว่าเจน — ถ้ามีเวลาถ่ายเอง ให้ใช้ AI กับของใช้แทน
+
+---
+
+## ถ้าอยากสร้างลิสต์ใหม่ / Rebuilding
+
+เมื่อสินค้าใน POS เปลี่ยน สร้างใหม่ได้ด้วย `python3 tools-make-image-prompts.py`
+แล้วตัดตัวที่มีรูปแล้วออกเหมือนเดิม
