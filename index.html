@@ -1055,6 +1055,13 @@
 </style>
 <section class="promos" id="promos" aria-label="Promotions">
   <div class="promo-track" id="promoTrack">
+    <div class="promo" onclick="openPromo('shops')" style="background-color:#07110b;background-image:url('assets/promo-all-shops.png')">
+      <div class="promo-shade"></div><span class="tagchip">4 DANK LOCATIONS</span>
+      <div class="promo-txt"><div class="promo-kick">Bangkok · Sathorn · Pattanakarn · Lomsak</div>
+        <h3>Find your nearest DANK</h3>
+        <p>See every shop, contact details and one-tap Google Maps directions.</p>
+        <span class="promo-btn">View all shops</span></div>
+    </div>
     <div class="promo" onclick="openPromo('joint')" style="background-color:#14100a;background-image:url('assets/products/alienmint.jpg')">
       <div class="promo-shade"></div><span class="tagchip">ROLLED FRESH</span>
       <div class="promo-txt"><div class="promo-kick">Any strain on the menu</div>
@@ -1077,7 +1084,7 @@
         <span class="promo-btn">Join &amp; claim</span></div>
     </div>
   </div>
-  <div class="promo-dots" id="promoDots"><i class="on"></i><i></i><i></i></div>
+  <div class="promo-dots" id="promoDots"><i class="on"></i><i></i><i></i><i></i></div>
 </section>
 <script>
 /* ---- Promo slides are data now, not markup: the owner edits this list from
@@ -1087,6 +1094,9 @@
    from data. Everything rendered from this array is escaped, because the
    owner-edited copy comes back from the server for every visitor. ---- */
 let SITE_SLIDES=[
+ {key:"shops", tag:"4 DANK LOCATIONS", kick:"Bangkok · Sathorn · Pattanakarn · Lomsak", title:"Find your nearest DANK",
+  text:"See every shop, contact details and one-tap Google Maps directions.",
+  btn:"View all shops", img:"assets/promo-all-shops.png", bg:"#07110b", detail:""},
  {key:"joint", tag:"ROLLED FRESH", kick:"Any strain on the menu", title:"Build your joint",
   text:"Pick the flower, pick the paper \u2014 we roll it fresh. Buy 3g and the 4th gram is free.",
   btn:"Start building", img:"assets/products/alienmint.jpg", bg:"#0f1c12", detail:""},
@@ -1396,6 +1406,16 @@ function openPromo(key,back){
   const ladder=(CONFIG.gramLadder||[[3,1],[5,2],[9,3],[12,4],[15,5]]).slice().sort((a,b)=>a[0]-b[0]);
   const lrows=ladder.map(([b,f])=>`<div style="display:flex;justify-content:space-between;padding:8px 2px;border-bottom:1px solid var(--line2);font-size:14.5px"><span><b>Buy ${b}g</b></span><span style="color:var(--green2);font-weight:800">+${f}g FREE 🌿</span></div>`).join("");
   let H={
+shops:{t:"All DANK shops 📍",b:`
+  <p style="color:var(--muted);font-size:14px;margin:0 0 14px">Choose a location to view it in Google Maps, call ahead, or message the DANK team.</p>
+  <div style="display:grid;gap:10px;margin-bottom:14px">
+    <a class="btn btn-ghost btn-block" style="justify-content:space-between;text-align:left" target="_blank" rel="noopener noreferrer" href="https://maps.app.goo.gl/zivxFn4nf6RpBysC6?g_st=ic"><span>📍 <b>DANK Cannabis Club — Pattanakarn</b><br><small style="color:var(--muted)">223 Phatthanakan Rd · Bangkok 10250</small></span><span>Maps ↗</span></a>
+    <a class="btn btn-ghost btn-block" style="justify-content:space-between;text-align:left" target="_blank" rel="noopener noreferrer" href="https://maps.app.goo.gl/X2j67wBR3q4ueNEU8?g_st=ic"><span>📍 <b>DANK — Sathorn</b><br><small style="color:var(--muted)">76/10 Nang Linchi Rd · Bangkok 10120</small></span><span>Maps ↗</span></a>
+    <a class="btn btn-ghost btn-block" style="justify-content:space-between;text-align:left" target="_blank" rel="noopener noreferrer" href="https://maps.app.goo.gl/ZxrDoRr3iUxJmUWFA?g_st=ic"><span>📍 <b>DANK Lomsak Phetchabun</b><br><small style="color:var(--muted)">56/2 Khotchaseni Rd · Phetchabun 67110</small></span><span>Maps ↗</span></a>
+    <a class="btn btn-ghost btn-block" style="justify-content:space-between;text-align:left" target="_blank" rel="noopener noreferrer" href="https://maps.app.goo.gl/QgbvTmwEQ3GzFvVo8?g_st=ic"><span>📍 <b>DANK Speakeasy — Pattanakarn</b><br><small style="color:var(--muted)">Phatthanakan 1 Alley · Bangkok 10250</small></span><span>Maps ↗</span></a>
+  </div>
+  <a class="btn btn-primary btn-block" href="tel:+66841620610">📞 Call +66 84 162 0610</a>
+  <a class="btn btn-ghost btn-block" style="margin-top:8px" target="_blank" rel="noopener noreferrer" href="https://linktr.ee/dankbkk">💬 Message DANK</a>`},
 box:{t:"Build your DANK box 📦",b:`
   <p style="color:var(--muted);font-size:14px;margin:0 0 12px">A dark-walnut DANK box packed with 28 grams — pick every strain yourself, or tell us your vibe and our budtenders curate it.</p>
   <div style="background:var(--panel2);border:1px solid var(--line2);border-radius:12px;padding:12px 14px;margin-bottom:12px">
@@ -5444,7 +5464,13 @@ function applyProductOverridesLocal(){
 function applySite(){
   const s=ADMIN_OV.site; if(!s) return;
   if(Array.isArray(s.slides)&&s.slides.length){
-    SITE_SLIDES=s.slides.slice(0,12).map((x,i)=>Object.assign({},DEFAULT_SLIDES[i]||{key:"extra"+i},x,{key:(DEFAULT_SLIDES[i]||{}).key||("extra"+i)}));
+    /* Keep the locations card first and prevent retired box artwork from
+       returning through an older saved homepage override. */
+    const saved=s.slides.filter(x=>x&&x.key!=="shops"&&x.key!=="box").slice(0,11);
+    SITE_SLIDES=[Object.assign({},DEFAULT_SLIDES[0])].concat(saved.map((x,i)=>{
+      const fallback=DEFAULT_SLIDES.find(d=>d.key===x.key)||DEFAULT_SLIDES[i+1]||{key:"extra"+i};
+      return Object.assign({},fallback,x,{key:fallback.key||("extra"+i)});
+    }));
   }
   if(s.hero&&typeof s.hero==="object") SITE_HERO=s.hero;
   if(s.tour&&typeof s.tour==="object") SITE_TOUR=Object.assign({video:"",pano:""},s.tour);
