@@ -9,6 +9,7 @@
 
 body{background:#050806;padding-bottom:0}
 body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:-1;background:radial-gradient(circle at 82% 18%,rgba(35,105,62,.11),transparent 34%)}
+#aiFab{display:none!important}
 
 /* Focus is visible without changing the visual language. */
 :where(button,a,input,select):focus-visible{outline:2px solid var(--green);outline-offset:3px}
