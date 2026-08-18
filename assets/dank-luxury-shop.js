@@ -28,7 +28,10 @@
     if(typeof shopData!=="function" || typeof FLOWER_CATS==="undefined") return [];
     return shopData().filter(function(p){
       var stock=Number(p.stock);
-      return FLOWER_CATS.indexOf(p.category)>=0 && !p._hidden && (!Number.isFinite(stock) || stock>0);
+      var flower=typeof shelfIsFlower==="function"
+        ? shelfIsFlower(p)
+        : FLOWER_CATS.indexOf(p.category)>=0 && !/\b(joint|pre[\s-]?roll|blunt|beer|wine|spirit|vape|gumm(?:y|ies)|edible|paper|grinder|bong|pipe|lighter)\b/i.test(String(p.name||""));
+      return flower && !p._hidden && (!Number.isFinite(stock) || stock>0);
     });
   }
 
