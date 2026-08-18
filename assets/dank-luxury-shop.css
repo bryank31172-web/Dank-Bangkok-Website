@@ -63,6 +63,14 @@ header.top{background:rgba(4,7,5,.9);border-bottom-color:rgba(214,173,85,.18);ba
 .hero-badges i{color:var(--lux-gold)}
 .hero-scroll{display:none}
 
+/* The legacy promotion studio is injected after the page styles. Keep it out
+   of this conversion-first hero so the generated flower pouch remains the
+   only campaign artwork and old carousel arrows/dots cannot reappear. */
+#hero #hfsBg,#hero #hfsNav,#hero .hero-slides,#heroPromoChip{display:none!important}
+#hero #heroStage.hpromo .hero-box{opacity:1!important}
+#hero .hero-scroll{display:none!important}
+#hero .hero-vig{background:linear-gradient(90deg,rgba(2,4,3,.95) 0%,rgba(2,4,3,.88) 27%,rgba(2,4,3,.2) 62%,rgba(2,4,3,.08) 100%),linear-gradient(0deg,#050806 0%,transparent 30%,rgba(0,0,0,.15) 100%)!important}
+
 /* Selected redesign moves selling products above promotions. */
 .promos,.ring3d{display:none!important}
 .lux-featured{padding-top:52px;padding-bottom:34px;scroll-margin-top:118px}
@@ -153,7 +161,7 @@ header.top{background:rgba(4,7,5,.9);border-bottom-color:rgba(214,173,85,.18);ba
   .lux-member-strip{justify-content:space-between;gap:8px;padding:7px 15px;font-size:11px}
   .hero{min-height:680px}
   .hero-box{background-position:64% center!important}
-  .hero-vig{background:linear-gradient(0deg,#050806 0%,rgba(2,4,3,.9) 17%,rgba(2,4,3,.22) 49%,rgba(2,4,3,.18) 100%),linear-gradient(90deg,rgba(2,4,3,.72),transparent 82%)}
+  #hero .hero-vig{background:linear-gradient(0deg,#050806 0%,rgba(2,4,3,.9) 17%,rgba(2,4,3,.22) 49%,rgba(2,4,3,.18) 100%),linear-gradient(90deg,rgba(2,4,3,.72),transparent 82%)!important}
   .hero-inner{display:flex;flex-direction:column;justify-content:flex-end;min-height:680px;padding:280px 16px 54px!important}
   .hero h1{font-size:clamp(43px,12vw,61px);max-width:9.3ch;margin-top:12px}
   .hero p{font-size:14.5px;line-height:1.55;max-width:32ch;margin-bottom:20px}
