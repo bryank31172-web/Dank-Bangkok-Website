@@ -18,7 +18,8 @@
 </script>
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
 <meta name="theme-color" content="#060a07" />
-<link rel="preload" as="image" href="assets/products/toadvenom.jpg" fetchpriority="high" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/remixicon@4.6.0/fonts/remixicon.css" />
+<link rel="stylesheet" href="assets/dank-luxury-shop.css" />
 <meta name="description" content="DANK BKK — premium cannabis in Bangkok. Live menu, member prices, PromptPay & card checkout, delivery & pickup across Pattanakarn & Sathorn. Ask DANK AI 24/7." />
 <meta property="og:type" content="website"/>
 <meta property="og:title" content="🌿 DANK BKK — Premium Cannabis Bangkok"/>
@@ -902,56 +903,26 @@
     <h1 id="ageBrand">DANK BKK</h1>
     <p><b>Adults 20+ only.</b> This site sells cannabis products; valid ID required.<br>
        <span style="color:var(--muted2)">จำหน่ายผลิตภัณฑ์กัญชาสำหรับผู้ที่มีอายุ 20 ปีขึ้นไปเท่านั้น · ต้องแสดงบัตรประชาชน</span></p>
-    <div class="age-warn">⚠️ Keep away from children · do not drive after use · not for those pregnant or breastfeeding.<br>
+    <div class="age-warn">Keep away from children · do not drive after use · not for those pregnant or breastfeeding.<br>
        เก็บให้พ้นมือเด็ก · ห้ามขับขี่หลังใช้ · ห้ามใช้ในสตรีมีครรภ์/ให้นมบุตร</div>
     <div class="gate-row" style="margin-top:14px">
-      <button class="btn btn-primary btn-block" onclick="passGate()">✅ I am 20+ · เข้าสู่เว็บไซต์</button>
-      <button class="btn btn-ghost" onclick="location.href='https://google.com'">Exit</button>
+      <button class="btn btn-primary btn-block" onclick="passGate()">I am 20+ · Enter shop</button>
     </div>
-    <div class="gate-help">ยังไม่แน่ใจว่าจะเลือกอะไร? · Not sure what to pick?<br>
-      <button onclick="passGate();setTimeout(openQuiz,150)">🧭 Take the quiz</button>
-      <button onclick="passGate();setTimeout(function(){openAI()},150)">💬 Chat น้องแดงค์</button>
-    </div>
-    <p style="margin-top:12px;font-size:11px;color:var(--muted2)">By entering you agree to our terms & to consume responsibly.</p>
-    <div class="gate-jump-t">✅ I am 20+ · take me straight to</div>
-    <div class="gate-jump">
-      <button type="button" onclick="gateJump('build-your-joint.html')"
-              aria-label="I am 20 or over — build your joint">
-        <span class="gj-e" aria-hidden="true">🚬</span>
-        <span>Build your joint</span>
-        <span class="gj-s">มวนเองตามสั่ง</span>
-      </button>
-      <button type="button" onclick="gateJump('224-livehouse.html')"
-              aria-label="I am 20 or over — 224 LIVEHOUSE bar and cafe">
-        <span class="gj-e" aria-hidden="true">🍸</span>
-        <span>224 LIVEHOUSE</span>
-        <span class="gj-s">บาร์ · คาเฟ่ · อาหาร</span>
-      </button>
-    </div>
-    <!-- Under 20 is not turned away: they get the kitchen, with the beer and
-         the Cannabis Bar taken out of it. Separate heading on purpose - this
-         path must not sit under an "I am 20+" claim. -->
-    <div class="gate-jump-t u20">🧃 Under 20? · อายุต่ำกว่า 20 ปี</div>
-    <div class="gate-jump one">
-      <button type="button" class="gj-food" onclick="gateJump('food.html?u20=1')"
-              aria-label="I am under 20 — food and soft drinks only">
-        <span class="gj-e" aria-hidden="true">🍜</span>
-        <span>Food &amp; soft drinks only</span>
-        <span class="gj-s">อาหาร · เครื่องดื่มไม่มีแอลกอฮอล์</span>
-      </button>
-    </div>
+    <button type="button" class="gate-food-link" onclick="gateJump('food.html?u20=1')">Food &amp; soft drinks only <i class="ri-arrow-right-line" aria-hidden="true"></i></button>
+    <p class="gate-terms">By entering you agree to consume responsibly.</p>
   </div>
 </div>
 
 <!-- ============ HEADER ============ -->
 <header class="top">
   <div class="wrap top-inner">
-    <div class="brand" onclick="openAI()"><img class="logo-img" id="logoImg" alt="DANK BKK mascot"><span class="full" id="brandName">DANK BKK</span></div>
+    <div class="brand" onclick="window.scrollTo({top:0,behavior:'smooth'})"><img class="logo-img" id="logoImg" alt="DANK BKK mascot"><span class="full" id="brandName">DANK BKK</span></div>
     <div class="search">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
-      <input id="searchInput" type="search" placeholder="Search strains, edibles, drinks…" oninput="render()" />
+      <input id="searchInput" type="search" placeholder="Search flower strains…" oninput="render()" />
     </div>
     <div class="top-actions">
+      <button class="lux-locations" type="button" onclick="openPromo('shops')"><i class="ri-map-pin-2-line" aria-hidden="true"></i><span>Locations</span></button>
       <select class="branch-sel" id="branchSel" onchange="render()" title="Branch"></select>
       <button class="member-toggle" id="memberToggle" onclick="toggleMember()" title="Show member prices">
         <span class="switch"></span><span class="mt-label">Member</span>
@@ -967,6 +938,9 @@
     </div>
   </div>
 </header>
+<button class="lux-member-strip" id="luxMemberStrip" type="button" onclick="openCRM(isMember()?undefined:'join')">
+  <span><i class="ri-vip-crown-line" aria-hidden="true"></i> Members save 10%</span><b>Join free <i class="ri-arrow-right-line" aria-hidden="true"></i></b>
+</button>
 <div class="promo-banner" id="promoBanner">
   <span>🎁 <b id="pbTitle">First order? Buy 1G get 1G FREE</b> — register to unlock.</span>
   <button onclick="openRegister()">Register free</button>
@@ -985,31 +959,28 @@
     <div class="hero-vig"></div>
   </div>
   <div class="wrap hero-inner">
-    <div class="eyebrow" id="heroEyebrow">Premium Cannabis · Bangkok</div>
-    <h1 id="heroTitle">Top-shelf flower, delivered across Bangkok.</h1>
-    <p id="heroSub">Browse our live menu, unlock member prices, and order in seconds — delivery or pickup at Pattanakarn & Sathorn. Or just ask DANK AI, 24/7.</p>
+    <div class="eyebrow" id="heroEyebrow">Curated in Bangkok</div>
+    <h1 id="heroTitle">Premium flower, delivered 24/7.</h1>
+    <p id="heroSub">Hand-selected. Always fresh. Delivered across Bangkok or ready for pickup.</p>
     <div class="hero-cta">
-      <a class="btn btn-primary" href="#menu" onclick="document.getElementById('menu').scrollIntoView({behavior:'smooth'});return false;">Shop the menu</a>
-      <a class="btn btn-gold" href="build-your-joint.html">🚬 Build your joint</a>
-      <a class="btn btn-food" href="224-livehouse.html"><span class="fk">🍸</span> 224 LIVEHOUSE <span class="newdot">BAR &amp; CAFE</span></a>
-      <a class="btn btn-med" id="medCardBtn"
-         href="https://salusbioceutical.co.th/product-category/thai-herbal-products-th/modern-herbal-product-th/salus-polyclinic-th/"
-         target="_blank" rel="noopener noreferrer"
-         title="Medical telemedicine by Salus Clinic — opens in a new tab"
-         onclick="try{track&&track('medcard')}catch(e){}"
-      >🩺 <span id="medCardLabel">Do Medical Card</span><span class="medby" id="medCardBy">Salus Clinic</span><span class="medx" aria-hidden="true">↗</span></a>
-      <a class="btn btn-ghost" onclick="openQuiz()">🧭 Take the quiz</a>
-      <a class="btn btn-ghost" onclick="openAI()">💬 Chat น้องแดงค์</a>
+      <a class="btn btn-primary lux-shop-cta" href="#featuredFlowers" onclick="showFlowerShop();return false;">Shop flower <i class="ri-arrow-right-line" aria-hidden="true"></i></a>
+      <button class="btn btn-ghost lux-budtender-cta" type="button" onclick="openBudtender()"><i class="ri-sparkling-2-line" aria-hidden="true"></i> Find my strain</button>
     </div>
     <div class="hero-badges">
-      <span>💚 <b>Midgrade</b> 18–23% · ฿200/½g</span>
-      <span>⭐ <b>Topshelf</b> 24–27% · ฿300/½g</span>
-      <span>🚀 <b>Exotics</b> 28–34% · ฿400/½g</span>
-      <span>🔥 <b>Buy 3 get 1 FREE</b> every strain</span>
-      <span>🤖 <b id="heroAI">DANK AI answers 24/7</b></span>
+      <span><i class="ri-shield-check-line" aria-hidden="true"></i> Lab-selected quality</span>
+      <span><i class="ri-truck-line" aria-hidden="true"></i> Bangkok delivery</span>
     </div>
   </div>
   <div class="hero-scroll" aria-hidden="true"><i></i>Scroll</div>
+</section>
+
+<!-- ============ QUICK SHOP: flower-only new drops and best sellers ============ -->
+<section class="lux-featured wrap" id="featuredFlowers" aria-labelledby="featuredTitle">
+  <div class="lux-section-head">
+    <div><span>On the shelf today</span><h2 id="featuredTitle">New &amp; best sellers</h2></div>
+    <button type="button" onclick="showFlowerShop()">Shop all flower <i class="ri-arrow-right-line" aria-hidden="true"></i></button>
+  </div>
+  <div class="lux-best-grid" id="luxBestGrid" aria-live="polite"></div>
 </section>
 
 <!-- ============ 3D SHELF — the live menu, on a turntable ============ -->
@@ -1613,6 +1584,13 @@ tiers:{t:"Membership has its perks \ud83d\udc9a",b:`
 <div class="modal" id="infoModal"><div class="modal-card" style="max-width:520px" id="infoCard"></div></div>
 <div id="toast"></div>
 
+<nav class="lux-bottom-nav" aria-label="Shop navigation">
+  <button class="active" type="button" onclick="showFlowerShop()"><i class="ri-store-2-line" aria-hidden="true"></i><span>Shop</span></button>
+  <button type="button" onclick="focusFlowerSearch()"><i class="ri-search-line" aria-hidden="true"></i><span>Search</span></button>
+  <button class="nav-bud" type="button" onclick="openBudtender()"><i class="ri-sparkling-2-line" aria-hidden="true"></i><span>Budtender</span></button>
+  <button type="button" onclick="openCart()"><i class="ri-shopping-bag-3-line" aria-hidden="true"></i><span>Cart</span></button>
+</nav>
+
 <!-- ============ DANK AI ============ -->
 <div id="aiFab">
   <div class="ai-nudge hidden" id="aiNudge">
@@ -1643,8 +1621,8 @@ tiers:{t:"Membership has its perks \ud83d\udc9a",b:`
 const CONFIG = {
   brand:"DANK BKK", domain:"dankbkk.com", currency:"฿",
   tagline:"Premium cannabis, curated for Bangkok. Consume responsibly — 20+ only.",
-  heroTitle:"Bangkok's dankest — Midgrade to Exotics.",
-  heroSub:"The full DANK Cannabis Club menu: flowers from ฿200/½g, buy-3-get-1-free on every strain, edibles, vapes & more. Delivery or pickup at Pattanakarn & Sathorn — or just ask DANK AI, 24/7.",
+  heroTitle:"Premium flower, delivered 24/7.",
+  heroSub:"Hand-selected. Always fresh. Delivered across Bangkok or ready for pickup.",
 
   branches:["All branches","Pattanakarn","Sathorn"],
   payments:["PromptPay","Card","Cash","Transfer","Crypto"],   // PromptPay+Card via Omise; rest pay on arrival
@@ -1668,7 +1646,7 @@ const CONFIG = {
   crm:{ enabled:true, discountPct:10, code:"CRM10",
         title:"Join DANK Members — 10% OFF 💚",
         sub:"Sign up free and save 10% on every order, plus members-only drops. Takes 10 seconds.",
-        firstDelayMs:1200, repeatMs:60000 },   // shows on entry, then re-invites every ~60s until they join
+        firstDelayMs:0, repeatMs:0 },
   // ---- Volume deal: buy more grams of flower, get grams free (cart-wide total) ----
   gramLadder:[ [3,1],[5,2],[9,3],[12,4],[15,5] ],   // [buy grams, free grams]
   /* Happy Hour: boosted ladder inside the windows below (Bangkok time).
@@ -1838,7 +1816,7 @@ function shopData(){
   const base=adminMode?DATA:DATA.filter(p=>!p._hidden);
   return base.filter(p=>!SHOP_HIDE_CAT.test(String(p.category||"")));
 }
-let activeCat="All", memberMode=false, branch="All branches";
+let activeCat="Flower", memberMode=false, branch="All branches";
 let cart=[], pdCurrent=null, pdTierIdx=0, coFulfill="delivery", coPay="Cash";
 let favs=[], appliedPromo=null, pdQty=1;
 /* What the customer has typed into the checkout. renderCheckout() replaces the whole form
@@ -1905,16 +1883,18 @@ function anyModalOpen(){ const o=$("#overlay"); if(o&&o.classList.contains("show
    after entry and keeps re-inviting (every crm.repeatMs) until they join, so
    the 10%-off offer is always in front of anyone who isn't a member yet. ---- */
 function scheduleCRM(delay){ const c=CONFIG.crm||{};
-  if(!c.enabled||isMember()) return;
+  delay=Number(delay)||0;
+  if(!c.enabled||isMember()||delay<=0) return;
   clearTimeout(crmTimer);
   crmTimer=setTimeout(function tick(){
     if(isMember()) return;                                   // stop the moment they join
     if(anyModalOpen()){ crmTimer=setTimeout(tick,c.retryMs||4000); return; }   // busy (cart/checkout/popup already open) → check again soon
     openCRM();
-    crmTimer=setTimeout(tick,c.repeatMs||60000);             // keep the cycle alive — survives any dismiss path until they join
+    const repeat=Number(c.repeatMs)||0;
+    if(repeat>0) crmTimer=setTimeout(tick,repeat);
   }, delay);
 }
-function maybeShowCRM(){ scheduleCRM((CONFIG.crm&&CONFIG.crm.firstDelayMs)||1200); }
+function maybeShowCRM(){ scheduleCRM(Number(CONFIG.crm&&CONFIG.crm.firstDelayMs)||0); }
 function openCRM(tab){
   const c=CONFIG.crm||{};
   if(isMember()){ openMemberCard(); return; }
@@ -2124,8 +2104,7 @@ function memberLogout(){
   closeAll(); toast("Logged out — see you soon 🌿"); maybeShowCRM();
 }
 function openRegister(){ openCRM(); }          // back-compat alias
-function dismissCRM(){ if(memberMode&&!isMember()){ memberMode=false; LS.set("memberOn",false); reflectMember(); repriceCart(); render(); } closeAll();
-  scheduleCRM((CONFIG.crm&&CONFIG.crm.repeatMs)||60000); }   // "Maybe later" → invite again shortly, until they join
+function dismissCRM(){ if(memberMode&&!isMember()){ memberMode=false; LS.set("memberOn",false); reflectMember(); repriceCart(); render(); } closeAll(); }
 function joinMember(){
   const name=($("#regName").value||"").trim(), phone=($("#regPhone").value||"").trim(), age=$("#regAge")?$("#regAge").checked:true;
   if(!name||!validContact(phone)){ toast("Please add your name and phone"); return; }
@@ -2566,9 +2545,8 @@ function gateJump(url){
   try{ $("#ageGate").classList.add("hidden"); }catch(e){}
   location.href=url;
 }
-function passGate(){ $("#ageGate").classList.add("hidden"); showBannerMaybe();
+function passGate(){ $("#ageGate").classList.add("hidden");
   if(!aiOpened) setTimeout(showNudge,6000);
-  maybeShowCRM();   // invite non-members to join for 10% off, every visit
   runDeepLink();    // someone came from Build Your Joint wanting the cart / checkout
 }
 
@@ -2667,9 +2645,9 @@ function buildChips(){
   const seen=Array.from(new Set(VD.map(p=>p.category)));
   /* Stable: equal ranks keep the order the feed gave them. */
   seen.sort((a,b)=>catRank(a)-catRank(b)||seen.indexOf(a)-seen.indexOf(b));
-  const cats=["All",...seen];
+  const cats=["Flower","All",...seen.filter(c=>c!=="Flower")];
   if(favs.length) cats.push("❤ Saved");
-  const cnt=c=> c==="All"?VD.length : c==="❤ Saved"?VD.filter(p=>isFav(p.id)).length : VD.filter(p=>p.category===c).length;
+  const cnt=c=> c==="Flower"?VD.filter(p=>FLOWER_CATS.includes(p.category)).length : c==="All"?VD.length : c==="❤ Saved"?VD.filter(p=>isFav(p.id)).length : VD.filter(p=>p.category===c).length;
   /* A category name is free text out of the product feed, so it goes nowhere near an
      inline handler — the chip carries its position in this list and setCatIdx() looks it
      back up. Ids get sanitised at the boundary; a category is displayed as typed, so it
@@ -2677,7 +2655,7 @@ function buildChips(){
      every page view otherwise. */
   CHIP_CATS=cats;
   $("#catChips").innerHTML='<button class="chip chip-promo" onclick="openPromosAll()">\ud83c\udf89 Promotions</button>'+
-    cats.map((c,i)=>`<button class="chip ${c===activeCat?'active':''}" onclick="setCatIdx(${i})">${c==="All"?"🌿 All":c==="❤ Saved"?"❤ Saved":catEmoji(c)+" "+esc(c)}<span class="chip-n">${cnt(c)}</span></button>`).join("");
+    cats.map((c,i)=>`<button class="chip ${c===activeCat?'active':''}" onclick="setCatIdx(${i})">${c==="Flower"?"Flower":c==="All"?"All products":c==="❤ Saved"?"Saved":esc(c)}<span class="chip-n">${cnt(c)}</span></button>`).join("");
 }
 var CHIP_CATS=[];
 function setCatIdx(i){ setCat(CHIP_CATS[i]); }
@@ -2750,6 +2728,7 @@ function render(){
     if(p._hidden && !adminMode) return false;   // owner-hidden items never show to customers
     if(activeCat==="❤ Saved" && !favs.length) activeCat="All";
     if(activeCat==="❤ Saved"){ if(!isFav(p.id)) return false; }
+    else if(activeCat==="Flower"){ if(!FLOWER_CATS.includes(p.category)) return false; }
     else if(activeCat!=="All"&&p.category!==activeCat) return false;
     if(tf&&p.type!==tf) return false;
     if(q){ const hay=(p.name+" "+p.type+" "+p.category+" "+(p.effects||[]).join(" ")+" "+(p.flavors||[]).join(" ")).toLowerCase(); if(!hay.includes(q)) return false; }
@@ -2771,12 +2750,13 @@ function render(){
     </div>`:"";
   if(!list.length){ g.innerHTML=byj+`<div class="empty" style="grid-column:1/-1">No products match.<br><br><button class="btn btn-ghost" onclick="resetFilters()">Clear filters</button></div>`; return; }
   g.innerHTML=byj+list.map(cardHTML).join("");
+  if(typeof renderLuxuryBest==="function") renderLuxuryBest();
   cardFX();                                       // rise-into-view for the new cards
   psCardFX();                                     // and flavours for the ones on screen
 }
 function cardHTML(p){
   const out=p.stock<=0;
-  const stockTag=out?`<span class="stock-tag out">Sold out</span>`:p.stock<=5?`<span class="stock-tag low">Only ${p.stock} left</span>`:`<span class="stock-tag">In stock</span>`;
+  const stockTag=out?`<span class="stock-tag out">Sold out</span>`:p.stock<=5?`<span class="stock-tag low">Only ${Math.max(0,Math.floor(Number(p.stock)||0))} left</span>`:`<span class="stock-tag">In stock</span>`;
   const thumb=imgTag(p,true);
   const potency=potencyHTML(p);
   const fx=(p.effects||[]).slice(0,3).map(e=>`<span class="tag">${fxEmoji(e)} ${esc(e)}</span>`).join("");
@@ -2811,7 +2791,7 @@ function priceBlock(p){
   if(memberMode) return `<div class="price mem-active">${pre}${money(mem)}${mem&&mem<list?`<span class="was">${money(list)}</span><span class="memtag">⭐ member price</span>`:''}</div>`;
   return `<div class="price">${pre}${money(list)}${mem&&mem<list?`<span class="mem">⭐ ${money(mem)} member</span>`:''}</div>`;
 }
-function resetFilters(){ activeCat="All"; $("#searchInput").value=""; $("#typeFilter").value=""; $("#sortBy").value="featured"; $("#branchSel").value="All branches"; buildChips(); render(); }
+function resetFilters(){ activeCat="Flower"; $("#searchInput").value=""; $("#typeFilter").value=""; $("#sortBy").value="featured"; $("#branchSel").value="All branches"; buildChips(); render(); }
 
 /* ---- Leafly-style strain sections ----
    Everything under the stats row of the product page: description, lineage,
@@ -3430,7 +3410,7 @@ function openPD(id){
       <button class="close-x pd-close" onclick="closeAll()">×</button>
       <div class="pd-sub">${[catEmoji(p.category)+" "+esc(p.category),esc(p.type),esc(branch)].filter(s=>s.trim()).join(" · ")}</div>
       <h2>${esc(p.name)}</h2>
-      <div class="pd-stats">${potStat}<div class="stat"><div class="k">Stock</div><div class="v" style="font-size:${Number.isFinite(+p.stock)?'19px':'15px'};color:${out?'var(--danger)':(Number.isFinite(+p.stock)&&p.stock<=5)?'var(--gold)':'var(--green2)'}">${out?'0':(Number.isFinite(+p.stock)?p.stock:'In stock')}</div></div></div>
+      <div class="pd-stats">${potStat}<div class="stat"><div class="k">Stock</div><div class="v" style="font-size:${Number.isFinite(+p.stock)?'19px':'15px'};color:${out?'var(--danger)':(Number.isFinite(+p.stock)&&p.stock<=5)?'var(--gold)':'var(--green2)'}">${out?'0':(Number.isFinite(+p.stock)?Math.max(0,Math.floor(+p.stock)):'In stock')}</div></div></div>
       <div id="pdStrainX">${strainSectionsHTML(p)}</div>
       ${tierBlock}
       <div class="pd-add-row">
@@ -5868,6 +5848,7 @@ async function pushOverrides(){
      party who is looking at their card. -->
 <script src="qr.js"></script>
 <script src="i18n.js"></script>
+<script src="assets/dank-luxury-shop.js"></script>
 
 <!-- ---- interactive layer: smooth anchors, section reveals, tap feedback, back-to-top.
      Grid cards already animate via cardFX; this covers everything around them.
