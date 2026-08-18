@@ -1051,6 +1051,19 @@
 .promo-dots{display:flex;gap:7px;justify-content:center;padding:12px 0 2px}
 .promo-dots i{width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,.25);transition:.25s}
 .promo-dots i.on{background:#fff;width:20px;border-radius:99px}
+/* Interactive 3D product poster: pointer tilt on desktop, tap tilt on mobile. */
+.promo-3d-frame{position:relative;perspective:1000px;overflow:hidden;border-radius:18px 18px 0 0;
+  background:#07100a;touch-action:pan-y}
+.promo-3d-img{width:100%;max-height:56vh;object-fit:contain;display:block;border-radius:18px 18px 0 0;
+  transform:rotateX(var(--promo-rx,0deg)) rotateY(var(--promo-ry,0deg)) scale(var(--promo-scale,1));
+  transform-style:preserve-3d;transition:transform .22s ease,filter .22s ease;will-change:transform;
+  filter:drop-shadow(0 18px 24px rgba(0,0,0,.3))}
+.promo-3d-frame.tilt-on .promo-3d-img{--promo-rx:-4deg;--promo-ry:6deg;--promo-scale:1.035;
+  filter:drop-shadow(-12px 20px 28px rgba(0,0,0,.48))}
+.promo-3d-hint{position:absolute;left:12px;bottom:10px;padding:6px 10px;border-radius:999px;
+  background:rgba(4,10,6,.7);border:1px solid rgba(123,227,137,.35);color:#dfffe7;
+  font-size:10.5px;font-weight:800;letter-spacing:.4px;pointer-events:none;backdrop-filter:blur(6px)}
+@media(prefers-reduced-motion:reduce){.promo-3d-img{transition:none!important;transform:none!important}.promo-3d-hint{display:none}}
 @media(min-width:900px){.promo-txt{padding:0 40px 40px}.promo{height:560px}}
 </style>
 <section class="promos" id="promos" aria-label="Promotions">
@@ -1120,7 +1133,7 @@ let SITE_SLIDES=[
   btn:"Join free", img:"assets/promo-membership.jpg", bg:"#101907", detail:""},
  {key:"tour", tag:"VISIT US", kick:"Video tour \u00b7 360\u00b0 walk-around", title:"Take a tour of the shop",
   text:"Step inside DANK before you visit \u2014 watch the video tour or look around the shop in 360\u00b0.",
-  btn:"Start the tour", img:"assets/promo-bags.jpg", bg:"#0b130e", detail:""},
+  btn:"Start the tour", img:"assets/promo-bags-products.jpg", bg:"#0b130e", detail:""},
 ];
 /* Tour links live in site overrides too - the owner pastes a YouTube link and a
    360 link in the Homepage editor and both players light up. Empty = coming soon. */
@@ -1399,6 +1412,22 @@ function heroShow(i,manual){
     setInterval(()=>{ if(heroOn && document.visibilityState==="visible" && Date.now()>heroHold) heroShow(heroIdx+1); },7000);
   }
 })();
+function promoTilt(ev,el){
+  if(!el||matchMedia("(prefers-reduced-motion:reduce)").matches||ev.pointerType==="touch") return;
+  const r=el.getBoundingClientRect(), nx=(ev.clientX-r.left)/Math.max(1,r.width)-.5, ny=(ev.clientY-r.top)/Math.max(1,r.height)-.5;
+  el.style.setProperty("--promo-rx",(-ny*7).toFixed(2)+"deg");
+  el.style.setProperty("--promo-ry",(nx*9).toFixed(2)+"deg");
+  el.style.setProperty("--promo-scale","1.025");
+}
+function promoTiltReset(el){
+  if(!el) return;
+  el.style.removeProperty("--promo-rx"); el.style.removeProperty("--promo-ry"); el.style.removeProperty("--promo-scale");
+}
+function promoTiltTap(el,ev){
+  if(!el||matchMedia("(prefers-reduced-motion:reduce)").matches) return;
+  if(ev&&ev.pointerType==="mouse") return;
+  el.classList.toggle("tilt-on");
+}
 function openPromo(key,back){
   const _sl=SITE_SLIDES.find(s=>s.key===key)||null;
   const img=pUrl((_sl&&_sl.img)||{box:"assets/products/toadvenom.jpg",joint:"assets/products/alienmint.jpg",
@@ -1491,7 +1520,10 @@ tiers:{t:"Membership has its perks \ud83d\udc9a",b:`
     <div style="position:relative;background:#07100a;border-radius:18px 18px 0 0">
       <!-- contain, not cover: these are dense infographic posters and a 210px
            cover strip showed one band across the middle of them. -->
-      <img src="${img}" alt="" style="width:100%;max-height:56vh;object-fit:contain;border-radius:18px 18px 0 0;display:block" onerror="this.style.display='none'">
+      <div class="promo-3d-frame" onpointermove="promoTilt(event,this)" onpointerleave="promoTiltReset(this)" onpointerup="promoTiltTap(this,event)">
+        <img class="promo-3d-img" src="${img}" alt="" onerror="this.parentElement.style.display='none'">
+        <span class="promo-3d-hint">TAP / MOVE · 3D</span>
+      </div>
       <button class="close-x" style="position:absolute;top:10px;right:10px" onclick="closeAll()">×</button></div>
     <div style="padding:16px 20px 22px">${back?'<button class="btn btn-ghost" style="margin:0 0 12px;padding:8px 14px;font-size:13px" onclick="openPromosAll()">\u2190 All promotions</button>':''}<h2 style="margin:0 0 10px;font-size:22px">${H.t}</h2>${H.b}</div>`;
 }
@@ -5471,6 +5503,8 @@ function applySite(){
       const fallback=DEFAULT_SLIDES.find(d=>d.key===x.key)||DEFAULT_SLIDES[i+1]||{key:"extra"+i};
       return Object.assign({},fallback,x,{key:fallback.key||("extra"+i)});
     }));
+    const tourSlide=SITE_SLIDES.find(x=>x.key==="tour");
+    if(tourSlide) tourSlide.img="assets/promo-bags-products.jpg";
   }
   if(s.hero&&typeof s.hero==="object") SITE_HERO=s.hero;
   if(s.tour&&typeof s.tour==="object") SITE_TOUR=Object.assign({video:"",pano:""},s.tour);
