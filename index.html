@@ -2647,7 +2647,7 @@ function buildChips(){
   seen.sort((a,b)=>catRank(a)-catRank(b)||seen.indexOf(a)-seen.indexOf(b));
   const cats=["Flower","All",...seen.filter(c=>c!=="Flower")];
   if(favs.length) cats.push("❤ Saved");
-  const cnt=c=> c==="Flower"?VD.filter(p=>FLOWER_CATS.includes(p.category)).length : c==="All"?VD.length : c==="❤ Saved"?VD.filter(p=>isFav(p.id)).length : VD.filter(p=>p.category===c).length;
+  const cnt=c=> c==="Flower"?VD.filter(p=>shelfIsFlower(p)).length : c==="All"?VD.length : c==="❤ Saved"?VD.filter(p=>isFav(p.id)).length : VD.filter(p=>p.category===c).length;
   /* A category name is free text out of the product feed, so it goes nowhere near an
      inline handler — the chip carries its position in this list and setCatIdx() looks it
      back up. Ids get sanitised at the boundary; a category is displayed as typed, so it
@@ -2728,7 +2728,7 @@ function render(){
     if(p._hidden && !adminMode) return false;   // owner-hidden items never show to customers
     if(activeCat==="❤ Saved" && !favs.length) activeCat="All";
     if(activeCat==="❤ Saved"){ if(!isFav(p.id)) return false; }
-    else if(activeCat==="Flower"){ if(!FLOWER_CATS.includes(p.category)) return false; }
+    else if(activeCat==="Flower"){ if(!shelfIsFlower(p)) return false; }
     else if(activeCat!=="All"&&p.category!==activeCat) return false;
     if(tf&&p.type!==tf) return false;
     if(q){ const hay=(p.name+" "+p.type+" "+p.category+" "+(p.effects||[]).join(" ")+" "+(p.flavors||[]).join(" ")).toLowerCase(); if(!hay.includes(q)) return false; }
