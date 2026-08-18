@@ -1016,8 +1016,8 @@
 <section class="ring3d" id="ring3d" hidden>
   <div class="wrap ring-head">
     <div>
-      <div class="ring-kick" id="ringKick">On the shelf today</div>
-      <h2 id="ringTitle">Turn the shelf.</h2>
+      <div class="ring-kick" id="ringKick">New drops &amp; best sellers</div>
+      <h2 id="ringTitle">Spin the flower shelf.</h2>
     </div>
     <p class="ring-hint" id="ringHint">Drag to spin · tap to open</p>
   </div>
@@ -5064,20 +5064,43 @@ let ringItems=[], ringRot=0, ringVel=0, ringStep=0, ringDrag=null, ringHold=fals
 let ringR=260;                // px out from the axis, recomputed from the stage
 const RING_AUTO = 0.055;      // degrees per frame when nobody is touching it
 
-/* Pick what actually deserves the turntable: in stock, photographed, and
-   featured first. A ring of nine placeholder SVGs is worse than no ring. */
+/* The turntable is a flower showcase, not a copy of the entire POS.
+   The live feed occasionally assigns drinks or rolled products to a flower
+   category, so both category and product name are checked. The curated names
+   are the current new drops and shop favourites; owner-set isNew/featured
+   flags are also honoured when the feed provides them. */
+const SHELF_NEW_FLOWER=/\b(grape stank|coco chanel|alien mintz?)\b/i;
+const SHELF_BEST_FLOWER=/\b(toad venom|granddaddy purple|grape gasolin(?:e)?|papaya fuel|(?:gem snow|snow brands) pineapple express|mac ?1|og kush.*zkittlez|king cherry|baby cake)\b/i;
+const SHELF_NON_FLOWER=/\b(beer|lager|ipa|ale|cider|shot|cocktail|wine|vodka|gin|rum|tequila|whisk(?:e)?y|joint|pre[\s-]?roll|blunt|cigar|vape|gumm(?:y|ies)|edible|brownie|cookie|paper|grinder|bong|pipe|tray|lighter|shirt|tee|cap)\b/i;
+function shelfIsNew(p){ return !!p.isNew||SHELF_NEW_FLOWER.test(String(p.name||"")); }
+function shelfIsBest(p){ return !!p.featured||SHELF_BEST_FLOWER.test(String(p.name||"")); }
+function shelfIsFlower(p){
+  const name=String(p.name||""), cat=String(p.category||"");
+  const flowerCat=/^(?:exotics?|top[\s-]?shelf|mid[\s-]?grade|premium|flowers?|weed)$/i.test(cat);
+  return flowerCat && !SHELF_NON_FLOWER.test(name) && (Number(p.thc)>0||!!p.priceTiers);
+}
+function shelfRank(p){
+  const realPhoto=!!p.image&&!String(p.image).includes("/api/tile");
+  return (shelfIsNew(p)?100:0)+(shelfIsBest(p)?80:0)+(realPhoto?20:0)+Math.min(10,Number(p.stock)||0)/10;
+}
+function shelfBadge(p){ return shelfIsNew(p)?"🔥 NEW FLOWER":"⭐ BEST SELLER"; }
 function ringPick(){
   const pool=(typeof DATA!=="undefined"&&Array.isArray(DATA))?DATA:[];
-  const live=pool.filter(p=>p&&!p._hidden&&p.stock>0);
-  const score=p=>(p.featured?4:0)+(p.image?3:0)+(isFlower(p)?2:0)+Math.min(1,(p.stock||0)/20);
-  return live.slice().sort((a,b)=>score(b)-score(a)).slice(0, FX_LEAN?7:9);
+  const flower=pool.filter(p=>p&&!p._hidden&&p.stock>0&&p.image&&
+    !String(p.image).includes("/api/tile")&&shelfIsFlower(p));
+  const curated=flower.filter(p=>shelfIsNew(p)||shelfIsBest(p));
+  /* Keep the shelf useful if the POS renames a favourite: still flower only,
+     while curated new/best-seller items remain first. */
+  const live=curated.length>=3?curated:flower;
+  return live.slice().sort((a,b)=>shelfRank(b)-shelfRank(a)).slice(0, FX_LEAN?7:9);
 }
 
 function ringCard(p){
   const thc=thcTxt(p);
   const pr=basePrice(p);
+  const fresh=shelfIsNew(p);
   return '<div class="ring-card" data-id="'+esc(p.id)+'">'
-    + '<span class="rc-tag" style="background:'+typeColor(p.type)+'">'+esc(p.type||p.category||"")+'</span>'
+    + '<span class="rc-tag" style="background:'+(fresh?"#1fd775":"#d6a83f")+'">'+shelfBadge(p)+'</span>'
     + imgTag(p,true)
     + '<div class="rc-body"><h4>'+esc(p.name)+'</h4><div class="rc-meta">'
     + '<span class="rc-thc">'+(thc?("THC "+thc):esc(p.category||""))+'</span>'
