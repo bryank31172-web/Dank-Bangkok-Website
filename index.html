@@ -4848,7 +4848,8 @@ function aiCTA(label,action){
 function applyConfig(){
   document.title=`🌿 ${CONFIG.brand} — Premium Cannabis Bangkok`;
   $("#ageBrand").textContent=CONFIG.brand; $("#brandName").textContent=CONFIG.brand; $("#aiName").textContent=CONFIG.aiName;
-  $("#heroTitle").textContent=CONFIG.heroTitle; $("#heroSub").textContent=CONFIG.heroSub; $("#heroAI").textContent=CONFIG.aiName+" answers 24/7";
+  $("#heroTitle").textContent=CONFIG.heroTitle; $("#heroSub").textContent=CONFIG.heroSub;
+  const heroAIEl=$("#heroAI"); if(heroAIEl) heroAIEl.textContent=CONFIG.aiName+" answers 24/7";
   $("#footBrand").textContent=CONFIG.brand; $("#footBrand2").textContent=CONFIG.brand; $("#footTag").textContent=CONFIG.tagline;
   $("#footBranches").textContent="📍 "+CONFIG.branches.filter(b=>b!=="All branches").join(" · ");
   $("#footHours").textContent="🕒 "+CONFIG.hours; $("#footPhone").textContent="📞 "+CONFIG.phone; $("#footPhone").href="tel:"+CONFIG.phone.replace(/\s/g,"");
