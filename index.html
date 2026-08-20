@@ -1649,12 +1649,18 @@ const CONFIG = {
         sub:"Sign up free and save 10% on every order, plus members-only drops. Takes 10 seconds.",
         firstDelayMs:1200, repeatMs:60000 },   // shows on entry, then re-invites every ~60s until they join
   // ---- Volume deal: buy more grams of flower, get grams free (cart-wide total) ----
-  gramLadder:[ [3,1],[5,2],[9,3],[12,4],[15,5] ],   // [buy grams, free grams]
+  gramLadder:[ [3,1],[5,2],[7,3],[10,4] ],   // [buy grams, free grams]
   /* Happy Hour: boosted ladder inside the windows below (Bangkok time).
-     The cart applies it automatically; promoHintsHTML announces it. */
+     The cart applies it automatically; promoHintsHTML announces it.
+
+     Its rungs have to sit on the same buy-points as the ladder above, not
+     just be a longer list: ladderFree() takes the best rung at or below the
+     grams bought, so a happy-hour list that jumped 3 to 9 while the base
+     ladder had a rung at 7 handed a customer buying 7g two free grams during
+     Happy Hour and three outside it. Same buy-points, one gram better. */
   happyHour:{ enabled:true, tz:"Asia/Bangkok",
     windows:[ {name:"Sathorn",from:17,to:19}, {name:"Pattanakarn",from:16,to:19} ],
-    ladder:[ [3,2],[9,3],[12,4],[15,5] ] },
+    ladder:[ [3,2],[5,3],[7,4],[10,5] ] },
   firstOrder:{ enabled:false, code:"FIRST1G", title:"Buy 1G get 1G FREE 🎁",
     sub:"First order only — register and get a free gram on any 1g flower." },
   wallet:{ enabled:true, bonusPct:10, amounts:[500,1000,2000,5000] },
@@ -1782,6 +1788,52 @@ function safeId(v,i){
   const s=String(v==null?"":v).replace(/[^A-Za-z0-9_-]/g,"");
   return s||("p"+i);
 }
+/* The flower shelves. A pattern rather than a list of exact names because the
+   POS writes "Top Shelf" and "Mid Grade" with a space and files loose bud
+   under "Weed" - spellings an exact-match list missed, which quietly left
+   most of the flower in the shop invisible to the free-gram ladder and to
+   the AI picker. Same patterns the shelf order uses. */
+const FLOWER_RE=/^(exotics?|top[\s-]?shelf|premium|mid[\s-]?grade|weed|flowers?|bud|cannabis)\b/i;
+const isFlowerCatName=c=>FLOWER_RE.test(c||"");
+const isFlowerCat=p=>isFlowerCatName(p&&p.category);
+
+/* Flower the till prices by the gram but sells in one size.
+
+   The POS sends most flower with no priceTiers at all - just "Gem Snow
+   Pineapple Express, 950". The storefront reads priceTiers to know a product
+   is flower, so those jars arrived as a single ฿950 button with no weights
+   and no "Roll it into a joint" row, while the jar beside them offered ½g, 1g
+   and bulk. The customer could not buy half a gram of the strongest strain in
+   the shop.
+
+   That bare price is the gram price - the POS's flower sits at exactly 400,
+   600, 800 and 950, the same rungs as the shelf presets - so the sizes can be
+   built from it. Rungs come from the volume ladder rather than a list written
+   out here, so the sizes on a product and the free grams the cart actually
+   hands over can never drift apart, and an owner who edits the ladder moves
+   both. Half a gram and one gram always lead, because those two are the
+   counter's own sizes and neither is a volume deal.
+
+   Only flower priced by the gram: a pre-roll, a lighter and a bag of gummies
+   have one size by nature, and anything the POS already gave tiers keeps
+   them untouched. */
+function laddered(p){
+  if(p.priceTiers||!isFlowerCat(p)) return p;
+  const per=Number(p.price);
+  if(!(per>0)) return p;
+  const u=String(p.unit||"").toLowerCase();
+  if(u&&!/^(g|gram|grams|กรัม)$/.test(u)) return p;     // sold by the piece, not the gram
+  /* The till's own member rate where it gave one, so a strain on a deeper
+     discount keeps it across every size instead of being flattened to 10%. */
+  const mr=Number(p.member)>0?Number(p.member)/per:0.9;
+  const money=g=>({ price:Math.round(per*g), member:Math.round(per*g*mr) });
+  const tiers=[{label:"½g",...money(0.5)},{label:"1g",...money(1)}];
+  activeLadder().slice().sort((a,b)=>a[0]-b[0]).forEach(([buy,free])=>{
+    if(buy<=1) return;                                  // 1g is already the row above
+    tiers.push({ label:`${buy}g +${free} free`, ...money(buy) });
+  });
+  return Object.assign({},p,{priceTiers:tiers});
+}
 function sanitizeMenu(list){
   if(!Array.isArray(list)) return list;
   const seen=Object.create(null);
@@ -1790,7 +1842,7 @@ function sanitizeMenu(list){
     let id=safeId(p.id,i);
     while(seen[id]) id=id+"_"+i;          // a rewrite must not collide with a real id
     seen[id]=1;
-    return id===p.id?p:Object.assign({},p,{id});
+    return laddered(id===p.id?p:Object.assign({},p,{id}));
   });
 }
 let DATA = sanitizeMenu(PRODUCTS.slice());
@@ -2550,14 +2602,6 @@ const catEmoji=c=>{
   for(const [re,e] of CAT_EMO_RE) if(re.test(s)) return e;
   return "🌿";
 };
-/* The flower shelves. A pattern rather than a list of exact names because the
-   POS writes "Top Shelf" and "Mid Grade" with a space and files loose bud
-   under "Weed" - spellings an exact-match list missed, which quietly left
-   most of the flower in the shop invisible to the free-gram ladder and to
-   the AI picker. Same patterns the shelf order uses. */
-const FLOWER_RE=/^(exotics?|top[\s-]?shelf|premium|mid[\s-]?grade|weed|flowers?|bud|cannabis)\b/i;
-const isFlowerCatName=c=>FLOWER_RE.test(c||"");
-const isFlowerCat=p=>isFlowerCatName(p&&p.category);
 const thcTxt=p=>esc(p.thcLabel||(p.thc?p.thc+"%":""));   // goes straight into innerHTML at four call sites
 const tiers=p=>p.priceTiers;
 const basePrice=p=>memberMode?(tiers(p)?tiers(p)[0].member:p.member):(tiers(p)?tiers(p)[0].price:p.price);
