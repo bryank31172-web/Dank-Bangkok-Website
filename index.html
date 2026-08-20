@@ -1813,9 +1813,26 @@ let DATA = sanitizeMenu(PRODUCTS.slice());
 /* Plurals matter: \b after "cocktail" refuses "Cocktails", because there is no
    word boundary between the l and the s. Every alternative takes an optional s. */
 const SHOP_HIDE_CAT=/^(bars?|cocktails?|liquors?|spirits?|whisk(e)?ys?|vodkas?|gins?|rums?|tequilas?|wines?|sake|soju)\b/i;
+/* Six bottles reached the cannabis shelf anyway, because the category test
+   above has nothing to read: "Fireball shot", "gin shot", "vodka", "Gin
+   tonic", "Regency on therock" and "santory ontherock" are filed in the POS
+   with no category at all. An empty category matches no pattern, so they fell
+   through to the storefront - and food.html drops uncategorised products
+   outright, so the same six were missing from the 224 menu where they belong.
+
+   So the bottle is recognised by its name when its shelf cannot say. Word
+   boundaries throughout: \bgin\b must not take "ginger", \bsake\b must not
+   take "milkshake", \brum\b must not take "crumble". Checked against all 324
+   product names on file - it takes those six and nothing else.
+
+   This is a net, not the fix. Give those six a category in the POS and the
+   category test above catches them the ordinary way. food.html carries the
+   same pattern; keep the two in step. */
+const BAR_NAME=/\b(gin|vodka|rum|tequila|whisk(?:e)?y|brandy|soju|sake|cognac|absinthe|fireball|sangsom|sang\s*som|hong\s*thong|regency|s[au]ntor[yi]|suntory|cocktail|margarita|mojito|martini|negroni|highball|shot)\b|on\s*the\s*rocks?/i;
+const isBarItem=p=>SHOP_HIDE_CAT.test(String(p.category||""))||BAR_NAME.test(String(p.name||""));
 function shopData(){
   const base=adminMode?DATA:DATA.filter(p=>!p._hidden);
-  return base.filter(p=>!SHOP_HIDE_CAT.test(String(p.category||"")));
+  return base.filter(p=>!isBarItem(p));
 }
 let activeCat="All", memberMode=false, branch="All branches";
 let cart=[], pdCurrent=null, pdTierIdx=0, coFulfill="delivery", coPay="Cash";
