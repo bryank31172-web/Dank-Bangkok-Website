@@ -1882,9 +1882,36 @@ const SHOP_HIDE_CAT=/^(bars?|cocktails?|liquors?|spirits?|whisk(e)?ys?|vodkas?|g
    same pattern; keep the two in step. */
 const BAR_NAME=/\b(gin|vodka|rum|tequila|whisk(?:e)?y|brandy|soju|sake|cognac|absinthe|fireball|sangsom|sang\s*som|hong\s*thong|regency|s[au]ntor[yi]|suntory|cocktail|margarita|mojito|martini|negroni|highball|shot)\b|on\s*the\s*rocks?/i;
 const isBarItem=p=>SHOP_HIDE_CAT.test(String(p.category||""))||BAR_NAME.test(String(p.name||""));
+
+/* Pre-rolls the joint builder already makes. Every flower now carries its own
+   "Roll it into a joint" row, so a shelf of "<strain> Joint" SKUs beside it
+   sells the same thing twice and splits the stock of one strain across two
+   listings. Bryan asked for them off.
+
+   Kept, because the builder cannot make them: the wax blunt, the hash
+   rockets, the fuzzies and the cigar are their own products, and the whole
+   Blunt shelf is Backwoods wraps - rolling gear a customer buys to roll with,
+   not a rolled joint. So the test is the other way round from the obvious
+   one: the shelf goes, and a named specialty is what stays.
+
+   Their POS records are untouched. The till still sells every one of them at
+   the counter; this only decides what the website lists. */
+const PREROLL_CAT=/^(pre[\s-]?roll|joint)s?\b/i;
+const PREROLL_KEEP=/\b(hash|rocket|fuzz|cigar|wax|blunt|backwood|blackwood)/i;
+/* The staff's own lines - "Joints Review", "weed for roll joint review
+   (inventory)" - which were on sale to the public at ฿150 and ฿0. */
+const TEST_ITEM=/\breview\b|\btest(ing)?\b|\(\s*inventory\s*\)/i;
+
+function shopHidden(p){
+  const cat=String(p.category||""), name=String(p.name||"");
+  if(isBarItem(p)) return true;                                     // sold at 224, not here
+  if(TEST_ITEM.test(name)) return true;                             // never a customer's to buy
+  if(PREROLL_CAT.test(cat)&&!PREROLL_KEEP.test(name)) return true;  // build-your-joint makes these
+  return false;
+}
 function shopData(){
   const base=adminMode?DATA:DATA.filter(p=>!p._hidden);
-  return base.filter(p=>!isBarItem(p));
+  return base.filter(p=>!shopHidden(p));
 }
 let activeCat="All", memberMode=false, branch="All branches";
 let cart=[], pdCurrent=null, pdTierIdx=0, coFulfill="delivery", coPay="Cash";
