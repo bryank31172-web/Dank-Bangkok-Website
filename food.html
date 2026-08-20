@@ -495,6 +495,16 @@ var CAT_KITCHEN = /(food|kitchen|snack|munch|bakery|dessert|noodle|rice|burger|p
 var CAT_DRINKS  = /(drink|beverage|coffee|tea|juice|shake|smoothie|water|soda|soft|mocktail|latte)/i;
 var CAT_BAR     = /(beer|alcohol|liquor|wine|spirit|cocktail|\bbar\b|whisky|vodka|gin|rum)/i;
 var CAT_CANNA   = /(edible|cannabis|weed|thc|hash|exotic|topshelf|midgrade|premium|joint|vape|flower|pre-?roll|merch|accessor|gram)/i;
+/* A bottle recognised by its name, for the six the POS files with no category
+   at all - "Fireball shot", "gin shot", "vodka", "Gin tonic", "Regency on
+   therock", "santory ontherock". Without this they are dropped by the empty
+   -category guard below and never reach this menu, while the storefront,
+   testing the same empty category, showed them on the cannabis shelf.
+
+   Word boundaries throughout so "ginger", "milkshake" and "crumble" are not
+   swept up. index.html carries the same pattern for the opposite purpose;
+   keep the two in step. The real fix is a category in the POS. */
+var BAR_NAME    = /\b(gin|vodka|rum|tequila|whisk(?:e)?y|brandy|soju|sake|cognac|absinthe|fireball|sangsom|sang\s*som|hong\s*thong|regency|s[au]ntor[yi]|suntory|cocktail|margarita|mojito|martini|negroni|highball|shot)\b|on\s*the\s*rocks?/i;
 
 function catEmojiFor(name){
   var s = String(name || "").toLowerCase();
@@ -516,7 +526,7 @@ function posToItem(p, catId){
      (131 x 1.07); printed straight onto a menu card that is what it says. */
   price = Math.round(price);
   var tags = [];
-  if (CAT_BAR.test(String(p.category || ""))) tags.push("21+");
+  if (CAT_BAR.test(String(p.category || "")) || BAR_NAME.test(String(p.name || ""))) tags.push("21+");
   if (CAT_CANNA.test(String(p.name || ""))) tags.push("edible");
   return { id: String(p.id || p.sku || p.name), name: String(p.name), cat: catId,
            price: price, tags: tags, img: p.image || p.img || "",
@@ -528,6 +538,9 @@ function menuFromPOS(list){
   (list || []).forEach(function(p){
     if (!p || !p.name) return;
     var cname = String(p.category || "").trim();
+    /* An uncategorised bottle still belongs on this menu, so it is filed under
+       Bar by its name rather than dropped with the rest of the blanks. */
+    if (!cname && BAR_NAME.test(String(p.name || ""))) cname = "Bar";
     if (!cname) return;
     if (CAT_CANNA.test(cname)) return;                                  // storefront's, not ours
     if (!(CAT_KITCHEN.test(cname) || CAT_DRINKS.test(cname) || CAT_BAR.test(cname))) return;
