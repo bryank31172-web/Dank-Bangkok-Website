@@ -202,6 +202,10 @@ export default async function handler(req, res) {
     `➡️ Open: https://${host}/staff.html#orders`;
 
   const results = [];
+  /* Whether the order reached storage. It decides the reply on its own: an
+     order that is written down has been taken, whatever the messengers did
+     about it afterwards. */
+  let saved = false;
 
   // 0) ALWAYS save the order so it shows in the staff console's Orders tab
   try {
@@ -216,6 +220,7 @@ export default async function handler(req, res) {
        their phone and normalise to nothing, so they simply don't land here. */
     const who = normPhone(o.customer?.phone);
     if (who.length >= 6) await indexAdd(orderId, "orders:by:" + who);
+    saved = true;
   } catch (e) { console.error("order save failed:", e.message); }
 
   // 0b) Telegram ping — staff phones buzz instantly (same bot as chat handoffs)
@@ -226,8 +231,17 @@ export default async function handler(req, res) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ chat_id: process.env.TELEGRAM_CHAT_ID, text: staffAlert }),
       });
+      /* Telegram answers a bad chat_id or a revoked token with 200-shaped JSON
+         carrying ok:false and a description - "chat not found", "Unauthorized".
+         Log that sentence: it names the fix, and without it a silent false is
+         indistinguishable from the network being down. The token is never
+         logged, only Telegram's own words. */
+      if (!r.ok) {
+        const why = await r.json().catch(() => ({}));
+        console.error("telegram send failed:", r.status, why.description || "");
+      }
       results.push(r.ok);
-    } catch (e) { results.push(false); }
+    } catch (e) { console.error("telegram send threw:", e.message); results.push(false); }
   }
 
   // 0b-LINE) Same alert pushed to LINE (Bryan / staff group) if LINE_TO is set
@@ -297,13 +311,21 @@ export default async function handler(req, res) {
     } catch (e) { results.push(false); }
   }
 
-  if (results.length === 0) {
-    // Nothing configured yet — accept and log so testing works,
-    // but tell the client so it can also push via LINE.
-    console.log("ORDER (no channels configured):", orderId, JSON.stringify(o));
-    return res.status(200).json({ ok: true, orderId, delivered: false, ...walletInfo });
-  }
   if (results.some(Boolean)) return res.status(200).json({ ok: true, orderId, delivered: true, ...walletInfo });
+
+  /* No messenger got through. The order is still taken if it was written down
+     - it is in storage and on the Orders tab, and staff will see it there.
+     Telling the customer "nothing was ordered" would be false, and it would
+     hand a single mistyped chat id the power to close the shop: before
+     Telegram was configured this branch could not be reached, so the first
+     wrong credential turned every checkout into a failure. A messenger that
+     cannot deliver is reported, not obeyed.
+
+     502 is kept for the one case that deserves it - the order reached neither
+     storage nor a messenger, so nothing anywhere knows it exists. */
+  if (results.length === 0) console.log("ORDER (no channels configured):", orderId, JSON.stringify(o));
+  else console.error("ORDER: every alert channel failed, order saved:", saved, orderId);
+  if (saved) return res.status(200).json({ ok: true, orderId, delivered: false, ...walletInfo });
   return res.status(502).json({ error: "all order channels failed" });
 }
 
