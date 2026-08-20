@@ -18,7 +18,7 @@
 </script>
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
 <meta name="theme-color" content="#060a07" />
-<link rel="preload" as="image" href="hero-box.jpg" fetchpriority="high" />
+<link rel="preload" as="image" href="assets/products/toadvenom.jpg" fetchpriority="high" />
 <meta name="description" content="DANK BKK — premium cannabis in Bangkok. Live menu, member prices, PromptPay & card checkout, delivery & pickup across Pattanakarn & Sathorn. Ask DANK AI 24/7." />
 <meta property="og:type" content="website"/>
 <meta property="og:title" content="🌿 DANK BKK — Premium Cannabis Bangkok"/>
@@ -228,7 +228,7 @@
      it; centred on a wide screen (--byo:-50%) where it sits beside the copy. */
   .hero-box{position:absolute;left:var(--boxx,50%);top:var(--boxy);
     width:var(--bw);height:var(--bh);
-    background:url(hero-box.jpg) center/contain no-repeat;
+    background:url(assets/products/toadvenom.jpg) center/contain no-repeat;
     mix-blend-mode:screen;will-change:transform;
     transform:translate3d(-50%,var(--byo),0)
       rotateX(calc(var(--py,0) * -5deg + var(--sp,0) * 13deg))
@@ -1037,8 +1037,8 @@
 <section class="ring3d" id="ring3d" hidden>
   <div class="wrap ring-head">
     <div>
-      <div class="ring-kick" id="ringKick">On the shelf today</div>
-      <h2 id="ringTitle">Turn the shelf.</h2>
+      <div class="ring-kick" id="ringKick">New drops &amp; best sellers</div>
+      <h2 id="ringTitle">Spin the flower shelf.</h2>
     </div>
     <p class="ring-hint" id="ringHint">Drag to spin · tap to open</p>
   </div>
@@ -1072,18 +1072,31 @@
 .promo-dots{display:flex;gap:7px;justify-content:center;padding:12px 0 2px}
 .promo-dots i{width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,.25);transition:.25s}
 .promo-dots i.on{background:#fff;width:20px;border-radius:99px}
+/* Interactive 3D product poster: pointer tilt on desktop, tap tilt on mobile. */
+.promo-3d-frame{position:relative;perspective:1000px;overflow:hidden;border-radius:18px 18px 0 0;
+  background:#07100a;touch-action:pan-y}
+.promo-3d-img{width:100%;max-height:56vh;object-fit:contain;display:block;border-radius:18px 18px 0 0;
+  transform:rotateX(var(--promo-rx,0deg)) rotateY(var(--promo-ry,0deg)) scale(var(--promo-scale,1));
+  transform-style:preserve-3d;transition:transform .22s ease,filter .22s ease;will-change:transform;
+  filter:drop-shadow(0 18px 24px rgba(0,0,0,.3))}
+.promo-3d-frame.tilt-on .promo-3d-img{--promo-rx:-4deg;--promo-ry:6deg;--promo-scale:1.035;
+  filter:drop-shadow(-12px 20px 28px rgba(0,0,0,.48))}
+.promo-3d-hint{position:absolute;left:12px;bottom:10px;padding:6px 10px;border-radius:999px;
+  background:rgba(4,10,6,.7);border:1px solid rgba(123,227,137,.35);color:#dfffe7;
+  font-size:10.5px;font-weight:800;letter-spacing:.4px;pointer-events:none;backdrop-filter:blur(6px)}
+@media(prefers-reduced-motion:reduce){.promo-3d-img{transition:none!important;transform:none!important}.promo-3d-hint{display:none}}
 @media(min-width:900px){.promo-txt{padding:0 40px 40px}.promo{height:560px}}
 </style>
 <section class="promos" id="promos" aria-label="Promotions">
   <div class="promo-track" id="promoTrack">
-    <div class="promo" onclick="openPromo('box')" style="background-color:#1d130b;background-image:url('promo-box.jpg')">
-      <div class="promo-shade"></div><span class="tagchip">DANK CUSTOMS</span>
-      <div class="promo-txt"><div class="promo-kick">28 g · curated or your picks</div>
-        <h3>Build your DANK box</h3>
-        <p>A walnut box, 28 grams of your favourite strains — free hash, brownie, jelly, Backwoods, papers, tee &amp; hat inside.</p>
-        <span class="promo-btn">See the box</span></div>
+    <div class="promo" onclick="openPromo('shops')" style="background-color:#07110b;background-image:url('assets/promo-all-shops.jpg')">
+      <div class="promo-shade"></div><span class="tagchip">4 DANK LOCATIONS</span>
+      <div class="promo-txt"><div class="promo-kick">Bangkok · Sathorn · Pattanakarn · Lomsak</div>
+        <h3>Find your nearest DANK</h3>
+        <p>See every shop, contact details and one-tap Google Maps directions.</p>
+        <span class="promo-btn">View all shops</span></div>
     </div>
-    <div class="promo" onclick="openPromo('joint')" style="background-color:#14100a;background-image:url('https://cdn.shopify.com/s/files/1/0812/7053/8528/files/18974187-610E-4BB3-8149-5F9240AEBA54.png?v=1692912822&width=1600')">
+    <div class="promo" onclick="openPromo('joint')" style="background-color:#14100a;background-image:url('assets/products/alienmint.jpg')">
       <div class="promo-shade"></div><span class="tagchip">ROLLED FRESH</span>
       <div class="promo-txt"><div class="promo-kick">Any strain on the menu</div>
         <h3>Build your joint</h3>
@@ -1115,12 +1128,12 @@
    from data. Everything rendered from this array is escaped, because the
    owner-edited copy comes back from the server for every visitor. ---- */
 let SITE_SLIDES=[
- {key:"box", tag:"DANK CUSTOMS", kick:"28 g \u00b7 curated or your picks", title:"Build your DANK box",
-  text:"A walnut box, 28 grams of your favourite strains \u2014 free hash, brownie, jelly, Backwoods, papers, tee & hat inside.",
-  btn:"See the box", img:"promo-box.jpg", bg:"#1d130b", detail:""},
+ {key:"shops", tag:"4 DANK LOCATIONS", kick:"Bangkok · Sathorn · Pattanakarn · Lomsak", title:"Find your nearest DANK",
+  text:"See every shop, contact details and one-tap Google Maps directions.",
+  btn:"View all shops", img:"assets/promo-all-shops.jpg", bg:"#07110b", detail:""},
  {key:"joint", tag:"ROLLED FRESH", kick:"Any strain on the menu", title:"Build your joint",
   text:"Pick the flower, pick the paper \u2014 we roll it fresh. Buy 3g and the 4th gram is free.",
-  btn:"Start building", img:"https://cdn.shopify.com/s/files/1/0812/7053/8528/files/18974187-610E-4BB3-8149-5F9240AEBA54.png?v=1692912822&width=1600", bg:"#14100a", detail:""},
+  btn:"Start building", img:"assets/products/alienmint.jpg", bg:"#0f1c12", detail:""},
  {key:"b3g1", tag:"EVERY STRAIN", kick:"Automatic in your cart", title:"Buy 3g, get 1g free",
   text:"Stack it: 5g \u2192 2 free \u00b7 9g \u2192 3 \u00b7 12g \u2192 4 \u00b7 15g \u2192 5. The cart adds them itself.",
   btn:"Shop flower", img:"https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-6890.png?v=1782732640&width=1600", bg:"#0f1c12", detail:""},
@@ -1141,7 +1154,7 @@ let SITE_SLIDES=[
   btn:"Join free", img:"assets/promo-membership.jpg", bg:"#101907", detail:""},
  {key:"tour", tag:"VISIT US", kick:"Video tour \u00b7 360\u00b0 walk-around", title:"Take a tour of the shop",
   text:"Step inside DANK before you visit \u2014 watch the video tour or look around the shop in 360\u00b0.",
-  btn:"Start the tour", img:"assets/promo-bags.jpg", bg:"#0b130e", detail:""},
+  btn:"Start the tour", img:"assets/promo-bags-products.jpg", bg:"#0b130e", detail:""},
 ];
 /* Tour links live in site overrides too - the owner pastes a YouTube link and a
    360 link in the Homepage editor and both players light up. Empty = coming soon. */
@@ -1420,13 +1433,39 @@ function heroShow(i,manual){
     setInterval(()=>{ if(heroOn && document.visibilityState==="visible" && Date.now()>heroHold) heroShow(heroIdx+1); },7000);
   }
 })();
+function promoTilt(ev,el){
+  if(!el||matchMedia("(prefers-reduced-motion:reduce)").matches||ev.pointerType==="touch") return;
+  const r=el.getBoundingClientRect(), nx=(ev.clientX-r.left)/Math.max(1,r.width)-.5, ny=(ev.clientY-r.top)/Math.max(1,r.height)-.5;
+  el.style.setProperty("--promo-rx",(-ny*7).toFixed(2)+"deg");
+  el.style.setProperty("--promo-ry",(nx*9).toFixed(2)+"deg");
+  el.style.setProperty("--promo-scale","1.025");
+}
+function promoTiltReset(el){
+  if(!el) return;
+  el.style.removeProperty("--promo-rx"); el.style.removeProperty("--promo-ry"); el.style.removeProperty("--promo-scale");
+}
+function promoTiltTap(el,ev){
+  if(!el||matchMedia("(prefers-reduced-motion:reduce)").matches) return;
+  if(ev&&ev.pointerType==="mouse") return;
+  el.classList.toggle("tilt-on");
+}
 function openPromo(key,back){
   const _sl=SITE_SLIDES.find(s=>s.key===key)||null;
-  const img=pUrl((_sl&&_sl.img)||{box:"promo-box.jpg",joint:"https://cdn.shopify.com/s/files/1/0812/7053/8528/files/18974187-610E-4BB3-8149-5F9240AEBA54.png?v=1692912822&width=1200",
+  const img=pUrl((_sl&&_sl.img)||{box:"assets/products/toadvenom.jpg",joint:"assets/products/alienmint.jpg",
     b3g1:"https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-6890.png?v=1782732640&width=1200",first:"promo-first.jpg"}[key]||"");
   const ladder=(CONFIG.gramLadder||[[3,1],[5,2],[9,3],[12,4],[15,5]]).slice().sort((a,b)=>a[0]-b[0]);
   const lrows=ladder.map(([b,f])=>`<div style="display:flex;justify-content:space-between;padding:8px 2px;border-bottom:1px solid var(--line2);font-size:14.5px"><span><b>Buy ${b}g</b></span><span style="color:var(--green2);font-weight:800">+${f}g FREE 🌿</span></div>`).join("");
   let H={
+shops:{t:"All DANK shops 📍",b:`
+  <p style="color:var(--muted);font-size:14px;margin:0 0 14px">Choose a location to view it in Google Maps, call ahead, or message the DANK team.</p>
+  <div style="display:grid;gap:10px;margin-bottom:14px">
+    <a class="btn btn-ghost btn-block" style="justify-content:space-between;text-align:left" target="_blank" rel="noopener noreferrer" href="https://maps.app.goo.gl/zivxFn4nf6RpBysC6?g_st=ic"><span>📍 <b>DANK Cannabis Club — Pattanakarn</b><br><small style="color:var(--muted)">223 Phatthanakan Rd · Bangkok 10250</small></span><span>Maps ↗</span></a>
+    <a class="btn btn-ghost btn-block" style="justify-content:space-between;text-align:left" target="_blank" rel="noopener noreferrer" href="https://maps.app.goo.gl/X2j67wBR3q4ueNEU8?g_st=ic"><span>📍 <b>DANK — Sathorn</b><br><small style="color:var(--muted)">76/10 Nang Linchi Rd · Bangkok 10120</small></span><span>Maps ↗</span></a>
+    <a class="btn btn-ghost btn-block" style="justify-content:space-between;text-align:left" target="_blank" rel="noopener noreferrer" href="https://maps.app.goo.gl/ZxrDoRr3iUxJmUWFA?g_st=ic"><span>📍 <b>DANK Lomsak Phetchabun</b><br><small style="color:var(--muted)">56/2 Khotchaseni Rd · Phetchabun 67110</small></span><span>Maps ↗</span></a>
+    <a class="btn btn-ghost btn-block" style="justify-content:space-between;text-align:left" target="_blank" rel="noopener noreferrer" href="https://maps.app.goo.gl/QgbvTmwEQ3GzFvVo8?g_st=ic"><span>📍 <b>DANK Speakeasy — Pattanakarn</b><br><small style="color:var(--muted)">Phatthanakan 1 Alley · Bangkok 10250</small></span><span>Maps ↗</span></a>
+  </div>
+  <a class="btn btn-primary btn-block" href="tel:+66841620610">📞 Call +66 84 162 0610</a>
+  <a class="btn btn-ghost btn-block" style="margin-top:8px" target="_blank" rel="noopener noreferrer" href="https://linktr.ee/dankbkk">💬 Message DANK</a>`},
 box:{t:"Build your DANK box 📦",b:`
   <p style="color:var(--muted);font-size:14px;margin:0 0 12px">A dark-walnut DANK box packed with 28 grams — pick every strain yourself, or tell us your vibe and our budtenders curate it.</p>
   <div style="background:var(--panel2);border:1px solid var(--line2);border-radius:12px;padding:12px 14px;margin-bottom:12px">
@@ -1502,7 +1541,10 @@ tiers:{t:"Membership has its perks \ud83d\udc9a",b:`
     <div style="position:relative;background:#07100a;border-radius:18px 18px 0 0">
       <!-- contain, not cover: these are dense infographic posters and a 210px
            cover strip showed one band across the middle of them. -->
-      <img src="${img}" alt="" style="width:100%;max-height:56vh;object-fit:contain;border-radius:18px 18px 0 0;display:block" onerror="this.style.display='none'">
+      <div class="promo-3d-frame" onpointermove="promoTilt(event,this)" onpointerleave="promoTiltReset(this)" onpointerup="promoTiltTap(this,event)">
+        <img class="promo-3d-img" src="${img}" alt="" onerror="this.parentElement.style.display='none'">
+        <span class="promo-3d-hint">TAP / MOVE · 3D</span>
+      </div>
       <button class="close-x" style="position:absolute;top:10px;right:10px" onclick="closeAll()">×</button></div>
     <div style="padding:16px 20px 22px">${back?'<button class="btn btn-ghost" style="margin:0 0 12px;padding:8px 14px;font-size:13px" onclick="openPromosAll()">\u2190 All promotions</button>':''}<h2 style="margin:0 0 10px;font-size:22px">${H.t}</h2>${H.b}</div>`;
 }
@@ -5244,20 +5286,43 @@ let ringItems=[], ringRot=0, ringVel=0, ringStep=0, ringDrag=null, ringHold=fals
 let ringR=260;                // px out from the axis, recomputed from the stage
 const RING_AUTO = 0.055;      // degrees per frame when nobody is touching it
 
-/* Pick what actually deserves the turntable: in stock, photographed, and
-   featured first. A ring of nine placeholder SVGs is worse than no ring. */
+/* The turntable is a flower showcase, not a copy of the entire POS.
+   The live feed occasionally assigns drinks or rolled products to a flower
+   category, so both category and product name are checked. The curated names
+   are the current new drops and shop favourites; owner-set isNew/featured
+   flags are also honoured when the feed provides them. */
+const SHELF_NEW_FLOWER=/\b(grape stank|coco chanel|alien mintz?)\b/i;
+const SHELF_BEST_FLOWER=/\b(toad venom|granddaddy purple|grape gasolin(?:e)?|papaya fuel|(?:gem snow|snow brands) pineapple express|mac ?1|og kush.*zkittlez|king cherry|baby cake)\b/i;
+const SHELF_NON_FLOWER=/\b(beer|lager|ipa|ale|cider|shot|cocktail|wine|vodka|gin|rum|tequila|whisk(?:e)?y|joint|pre[\s-]?roll|blunt|cigar|vape|gumm(?:y|ies)|edible|brownie|cookie|paper|grinder|bong|pipe|tray|lighter|shirt|tee|cap)\b/i;
+function shelfIsNew(p){ return !!p.isNew||SHELF_NEW_FLOWER.test(String(p.name||"")); }
+function shelfIsBest(p){ return !!p.featured||SHELF_BEST_FLOWER.test(String(p.name||"")); }
+function shelfIsFlower(p){
+  const name=String(p.name||""), cat=String(p.category||"");
+  const flowerCat=/^(?:exotics?|top[\s-]?shelf|mid[\s-]?grade|premium|flowers?|weed)$/i.test(cat);
+  return flowerCat && !SHELF_NON_FLOWER.test(name) && (Number(p.thc)>0||!!p.priceTiers);
+}
+function shelfRank(p){
+  const realPhoto=!!p.image&&!String(p.image).includes("/api/tile");
+  return (shelfIsNew(p)?100:0)+(shelfIsBest(p)?80:0)+(realPhoto?20:0)+Math.min(10,Number(p.stock)||0)/10;
+}
+function shelfBadge(p){ return shelfIsNew(p)?"🔥 NEW FLOWER":"⭐ BEST SELLER"; }
 function ringPick(){
   const pool=(typeof DATA!=="undefined"&&Array.isArray(DATA))?DATA:[];
-  const live=pool.filter(p=>p&&!p._hidden&&p.stock>0);
-  const score=p=>(p.featured?4:0)+(p.image?3:0)+(isFlower(p)?2:0)+Math.min(1,(p.stock||0)/20);
-  return live.slice().sort((a,b)=>score(b)-score(a)).slice(0, FX_LEAN?7:9);
+  const flower=pool.filter(p=>p&&!p._hidden&&p.stock>0&&p.image&&
+    !String(p.image).includes("/api/tile")&&shelfIsFlower(p));
+  const curated=flower.filter(p=>shelfIsNew(p)||shelfIsBest(p));
+  /* Keep the shelf useful if the POS renames a favourite: still flower only,
+     while curated new/best-seller items remain first. */
+  const live=curated.length>=3?curated:flower;
+  return live.slice().sort((a,b)=>shelfRank(b)-shelfRank(a)).slice(0, FX_LEAN?7:9);
 }
 
 function ringCard(p){
   const thc=thcTxt(p);
   const pr=basePrice(p);
+  const fresh=shelfIsNew(p);
   return '<div class="ring-card" data-id="'+esc(p.id)+'">'
-    + '<span class="rc-tag" style="background:'+typeColor(p.type)+'">'+esc(p.type||p.category||"")+'</span>'
+    + '<span class="rc-tag" style="background:'+(fresh?"#1fd775":"#d6a83f")+'">'+shelfBadge(p)+'</span>'
     + imgTag(p,true)
     + '<div class="rc-body"><h4>'+esc(p.name)+'</h4><div class="rc-meta">'
     + '<span class="rc-thc">'+(thc?("THC "+thc):esc(p.category||""))+'</span>'
@@ -5676,7 +5741,15 @@ function applyProductOverridesLocal(){
 function applySite(){
   const s=ADMIN_OV.site; if(!s) return;
   if(Array.isArray(s.slides)&&s.slides.length){
-    SITE_SLIDES=s.slides.slice(0,12).map((x,i)=>Object.assign({},DEFAULT_SLIDES[i]||{key:"extra"+i},x,{key:(DEFAULT_SLIDES[i]||{}).key||("extra"+i)}));
+    /* Keep the locations card first and prevent retired box artwork from
+       returning through an older saved homepage override. */
+    const saved=s.slides.filter(x=>x&&x.key!=="shops"&&x.key!=="box").slice(0,11);
+    SITE_SLIDES=[Object.assign({},DEFAULT_SLIDES[0])].concat(saved.map((x,i)=>{
+      const fallback=DEFAULT_SLIDES.find(d=>d.key===x.key)||DEFAULT_SLIDES[i+1]||{key:"extra"+i};
+      return Object.assign({},fallback,x,{key:fallback.key||("extra"+i)});
+    }));
+    const tourSlide=SITE_SLIDES.find(x=>x.key==="tour");
+    if(tourSlide) tourSlide.img="assets/promo-bags-products.jpg";
   }
   if(s.hero&&typeof s.hero==="object") SITE_HERO=s.hero;
   if(s.tour&&typeof s.tour==="object") SITE_TOUR=Object.assign({video:"",pano:""},s.tour);
