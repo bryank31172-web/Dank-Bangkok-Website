@@ -23,8 +23,35 @@
 <meta property="og:type" content="website"/>
 <meta property="og:title" content="🌿 DANK BKK — Premium Cannabis Bangkok"/>
 <meta property="og:description" content="Shop top-shelf to exotics, edibles & vapes. Buy 3 get 1 free. Delivery or pickup, PromptPay & card. Ask DANK AI 24/7."/>
-<meta property="og:url" content="https://www.dankbkk.com"/>
+<meta property="og:url" content="https://dankbangkok.com/"/>
+<meta property="og:type" content="website"/>
+<meta property="og:site_name" content="DANK BKK"/>
+<meta property="og:locale" content="en_US"/>
+<meta property="og:locale:alternate" content="th_TH"/>
+<meta property="og:image" content="https://dankbangkok.com/assets/promo-exotic-cards.jpg"/>
+<meta property="og:image:alt" content="DANK BKK exotic flower shelf"/>
 <meta name="twitter:card" content="summary_large_image"/>
+<meta name="twitter:image" content="https://dankbangkok.com/assets/promo-exotic-cards.jpg"/>
+<meta name="robots" content="index,follow,max-image-preview:large"/>
+<link rel="canonical" href="https://dankbangkok.com/"/>
+<!-- Structured data. Only what the shop already states about itself elsewhere
+     on this page - name, the two branches, phone, socials, the maps link. No
+     invented address, hours or rating: a Store card that claims more than the
+     business can back is the kind that gets the whole card dropped. -->
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"Store","name":"DANK BKK",
+ "alternateName":"DANK Cannabis Club",
+ "url":"https://dankbangkok.com/",
+ "image":"https://dankbangkok.com/assets/promo-exotic-cards.jpg",
+ "description":"Premium cannabis in Bangkok — live menu from the shop, member prices, delivery or pickup.",
+ "telephone":"+66841620610",
+ "areaServed":"Bangkok",
+ "address":{"@type":"PostalAddress","addressLocality":"Bangkok","addressCountry":"TH"},
+ "hasMap":"https://maps.google.com/?q=Dank+Cannabis+Club+Bangkok",
+ "department":[{"@type":"Store","name":"DANK BKK Sathorn","address":{"@type":"PostalAddress","addressLocality":"Bangkok","addressRegion":"Sathorn","addressCountry":"TH"}},
+               {"@type":"Store","name":"DANK BKK Pattanakarn","address":{"@type":"PostalAddress","addressLocality":"Bangkok","addressRegion":"Pattanakarn","addressCountry":"TH"}}],
+ "sameAs":["https://www.instagram.com/dankclub.official","https://www.youtube.com/@DANKCANNABISCLUBBKK","https://linktr.ee/dankbkk"]}
+</script>
 <title>🌿 DANK BKK — Premium Cannabis Bangkok</title>
 <style>
   /* ============================================================
@@ -343,6 +370,33 @@
   .btn-spin:focus-visible{outline:2px solid var(--green);outline-offset:3px}
   .btn-spin[disabled]{opacity:.45;cursor:default;filter:grayscale(.5);transform:none;box-shadow:none}
   .spin-note{margin:0;font-size:12px;color:var(--muted);text-align:center}
+
+  /* ---- Cookie notice -------------------------------------------------------
+     Thailand's PDPA wants a choice, not a notice that only closes. So there
+     are two buttons doing two different things, and until one is pressed the
+     optional cookies do not run. It sits at the bottom and never covers the
+     age gate, which has to be answered first. */
+  .ck-bar{position:fixed;left:0;right:0;bottom:0;z-index:70;padding:14px 16px calc(14px + env(safe-area-inset-bottom));
+    background:var(--panel);border-top:1px solid var(--line2);
+    box-shadow:0 -16px 40px -22px rgba(0,0,0,.9);
+    transform:translateY(110%);transition:transform .38s cubic-bezier(.2,.8,.3,1)}
+  .ck-bar.show{transform:translateY(0)}
+  /* The floating mascot sits in the same corner as the "Allow all" button and
+     covered it. Lifted while the bar is up, and put back when it goes. */
+  body:has(.ck-bar.show) #aiFab{bottom:118px}
+  body:has(.ck-bar.show) #toTop{bottom:118px}
+  .ck-in{max-width:840px;margin:0 auto;display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+  .ck-tx{flex:1 1 300px;min-width:0;font-size:13px;line-height:1.55;color:var(--muted);margin:0}
+  .ck-tx b{color:var(--txt)}
+  .ck-tx a{color:var(--green2)}
+  .ck-btns{display:flex;gap:8px;flex:0 0 auto}
+  .ck-btns button{font:inherit;font-size:13.5px;font-weight:700;cursor:pointer;padding:10px 18px;border-radius:10px;white-space:nowrap}
+  .ck-no{background:transparent;border:1px solid var(--line2);color:var(--txt)}
+  .ck-no:hover{border-color:var(--muted)}
+  .ck-yes{background:var(--green);border:0;color:#06120b}
+  .ck-yes:hover{filter:brightness(1.06)}
+  .ck-btns button:focus-visible{outline:2px solid var(--green);outline-offset:2px}
+  @media (max-width:520px){ .ck-btns{width:100%} .ck-btns button{flex:1} }
 
   /* The stage leans back and the cards smear while the wheel is running. The
      blur sits on the track, not each card, so it is one composited layer. */
@@ -1227,7 +1281,7 @@ function openTourVideo(){
   document.getElementById("infoCard").innerHTML=
    '<div class="drawer-head" style="border:none;padding:16px 20px 8px"><h2>\ud83c\udfa5 Shop tour</h2><button class="close-x" onclick="closeAll()">\u00d7</button></div>'+
    '<div style="padding:0 14px 18px"><div style="position:relative;width:100%;aspect-ratio:16/9;border-radius:14px;overflow:hidden;background:#000">'+
-   '<iframe src="https://www.youtube-nocookie.com/embed/'+pEsc(id)+'?rel=0&playsinline=1" style="position:absolute;inset:0;width:100%;height:100%;border:0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture; fullscreen" allowfullscreen loading="lazy"></iframe></div></div>';
+   '<iframe src="https://www.youtube-nocookie.com/embed/'+pEsc(id)+'?rel=0&playsinline=1" style="position:absolute;inset:0;width:100%;height:100%;border:0" loading="lazy" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture; fullscreen" allowfullscreen loading="lazy"></iframe></div></div>';
 }
 function openTour360(){
   const src=panoSrc(SITE_TOUR.pano);
@@ -1236,7 +1290,7 @@ function openTour360(){
   document.getElementById("infoCard").innerHTML=
    '<div class="drawer-head" style="border:none;padding:16px 20px 8px"><h2>\ud83e\udded 360\u00b0 walk-around</h2><button class="close-x" onclick="closeAll()">\u00d7</button></div>'+
    '<div style="padding:0 14px 18px"><div style="position:relative;width:100%;height:min(62vh,520px);border-radius:14px;overflow:hidden;background:#000">'+
-   '<iframe src="'+pEsc(src)+'" style="position:absolute;inset:0;width:100%;height:100%;border:0" allow="accelerometer; gyroscope; fullscreen" allowfullscreen loading="lazy"></iframe></div></div>';
+   '<iframe src="'+pEsc(src)+'" style="position:absolute;inset:0;width:100%;height:100%;border:0" loading="lazy" allow="accelerometer; gyroscope; fullscreen" allowfullscreen loading="lazy"></iframe></div></div>';
 }
 const DEFAULT_SLIDES=SITE_SLIDES.map(s=>Object.assign({},s));
 let SITE_HERO=null, ORIG_HERO=null;
@@ -1280,7 +1334,7 @@ function openPromosAll(){
    '<div class="drawer-head" style="border:none;padding:16px 20px 4px"><h2>\ud83c\udf89 Promotions</h2><button class="close-x" onclick="closeAll()">\u00d7</button></div>'+
    '<div style="padding:8px 16px 20px">'+SITE_SLIDES.map((s,i)=>
     '<div onclick="openPromoIdx('+i+',1)" style="cursor:pointer;border:1px solid var(--line2);border-radius:14px;overflow:hidden;margin-bottom:12px;background:var(--panel2)">'+
-    '<img src="'+pUrl(s.img)+'" alt="" style="width:100%;height:120px;object-fit:cover;display:block" onerror="this.style.display=\'none\'">'+
+    '<img src="'+pUrl(s.img)+'" alt="" loading="lazy" decoding="async" style="width:100%;height:120px;object-fit:cover;display:block" onerror="this.style.display=\'none\'">'+
     '<div style="padding:12px 14px">'+
     '<div style="font-size:11px;font-weight:800;letter-spacing:2px;color:var(--gold);text-transform:uppercase">'+pEsc(s.tag)+'</div>'+
     '<div style="font-weight:900;font-size:17px;margin:3px 0">'+pEsc(s.title)+'</div>'+
@@ -1683,6 +1737,16 @@ tiers:{t:"Membership has its perks \ud83d\udc9a",b:`
 <div class="modal" id="pdModal"><div class="modal-card" id="pdCard"></div></div>
 <div class="modal" id="coModal"><div class="modal-card" style="max-width:520px" id="coCard"></div></div>
 <div class="modal" id="infoModal"><div class="modal-card" style="max-width:520px" id="infoCard"></div></div>
+<div class="ck-bar" id="ckBar" role="dialog" aria-live="polite" aria-label="Cookie choices">
+  <div class="ck-in">
+    <p class="ck-tx"><b>🍪 Cookies.</b> We keep your cart, your language and whether you are a member on this device — that part the shop cannot work without. May we also count anonymous visits to see which strains people look at?
+      <a href="#" onclick="openPrivacy();return false">What we keep</a></p>
+    <div class="ck-btns">
+      <button type="button" class="ck-no" onclick="ckChoose(false)">Essential only</button>
+      <button type="button" class="ck-yes" onclick="ckChoose(true)">Allow all</button>
+    </div>
+  </div>
+</div>
 <div id="toast"></div>
 
 <!-- ============ DANK AI ============ -->
@@ -2774,7 +2838,63 @@ function gateJump(url){
   try{ $("#ageGate").classList.add("hidden"); }catch(e){}
   location.href=url;
 }
-function passGate(){ $("#ageGate").classList.add("hidden"); showBannerMaybe();
+/* ---- Cookies ---------------------------------------------------------------
+   Two categories, and only one of them is a choice. Essential is the cart, the
+   language, the member flag and the age answer - the shop is not usable
+   without them and they are never sent anywhere. Analytics is optional and
+   stays off until it is allowed, which is what PDPA asks for.
+
+   Nothing analytical is loaded today, so the flag has no consumer yet; it is
+   read by ckAllowed() so that whatever is added later has to ask it rather
+   than assume. Asked once the age gate is out of the way, because two dialogs
+   stacked on a phone is how a customer leaves. */
+function ckChoice(){ return LS.get("ck",null); }
+function ckAllowed(kind){ return kind==="essential" ? true : ckChoice()==="all"; }
+function ckChoose(all){
+  LS.set("ck", all?"all":"essential");
+  const b=$("#ckBar"); if(b) b.classList.remove("show");
+  setTimeout(()=>{ try{ window.dispatchEvent(new Event("resize")); }catch(e){} }, 420);
+  toast(all?"Thanks — cookies allowed 🍪":"Essential cookies only ✅");
+}
+function ckMaybeAsk(){
+  if(ckChoice()) return;                       // already answered, on this device
+  const b=$("#ckBar"); if(!b) return;
+  /* Wait for a clear screen. passGate() also opens the membership invite, and
+     a consent bar pinned under an open modal is both unreadable and
+     unclickable - the customer meets two dialogs at once and answers neither.
+     So it waits its turn, and gives up after a while rather than ambushing
+     someone mid-checkout. */
+  let tries=0;
+  const busy=()=>document.querySelector(".modal.show")||document.querySelector("#cartDrawer.show")
+                ||!$("#ageGate").classList.contains("hidden");
+  const ask=()=>{
+    if(ckChoice()) return;
+    if(busy()){ if(++tries<40) setTimeout(ask,1200); return; }
+    b.classList.add("show");
+    /* i18n.js parks its language pill above whatever is pinned to the bottom,
+       but it measured before this bar existed and only re-measures on resize.
+       One synthetic resize and it climbs clear of the buttons. */
+    setTimeout(()=>{ try{ window.dispatchEvent(new Event("resize")); }catch(e){} }, 420);
+  };
+  setTimeout(ask,900);
+}
+function openPrivacy(){
+  $("#infoCard").innerHTML='<div class="drawer-head" style="border:none;padding:18px 20px 4px">'
+    +'<h2 style="font-size:17px">🍪 What we keep on your device</h2>'
+    +'<button class="close-x" onclick="closeAll()">×</button></div>'
+    +'<div style="padding:2px 20px 24px;font-size:14px;line-height:1.65;color:var(--muted)">'
+    +'<div class="pd-section-t">Essential — always on</div>'
+    +'<p style="margin:0 0 12px">Your cart, your language, whether you are a member, whether you have answered the age question, and any coupon you have won. Kept in this browser only. We do not send it anywhere and it is not used to identify you.</p>'
+    +'<div class="pd-section-t">Optional — only if you allow it</div>'
+    +'<p style="margin:0 0 12px">Anonymous counts of which pages and strains get looked at, so we stock what people actually want. No names, no numbers, nothing that points back at a person.</p>'
+    +'<div class="pd-section-t">Changing your mind</div>'
+    +'<p style="margin:0 0 14px">Press the button below to be asked again, or clear this site\'s data in your browser to erase everything above.</p>'
+    +'<button class="btn btn-ghost btn-block" onclick="ckReset()">Ask me again</button></div>';
+  showModal("#infoModal");
+}
+function ckReset(){ LS.set("ck",null); closeAll(); ckMaybeAsk(); }
+
+function passGate(){ $("#ageGate").classList.add("hidden"); showBannerMaybe(); ckMaybeAsk();
   if(!aiOpened) setTimeout(showNudge,6000);
   maybeShowCRM();   // invite non-members to join for 10% off, every visit
   runDeepLink();    // someone came from Build Your Joint wanting the cart / checkout
@@ -2973,7 +3093,10 @@ function genPhoto(p,bare){
 const isArtCard=src=>/assets\/strains\//.test(String(src||""));
 function imgTag(p,lazy,bare){
   const gp=genPhoto(p,bare);
-  const lz=lazy?' loading="lazy"':'';
+  /* decoding="async" on every product image, lazy or not: it keeps a large
+     photograph from blocking the frame it lands in, which matters most for the
+     ones that are NOT lazy - the popup stage and the cart thumbnails. */
+  const lz=(lazy?' loading="lazy"':'')+' decoding="async"';
   if(!p.image) return '<img src="'+esc(gp)+'"'+lz+(isArtCard(gp)?' class="art"':'')+' onload="imgFit(this)">';
   return '<img src="'+esc(p.image)+'"'+lz+(isArtCard(p.image)?' class="art"':'')+' data-fb="'+esc(gp)+'" onload="imgFit(this)" onerror="imgFallback(this)">';
 }
@@ -3050,9 +3173,93 @@ function render(){
       <a class="btn btn-gold go" href="build-your-joint.html" onclick="event.stopPropagation()">Start building →</a>
     </div>`:"";
   if(!list.length){ g.innerHTML=byj+`<div class="empty" style="grid-column:1/-1">No products match.<br><br><button class="btn btn-ghost" onclick="resetFilters()">Clear filters</button></div>`; return; }
-  g.innerHTML=byj+list.map(cardHTML).join("");
+  /* The shelf is drawn a page at a time. "All" is 390 products, and drawing
+     every one of them built 390 cards with their images, sprites and observers
+     before the customer had scrolled past the first row - a page metres long
+     that cost seconds to lay out on a phone and was never going to be read to
+     the end. The rest arrive as they are scrolled to. */
+  /* refreshMenu() re-renders on every poll, and that must not drag a customer
+     who has scrolled to the two-hundredth card back to the twenty-fourth. So
+     how far they have got is kept while the question stays the same, and only
+     reset when they change it - a new search, category, sort, branch or the
+     member toggle. */
+  const sig=[activeCat,q,tf,sort,branch,memberMode?1:0].join("");
+  const keep=(sig===gridSig)?gridShown:0;
+  const sigWas=gridSig;
+  gridSig=sig;
+  gridList=list; gridShown=0;
+  if(gridIO) gridIO.disconnect();                 // stale sentinel must not fire into the new grid
+  g.innerHTML=byj;
+  const want=Math.min(Math.max(GRID_PAGE,keep), list.length);
+  while(gridShown<want) gridPage();
+  cardFX(); psCardFX(); gridSentinel();
+  /* Changing the question takes you back to the top of the answers. Only on a
+     real change - gridSig is empty on the first render, and a poll re-renders
+     with the same signature - and only when the shelf has been scrolled past,
+     so it never yanks a customer who is already reading the first row. */
+  if(keep===0 && gridSig && sigWas && sigWas!==sig){
+    const menu=$("#menu");
+    if(menu && menu.getBoundingClientRect().top < -40){
+      try{ menu.scrollIntoView({behavior:"smooth",block:"start"}); }
+      catch(e){ menu.scrollIntoView(); }
+    }
+  }
+}
+
+/* How many cards a page of the grid holds. Enough to fill any screen twice
+   over, so the next page is always drawn before its edge is reached. */
+const GRID_PAGE=24;
+let gridList=[], gridShown=0, gridIO=null, gridSig="";
+
+/* One page of cards, appended. insertAdjacentHTML rather than innerHTML+=,
+   which would rewrite every card already on screen and re-decode its image. */
+function gridPage(){
+  const g=$("#grid"); if(!g||gridShown>=gridList.length) return;
+  const slice=gridList.slice(gridShown, gridShown+GRID_PAGE);
+  gridShown+=slice.length;
+  g.insertAdjacentHTML("beforeend", slice.map(cardHTML).join(""));
+}
+function gridMore(){
+  if(gridShown>=gridList.length) return;
+  gridPage();
   cardFX();                                       // rise-into-view for the new cards
   psCardFX();                                     // and flavours for the ones on screen
+  gridSentinel();
+}
+
+/* A marker after the last card. When it comes into view the next page is
+   drawn, so the grid grows by scrolling and needs no button. It is moved
+   rather than recreated, and removed for good once the list runs out. */
+function gridSentinel(){
+  const g=$("#grid"); if(!g) return;
+  let s=$("#gridEnd");
+  if(gridShown>=gridList.length){ if(s) s.remove(); return; }
+  if(!s){
+    s=document.createElement("div");
+    s.id="gridEnd";
+    s.style.cssText="grid-column:1/-1;height:1px";
+    s.innerHTML="";
+  }
+  g.appendChild(s);                               // always last, after the new cards
+  if(!("IntersectionObserver" in window)){
+    /* No observer: fall back to a button, so the rest of the shelf is still
+       reachable rather than silently cut off. */
+    if(!$("#gridMoreBtn")){
+      const b=document.createElement("button");
+      b.id="gridMoreBtn"; b.className="btn btn-ghost";
+      b.style.cssText="grid-column:1/-1;margin:14px auto;max-width:280px";
+      b.textContent="Show more";
+      b.onclick=()=>{ b.remove(); gridMore(); };
+      g.appendChild(b);
+    }
+    return;
+  }
+  if(!gridIO){
+    gridIO=new IntersectionObserver(es=>{
+      if(es.some(e=>e.isIntersecting)) gridMore();
+    },{rootMargin:"800px 0px"});               // start the next page well before it shows
+  }
+  gridIO.observe(s);
 }
 function cardHTML(p){
   const out=p.stock<=0;
@@ -3685,7 +3892,7 @@ function psStageHTML(p){
     const cx=Math.round((50-(s.l+s.w/2))/s.w*100), cy=Math.round((50-(s.t+s.w/2))/s.w*100);
     const el='<i class="ps-o" style="left:'+s.l+'%;top:'+s.t+'%;width:'+s.w+'%;--cx:'+cx+'%;--cy:'+cy+'%;animation-delay:'+(i*70)+'ms">'
       +'<i class="ps-oi" style="animation-name:'+s.k+';animation-duration:'+s.d+'s;animation-delay:'+s.s+'s">'
-      +'<img src="'+psSprite(kind)+'" alt="" aria-hidden="true">'
+      +'<img src="'+psSprite(kind)+'" alt="" aria-hidden="true" loading="lazy" decoding="async">'
       +'</i></i>';
     if(s.p==="far") far+=el; else near+=el;
   }
@@ -5767,7 +5974,7 @@ function psCardHTML(p){
     const cx=Math.round((50-(s.l+s.w/2))/s.w*100), cy=Math.round((50-(s.t+s.w/2))/s.w*100);
     h+='<i class="pc-o" style="left:'+s.l+'%;top:'+s.t+'%;width:'+s.w+'%;--cx:'+cx+'%;--cy:'+cy+'%;animation-delay:'+(i*60)+'ms">'
       +'<i class="pc-oi" style="animation-name:'+s.k+';animation-duration:'+s.d+'s;animation-delay:'+s.s+'s">'
-      +'<img src="'+psSprite(kind)+'" alt="" aria-hidden="true"></i></i>';
+      +'<img src="'+psSprite(kind)+'" alt="" aria-hidden="true" loading="lazy" decoding="async"></i></i>';
   }
   return h;
 }

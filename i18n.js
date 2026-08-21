@@ -248,7 +248,11 @@
      entirely at desktop widths, so a height decided once at boot is wrong for
      the rest of the visit. Measure the bar itself, and measure it again every
      time it moves. */
-  function bottomBar() { return document.querySelector(".mcart, .cartbar, #cartBar"); }
+  /* Anything pinned along the bottom that the language pill must climb over.
+     The cookie bar joined that list: it slides up over the same corner and
+     covered the "Essential only" button it sits beside. Listed before the
+     cart bar because when both are up the cookie bar is the taller one. */
+  function bottomBar() { return document.querySelector(".ck-bar.show, .mcart, .cartbar, #cartBar"); }
   function liftFor(bar) {
     if (!bar) return 14;
     var st = window.getComputedStyle(bar);
