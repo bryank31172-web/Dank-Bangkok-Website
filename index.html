@@ -324,6 +324,53 @@
   .ring-card.front{border-color:var(--green);box-shadow:0 30px 74px rgba(0,0,0,.7),0 0 0 1px rgba(61,220,132,.35)}
   .ring-card.front .rc-sheen{opacity:1}
   .ring-card.front .rc-shade{opacity:0}
+
+  /* ---- Flower roulette ----------------------------------------------------
+     The shelf spins on its own axis already; a prize spin just drives it much
+     harder. What sells it as a wheel rather than a fast carousel is the blur
+     and the tilt, so both ride on one class the spin adds and removes. */
+  .ring-spin-wrap{display:flex;flex-direction:column;align-items:center;gap:7px;margin:14px auto 2px;padding:0 16px}
+  .btn-spin{
+    font:inherit;font-size:16px;font-weight:800;cursor:pointer;
+    padding:13px 30px;border-radius:999px;border:0;color:#08150e;
+    background:linear-gradient(135deg,var(--gold),#f0d68b 46%,var(--gold));
+    box-shadow:0 12px 30px -10px rgba(217,178,91,.75), 0 0 0 1px rgba(255,255,255,.18) inset;
+    transition:transform .16s cubic-bezier(.2,.9,.3,1.3), filter .16s, opacity .16s;
+  }
+  .btn-spin b{font-weight:900;letter-spacing:.2px}
+  .btn-spin:hover{transform:translateY(-2px) scale(1.02);filter:brightness(1.06)}
+  .btn-spin:active{transform:translateY(0) scale(.97)}
+  .btn-spin:focus-visible{outline:2px solid var(--green);outline-offset:3px}
+  .btn-spin[disabled]{opacity:.45;cursor:default;filter:grayscale(.5);transform:none;box-shadow:none}
+  .spin-note{margin:0;font-size:12px;color:var(--muted);text-align:center}
+
+  /* The stage leans back and the cards smear while the wheel is running. The
+     blur sits on the track, not each card, so it is one composited layer. */
+  .ring-stage.spinning .ring-track{filter:blur(.7px) saturate(1.15)}
+  .ring-stage.spinning{perspective:900px}
+  .ring-stage.spinning .ring-card{border-color:rgba(217,178,91,.5)}
+  .ring-stage.spinning .rc-shade{opacity:.55}
+  .ring-stage.spinning .ring-card.front{box-shadow:0 30px 74px rgba(0,0,0,.7),0 0 0 1px rgba(217,178,91,.5)}
+  /* The landing beat: the winning card punches forward once it stops. */
+  @keyframes spinLand{0%{transform:scale(1)}38%{transform:scale(1.07)}100%{transform:scale(1)}}
+  .ring-card.landed{animation:spinLand .62s cubic-bezier(.2,.9,.3,1.25)}
+  @media (prefers-reduced-motion: reduce){
+    .ring-stage.spinning .ring-track{filter:none}
+    .ring-card.landed{animation:none}
+  }
+
+  /* Prize card in the popup */
+  .prize{text-align:center;padding:6px 4px 2px}
+  .prize .pz-em{font-size:52px;line-height:1;margin-bottom:6px}
+  .prize h2{margin:0 0 4px;font-size:26px;font-weight:900}
+  .prize .pz-sub{margin:0 0 14px;color:var(--muted);font-size:14px}
+  .prize .pz-code{
+    display:inline-block;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+    font-size:22px;font-weight:800;letter-spacing:2px;color:var(--gold);
+    background:rgba(217,178,91,.10);border:1px dashed rgba(217,178,91,.55);
+    border-radius:12px;padding:11px 22px;margin-bottom:6px;
+  }
+  .prize .pz-strain{margin:12px 0 0;font-size:13px;color:var(--muted)}
   .ring-fade{position:absolute;inset:0;pointer-events:none;
     background:linear-gradient(90deg,var(--bg),transparent 9%,transparent 91%,var(--bg))}
   .ring-ui{display:flex;align-items:center;justify-content:center;gap:12px;margin-top:8px}
@@ -1051,6 +1098,10 @@
     <div class="ring-now" id="ringNow"></div>
     <button type="button" id="ringNext" aria-label="Next product">›</button>
   </div>
+  <div class="ring-spin-wrap">
+    <button type="button" class="btn-spin" id="ringSpinBtn">🎰 <b>Spin to win</b></button>
+    <p class="spin-note" id="ringSpinNote">One free spin a day — win up to 20% off</p>
+  </div>
 </section>
 
 <!-- ============ PROMO HEROES — full-bleed, Nike-style ============ -->
@@ -1683,7 +1734,35 @@ const CONFIG = {
   promos:{ "CRM10":{type:"pct",value:10,desc:"Members get 10% off 💚"},
            "DANK10":{type:"pct",value:10,desc:"10% off your order"},
            "WELCOME50":{type:"fixed",value:50,min:400,desc:"฿50 off orders over ฿400"},
-           "FREEDEL":{type:"freedelivery",desc:"Free delivery"} },
+           "FREEDEL":{type:"freedelivery",desc:"Free delivery"},
+           /* Won on the flower roulette. Ordinary promo codes, so a prize goes
+              through the same applyPromo() path a typed code does - it can be
+              read in the cart, it stacks with nothing it should not, and the
+              member-price guard still applies. */
+           "SPIN5":{type:"pct",value:5,desc:"5% off — won on the wheel 🎰"},
+           "SPIN10":{type:"pct",value:10,desc:"10% off — won on the wheel 🎰"},
+           "SPIN15":{type:"pct",value:15,desc:"15% off — won on the wheel 🎰"},
+           "SPIN20":{type:"pct",value:20,desc:"20% off — won on the wheel 🎰"} },
+  /* ---- Flower roulette --------------------------------------------------
+     The 3D shelf doubles as a prize wheel. Weights are plain numbers out of
+     their own total, so Bryan can retune the shop's exposure here without
+     touching the code that spins it: raise `w` on the blank to give less
+     away, add a rung to give more. Every winning code must exist in `promos`
+     above or the prize cannot be redeemed.
+
+     oncePerHours is held in this browser only. It stops the wheel being
+     farmed by a customer sitting on the page, which is what it is for; it is
+     not an identity check, and it is not trying to be one - the codes are
+     small, public and capped by the cart's own rules. */
+  wheel:{ enabled:true, oncePerHours:24,
+    prizes:[
+      { w:34, code:"",        label:"So close",      sub:"Spin again tomorrow 🌿" },
+      { w:30, code:"SPIN5",   label:"5% OFF",        sub:"On this order" },
+      { w:20, code:"SPIN10",  label:"10% OFF",       sub:"On this order" },
+      { w:10, code:"FREEDEL", label:"FREE DELIVERY", sub:"On this order" },
+      { w:5,  code:"SPIN15",  label:"15% OFF",       sub:"Nice one" },
+      { w:1,  code:"SPIN20",  label:"20% OFF",       sub:"Jackpot 🎉" },
+    ] },
   // ---- CRM membership: join free, get 10% off every order (a pop-up invites
   //      every non-member on each visit; signing up unlocks member prices) ----
   crm:{ enabled:true, discountPct:10, code:"CRM10",
@@ -1983,6 +2062,13 @@ function saveCart(){ LS.set("cart",cart); }
    would go on charging member prices to someone who is no longer one. */
 function loadPersisted(){ cart=LS.get("cart",[])||[]; favs=LS.get("favs",[])||[];
   memberMode=!!LS.get("memberOn",false) && isMember();
+  /* A coupon won on the wheel outlives the page it was won on. Restored from
+     the promo table rather than from storage, so a prize can never be a
+     discount the shop no longer offers - retiring a code retires every copy
+     of it already sitting in a browser. */
+  const wonCode=String(LS.get("spinWin","")||"").toUpperCase();
+  const wonDef=wonCode&&CONFIG.promos?CONFIG.promos[wonCode]:null;
+  if(wonDef) appliedPromo=Object.assign({code:wonCode},wonDef); else if(wonCode) LS.set("spinWin","");
   LS.set("memberOn",memberMode); reflectMember(); updateCartCount(); }
 function reflectMember(){ const t=$("#memberToggle"); if(t) t.classList.toggle("on",memberMode); }
 function isMember(){ return !!LS.get("member",false); }
@@ -5349,6 +5435,7 @@ function ringSync(){
   ringLayout();
   ringFront=-1;
   ringPaint();
+  spinSyncBtn();   // the shelf can appear after mountRing() has already run
 }
 
 /* Radius from the stage width, so the cards either side of the front one are
@@ -5385,12 +5472,182 @@ function ringPaint(){
 
 function ringNudge(dir){ ringRot -= dir*ringStep; ringVel=0; fxStart(); }
 
+/* ---- Flower roulette -------------------------------------------------------
+   The shelf is already a ring that spins with friction, so the prize wheel is
+   the same ring driven hard and left to coast. Nothing here duplicates the
+   turntable: it borrows ringRot, ringVel and the existing frame loop.
+
+   The prize is drawn BEFORE the spin and the wheel is aimed at it, rather than
+   reading off whatever card the coasting happens to stop on. Landing decides
+   the prize only if every card is worth the same, and these are not - a wheel
+   whose odds come out of where friction ran out is a wheel whose odds nobody
+   can state. This way the weights in CONFIG.wheel are exactly the odds. */
+const SPIN_KEY="spinAt";   // via LS, which prefixes dank_
+let spinning=false, spinAudio=null, spinTickAt=0;
+
+/* Sound without a download: two oscillators through a gain envelope. A file
+   would be another asset to host and another thing to 404; this is a few
+   lines and it cannot fail to load. Built lazily on the first spin, because a
+   context created before a gesture starts life suspended. */
+function spinBeep(freq, ms, type, vol){
+  try{
+    if(!spinAudio){
+      const AC=window.AudioContext||window.webkitAudioContext; if(!AC) return;
+      spinAudio=new AC();
+    }
+    if(spinAudio.state==="suspended") spinAudio.resume();
+    const t=spinAudio.currentTime;
+    const osc=spinAudio.createOscillator(), g=spinAudio.createGain();
+    osc.type=type||"triangle"; osc.frequency.setValueAtTime(freq,t);
+    g.gain.setValueAtTime(0,t);
+    g.gain.linearRampToValueAtTime(vol==null?0.05:vol,t+0.006);
+    g.gain.exponentialRampToValueAtTime(0.0001,t+(ms||70)/1000);
+    osc.connect(g); g.connect(spinAudio.destination);
+    osc.start(t); osc.stop(t+(ms||70)/1000+0.02);
+  }catch(e){}
+}
+/* One tick per card crossing the front, so the clicking slows down with the
+   wheel the way a real one does. Rate-limited as well, because at full speed
+   nine cards a frame would be a buzz, not a tick. */
+function spinTick(){
+  const now=Date.now();
+  if(now-spinTickAt<28) return;
+  spinTickAt=now;
+  spinBeep(1180,42,"square",0.035);
+}
+function spinFanfare(win){
+  if(win) [0,110,220,380].forEach((d,i)=>setTimeout(()=>spinBeep([523,659,784,1047][i],i===3?420:170,"triangle",0.075),d));
+  else [0,140].forEach((d,i)=>setTimeout(()=>spinBeep(i?196:262,220,"sine",0.05),d));
+}
+
+function spinReady(){
+  const W=CONFIG.wheel;
+  if(!W||!W.enabled) return false;
+  try{
+    const last=Number(LS.get(SPIN_KEY,0)||0);
+    return !last || (Date.now()-last)/36e5 >= (W.oncePerHours||24);
+  }catch(e){ return true; }   // no storage is not a reason to withhold the prize
+}
+function spinNextIn(){
+  try{
+    const last=Number(LS.get(SPIN_KEY,0)||0);
+    const h=(CONFIG.wheel.oncePerHours||24)-(Date.now()-last)/36e5;
+    return h>1?Math.ceil(h)+"h":Math.max(1,Math.ceil(h*60))+"m";
+  }catch(e){ return "24h"; }
+}
+function spinPrize(){
+  const list=(CONFIG.wheel&&CONFIG.wheel.prizes)||[];
+  const total=list.reduce((s,p)=>s+(p.w||0),0);
+  if(!total) return null;
+  let r=Math.random()*total;
+  for(const p of list){ r-=(p.w||0); if(r<=0) return p; }
+  return list[list.length-1];
+}
+function spinSyncBtn(){
+  const b=$("#ringSpinBtn"), n=$("#ringSpinNote");
+  if(!b) return;
+  const W=CONFIG.wheel;
+  if(!W||!W.enabled){ const wrap=b.closest(".ring-spin-wrap"); if(wrap) wrap.hidden=true; return; }
+  const ok=spinReady();
+  b.disabled=!ok||spinning;
+  b.innerHTML=spinning?"🎰 <b>Spinning…</b>":(ok?"🎰 <b>Spin to win</b>":"🎰 <b>Come back soon</b>");
+  if(n) n.textContent=ok?"One free spin a day — win up to 20% off":("Next spin in "+spinNextIn());
+}
+
+function ringSpin(){
+  if(spinning||!ringItems.length||!spinReady()) return;
+  const prize=spinPrize(); if(!prize) return;
+  spinning=true;
+  LS.set(SPIN_KEY,Date.now());
+  spinSyncBtn();
+  const stage=$("#ringStage"); if(stage) stage.classList.add("spinning");
+  const track=$("#ringTrack");
+  if(track) for(const k of track.children) k.classList.remove("landed");
+
+  /* Aim: pick the card to stop on, then choose the exact rotation that puts it
+     at the front after several whole turns. ringPaint() reads the same
+     arithmetic backwards, so the card it lights is the one aimed at. */
+  const n=ringItems.length;
+  const idx=Math.floor(Math.random()*n);
+  const turns=(FX_LEAN?3:5)+Math.floor(Math.random()*3);
+  const target=-(idx*ringStep) - turns*360;
+  const from=ringRot, dist=target-from;
+  const dur=(FX_OFF?900:3400)+Math.random()*700;
+  const t0=performance.now();
+  ringHold=true;                       // the idle drift must not fight the spin
+  ringVel=0;
+  let lastFront=-1;
+
+  const step=now=>{
+    const k=Math.min(1,(now-t0)/dur);
+    /* Fast out, long settle - the shape of a wheel losing to friction. */
+    const e=1-Math.pow(1-k,4);
+    ringRot=from+dist*e;
+    ringPaint();
+    if(ringFront!==lastFront){ lastFront=ringFront; if(!FX_OFF) spinTick(); }
+    if(k<1){ requestAnimationFrame(step); return; }
+    ringRot=target; ringPaint();
+    spinning=false; ringHold=false; ringVel=0;
+    if(stage) stage.classList.remove("spinning");
+    const kids=track?track.children:null;
+    if(kids&&kids[idx]) kids[idx].classList.add("landed");
+    spinFanfare(!!prize.code);
+    spinAward(prize, ringItems[idx]);
+    spinSyncBtn();
+    fxStart();
+  };
+  requestAnimationFrame(step);
+}
+
+/* The prize, and the only place a coupon is handed over. A win writes the code
+   into the cart's own promo box through applyPromo(), so the cart validates it
+   exactly as if the customer had typed it - no second discount path to keep in
+   step with the first. */
+function spinAward(prize, strain){
+  const def=prize.code&&CONFIG.promos?CONFIG.promos[prize.code]:null;
+  const won=!!def;                       // a prize whose code is not a real promo is not a prize
+  if(won){
+    /* Applied directly rather than through the cart's input box: that box only
+       exists once renderCart() has drawn the drawer, so awarding through it
+       dropped the coupon whenever the wheel was spun with an empty cart -
+       which is most of the time. discountAmt() still re-checks any minimum
+       spend on every total, so a code cannot pay out early. */
+    appliedPromo=Object.assign({code:prize.code},def);
+    LS.set("spinWin",prize.code);
+    const input=$("#promoInput"); if(input) input.value=prize.code;
+    try{ renderCart(); }catch(e){}
+  }
+  const strainLine=strain?('<p class="pz-strain">Landed on <b>'+esc(strain.name)+'</b></p>'):"";
+  const body='<div class="prize">'
+    + '<div class="pz-em">'+(won?"🎉":"🌿")+'</div>'
+    + '<h2>'+esc(prize.label||"")+'</h2>'
+    + '<p class="pz-sub">'+esc(prize.sub||"")+'</p>'
+    + (won?('<div class="pz-code">'+esc(prize.code)+'</div>'
+           +'<p class="pz-sub" style="margin:8px 0 0">Added to your cart already ✅</p>'):"")
+    + strainLine
+    + '</div>';
+  const foot=won
+    ? '<button class="btn btn-primary btn-block" onclick="closeAll();openCart()">🛒 Use it now</button>'
+    : '<button class="btn btn-ghost btn-block" onclick="closeAll()">Maybe tomorrow</button>';
+  $("#infoCard").innerHTML='<div class="drawer-head" style="border:none;padding:18px 20px 4px">'
+    + '<h2 style="font-size:17px">🎰 Flower roulette</h2>'
+    + '<button class="close-x" onclick="closeAll()">×</button></div>'
+    + '<div style="padding:2px 20px 22px">'+body+'<div style="margin-top:16px">'+foot+'</div></div>';
+  /* showModal, not openInfo: openInfo() rewrites #infoCard with the Help &
+     Info page, so calling it here threw the prize away and showed the help
+     text instead. This borrows the modal, not its contents. */
+  showModal("#infoModal");
+}
+
 function mountRing(){
   const stage=$("#ringStage"), track=$("#ringTrack");
   if(!stage||!track) return;
   const prev=$("#ringPrev"), next=$("#ringNext");
   if(prev) prev.onclick=()=>ringNudge(-1);
   if(next) next.onclick=()=>ringNudge(1);
+  const spinBtn=$("#ringSpinBtn");
+  if(spinBtn) spinBtn.onclick=()=>ringSpin();
+  spinSyncBtn();
 
   /* Drag to spin. A press that never travels more than a few pixels is a tap,
      so the same gesture opens the product - which is what a thumb expects. */
