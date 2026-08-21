@@ -2,6 +2,8 @@
   "_readme": "Photo backfill for products that arrive from the POS without an image. 'byName' is matched on the product name with punctuation, spaces and any (bracketed) words removed and letters lower-cased, so '( weed ) Crispy Boy Lager Can' matches 'crispyboylagercan'. Add your own entries here: key = the flattened name, value = an image URL or a path like 'assets/crunchberrie.jpg'. 'generic' supplies a category-style photo for anything with no name match; set GENERIC_PRODUCT_IMAGES=0 in Vercel to turn those off and fall back to the leaf placeholder instead. A value may also be a LIST of URLs instead of one: the first is the main picture and the rest appear as a shot strip in the product popup. That is how a strain leads with its Botanical Legends card and then shows photographs of the actual jar — put the card first, the photos after.",
   "byName": {
     "tequilashot": "assets/products/tequilashot.jpg",
+    "seedsiamseedbanksofemwalipini": "assets/products/seedsiamseedbank.jpg",
+    "seedsiamseedbankcopycatpack10seed": "assets/products/seedsiamseedbank.jpg",
     "onionring": "assets/products/onionring.jpg",
     "stashproyukilighters": "assets/products/stashproyukilighters.jpg",
     "rawblackkingsize": "assets/products/rawblackkingsize.jpg",
