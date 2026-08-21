@@ -1,0 +1,18 @@
+# DANK BKK — dankbangkok.com
+User-agent: *
+Allow: /
+
+# Staff and counter tooling: no customer reaches these by search, and a
+# crawler wandering the POS bundle or the pairing screen wastes the crawl
+# budget that belongs to the menu.
+Disallow: /staff.html
+Disallow: /customer-display.html
+Disallow: /pos.html
+Disallow: /labels.html
+Disallow: /table-qr.html
+Disallow: /sku-margins.html
+Disallow: /photo-audit.html
+Disallow: /status.html
+Disallow: /api/
+
+Sitemap: https://dankbangkok.com/sitemap.xml
