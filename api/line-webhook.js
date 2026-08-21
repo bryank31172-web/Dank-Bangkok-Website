@@ -9,13 +9,14 @@
    (the ?k= gate is an extra check on top of the LINE signature.)
 
    Env: LINE_CHANNEL_ACCESS_TOKEN, LINE_CHANNEL_SECRET, LINE_TO (staff),
-        XAI_API_KEY (+ GROK_MODEL), STAFF_KEY, MONITORED_GROUP_IDS (optional). */
+        an AI key (see _ai.js), STAFF_KEY, MONITORED_GROUP_IDS (optional). */
 import { lineReply, notifyStaffLine, getLineProfile, verifyLineSignature } from "./_line.js";
 import { getJSON, setJSON } from "./_store.js";
 import { getMenu } from "./_menu.js";
 import { logMessage, isMonitored, getMessagesSince, summarize } from "./_linelog.js";
 import { computeEta, etaText, routeConfigured } from "./_route.js";
 import { isStaffKey } from "./_auth.js";
+import { aiChat, aiOn } from "./_ai.js";
 
 export const config = { api: { bodyParser: false } }; // we need the raw body for the signature
 
@@ -46,7 +47,7 @@ async function menuContext() {
 }
 
 async function grokReply(userId, message) {
-  if (!process.env.XAI_API_KEY) return "";
+  if (!aiOn()) return "";
   const histKey = "linehist:" + userId;
   const history = (await getJSON(histKey)) || [];
   const context = await menuContext();
@@ -63,21 +64,14 @@ Rules:
     { role: "user", content: String(message).slice(0, 1000) },
   ];
   try {
-    const r = await fetch("https://api.x.ai/v1/chat/completions", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${process.env.XAI_API_KEY}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ model: process.env.GROK_MODEL || "grok-4", messages, max_tokens: 300, temperature: 0.6 }),
-    });
-    if (!r.ok) throw new Error("xAI " + r.status);
-    const j = await r.json();
-    const reply = j.choices?.[0]?.message?.content?.trim() || "";
+    const reply = await aiChat(messages, { maxTokens: 300, temperature: 0.6 });
     if (reply) {
       history.push({ role: "user", content: String(message).slice(0, 500) });
       history.push({ role: "assistant", content: reply.slice(0, 500) });
       await setJSON(histKey, history.slice(-16), 60 * 60 * 24);
     }
     return reply;
-  } catch (e) { console.error("LINE grok fail:", e.message); return ""; }
+  } catch (e) { console.error("LINE AI fail:", e.message); return ""; }
 }
 
 export default async function handler(req, res) {

@@ -196,9 +196,15 @@ As of 14 Aug 2026, `/api/health` reports every wired flag true and an empty
    rows and enter stock numbers, or the custom-box free items never decrement.
 5. Shop tour: Bryan has an Insta360 and wanted both a video tour and a 360°
    one. Nothing has been shot yet.
-6. Not set, so their features are dark: `XAI_API_KEY` (AI chat),
+6. Not set, so their features are dark: an AI key (AI chat and the LINE
+   budtender — `api/_ai.js` accepts `GEMINI_API_KEY`, `GROQ_API_KEY`,
+   `OPENROUTER_API_KEY`, `DEEPSEEK_API_KEY`, `OPENAI_API_KEY` or
+   `XAI_API_KEY`, first one found wins, free tiers first; `/api/health` →
+   `ai.provider` names the one actually live),
    `TELEGRAM_BOT_TOKEN`/`TELEGRAM_CHAT_ID` and `RESEND_API_KEY` (order
    notifications), `OMISE_*`/`TWOC2P_*`/`GBP_SECRET_KEY` (card payments).
+   The storefront answers ~55 common questions on its own with no key at
+   all, so a key only buys the long, unusual sentences.
 
 Things for Bryan to fix in the POS rather than in code:
 
