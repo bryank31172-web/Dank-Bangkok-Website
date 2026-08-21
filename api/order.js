@@ -193,8 +193,18 @@ export default async function handler(req, res) {
     : o.fulfilment === "delivery"
     ? `🚚 Delivery — ${o.delivery?.zone || ""}\n${o.delivery?.address || ""}`
     : `🏬 Pickup — ${o.pickup?.branch || ""}${o.pickup?.time ? " at " + o.pickup.time : ""}`;
+  /* A won code that hands over goods rather than money off - the wheel's free
+     joint - is invisible in the totals by design, so without this line the
+     only person who needs to know never finds out and the customer is
+     promised a joint nobody puts in the bag. Printed for every code, since a
+     discount worth naming on the slip is worth naming here too. */
+  const promoCode = String(o.promo || "").trim().toUpperCase().slice(0, 24);
+  const promoBlock = promoCode
+    ? `\n🎟️ Code: ${promoCode}${/^FREEJOINT$/.test(promoCode) ? "  ← 🚬 ADD ONE FREE JOINT" : ""}`
+    : "";
+
   const staffAlert =
-    `🛒 NEW ORDER ${orderId} — dankbkk.com\n\n${itemLines}${giftBlock}\n\n` +
+    `🛒 NEW ORDER ${orderId} — dankbkk.com\n\n${itemLines}${giftBlock}${promoBlock}\n\n` +
     `Total: ฿${o.total ?? o.subtotal}${o.member ? " (member ⭐)" : ""}\n` +
     `Pay: ${o.payment}\n${where}\n` +
     `Customer: ${o.customer?.name || "-"} · ${o.customer?.phone}\n` +

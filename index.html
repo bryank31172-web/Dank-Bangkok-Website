@@ -1100,7 +1100,7 @@
   </div>
   <div class="ring-spin-wrap">
     <button type="button" class="btn-spin" id="ringSpinBtn">🎰 <b>Spin to win</b></button>
-    <p class="spin-note" id="ringSpinNote">One free spin a day — win up to 20% off</p>
+    <p class="spin-note" id="ringSpinNote">One free spin a day — free joints & up to 15% off</p>
   </div>
 </section>
 
@@ -1742,7 +1742,11 @@ const CONFIG = {
            "SPIN5":{type:"pct",value:5,desc:"5% off — won on the wheel 🎰"},
            "SPIN10":{type:"pct",value:10,desc:"10% off — won on the wheel 🎰"},
            "SPIN15":{type:"pct",value:15,desc:"15% off — won on the wheel 🎰"},
-           "SPIN20":{type:"pct",value:20,desc:"20% off — won on the wheel 🎰"} },
+           /* Not money off: discountAmt() pays out only on pct and fixed, so a
+              gift takes nothing off the total. It rides on the order as a code
+              and the kitchen slip prints it, which is how the joint actually
+              reaches the bag. */
+           "FREEJOINT":{type:"gift",gift:"1 free pre-rolled joint",desc:"A free joint — won on the wheel 🎰"} },
   /* ---- Flower roulette --------------------------------------------------
      The 3D shelf doubles as a prize wheel. Weights are plain numbers out of
      their own total, so Bryan can retune the shop's exposure here without
@@ -1756,12 +1760,12 @@ const CONFIG = {
      small, public and capped by the cart's own rules. */
   wheel:{ enabled:true, oncePerHours:24,
     prizes:[
-      { w:34, code:"",        label:"So close",      sub:"Spin again tomorrow 🌿" },
-      { w:30, code:"SPIN5",   label:"5% OFF",        sub:"On this order" },
-      { w:20, code:"SPIN10",  label:"10% OFF",       sub:"On this order" },
-      { w:10, code:"FREEDEL", label:"FREE DELIVERY", sub:"On this order" },
-      { w:5,  code:"SPIN15",  label:"15% OFF",       sub:"Nice one" },
-      { w:1,  code:"SPIN20",  label:"20% OFF",       sub:"Jackpot 🎉" },
+      { w:50, code:"",          label:"So close",      sub:"Spin again tomorrow 🌿" },
+      { w:24, code:"SPIN5",     label:"5% OFF",        sub:"On this order" },
+      { w:10, code:"FREEDEL",   label:"FREE DELIVERY", sub:"On this order" },
+      { w:8,  code:"FREEJOINT", label:"FREE JOINT",    sub:"Handed over with your order 🚬" },
+      { w:6,  code:"SPIN10",    label:"10% OFF",       sub:"Nice one" },
+      { w:2,  code:"SPIN15",    label:"15% OFF",       sub:"Top prize 🎉" },
     ] },
   // ---- CRM membership: join free, get 10% off every order (a pop-up invites
   //      every non-member on each visit; signing up unlocks member prices) ----
@@ -3911,6 +3915,10 @@ function renderCart(){
     </div>
     <div class="cart-total-row"><span>Subtotal${memberMode?' (member ⭐)':''}</span><span>${money(sub)}</span></div>
     ${disc>0?`<div class="cart-total-row" style="color:var(--gold)"><span>Discount (${esc(appliedPromo.code)})</span><span>−${money(disc)}</span></div>`:''}
+    ${/* A gift takes nothing off the total, so without a row of its own the
+          customer sees an empty code box and no sign of the thing they won.
+          Shown as goods, not money — the price column says FREE. */''}
+    ${appliedPromo&&appliedPromo.type==="gift"?`<div class="cart-total-row" style="color:var(--gold)"><span>🚬 ${esc(appliedPromo.gift||"Free gift")}</span><span>FREE</span></div>`:''}
     <div class="cart-total-row"><span>Delivery</span><span>${coFulfill==="pickup"?'Pickup':fee===0?'Free':money(fee)}</span></div>
     <div class="cart-total-row grand"><span>Total</span><span>${money(tot)}</span></div>
     ${below?`<div class="minorder">Minimum order ${money(CONFIG.minOrder)} — add ${money(CONFIG.minOrder-sub)} more</div>`:''}
@@ -5551,7 +5559,7 @@ function spinSyncBtn(){
   const ok=spinReady();
   b.disabled=!ok||spinning;
   b.innerHTML=spinning?"🎰 <b>Spinning…</b>":(ok?"🎰 <b>Spin to win</b>":"🎰 <b>Come back soon</b>");
-  if(n) n.textContent=ok?"One free spin a day — win up to 20% off":("Next spin in "+spinNextIn());
+  if(n) n.textContent=ok?"One free spin a day — free joints & up to 15% off":("Next spin in "+spinNextIn());
 }
 
 function ringSpin(){
