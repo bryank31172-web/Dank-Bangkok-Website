@@ -1227,7 +1227,7 @@ function openTourVideo(){
   document.getElementById("infoCard").innerHTML=
    '<div class="drawer-head" style="border:none;padding:16px 20px 8px"><h2>\ud83c\udfa5 Shop tour</h2><button class="close-x" onclick="closeAll()">\u00d7</button></div>'+
    '<div style="padding:0 14px 18px"><div style="position:relative;width:100%;aspect-ratio:16/9;border-radius:14px;overflow:hidden;background:#000">'+
-   '<iframe src="https://www.youtube-nocookie.com/embed/'+pEsc(id)+'?rel=0&playsinline=1" style="position:absolute;inset:0;width:100%;height:100%;border:0" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture; fullscreen" allowfullscreen loading="lazy"></iframe></div></div>';
+   '<iframe src="https://www.youtube-nocookie.com/embed/'+pEsc(id)+'?rel=0&playsinline=1" style="position:absolute;inset:0;width:100%;height:100%;border:0" loading="lazy" allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture; fullscreen" allowfullscreen loading="lazy"></iframe></div></div>';
 }
 function openTour360(){
   const src=panoSrc(SITE_TOUR.pano);
@@ -1236,7 +1236,7 @@ function openTour360(){
   document.getElementById("infoCard").innerHTML=
    '<div class="drawer-head" style="border:none;padding:16px 20px 8px"><h2>\ud83e\udded 360\u00b0 walk-around</h2><button class="close-x" onclick="closeAll()">\u00d7</button></div>'+
    '<div style="padding:0 14px 18px"><div style="position:relative;width:100%;height:min(62vh,520px);border-radius:14px;overflow:hidden;background:#000">'+
-   '<iframe src="'+pEsc(src)+'" style="position:absolute;inset:0;width:100%;height:100%;border:0" allow="accelerometer; gyroscope; fullscreen" allowfullscreen loading="lazy"></iframe></div></div>';
+   '<iframe src="'+pEsc(src)+'" style="position:absolute;inset:0;width:100%;height:100%;border:0" loading="lazy" allow="accelerometer; gyroscope; fullscreen" allowfullscreen loading="lazy"></iframe></div></div>';
 }
 const DEFAULT_SLIDES=SITE_SLIDES.map(s=>Object.assign({},s));
 let SITE_HERO=null, ORIG_HERO=null;
@@ -1280,7 +1280,7 @@ function openPromosAll(){
    '<div class="drawer-head" style="border:none;padding:16px 20px 4px"><h2>\ud83c\udf89 Promotions</h2><button class="close-x" onclick="closeAll()">\u00d7</button></div>'+
    '<div style="padding:8px 16px 20px">'+SITE_SLIDES.map((s,i)=>
     '<div onclick="openPromoIdx('+i+',1)" style="cursor:pointer;border:1px solid var(--line2);border-radius:14px;overflow:hidden;margin-bottom:12px;background:var(--panel2)">'+
-    '<img src="'+pUrl(s.img)+'" alt="" style="width:100%;height:120px;object-fit:cover;display:block" onerror="this.style.display=\'none\'">'+
+    '<img src="'+pUrl(s.img)+'" alt="" loading="lazy" decoding="async" style="width:100%;height:120px;object-fit:cover;display:block" onerror="this.style.display=\'none\'">'+
     '<div style="padding:12px 14px">'+
     '<div style="font-size:11px;font-weight:800;letter-spacing:2px;color:var(--gold);text-transform:uppercase">'+pEsc(s.tag)+'</div>'+
     '<div style="font-weight:900;font-size:17px;margin:3px 0">'+pEsc(s.title)+'</div>'+
@@ -2973,7 +2973,10 @@ function genPhoto(p,bare){
 const isArtCard=src=>/assets\/strains\//.test(String(src||""));
 function imgTag(p,lazy,bare){
   const gp=genPhoto(p,bare);
-  const lz=lazy?' loading="lazy"':'';
+  /* decoding="async" on every product image, lazy or not: it keeps a large
+     photograph from blocking the frame it lands in, which matters most for the
+     ones that are NOT lazy - the popup stage and the cart thumbnails. */
+  const lz=(lazy?' loading="lazy"':'')+' decoding="async"';
   if(!p.image) return '<img src="'+esc(gp)+'"'+lz+(isArtCard(gp)?' class="art"':'')+' onload="imgFit(this)">';
   return '<img src="'+esc(p.image)+'"'+lz+(isArtCard(p.image)?' class="art"':'')+' data-fb="'+esc(gp)+'" onload="imgFit(this)" onerror="imgFallback(this)">';
 }
@@ -3050,9 +3053,93 @@ function render(){
       <a class="btn btn-gold go" href="build-your-joint.html" onclick="event.stopPropagation()">Start building →</a>
     </div>`:"";
   if(!list.length){ g.innerHTML=byj+`<div class="empty" style="grid-column:1/-1">No products match.<br><br><button class="btn btn-ghost" onclick="resetFilters()">Clear filters</button></div>`; return; }
-  g.innerHTML=byj+list.map(cardHTML).join("");
+  /* The shelf is drawn a page at a time. "All" is 390 products, and drawing
+     every one of them built 390 cards with their images, sprites and observers
+     before the customer had scrolled past the first row - a page metres long
+     that cost seconds to lay out on a phone and was never going to be read to
+     the end. The rest arrive as they are scrolled to. */
+  /* refreshMenu() re-renders on every poll, and that must not drag a customer
+     who has scrolled to the two-hundredth card back to the twenty-fourth. So
+     how far they have got is kept while the question stays the same, and only
+     reset when they change it - a new search, category, sort, branch or the
+     member toggle. */
+  const sig=[activeCat,q,tf,sort,branch,memberMode?1:0].join("");
+  const keep=(sig===gridSig)?gridShown:0;
+  const sigWas=gridSig;
+  gridSig=sig;
+  gridList=list; gridShown=0;
+  if(gridIO) gridIO.disconnect();                 // stale sentinel must not fire into the new grid
+  g.innerHTML=byj;
+  const want=Math.min(Math.max(GRID_PAGE,keep), list.length);
+  while(gridShown<want) gridPage();
+  cardFX(); psCardFX(); gridSentinel();
+  /* Changing the question takes you back to the top of the answers. Only on a
+     real change - gridSig is empty on the first render, and a poll re-renders
+     with the same signature - and only when the shelf has been scrolled past,
+     so it never yanks a customer who is already reading the first row. */
+  if(keep===0 && gridSig && sigWas && sigWas!==sig){
+    const menu=$("#menu");
+    if(menu && menu.getBoundingClientRect().top < -40){
+      try{ menu.scrollIntoView({behavior:"smooth",block:"start"}); }
+      catch(e){ menu.scrollIntoView(); }
+    }
+  }
+}
+
+/* How many cards a page of the grid holds. Enough to fill any screen twice
+   over, so the next page is always drawn before its edge is reached. */
+const GRID_PAGE=24;
+let gridList=[], gridShown=0, gridIO=null, gridSig="";
+
+/* One page of cards, appended. insertAdjacentHTML rather than innerHTML+=,
+   which would rewrite every card already on screen and re-decode its image. */
+function gridPage(){
+  const g=$("#grid"); if(!g||gridShown>=gridList.length) return;
+  const slice=gridList.slice(gridShown, gridShown+GRID_PAGE);
+  gridShown+=slice.length;
+  g.insertAdjacentHTML("beforeend", slice.map(cardHTML).join(""));
+}
+function gridMore(){
+  if(gridShown>=gridList.length) return;
+  gridPage();
   cardFX();                                       // rise-into-view for the new cards
   psCardFX();                                     // and flavours for the ones on screen
+  gridSentinel();
+}
+
+/* A marker after the last card. When it comes into view the next page is
+   drawn, so the grid grows by scrolling and needs no button. It is moved
+   rather than recreated, and removed for good once the list runs out. */
+function gridSentinel(){
+  const g=$("#grid"); if(!g) return;
+  let s=$("#gridEnd");
+  if(gridShown>=gridList.length){ if(s) s.remove(); return; }
+  if(!s){
+    s=document.createElement("div");
+    s.id="gridEnd";
+    s.style.cssText="grid-column:1/-1;height:1px";
+    s.innerHTML="";
+  }
+  g.appendChild(s);                               // always last, after the new cards
+  if(!("IntersectionObserver" in window)){
+    /* No observer: fall back to a button, so the rest of the shelf is still
+       reachable rather than silently cut off. */
+    if(!$("#gridMoreBtn")){
+      const b=document.createElement("button");
+      b.id="gridMoreBtn"; b.className="btn btn-ghost";
+      b.style.cssText="grid-column:1/-1;margin:14px auto;max-width:280px";
+      b.textContent="Show more";
+      b.onclick=()=>{ b.remove(); gridMore(); };
+      g.appendChild(b);
+    }
+    return;
+  }
+  if(!gridIO){
+    gridIO=new IntersectionObserver(es=>{
+      if(es.some(e=>e.isIntersecting)) gridMore();
+    },{rootMargin:"800px 0px"});               // start the next page well before it shows
+  }
+  gridIO.observe(s);
 }
 function cardHTML(p){
   const out=p.stock<=0;
@@ -3685,7 +3772,7 @@ function psStageHTML(p){
     const cx=Math.round((50-(s.l+s.w/2))/s.w*100), cy=Math.round((50-(s.t+s.w/2))/s.w*100);
     const el='<i class="ps-o" style="left:'+s.l+'%;top:'+s.t+'%;width:'+s.w+'%;--cx:'+cx+'%;--cy:'+cy+'%;animation-delay:'+(i*70)+'ms">'
       +'<i class="ps-oi" style="animation-name:'+s.k+';animation-duration:'+s.d+'s;animation-delay:'+s.s+'s">'
-      +'<img src="'+psSprite(kind)+'" alt="" aria-hidden="true">'
+      +'<img src="'+psSprite(kind)+'" alt="" aria-hidden="true" loading="lazy" decoding="async">'
       +'</i></i>';
     if(s.p==="far") far+=el; else near+=el;
   }
@@ -5767,7 +5854,7 @@ function psCardHTML(p){
     const cx=Math.round((50-(s.l+s.w/2))/s.w*100), cy=Math.round((50-(s.t+s.w/2))/s.w*100);
     h+='<i class="pc-o" style="left:'+s.l+'%;top:'+s.t+'%;width:'+s.w+'%;--cx:'+cx+'%;--cy:'+cy+'%;animation-delay:'+(i*60)+'ms">'
       +'<i class="pc-oi" style="animation-name:'+s.k+';animation-duration:'+s.d+'s;animation-delay:'+s.s+'s">'
-      +'<img src="'+psSprite(kind)+'" alt="" aria-hidden="true"></i></i>';
+      +'<img src="'+psSprite(kind)+'" alt="" aria-hidden="true" loading="lazy" decoding="async"></i></i>';
   }
   return h;
 }
