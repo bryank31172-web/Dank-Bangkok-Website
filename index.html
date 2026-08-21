@@ -2,6 +2,9 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
+<link rel="icon" href="/favicon.svg" type="image/svg+xml"/>
+<link rel="icon" href="/favicon.ico" sizes="32x32"/>
+<link rel="apple-touch-icon" href="/apple-touch-icon.png"/>
 <!-- Table QR guard: a code scanned at a table must open the food & drinks page,
      never the shop. If a ?table= (or ?t=/?tb=) lands here it is forwarded on
      before anything else renders. -->
@@ -4898,20 +4901,30 @@ const AI_MOODS=[
    k:["appetite","hungry","hunger","munchies","nausea","nauseous","eat more","อยากอาหาร","หิว","คลื่นไส้"]},
 ];
 
+/* Patterns, not exact names. These were written as /^Topshelf$/ and
+   /^Edibles$/ while the POS writes "Top Shelf" and "Edible", so twelve of the
+   sixteen shelves the till actually sends matched nothing at all: a customer
+   asking for a vape or a gummy had their request filtered down to an empty
+   list. Third place this same spelling trap has turned up, so these follow
+   the shelf order's patterns rather than inventing a fourth spelling. */
 const AI_CATS=[
-  {re:/^Exotics$/i,      k:["exotic","exo","เอ็กโซ","เอกโซติก"]},
-  {re:/^Topshelf$/i,     k:["topshelf","top shelf","ท็อปเชลฟ์"]},
-  {re:/^Midgrade$/i,     k:["midgrade","mid grade","mid-grade","มิดเกรด"]},
-  {re:/^Premium$/i,      k:["moon rock","moonrock","super exotic","พรีเมียม"]},
-  {re:/^Joints$/i,       k:["joint","pre-roll","preroll","pre roll","blunt","backwood","มวน","โจ๊ย"]},
-  {re:/^Edibles$/i,      k:["edible","gummy","gummies","chocolate","brownie","cookie","candy","กินได้","เยลลี่","กัมมี่","บราวนี่","คุกกี้"]},
-  {re:/^Vapes$/i,        k:["vape","cartridge","disposable","dab","wax","shatter","rosin","resin","concentrate","แว๊ป","แวป","แดบ"]},
-  {re:/^Beer$/i,         k:["beer","soda","drink","lager","เครื่องดื่ม","เบียร์"]},
-  {re:/^Merch$/i,        k:["merch","t-shirt","tshirt","tee","hoodie","cap","เสื้อ"]},
-  {re:/^(Accessories|Equipment)$/i, k:["accessory","accessories","bong","grinder","rolling paper","lighter","tray","อุปกรณ์","บ้อง","ไฟแช็ค"]},
+  {re:/^exotics?\b/i,        k:["exotic","exo","เอ็กโซ","เอกโซติก"]},
+  {re:/^top[\s-]?shelf\b/i,  k:["topshelf","top shelf","ท็อปเชลฟ์"]},
+  {re:/^mid[\s-]?grade\b/i,  k:["midgrade","mid grade","mid-grade","มิดเกรด"]},
+  {re:/^premium\b/i,         k:["moon rock","moonrock","super exotic","พรีเมียม"]},
+  {re:/^(pre[\s-]?roll|joint|blunt)s?\b/i, k:["joint","pre-roll","preroll","pre roll","blunt","backwood","มวน","โจ๊ย"]},
+  {re:/^edibles?\b/i,        k:["edible","gummy","gummies","chocolate","brownie","cookie","candy","กินได้","เยลลี่","กัมมี่","บราวนี่","คุกกี้"]},
+  {re:/^(vapes?|carts?|cartridges?)\b/i, k:["vape","cartridge","disposable","แว๊ป","แวป"]},
+  /* Hash and the extracts are their own shelf in the till, and "hash" on its
+     own used to reach nothing. */
+  {re:/^(concentrates?|hash|rosin|wax)\b/i, k:["hash","hashish","concentrate","rosin","wax","shatter","live resin","dab","แฮช","แดบ"]},
+  {re:/^cbd\b/i,             k:["cbd","non psychoactive","no high","ซีบีดี","ไม่เมา"]},
+  {re:/^(beer|drink|beverage|soft|soda|juice|shake|coffee|tea|water)\b/i, k:["beer","soda","drink","lager","เครื่องดื่ม","เบียร์","น้ำ","กาแฟ"]},
+  {re:/^(merch|merchandise|apparel|clothing|special)\b/i, k:["merch","t-shirt","tshirt","tee","hoodie","cap","เสื้อ"]},
+  {re:/^(accessor(y|ies)|equipment|paper)\b/i, k:["accessory","accessories","bong","grinder","rolling paper","lighter","tray","อุปกรณ์","บ้อง","ไฟแช็ค"]},
   /* Last on purpose: "exotic" must reach Exotics before the plain word
      "weed" sweeps every flower shelf into one pile. */
-  {re:/^(Exotics|Topshelf|Midgrade|Premium)$/i, k:["weed","cannabis","flower","flowers","bud","buds","ganja","herb","smoke","กัญชา","ดอก","ช่อดอก","ยา"]},
+  {re:/^(exotics?|top[\s-]?shelf|mid[\s-]?grade|premium|weed|flowers?|bud)\b/i, k:["weed","cannabis","flower","flowers","bud","buds","ganja","herb","smoke","กัญชา","ดอก","ช่อดอก","ยา"]},
 ];
 
 /* A budget only counts when the shopper framed it like money. "I am 20" and
@@ -5278,6 +5291,15 @@ function builtinRespond(q){
     renderQuick(th?["ช่วยให้นอนหลับ","ตื่นตัวมีพลัง","ตัวแรงสุด","ส่งไหม"]:["Help me sleep","Energy and focus","Most potent","Do you deliver?"]);
     return true;
   }
+  /* THC and CBD get asked constantly and had no answer at all. Kept plain and
+     kept honest: the numbers are what the shop's cards say, and the advice is
+     the one thing a budtender always says out loud. */
+  if(has("what is thc","whats thc","what's thc","thc mean","what does thc","how much thc","what is cbd","whats cbd","what's cbd","cbd mean","thc คือ","ซีบีดี คือ","cbd คือ","thc กับ cbd")){
+    aiPush("ai",th?"<b>THC</b> คือสารที่ทำให้เมาค่ะ ยิ่ง % สูงยิ่งแรง — ดอกในร้านอยู่ราว 19–33% · <b>CBD</b> ไม่ทำให้เมา คนใช้เพื่อผ่อนคลายหรือช่วยเรื่องปวด 🌿 มือใหม่เริ่มครึ่งกรัมก่อนนะคะ เติมทีหลังได้เสมอ"
+      :"<b>THC</b> is the part that gets you high — the higher the %, the stronger. Our flower runs about 19–33%. <b>CBD</b> doesn't get you high; people use it to relax or for aches 🌿 If it's your first time, start with a ½g — you can always have more.");
+    renderQuick(th?["ตัวอ่อนๆ สำหรับมือใหม่","ตัวแรงสุด","CBD ไม่เมา"]:["Something gentle","Strongest you have","CBD, no high"]);
+    return true;
+  }
   if(has("difference between","indica or sativa","what is indica","what is sativa","what is hybrid","ต่างกันยังไง","อินดิก้าคือ","ซาติวาคือ")){
     aiPush("ai",th?"สั้นๆ นะคะ 🌿 <b>อินดิก้า</b> = ผ่อนคลาย หนักตัว เหมาะตอนกลางคืน · <b>ซาติวา</b> = ตื่นตัว หัวโล่ง เหมาะกลางวัน · <b>ไฮบริด</b> = ผสมทั้งสองแบบ บอกมาว่าอยากรู้สึกยังไง เดี๋ยวเลือกให้ค่ะ"
       :"Short version 🌿 <b>Indica</b> relaxes the body — night-time. <b>Sativa</b> lifts the head — daytime. <b>Hybrid</b> sits between the two. Tell me how you want to feel and I'll pick the one.");
@@ -5311,7 +5333,7 @@ function builtinRespond(q){
   if(has("where","location","address","directions","branch","map","ที่ไหน","ที่อยู่","สาขา","แผนที่")){
     aiPush("ai",(th?"เราอยู่ที่ ":"We're at ")+CONFIG.branches.filter(b=>b!=="All branches").join(", ")+`. <a style="color:var(--green2)" href="${CONFIG.mapsUrl}" target="_blank" rel="noopener">${th?"ดูแผนที่":"Get directions"}</a>`); return true;
   }
-  if(has("payment","pay by","pay with","how do i pay","cash","credit card","crypto","bank transfer","promptpay","ชำระเงิน","วิธีจ่าย","เงินสด","โอนเงิน","บัตรเครดิต","คริปโต")){
+  if(has("payment","pay by","pay with","how do i pay","how to pay","how can i pay","ways to pay","cash","credit card","crypto","bank transfer","promptpay","ชำระเงิน","วิธีจ่าย","จ่ายยังไง","จ่ายเงินยังไง","เงินสด","โอนเงิน","บัตรเครดิต","คริปโต")){
     aiPush("ai",(th?"รับชำระ 💳: ":"We accept 💳: ")+CONFIG.payments.join(", ")+(th?" ชำระตอนรับของหรือรับเองค่ะ":" — pay on delivery or at pickup.")); return true;
   }
   if(has("wallet","top up","topup","top-up","balance","เติมเงิน","กระเป๋าเงิน","ยอดเงิน")){
