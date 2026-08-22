@@ -199,7 +199,17 @@ As of 14 Aug 2026, `/api/health` reports every wired flag true and an empty
    rows and enter stock numbers, or the custom-box free items never decrement.
 4. Shop tour: Bryan has an Insta360 and wanted both a video tour and a 360°
    one. Nothing has been shot yet.
-5. Not set, so their features are dark: an AI key (AI chat and the LINE
+5. **Shopify (dankbkk.com)** — `api/_shopify.js` creates each website order in
+   the Shopify admin as an **unpaid** order, so the two shops share one order
+   book. Off until `SHOPIFY_STORE` (the `*.myshopify.com` domain, not
+   dankbkk.com) and `SHOPIFY_ADMIN_TOKEN` (custom app, `write_orders` scope)
+   are set; `/api/health` → `wired.shopify` says whether it is live. Lines go
+   over as **custom line items**, not links to Shopify products, so Shopify
+   records the sale but does **not** move its own stock — the POS still owns
+   inventory. Wiring stock would mean the two catalogues agreeing on every
+   SKU, and a mismatch would fail the order rather than deliver it. It is a
+   channel like the others: if Shopify is down the order is still taken.
+6. Not set, so their features are dark: an AI key (AI chat and the LINE
    budtender — `api/_ai.js` accepts `GEMINI_API_KEY`, `GROQ_API_KEY`,
    `OPENROUTER_API_KEY`, `DEEPSEEK_API_KEY`, `OPENAI_API_KEY` or
    `XAI_API_KEY`, first one found wins, free tiers first; `/api/health` →

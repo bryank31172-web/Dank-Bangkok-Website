@@ -6,6 +6,7 @@ import { getMenu } from "./_menu.js";
 import { shConfigured } from "./_storehub.js";
 import { posSyncKey } from "./_auth.js";
 import { aiProvider } from "./_ai.js";
+import { shopifyConfigured } from "./_shopify.js";
 import {
   usingRedis, storageConfigured, storageUrlUsable, storageFault, storageMode,
   supabaseConfigured, supabaseKeyIsPublishable,
@@ -30,6 +31,8 @@ const KNOWN_VARS = [
   "OPENROUTER_API_KEY", "DEEPSEEK_API_KEY", "OPENAI_API_KEY",
   "AI_PROVIDER", "AI_MODEL", "RESEND_API_KEY",
   "TELEGRAM_BOT_TOKEN", "TELEGRAM_CHAT_ID",
+  "SHOPIFY_STORE", "SHOPIFY_ADMIN_TOKEN", "SHOPIFY_API_VERSION",
+  "SHOPIFY_ORDER_TAGS",
   "LINE_CHANNEL_ACCESS_TOKEN", "LINE_CHANNEL_SECRET", "LINE_TO",
   "WHATSAPP_ACCESS_TOKEN", "WHATSAPP_PHONE_NUMBER_ID", "WHATSAPP_TO",
   "WHATSAPP_API_VERSION", "WHATSAPP_TEMPLATE_NAME", "WHATSAPP_TEMPLATE_LANGUAGE",
@@ -125,6 +128,7 @@ export default async function handler(req, res) {
       staffKey: Boolean(process.env.STAFF_KEY),
       ownerLogin: Boolean(process.env.ADMIN_EMAIL && process.env.ADMIN_PASSWORD && process.env.ADMIN_SECRET),
       promoPin: Boolean(process.env.MASTER_PIN),
+      shopify: shopifyConfigured(),   // orders also land in the dankbkk.com admin
       payments: {
         omise: Boolean(process.env.OMISE_PUBLIC_KEY && process.env.OMISE_SECRET_KEY),
         twoc2p: Boolean(process.env.TWOC2P_MERCHANT_ID && process.env.TWOC2P_SECRET),

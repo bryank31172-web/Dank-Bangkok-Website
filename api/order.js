@@ -1,12 +1,16 @@
 /* POST /api/order — receives an order from the storefront checkout.
-   What happens to it (all optional, any combination):
-     1. ORDER_FORWARD_URL set  → forwarded as JSON (e.g. your BRYAN POS
-        app's own order-intake endpoint, so it lands in the Orders tab).
-     2. RESEND_API_KEY set     → emailed to ORDER_EMAIL_TO
-        (default dankclubbkk@gmail.com) via resend.com (free tier).
-   Always returns {ok:true, orderId} if at least one channel succeeded,
-   so the storefront can show success. If everything fails, returns 502
-   and the storefront automatically falls back to LINE.
+   The order is always written to storage first, then offered to every channel
+   that is configured (all optional, any combination):
+     - Telegram / LINE / WhatsApp   → staff phones buzz
+     - StoreHub                     → pushed as a transaction
+     - Shopify (dankbkk.com)        → created as an unpaid order, see _shopify.js
+     - ORDER_FORWARD_URL set        → forwarded as JSON (e.g. your BRYAN POS
+       app's own order-intake endpoint, so it lands in the Orders tab).
+     - RESEND_API_KEY set           → emailed to ORDER_EMAIL_TO
+       (default dankclubbkk@gmail.com) via resend.com (free tier).
+   Returns {ok:true, orderId} whenever the order was written down, whatever
+   the channels did — see the comment at the bottom for why that matters.
+   502 is only for the case where nothing anywhere knows the order exists.
    Paying by Wallet reserves the amount instead of spending it: the reply
    carries {walletPending:true, balance} and staff settle it from the
    console. See the wallet block below for why.                       */
@@ -20,6 +24,7 @@ import { boxesInOrder, issueGifts, giftAlertLines, getGiftConfig } from "./_boxg
 import { getMenu } from "./_menu.js";
 import { notifyStaffLine } from "./_line.js";
 import { notifyStaffWhatsApp } from "./_whatsapp.js";
+import { pushShopifyOrder } from "./_shopify.js";
 import { requireRate } from "./_ratelimit.js";
 
 const OWNER_EMAIL = process.env.ORDER_EMAIL_TO || "dankclubbkk@gmail.com";
@@ -216,13 +221,16 @@ export default async function handler(req, res) {
      order that is written down has been taken, whatever the messengers did
      about it afterwards. */
   let saved = false;
+  /* Taken once, so a later re-save (the Shopify reference below) does not move
+     the order's own clock and shuffle it in the Orders tab. */
+  const takenAt = Date.now();
 
   // 0) ALWAYS save the order so it shows in the staff console's Orders tab
   try {
     // orderId AFTER the spread. With it first, a body carrying its own
     // "orderId" overwrote the real one, so the record stored under
     // order:<returned id> claimed to be a different order entirely.
-    await setJSON("order:" + orderId, { ...o, orderId, at: Date.now(), status: "new" });
+    await setJSON("order:" + orderId, { ...o, orderId, at: takenAt, status: "new" });
     await indexAdd(orderId, "orders:index");
     /* A second index, keyed on the customer, so that pulling up one person's
        history when staff scan their card is one read instead of a walk over
@@ -272,6 +280,24 @@ export default async function handler(req, res) {
      read-only, so a zero-priced line on the transaction is the only write path
      there is. Gifts with no StoreHub id mapped yet are skipped inside. */
   try { const r = await pushTransaction(o, orderId, giftLines); if (r && r.ok) results.push(true); } catch (e) { /* non-fatal */ }
+
+  /* 0d) Push into Shopify (dankbkk.com) as an unpaid order, when the store and
+     token are set. It is a record channel, not a messenger: a Shopify that is
+     unreachable must not decide whether the customer's order was taken, so it
+     joins `results` like every other channel and nothing here throws. The
+     Shopify order name is stored on our record so staff can find the two
+     sides of the same sale. */
+  try {
+    const r = await pushShopifyOrder(o, orderId, matchedTable);
+    if (!r.skipped) {
+      results.push(r.ok);
+      if (r.ok) {
+        o.shopify = { order: r.shopifyOrder, id: r.shopifyId };
+        try { await setJSON("order:" + orderId, { ...o, orderId, at: takenAt, status: "new" }); }
+        catch (e) { console.error("shopify ref not saved:", e.message); }
+      }
+    }
+  } catch (e) { console.error("shopify push threw:", e.message); }
 
   // 1) Forward into the POS flow
   if (process.env.ORDER_FORWARD_URL) {
