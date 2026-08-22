@@ -1,3 +1,9 @@
+> ⚠️ **OUT OF DATE — read `AGENTS.md` first.**
+> This file was written when 296 products had no photograph. Counted off the
+> live feed on 21 Aug 2026 it is **19**, and twelve of those are bar cocktails
+> that belong on the 224 menu rather than the cannabis shelf. The method below
+> is still correct; the size of the job is not. Recount before starting.
+
 # ข้อความที่ต้องพิมพ์ตอนอัปโหลดไฟล์
 
 มี 2 อัน ใช้คนละที่ **อันที่ 1 ก่อน** แล้วค่อยอันที่ 2
