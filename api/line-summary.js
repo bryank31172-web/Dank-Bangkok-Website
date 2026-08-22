@@ -7,7 +7,8 @@
      POST  { sourceId?, hours?, key }         → summarize one source (or all),
            push to LINE_TO, and return the text. Requires key = STAFF_KEY.
 
-   Env: STAFF_KEY, LINE_CHANNEL_ACCESS_TOKEN, LINE_TO, XAI_API_KEY, CRON_SECRET
+   Env: STAFF_KEY, LINE_CHANNEL_ACCESS_TOKEN, LINE_TO, CRON_SECRET, and an AI
+        key (see api/_ai.js) — without one it still sends a plain digest
         (optional, set it so Vercel Cron authorizes itself), SUMMARY_TO
         (optional override of where summaries go; defaults to LINE_TO).        */
 import { listSources, getMessagesSince, summarize } from "./_linelog.js";

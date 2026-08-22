@@ -2,6 +2,9 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8"/>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml"/>
+<link rel="icon" href="/favicon.ico" sizes="32x32"/>
+<link rel="apple-touch-icon" href="/apple-touch-icon.png"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
 <meta name="robots" content="noindex,nofollow"/>
 <title>🌿 DANK BKK — Staff Console</title>
@@ -105,6 +108,9 @@ main{flex:1;display:flex;min-height:0}
   <span style="font-size:22px">🌿</span><h1>DANK BKK · Staff Console</h1>
   <span class="st" id="storeStat"></span>
   <button class="ghost" id="alertBtn" style="display:none" type="button">🔕 Alerts off</button>
+  <!-- The staff key is already in this browser's storage, so analytics.html
+       opens straight into the numbers rather than asking for it again. -->
+  <a class="ghost" id="statsBtn" href="/analytics.html" style="display:none;text-decoration:none">📊 Numbers</a>
   <button class="ghost" id="logoutBtn" style="display:none" onclick="logout()">Log out</button>
 </header>
 <main id="main">
@@ -246,6 +252,7 @@ async function login(){
   $('#storeStat').innerHTML=j.redis?'<span class="pill">● storage: redis</span>':'<span class="pill warn">● storage: memory (set up Upstash for production)</span>';
   $('#login').style.display='none'; $('#listWrap').style.display='flex'; $('#chatWrap').style.display='flex'; $('#logoutBtn').style.display='';
   $('#alertBtn').style.display=''; updateAlertButton();
+  { const sb=$('#statsBtn'); if(sb) sb.style.display=''; }
   renderList(j.threads); startListPoll(); pollOrders(); startOrderPoll();
   /* The Telegram and LINE alerts link back here as staff.html#orders and
      staff.html#count. These were two separate ifs, so #orders matched the tab

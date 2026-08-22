@@ -263,6 +263,24 @@ function flatName(s) {
     .replace(/[^a-z0-9]+/g, "");
 }
 
+/* Keeping only a-z0-9 means a Thai-only name flattens to the empty string, and
+   an empty key can never match a photograph — "( cbd product) ขิงผง โชคดี
+   เขาค้อ" was written off as unphotographable for that reason. So there is a
+   second key that keeps letters and digits in any script.
+
+   It is a fallback, never a replacement: widening flatName itself would turn
+   "Thai Tea ชาไทย" from "thaitea" into "thaiteaชาไทย" and silently break a
+   photo that matches today. This is only consulted when the ASCII key came out
+   empty, which is exactly the case it was written for. */
+function flatNameIntl(s) {
+  return String(s || "")
+    .toLowerCase()
+    .replace(/\([^)]*\)/g, " ")
+    /* \p{M} keeps the Thai vowel and tone marks: without it the key for
+       "ขิงผง" comes out "ขงผง", which nobody would ever type by hand. */
+    .replace(/[^\p{L}\p{N}\p{M}]+/gu, "");
+}
+
 /* flatName() throws the spaces away, and a keyword search over the result will
    happily find "rig" inside "Original", "cola" inside "Chocolate", "ham" inside
    "Chamomile" and "tea" inside "Steam Bun" — each of which hangs a confident,
@@ -381,7 +399,7 @@ export async function fillImages(data) {
     /* 1. an exact photo of this very product */
     const flat = flatName(p.name);
     const words = wordsOf(p.name);
-    const hit = m.byName[flat];
+    const hit = m.byName[flat] || (flat ? "" : m.byName[flatNameIntl(p.name)]);
     if (hit) return { ...p, ...shot(hit), _imgFrom: "name" };
     /* 1b. a rolled product wears its own strain's picture. "Zkittles Joint" is
        Zkittles, so it gets the Zkittles card rather than a stock photograph of

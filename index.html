@@ -2,6 +2,9 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
+<link rel="icon" href="/favicon.svg" type="image/svg+xml"/>
+<link rel="icon" href="/favicon.ico" sizes="32x32"/>
+<link rel="apple-touch-icon" href="/apple-touch-icon.png"/>
 <!-- Table QR guard: a code scanned at a table must open the food & drinks page,
      never the shop. If a ?table= (or ?t=/?tb=) lands here it is forwarded on
      before anything else renders. -->
@@ -1739,7 +1742,7 @@ tiers:{t:"Membership has its perks \ud83d\udc9a",b:`
 <div class="modal" id="infoModal"><div class="modal-card" style="max-width:520px" id="infoCard"></div></div>
 <div class="ck-bar" id="ckBar" role="dialog" aria-live="polite" aria-label="Cookie choices">
   <div class="ck-in">
-    <p class="ck-tx"><b>🍪 Cookies.</b> We keep your cart, your language and whether you are a member on this device — that part the shop cannot work without. May we also count anonymous visits to see which strains people look at?
+    <p class="ck-tx"><b>🍪 Cookies.</b> We keep your cart, your language and whether you are a member on this device — that part the shop cannot work without. Nothing here identifies you and nothing is sold or shared.
       <a href="#" onclick="openPrivacy();return false">What we keep</a></p>
     <div class="ck-btns">
       <button type="button" class="ck-no" onclick="ckChoose(false)">Essential only</button>
@@ -2047,10 +2050,14 @@ let DATA = sanitizeMenu(PRODUCTS.slice());
    20+ gate. Beer is deliberately NOT in here: Bryan sells it here, he only
    asked for it to be ordered last.
 
-   Applied in shopData() because that is the one chokepoint every part of the
-   storefront reads - the grid, the category chips and their counts, search,
-   the quiz, the 3D shelf and the menu handed to the AI - so น้องแดงค์ cannot
-   offer a customer a tequila either. */
+   Applied in shopData(). That was written as "the one chokepoint every part
+   of the storefront reads", and it was not: the grid, the search inside it,
+   the quiz and "you may also like" each read DATA straight and skipped the
+   whole filter. The chips came out clean, the Bar chip disappeared, and it
+   looked fixed - but "Tequila shot" was still sitting in All with a HYBRID
+   badge and a gram ladder. Those four now read shopData() like everything
+   else, so the sentence is finally true. Anything new that lists products
+   for a customer reads shopData(), never DATA. */
 /* Plurals matter: \b after "cocktail" refuses "Cocktails", because there is no
    word boundary between the l and the s. Every alternative takes an optional s. */
 const SHOP_HIDE_CAT=/^(bars?|cocktails?|liquors?|spirits?|whisk(e)?ys?|vodkas?|gins?|rums?|tequilas?|wines?|sake|soju)\b/i;
@@ -2125,6 +2132,43 @@ let crmTimer=null;   // drives the always-on members pop-up (keeps re-inviting u
 const LS={ get(k,d){ try{ const v=localStorage.getItem("dank_"+k); return v?JSON.parse(v):d; }catch(e){ return d; } },
            set(k,v){ try{ localStorage.setItem("dank_"+k,JSON.stringify(v)); }catch(e){} } };
 function saveCart(){ LS.set("cart",cart); }
+
+/* ---- counting how busy the shop is -----------------------------------------
+   Sends the name of a thing that happened and nothing else. No id, no cart,
+   no product, nothing that could be tied back to a person: the server adds 1
+   to a number for today and there is no way to take it apart afterwards. See
+   api/_analytics.js.
+
+   sendBeacon rather than fetch, so it survives the customer navigating away
+   mid-request — a page view that is only counted when the visitor lingers is
+   a page view that under-counts exactly the people who bounced. Wrapped
+   because a browser with the API missing, or an ad blocker refusing the call,
+   must lose a statistic and nothing else. */
+let statSent = {};
+function stat(...events){
+  try{
+    const fresh = events.filter(e => !statSent[e]);
+    if(!fresh.length) return;
+    fresh.forEach(e => { statSent[e] = 1; });
+    /* A visit is the first page of a browsing session, a view is every page.
+       sessionStorage rather than a cookie: it dies with the tab, it is never
+       sent anywhere, and when it is unavailable the visit is simply not
+       counted rather than counted twice. */
+    const body = JSON.stringify({ e: fresh, pg: "home" });
+    if(navigator.sendBeacon){
+      navigator.sendBeacon("/api/stats", new Blob([body], {type:"application/json"}));
+    } else {
+      fetch("/api/stats", {method:"POST", headers:{"Content-Type":"application/json"}, body, keepalive:true}).catch(()=>{});
+    }
+  }catch(e){}
+}
+function statPageOpen(){
+  let firstOfVisit = false;
+  try{
+    if(!sessionStorage.getItem("dank_seen")){ sessionStorage.setItem("dank_seen","1"); firstOfVisit = true; }
+  }catch(e){ /* private window: count the view, skip the visit */ }
+  stat(...(firstOfVisit ? ["views","visits"] : ["views"]));
+}
 /* memberOn is only ever honoured for an actual member. Membership can end (or the
    flag can be left behind by an older build), and without this check the shop
    would go on charging member prices to someone who is no longer one. */
@@ -2885,8 +2929,8 @@ function openPrivacy(){
     +'<div style="padding:2px 20px 24px;font-size:14px;line-height:1.65;color:var(--muted)">'
     +'<div class="pd-section-t">Essential — always on</div>'
     +'<p style="margin:0 0 12px">Your cart, your language, whether you are a member, whether you have answered the age question, and any coupon you have won. Kept in this browser only. We do not send it anywhere and it is not used to identify you.</p>'
-    +'<div class="pd-section-t">Optional — only if you allow it</div>'
-    +'<p style="margin:0 0 12px">Anonymous counts of which pages and strains get looked at, so we stock what people actually want. No names, no numbers, nothing that points back at a person.</p>'
+    +'<div class="pd-section-t">What the shop counts</div>'
+    +'<p style="margin:0 0 12px">We add 1 to a number when a page is opened, so we can see how busy the site is and stock what people actually want. That is the whole of it: a total per day, kept on our own server. No cookie, no advertising id, no IP address, nothing tied to you. Two people and one person visiting twice look exactly the same to us afterwards, and there is no way to unpick a total back into the visits that made it.</p>'
     +'<div class="pd-section-t">Changing your mind</div>'
     +'<p style="margin:0 0 14px">Press the button below to be asked again, or clear this site\'s data in your browser to erase everything above.</p>'
     +'<button class="btn btn-ghost btn-block" onclick="ckReset()">Ask me again</button></div>';
@@ -3136,8 +3180,7 @@ function render(){
   branch=$("#branchSel").value||"All branches";
   const q=($("#searchInput").value||"").toLowerCase().trim();
   const tf=$("#typeFilter").value, sort=$("#sortBy").value;
-  let list=DATA.filter(p=>{
-    if(p._hidden && !adminMode) return false;   // owner-hidden items never show to customers
+  let list=shopData().filter(p=>{
     if(activeCat==="❤ Saved" && !favs.length) activeCat="All";
     if(activeCat==="❤ Saved"){ if(!isFav(p.id)) return false; }
     else if(activeCat!=="All"&&p.category!==activeCat) return false;
@@ -4013,7 +4056,7 @@ function pdShot(i){
 function pdStep(d){ pdQty=Math.max(1,pdQty+d); const el=$("#pdQtyN"); if(el) el.textContent=pdQty; }
 function renderRelated(p){
   const box=$("#pdRelated"); if(!box) return;
-  const rel=DATA.filter(x=>x.id!==p.id && x.category===p.category && x.stock>0 && !x._hidden).slice(0,3);
+  const rel=shopData().filter(x=>x.id!==p.id && x.category===p.category && x.stock>0).slice(0,3);
   if(!rel.length){ box.innerHTML=""; return; }
   box.innerHTML=`<div class="pd-section-t">You may also like</div><div class="rel-row">${rel.map(r=>{
     const pr=isFlower(r)?(memberMode?r.priceTiers[0].member:r.priceTiers[0].price):(memberMode?r.member:r.price);
@@ -4040,7 +4083,7 @@ function repriceCart(){
     if(isFlower(p)){ const t=p.priceTiers&&p.priceTiers.find(t=>t.label===c.tierLabel); if(t) c.price=memberMode?(t.member||t.price):t.price; }
     else { c.price=memberMode?(p.member!=null?p.member:p.price):p.price; } });
 }
-function addToCart(p,tier){
+function addToCart(p,tier){ stat("carts");
   if(!tier&&p&&p.priceTiers&&p.priceTiers.length&&!(+p.price>0)) tier=p.priceTiers[0];   // tier-only product — use first size so price is never NaN
   const key=p.id+(tier?("|"+tier.label):"");
   const price=memberMode?(tier?(tier.member||tier.price):(p.member!=null?p.member:p.price)):(tier?tier.price:p.price);
@@ -4144,7 +4187,7 @@ function renderCart(){
 }
 
 /* ---- Checkout ---- */
-function openCheckout(){
+function openCheckout(){ stat("checkouts");
   /* Bonus lines are settled BEFORE the empty-cart test. Removing the last paid line
      leaves its free grams behind, and testing cart.length first let a cart that is
      really empty open the checkout on "0 items · ฿0" and POST an order the API then
@@ -4649,7 +4692,7 @@ function setAvatar(s){ const el=$("#aiAvatarImg"); if(!el)return; const src=av(s
 function avatarReply(){ const s=aiNextAvatar||"happy"; aiNextAvatar=null; setAvatar(s); clearTimeout(window._avT); window._avT=setTimeout(()=>setAvatar("neutral"), s==="celebrate"?3200:2400); }
 function showNudge(){ if(aiOpened)return; $("#aiNudge").classList.remove("hidden"); }
 function dismissNudge(e){ e.stopPropagation(); $("#aiNudge").classList.add("hidden"); }
-function openAI(seed){
+function openAI(seed){ stat("chats");
   aiOpened=true; $("#aiNudge").classList.add("hidden"); $("#aiPanel").classList.add("show");
   setAvatar("welcome"); clearTimeout(window._avT); window._avT=setTimeout(()=>setAvatar("neutral"),1900);
   if(!aiHistory.length){
@@ -4898,20 +4941,30 @@ const AI_MOODS=[
    k:["appetite","hungry","hunger","munchies","nausea","nauseous","eat more","อยากอาหาร","หิว","คลื่นไส้"]},
 ];
 
+/* Patterns, not exact names. These were written as /^Topshelf$/ and
+   /^Edibles$/ while the POS writes "Top Shelf" and "Edible", so twelve of the
+   sixteen shelves the till actually sends matched nothing at all: a customer
+   asking for a vape or a gummy had their request filtered down to an empty
+   list. Third place this same spelling trap has turned up, so these follow
+   the shelf order's patterns rather than inventing a fourth spelling. */
 const AI_CATS=[
-  {re:/^Exotics$/i,      k:["exotic","exo","เอ็กโซ","เอกโซติก"]},
-  {re:/^Topshelf$/i,     k:["topshelf","top shelf","ท็อปเชลฟ์"]},
-  {re:/^Midgrade$/i,     k:["midgrade","mid grade","mid-grade","มิดเกรด"]},
-  {re:/^Premium$/i,      k:["moon rock","moonrock","super exotic","พรีเมียม"]},
-  {re:/^Joints$/i,       k:["joint","pre-roll","preroll","pre roll","blunt","backwood","มวน","โจ๊ย"]},
-  {re:/^Edibles$/i,      k:["edible","gummy","gummies","chocolate","brownie","cookie","candy","กินได้","เยลลี่","กัมมี่","บราวนี่","คุกกี้"]},
-  {re:/^Vapes$/i,        k:["vape","cartridge","disposable","dab","wax","shatter","rosin","resin","concentrate","แว๊ป","แวป","แดบ"]},
-  {re:/^Beer$/i,         k:["beer","soda","drink","lager","เครื่องดื่ม","เบียร์"]},
-  {re:/^Merch$/i,        k:["merch","t-shirt","tshirt","tee","hoodie","cap","เสื้อ"]},
-  {re:/^(Accessories|Equipment)$/i, k:["accessory","accessories","bong","grinder","rolling paper","lighter","tray","อุปกรณ์","บ้อง","ไฟแช็ค"]},
+  {re:/^exotics?\b/i,        k:["exotic","exo","เอ็กโซ","เอกโซติก"]},
+  {re:/^top[\s-]?shelf\b/i,  k:["topshelf","top shelf","ท็อปเชลฟ์"]},
+  {re:/^mid[\s-]?grade\b/i,  k:["midgrade","mid grade","mid-grade","มิดเกรด"]},
+  {re:/^premium\b/i,         k:["moon rock","moonrock","super exotic","พรีเมียม"]},
+  {re:/^(pre[\s-]?roll|joint|blunt)s?\b/i, k:["joint","pre-roll","preroll","pre roll","blunt","backwood","มวน","โจ๊ย"]},
+  {re:/^edibles?\b/i,        k:["edible","gummy","gummies","chocolate","brownie","cookie","candy","กินได้","เยลลี่","กัมมี่","บราวนี่","คุกกี้"]},
+  {re:/^(vapes?|carts?|cartridges?)\b/i, k:["vape","cartridge","disposable","แว๊ป","แวป"]},
+  /* Hash and the extracts are their own shelf in the till, and "hash" on its
+     own used to reach nothing. */
+  {re:/^(concentrates?|hash|rosin|wax)\b/i, k:["hash","hashish","concentrate","rosin","wax","shatter","live resin","dab","แฮช","แดบ"]},
+  {re:/^cbd\b/i,             k:["cbd","non psychoactive","no high","ซีบีดี","ไม่เมา"]},
+  {re:/^(beer|drink|beverage|soft|soda|juice|shake|coffee|tea|water)\b/i, k:["beer","soda","drink","lager","เครื่องดื่ม","เบียร์","น้ำ","กาแฟ"]},
+  {re:/^(merch|merchandise|apparel|clothing|special)\b/i, k:["merch","t-shirt","tshirt","tee","hoodie","cap","เสื้อ"]},
+  {re:/^(accessor(y|ies)|equipment|paper)\b/i, k:["accessory","accessories","bong","grinder","rolling paper","lighter","tray","อุปกรณ์","บ้อง","ไฟแช็ค"]},
   /* Last on purpose: "exotic" must reach Exotics before the plain word
      "weed" sweeps every flower shelf into one pile. */
-  {re:/^(Exotics|Topshelf|Midgrade|Premium)$/i, k:["weed","cannabis","flower","flowers","bud","buds","ganja","herb","smoke","กัญชา","ดอก","ช่อดอก","ยา"]},
+  {re:/^(exotics?|top[\s-]?shelf|mid[\s-]?grade|premium|weed|flowers?|bud)\b/i, k:["weed","cannabis","flower","flowers","bud","buds","ganja","herb","smoke","กัญชา","ดอก","ช่อดอก","ยา"]},
 ];
 
 /* A budget only counts when the shopper framed it like money. "I am 20" and
@@ -5278,6 +5331,15 @@ function builtinRespond(q){
     renderQuick(th?["ช่วยให้นอนหลับ","ตื่นตัวมีพลัง","ตัวแรงสุด","ส่งไหม"]:["Help me sleep","Energy and focus","Most potent","Do you deliver?"]);
     return true;
   }
+  /* THC and CBD get asked constantly and had no answer at all. Kept plain and
+     kept honest: the numbers are what the shop's cards say, and the advice is
+     the one thing a budtender always says out loud. */
+  if(has("what is thc","whats thc","what's thc","thc mean","what does thc","how much thc","what is cbd","whats cbd","what's cbd","cbd mean","thc คือ","ซีบีดี คือ","cbd คือ","thc กับ cbd")){
+    aiPush("ai",th?"<b>THC</b> คือสารที่ทำให้เมาค่ะ ยิ่ง % สูงยิ่งแรง — ดอกในร้านอยู่ราว 19–33% · <b>CBD</b> ไม่ทำให้เมา คนใช้เพื่อผ่อนคลายหรือช่วยเรื่องปวด 🌿 มือใหม่เริ่มครึ่งกรัมก่อนนะคะ เติมทีหลังได้เสมอ"
+      :"<b>THC</b> is the part that gets you high — the higher the %, the stronger. Our flower runs about 19–33%. <b>CBD</b> doesn't get you high; people use it to relax or for aches 🌿 If it's your first time, start with a ½g — you can always have more.");
+    renderQuick(th?["ตัวอ่อนๆ สำหรับมือใหม่","ตัวแรงสุด","CBD ไม่เมา"]:["Something gentle","Strongest you have","CBD, no high"]);
+    return true;
+  }
   if(has("difference between","indica or sativa","what is indica","what is sativa","what is hybrid","ต่างกันยังไง","อินดิก้าคือ","ซาติวาคือ")){
     aiPush("ai",th?"สั้นๆ นะคะ 🌿 <b>อินดิก้า</b> = ผ่อนคลาย หนักตัว เหมาะตอนกลางคืน · <b>ซาติวา</b> = ตื่นตัว หัวโล่ง เหมาะกลางวัน · <b>ไฮบริด</b> = ผสมทั้งสองแบบ บอกมาว่าอยากรู้สึกยังไง เดี๋ยวเลือกให้ค่ะ"
       :"Short version 🌿 <b>Indica</b> relaxes the body — night-time. <b>Sativa</b> lifts the head — daytime. <b>Hybrid</b> sits between the two. Tell me how you want to feel and I'll pick the one.");
@@ -5311,7 +5373,7 @@ function builtinRespond(q){
   if(has("where","location","address","directions","branch","map","ที่ไหน","ที่อยู่","สาขา","แผนที่")){
     aiPush("ai",(th?"เราอยู่ที่ ":"We're at ")+CONFIG.branches.filter(b=>b!=="All branches").join(", ")+`. <a style="color:var(--green2)" href="${CONFIG.mapsUrl}" target="_blank" rel="noopener">${th?"ดูแผนที่":"Get directions"}</a>`); return true;
   }
-  if(has("payment","pay by","pay with","how do i pay","cash","credit card","crypto","bank transfer","promptpay","ชำระเงิน","วิธีจ่าย","เงินสด","โอนเงิน","บัตรเครดิต","คริปโต")){
+  if(has("payment","pay by","pay with","how do i pay","how to pay","how can i pay","ways to pay","cash","credit card","crypto","bank transfer","promptpay","ชำระเงิน","วิธีจ่าย","จ่ายยังไง","จ่ายเงินยังไง","เงินสด","โอนเงิน","บัตรเครดิต","คริปโต")){
     aiPush("ai",(th?"รับชำระ 💳: ":"We accept 💳: ")+CONFIG.payments.join(", ")+(th?" ชำระตอนรับของหรือรับเองค่ะ":" — pay on delivery or at pickup.")); return true;
   }
   if(has("wallet","top up","topup","top-up","balance","เติมเงิน","กระเป๋าเงิน","ยอดเงิน")){
@@ -5571,7 +5633,7 @@ function renderQuiz(){
 }
 function quizPick(v){ quizAns[QUIZ[quizStep].k]=v; quizStep++; renderQuiz(); }
 function quizResults(){
-  let list=DATA.filter(p=>p.stock>0&&!p._hidden);
+  let list=shopData().filter(p=>p.stock>0);
   const cat=quizAns.cat;
   if(cat==="flower") list=list.filter(p=>isFlowerCat(p));
   else if(cat==="Edibles"||cat==="Vapes") list=list.filter(p=>p.category===cat);
@@ -5581,7 +5643,7 @@ function quizResults(){
   if(quizAns.feel==="relief") list=[...list].sort((a,b)=>b.thc-a.thc);
   if(quizAns.exp==="low"){ const soft=list.filter(p=>!p.thc||p.thc<=24); if(soft.length) list=soft; }
   if(quizAns.exp==="high") list=[...list].sort((a,b)=>b.thc-a.thc);
-  list=(list.length?list:DATA.filter(p=>p.stock>0)).slice(0,4);
+  list=(list.length?list:shopData().filter(p=>p.stock>0)).slice(0,4);
   $("#infoCard").innerHTML=`<div class="drawer-head" style="border:none;padding:18px 20px 4px"><h2>🌿 น้องแดงค์แนะนำ</h2><button class="close-x" onclick="closeAll()">×</button></div>
     <div style="padding:6px 20px 22px"><p style="color:var(--muted);font-size:13px;margin:0 0 12px">ตรงกับที่คุณเลือกที่สุดค่ะ · Your best matches:</p>
     <div class="grid" style="grid-template-columns:repeat(2,1fr);gap:12px;padding:0">${list.map(p=>{
@@ -5810,7 +5872,7 @@ function spinSyncBtn(){
   if(n) n.textContent=ok?"One free spin a day — free joints & up to 15% off":("Next spin in "+spinNextIn());
 }
 
-function ringSpin(){
+function ringSpin(){ stat("spins");
   if(spinning||!ringItems.length||!spinReady()) return;
   const prize=spinPrize(); if(!prize) return;
   spinning=true;
@@ -6176,7 +6238,7 @@ function fxMeasure(){
   ringLayout();
 }
 
-applyConfig(); loadPersisted(); loadData(); refreshWallet(); refreshFreeGifts(); refreshBoxGifts(); refreshPayGW(); handlePayReturn(); loadAdmin();
+applyConfig(); loadPersisted(); statPageOpen(); loadData(); refreshWallet(); refreshFreeGifts(); refreshBoxGifts(); refreshPayGW(); handlePayReturn(); loadAdmin();
 mount3D();
 
 /* ---- arriving from Build Your Joint ----

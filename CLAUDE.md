@@ -136,8 +136,13 @@ it did on 13 Aug 2026, when a Redis 401 made `/api/products` answer 500.
 - `index.html` is ~539 KB and `staff.html` ~119 KB. They are single files on
   purpose. Do not split them into modules; that is not the deployment model.
 - To syntax-check a page, extract its inline `<script>` blocks (those without a
-  `src=`), join them, write a real `.js` file and run `node --check` on it.
-  Process substitution (`node --check <(...)`) does not work.
+  `src=`, and skipping non-JS types like `application/ld+json`), join them,
+  write a real `.js` file and run `node --check` on it. Process substitution
+  (`node --check <(...)`) does not work. **Write that file outside the repo.**
+  A checker that dropped its scratch file in the project root as `idx.js` had
+  it swept into a commit by `git add -A`, which put a 5,365-line stale copy of
+  `index.html`'s scripts in the repo that nothing loaded and every later run
+  silently rewrote.
 - `staff.html` uses **event delegation** — one click listener reading
   `data-act` attributes into a `switch`. That is deliberate XSS mitigation.
   Do not add inline `onclick` handlers with interpolated ids to it.
@@ -177,28 +182,85 @@ folded to `0`.
   hero text, all promo slides and the shop-tour links; publishes with
   `💾 Save changes`. Stored in `admin:overrides` under `site`.
 
+## Website numbers — `analytics.html`
+
+Bryan's own dashboard: **`/analytics.html`**, staff key, linked from the
+📊 Numbers button in the staff console header. Two halves, with different
+amounts of history, which the page says out loud rather than letting a flat
+line read as "no customers":
+
+- **Traffic** comes from counters `api/_analytics.js` keeps — views, visits,
+  baskets started, checkouts opened, chats, spins, and views per page. Only
+  exists from the day it shipped, because nobody was counting before.
+- **Sales** is worked out from the order records the shop already writes, the
+  same way `/api/sales` does. Complete from the first ever order.
+
+The counters are integers per day and nothing else — `an:2026-08-22:views`.
+No cookie, no IP, no device id, no per-person path. A total cannot be un-summed,
+which is the whole point: there is nothing in there to leak. The one thing that
+touches the device is a `sessionStorage` flag telling a second page view apart
+from a second visit, and when it is unavailable the visit is simply not counted.
+Because of that the cookie bar no longer asks permission to count — it would be
+asking about something that isn't happening. Do not "restore" that question
+without also gating `stat()` in `index.html`, or the bar starts lying.
+
+`/api/stats` POST is public (the visitors are the public) and rate limited to
+120 in 5 minutes per address; GET needs the staff key, because the same reply
+carries takings and customer counts.
+
+Chart colours are **not** the brand green and gold: that pair fails the
+colour-blindness check outright (ΔE 4.8 deuteran — a large minority of men
+cannot tell them apart). The validated pair is `#1faa63` and `#3987e5`. Brand
+green stays on headline numbers and buttons, which are text, not data.
+
 ## Open work, roughly in priority order
 
 As of 14 Aug 2026, `/api/health` reports every wired flag true and an empty
 `warnings` list. Nothing below is breaking the shop.
 
-1. **Product photographs — the big one.** 271 products still show a borrowed
-   stand-in. `IMAGE-QUEUE.csv` is the work list (in-stock first),
-   `CHATGPT-START.md` drives an image generator, `CODEX-HANDOVER.md` explains
-   wiring the results back in. Flower is better photographed than generated.
-2. **The Gelato 41 card is wrong.** Its TASTE / FEELING / BEST FOR lines are
-   word for word the Granddaddy Purple card. Only the header (creamy, sweet)
-   went into `strain-db.json`; the card needs redrawing before the rest can.
-3. Delete the duplicate Vercel project `dankbkk-site-4jrn` (failed build,
+1. **Product photographs — nearly done, and the old count was wrong.** "271
+   products still show a borrowed stand-in" was true when it was written and
+   is not true now. Counted off the live feed on 21 Aug 2026: of 391 products,
+   280 match a photograph by name, 56 carry one straight from the POS, 15 get
+   a keyword or category photo, and **19 still fall through to a drawn
+   `/api/tile`** — 12 of those in stock. Twelve of the nineteen are bar
+   cocktails that belong on the 224 menu rather than the cannabis shelf. What
+   is actually left: `Kamagra`, `MonkeyKing Tip` (out of stock), and the bar
+   list. `IMAGE-QUEUE.csv` and `IMAGE-PROMPTS-ALL.csv` predate this and
+   overstate the work; recount before trusting either.
+2. Delete the duplicate Vercel project `dankbkk-site-4jrn` (failed build,
    confuses which deployment is live), and the now-unused `KV_*`, `KV_URL`,
    `REDIS_URL` variables left over from Upstash.
-4. `staff.html#box` — Bryan needs to pick a POS product on each of the 7 gift
+3. `staff.html#box` — Bryan needs to pick a POS product on each of the 7 gift
    rows and enter stock numbers, or the custom-box free items never decrement.
-5. Shop tour: Bryan has an Insta360 and wanted both a video tour and a 360°
+4. Shop tour: Bryan has an Insta360 and wanted both a video tour and a 360°
    one. Nothing has been shot yet.
-6. Not set, so their features are dark: `XAI_API_KEY` (AI chat),
+5. **Shopify (dankbkk.com)** — `api/_shopify.js` creates each website order in
+   the Shopify admin as an **unpaid** order, so the two shops share one order
+   book. Off until `SHOPIFY_STORE` (the `*.myshopify.com` domain, not
+   dankbkk.com) and `SHOPIFY_ADMIN_TOKEN` (custom app, `write_orders` scope)
+   are set; `/api/health` → `wired.shopify` says whether it is live. Lines go
+   over as **custom line items**, not links to Shopify products, so Shopify
+   records the sale but does **not** move its own stock — the POS still owns
+   inventory. Wiring stock would mean the two catalogues agreeing on every
+   SKU, and a mismatch would fail the order rather than deliver it. It is a
+   channel like the others: if Shopify is down the order is still taken.
+   Orders arrive in the admin's **Orders** list, tagged `dankbangkok.com` and
+   labelled with that sales channel — not in the Shopify **Inbox** app, which
+   is customer chat and has no way to receive an order. Staff track them on
+   Orders, or in the Shopify mobile app once Settings → Notifications → staff
+   order notifications is switched on. If Shopify's schema ever refuses one of
+   the decorative fields (`sourceName`, discount, shipping line, address), the
+   helper retries once with a plain order rather than losing the sale.
+6. Not set, so their features are dark: an AI key (AI chat and the LINE
+   budtender — `api/_ai.js` accepts `GEMINI_API_KEY`, `GROQ_API_KEY`,
+   `OPENROUTER_API_KEY`, `DEEPSEEK_API_KEY`, `OPENAI_API_KEY` or
+   `XAI_API_KEY`, first one found wins, free tiers first; `/api/health` →
+   `ai.provider` names the one actually live),
    `TELEGRAM_BOT_TOKEN`/`TELEGRAM_CHAT_ID` and `RESEND_API_KEY` (order
    notifications), `OMISE_*`/`TWOC2P_*`/`GBP_SECRET_KEY` (card payments).
+   The storefront answers ~55 common questions on its own with no key at
+   all, so a key only buys the long, unusual sentences.
 
 Things for Bryan to fix in the POS rather than in code:
 
@@ -208,14 +270,26 @@ Things for Bryan to fix in the POS rather than in code:
 - Eight bar lines carry negative stock.
 - Three `onion ring` products, one holding 4999. Cappuccino, Latte, Mocha and
   Strawberry are each in there three times.
-- `(cbd product) ขิงผง โชคดี เขาค้อ` can never have a photograph: the image
-  key keeps letters and digits only, so a Thai-only name flattens to an empty
-  string. Rename it in the POS.
+- `(cbd product) ขิงผง โชคดี เขาค้อ` still has no photograph, but it no longer
+  "can never" have one: `flatNameIntl()` in `api/_menu.js` gives a Thai-only
+  name a real key (`ขิงผงโชคดีเขาค้อ`) when the ASCII one comes out empty, so a
+  `byName` entry now works. Renaming it in the POS is optional.
 - Two spellings worth correcting, though both are mapped either way:
   "Grape Gasolin" (no e), "Galic Man" and "White Galic" (no r).
 
 Done, kept here so nobody redoes them:
 
+- **The Gelato 41 card** — its TASTE / FEELING / BEST FOR were word for word
+  the Granddaddy Purple card. The three wrong lines were painted out of
+  `assets/strains/gelato-41.jpg` and rewritten in place (creamy · sweet ·
+  citrus / bright euphoria, easy body calm / daytime lift & good company);
+  TYPE Hybrid was already right and was left alone. `strain-db.json` now
+  carries the same words plus effects, terpene and lineage. It still prints
+  no THC figure, because nobody has one — the card never had it either.
+  All twelve local cards in `assets/strains/` were checked against
+  `strain-db.json` after this; every one agrees. The strain cards served from
+  `cdn.shopify.com` cannot be checked from a sandbox — the network policy
+  refuses that host — so those remain Bryan's to eyeball.
 - **Storage** — Supabase, Aug 2026. See the section above.
 - **`MASTER_PIN`, `POS_SYNC_KEY`, domain** — all set. `dankbangkok.com` is
   live, bought through Vercel, with `.co` and `.shop` also owned.

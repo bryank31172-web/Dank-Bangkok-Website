@@ -1080,7 +1080,7 @@
       "name": "Garlic Man",
       "known": true,
       "type": "Hybrid",
-      "thc": "29%",
+      "thc": "29.0%",
       "cbd": "<1%",
       "terpene": "Caryophyllene",
       "effects": [
@@ -1148,14 +1148,20 @@
       "type": "Hybrid",
       "thc": "",
       "cbd": "<1%",
-      "terpene": "",
-      "effects": [],
+      "terpene": "Caryophyllene",
+      "effects": [
+        "Euphoric",
+        "Happy",
+        "Relaxed",
+        "Creative"
+      ],
       "flavors": [
         "Creamy",
-        "Sweet"
+        "Sweet",
+        "Citrus"
       ],
-      "lineage": "",
-      "desc": "Dessert-style exotic — creamy and sweet, the Gelato family at its most indulgent.",
+      "lineage": "Sunset Sherbet x Thin Mint GSC",
+      "desc": "Dessert-style exotic — creamy and sweet with a twist of citrus. A bright, chatty lift that settles into an easy body calm, so it suits the afternoon and good company rather than the end of the night.",
       "card": true
     },
     "limehooties": {

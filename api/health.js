@@ -5,6 +5,8 @@
 import { getMenu } from "./_menu.js";
 import { shConfigured } from "./_storehub.js";
 import { posSyncKey } from "./_auth.js";
+import { aiProvider } from "./_ai.js";
+import { shopifyConfigured } from "./_shopify.js";
 import {
   usingRedis, storageConfigured, storageUrlUsable, storageFault, storageMode,
   supabaseConfigured, supabaseKeyIsPublishable,
@@ -25,8 +27,12 @@ const KNOWN_VARS = [
   "POS_SYNC_KEY", "WEBSITE_API_KEY", "STAFF_KEY", "MASTER_PIN",
   "ADMIN_EMAIL", "ADMIN_PASSWORD", "ADMIN_SECRET",
   "STOREHUB_STORE", "STOREHUB_TOKEN", "MENU_FEED_URL", "POS_FEED_MAX_AGE_H",
-  "XAI_API_KEY", "GROK_MODEL", "RESEND_API_KEY",
+  "XAI_API_KEY", "GROK_MODEL", "GEMINI_API_KEY", "GROQ_API_KEY",
+  "OPENROUTER_API_KEY", "DEEPSEEK_API_KEY", "OPENAI_API_KEY",
+  "AI_PROVIDER", "AI_MODEL", "RESEND_API_KEY",
   "TELEGRAM_BOT_TOKEN", "TELEGRAM_CHAT_ID",
+  "SHOPIFY_STORE", "SHOPIFY_ADMIN_TOKEN", "SHOPIFY_API_VERSION",
+  "SHOPIFY_ORDER_TAGS",
   "LINE_CHANNEL_ACCESS_TOKEN", "LINE_CHANNEL_SECRET", "LINE_TO",
   "WHATSAPP_ACCESS_TOKEN", "WHATSAPP_PHONE_NUMBER_ID", "WHATSAPP_TO",
   "WHATSAPP_API_VERSION", "WHATSAPP_TEMPLATE_NAME", "WHATSAPP_TEMPLATE_LANGUAGE",
@@ -109,9 +115,11 @@ export default async function handler(req, res) {
     /* Booleans only. Whether a key is set is a deployment fact worth being
        able to check from a phone; the key itself is not, and this endpoint is
        public. Never widen this to echo a value. */
+    const prov = aiProvider();
     const ai = {
-      brain: Boolean(process.env.XAI_API_KEY),
-      model: process.env.GROK_MODEL || "grok-4",
+      brain: Boolean(prov),
+      provider: prov?.name || null,   // gemini | groq | openrouter | deepseek | openai | xai
+      model: prov?.model || null,
     };
     const wired = {
       posSync: Boolean(posSyncKey()),
@@ -120,6 +128,7 @@ export default async function handler(req, res) {
       staffKey: Boolean(process.env.STAFF_KEY),
       ownerLogin: Boolean(process.env.ADMIN_EMAIL && process.env.ADMIN_PASSWORD && process.env.ADMIN_SECRET),
       promoPin: Boolean(process.env.MASTER_PIN),
+      shopify: shopifyConfigured(),   // orders also land in the dankbkk.com admin
       payments: {
         omise: Boolean(process.env.OMISE_PUBLIC_KEY && process.env.OMISE_SECRET_KEY),
         twoc2p: Boolean(process.env.TWOC2P_MERCHANT_ID && process.env.TWOC2P_SECRET),
