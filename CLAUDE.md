@@ -136,8 +136,13 @@ it did on 13 Aug 2026, when a Redis 401 made `/api/products` answer 500.
 - `index.html` is ~539 KB and `staff.html` ~119 KB. They are single files on
   purpose. Do not split them into modules; that is not the deployment model.
 - To syntax-check a page, extract its inline `<script>` blocks (those without a
-  `src=`), join them, write a real `.js` file and run `node --check` on it.
-  Process substitution (`node --check <(...)`) does not work.
+  `src=`, and skipping non-JS types like `application/ld+json`), join them,
+  write a real `.js` file and run `node --check` on it. Process substitution
+  (`node --check <(...)`) does not work. **Write that file outside the repo.**
+  A checker that dropped its scratch file in the project root as `idx.js` had
+  it swept into a commit by `git add -A`, which put a 5,365-line stale copy of
+  `index.html`'s scripts in the repo that nothing loaded and every later run
+  silently rewrote.
 - `staff.html` uses **event delegation** — one click listener reading
   `data-act` attributes into a `switch`. That is deliberate XSS mitigation.
   Do not add inline `onclick` handlers with interpolated ids to it.
