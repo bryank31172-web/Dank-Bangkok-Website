@@ -1,10 +1,12 @@
 /* Push a website order into the Shopify admin at dankbkk.com.
 
    Env:
-     SHOPIFY_STORE          the myshopify domain — "dank-bkk.myshopify.com".
-                            The shop's public domain (dankbkk.com) is not the
-                            API host; paste whatever Shopify shows in the
-                            browser bar inside the admin.
+     SHOPIFY_STORE          the myshopify domain. The shop handle is
+                            "dankclubbkk", so this is almost certainly
+                            "dankclubbkk.myshopify.com" — confirm it in
+                            Settings → Domains, which names it outright.
+                            The public domain (dankbkk.com) is NOT the API
+                            host and a wrong value here answers 404.
      SHOPIFY_ADMIN_TOKEN    Admin API access token from a custom app,
                             starts "shpat_". Needs the write_orders scope.
      SHOPIFY_API_VERSION    optional, default below.
