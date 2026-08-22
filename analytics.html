@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml"/>
+<link rel="icon" href="/favicon.ico" sizes="32x32"/>
+<link rel="apple-touch-icon" href="/apple-touch-icon.png"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<title>Website Numbers · DANK BKK</title>
+<style>
+  /* The shop's own dark palette. The two SERIES colours are not the brand
+     green: #3ddc84 against the brand gold fails the colour-blindness check
+     outright (ΔE 4.8 for deuteranopia — a green/gold pair a large minority of
+     men cannot tell apart), and the bright green also sits above the readable
+     lightness band for marks on a dark surface. #1faa63 with #3987e5 passes
+     every check on this panel colour. The bright green stays where it belongs:
+     headline numbers and buttons, which are text, not data. */
+  :root{
+    --bg:#060a07; --panel:#101a12; --panel2:#0b120d; --line:#294634;
+    --txt:#e8f5ec; --muted:#8fae9a; --brand:#3ddc84; --gold:#d9b25b; --bad:#ff6b6b;
+    --s1:#1faa63;   /* series 1 — page views, and every single-series chart */
+    --s2:#3987e5;   /* series 2 — visits */
+    --grid:#1c2c21;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;font-family:'Segoe UI',system-ui,-apple-system,sans-serif}
+  body{background:var(--bg);color:var(--txt);padding:16px 14px calc(30px + env(safe-area-inset-bottom));-webkit-text-size-adjust:100%}
+  .wrap{max-width:1080px;margin:0 auto}
+  header{display:flex;flex-wrap:wrap;gap:10px;align-items:baseline;justify-content:space-between;margin-bottom:4px}
+  h1{font-size:21px;letter-spacing:-.01em}
+  .sub{color:var(--muted);font-size:12.5px;margin-bottom:16px;line-height:1.5}
+  a{color:var(--brand)}
+
+  .ranges{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:16px}
+  .rg{background:var(--panel);border:1px solid var(--line);color:var(--muted);border-radius:999px;
+      padding:7px 15px;font-size:13px;font-weight:600;cursor:pointer;min-height:38px}
+  .rg.on{background:rgba(61,220,132,.14);border-color:var(--brand);color:var(--brand)}
+  .rg:disabled{opacity:.5;cursor:default}
+
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(148px,1fr));gap:10px;margin-bottom:14px}
+  .kpi{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px 15px}
+  .kpi .lab{color:var(--muted);font-size:10.5px;text-transform:uppercase;letter-spacing:.9px;font-weight:700}
+  .kpi .val{font-size:29px;font-weight:800;margin-top:5px;letter-spacing:-.02em;line-height:1.05}
+  .kpi .note{color:var(--muted);font-size:11.5px;margin-top:3px}
+  .kpi.hero .val{color:var(--brand)}
+
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:16px;margin-bottom:14px}
+  .card h2{font-size:14.5px;margin-bottom:2px}
+  .card .cs{color:var(--muted);font-size:11.5px;margin-bottom:12px;line-height:1.45}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media (max-width:720px){ .two{grid-template-columns:1fr} }
+
+  .legend{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:8px}
+  .lg{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted)}
+  .lg i{width:11px;height:11px;border-radius:3px;display:inline-block}
+
+  svg{display:block;width:100%;height:auto;overflow:visible}
+  .gl{stroke:var(--grid);stroke-width:1}
+  .ax{fill:var(--muted);font-size:10px}
+  .dot{stroke:var(--panel);stroke-width:2}
+
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th,td{text-align:left;padding:8px 6px;border-bottom:1px solid var(--line);vertical-align:middle}
+  th{color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.8px}
+  td.n,th.n{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+  .barcell{position:relative;min-width:70px}
+  .barcell i{display:block;height:9px;border-radius:0 4px 4px 0;background:var(--s1)}
+
+  .funnel .row{display:flex;align-items:center;gap:10px;margin-bottom:9px}
+  .funnel .nm{width:112px;flex:none;font-size:12.5px;color:var(--muted)}
+  .funnel .tr{flex:1;background:var(--panel2);border-radius:5px;overflow:hidden;height:20px}
+  .funnel .tr i{display:block;height:100%;background:var(--s1);border-radius:0 4px 4px 0}
+  .funnel .vv{width:96px;flex:none;text-align:right;font-size:12.5px;font-variant-numeric:tabular-nums}
+  .funnel .pc{color:var(--muted);font-size:11px}
+
+  .gate{max-width:420px;margin:60px auto;text-align:center}
+  .gate input{width:100%;background:var(--panel2);border:1px solid var(--line);color:var(--txt);
+              border-radius:11px;padding:13px 14px;font-size:15px;margin:14px 0}
+  button.go{background:var(--brand);color:#04180d;font-weight:800;border:none;border-radius:11px;
+            padding:12px 20px;font-size:14.5px;cursor:pointer;min-height:44px}
+  .warn{background:rgba(217,178,91,.1);border:1px solid var(--gold);color:var(--gold);
+        border-radius:11px;padding:11px 13px;font-size:12.5px;margin-bottom:14px;line-height:1.5}
+  .err{color:var(--bad);font-size:13px;margin-top:8px}
+  .empty{color:var(--muted);font-size:12.5px;padding:14px 2px}
+  details.tv{margin-top:12px}
+  details.tv summary{color:var(--muted);font-size:11.5px;cursor:pointer;padding:5px 0}
+</style>
+</head>
+<body>
+<div class="wrap" id="app">
+  <div class="gate" id="gate">
+    <h1>📊 ตัวเลขเว็บไซต์</h1>
+    <p class="sub" style="margin-top:8px">Website numbers · ใส่ Staff key เพื่อเปิด</p>
+    <input id="k" type="password" placeholder="Staff key" autocomplete="current-password">
+    <button class="go" onclick="unlock()">เปิดดู</button>
+    <div class="err" id="gerr"></div>
+  </div>
+
+  <div id="main" hidden>
+    <header>
+      <h1>📊 ตัวเลขเว็บไซต์</h1>
+      <div style="font-size:12px;color:var(--muted)" id="stamp"></div>
+    </header>
+    <p class="sub" id="range"></p>
+    <div class="ranges" id="ranges"></div>
+    <div id="body"></div>
+  </div>
+</div>
+
+<script>
+/* ---------------------------------------------------------------------------
+   Reads /api/stats. Everything drawn here is either a counter the site keeps
+   (traffic) or something worked out from the order records (sales) — see
+   api/stats.js for why those two halves have different amounts of history.
+
+   Charts are hand-drawn SVG on purpose: this page has to load on Bryan's phone
+   over 5G, and a charting library would be a bigger download than the whole
+   page. --------------------------------------------------------------------*/
+let KEY = localStorage.getItem('dankStaffKey') || '';
+let DAYS = 7;
+let LAST = null;
+
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[<>&"]/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c]));
+const n = v => (Number(v) || 0).toLocaleString('en-US');
+const baht = v => '฿' + n(Math.round(Number(v) || 0));
+const pct = (a, b) => b > 0 ? Math.round((a / b) * 100) : 0;
+
+function unlock(){
+  const k = $('#k').value.trim();
+  if(!k){ $('#gerr').textContent = 'ใส่ key ก่อนนะครับ'; return; }
+  KEY = k; localStorage.setItem('dankStaffKey', k);
+  load();
+}
+
+async function load(){
+  try{
+    const r = await fetch('/api/stats?days=' + DAYS, {
+      headers:{ 'X-Staff-Key': KEY, 'Authorization': 'Bearer ' + KEY }
+    });
+    if(r.status === 401){ $('#gerr').textContent = 'Key ไม่ถูก ลองใหม่'; show(false); return; }
+    if(r.status === 503){ $('#gerr').textContent = 'ยังไม่ได้ตั้ง STAFF_KEY บน Vercel'; show(false); return; }
+    if(!r.ok) throw new Error('HTTP ' + r.status);
+    LAST = await r.json();
+    show(true);
+    render();
+  }catch(e){
+    $('#gerr').textContent = 'โหลดไม่ได้: ' + e.message;
+    show(false);
+  }
+}
+function show(ok){ $('#gate').hidden = ok; $('#main').hidden = !ok; }
+
+const RANGES = [[1,'วันนี้'],[7,'7 วัน'],[30,'30 วัน'],[90,'90 วัน']];
+function renderRanges(){
+  $('#ranges').innerHTML = RANGES.map(([d,l]) =>
+    `<button class="rg ${d===DAYS?'on':''}" onclick="setDays(${d})">${l}</button>`).join('');
+}
+function setDays(d){ DAYS = d; renderRanges(); $('#body').innerHTML = '<div class="empty">กำลังโหลด…</div>'; load(); }
+
+/* ---- the charts --------------------------------------------------------- */
+
+/* Day-by-day, two series. Two lines rather than two axes: views and visits are
+   both counts of the same thing, so they share one scale honestly. */
+function lineChart(days, series){
+  /* A viewBox scales to the container's width, so one fixed ratio renders a
+     680x170 chart as 300x75 on a phone — too flat to read a trend off. The
+     narrow layout gets its own, taller box instead. */
+  const narrow = window.innerWidth < 640;
+  const W = narrow ? 360 : 680, H = narrow ? 200 : 170;
+  const P = {t:10, r:12, b:22, l:38};
+  const all = series.flatMap(s => s.data);
+  const max = Math.max(1, ...all);
+  const top = niceMax(max);
+  const iw = W - P.l - P.r, ih = H - P.t - P.b;
+  const x = i => P.l + (days.length <= 1 ? iw/2 : (i * iw) / (days.length - 1));
+  const y = v => P.t + ih - (v / top) * ih;
+
+  const ticks = [0, top/2, top].map(v => Math.round(v));
+  const grid = ticks.map(v =>
+    `<line class="gl" x1="${P.l}" y1="${y(v)}" x2="${W-P.r}" y2="${y(v)}"/>
+     <text class="ax" x="${P.l-7}" y="${y(v)+3.5}" text-anchor="end">${n(v)}</text>`).join('');
+
+  /* Label the ends only — a number on every point is unreadable, and the
+     tooltip and the table below carry the rest. */
+  const paths = series.map(s => {
+    const d = s.data.map((v,i) => `${i?'L':'M'}${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(' ');
+    const last = s.data.length - 1;
+    return `<path d="${d}" fill="none" stroke="${s.color}" stroke-width="2"
+              stroke-linejoin="round" stroke-linecap="round"/>
+            <circle class="dot" cx="${x(last)}" cy="${y(s.data[last])}" r="4.5" fill="${s.color}"/>`;
+  }).join('');
+
+  const step = Math.max(1, Math.ceil(days.length / (narrow ? 4 : 6)));
+  const xlab = days.map((d,i) => showTick(i, days.length, step)
+    ? `<text class="ax" x="${x(i)}" y="${H-6}" text-anchor="middle">${d.slice(5)}</text>` : '').join('');
+
+  /* One hit strip per day, full height, so the tooltip is reachable on a phone
+     without hitting a 4px dot. */
+  const hit = days.map((d,i) => {
+    const w = days.length > 1 ? iw/(days.length-1) : iw;
+    const title = `${d}\n` + series.map(s => `${s.name}: ${n(s.data[i])}`).join('\n');
+    return `<rect x="${x(i)-w/2}" y="${P.t}" width="${w}" height="${ih}" fill="transparent"><title>${esc(title)}</title></rect>`;
+  }).join('');
+
+  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="ยอดเข้าชมรายวัน">${grid}${paths}${xlab}${hit}</svg>`;
+}
+
+/* One measure, one hue — a column per day. */
+function colChart(days, data, color, fmt){
+  const narrow = window.innerWidth < 640;
+  const W = narrow ? 360 : 680, H = narrow ? 175 : 150;
+  const P = {t:10, r:12, b:22, l:44};
+  const top = niceMax(Math.max(1, ...data));
+  const iw = W - P.l - P.r, ih = H - P.t - P.b;
+  const band = iw / Math.max(1, days.length);
+  const bw = Math.min(24, band - 2);           // ≤24px, and 2px of air in the band
+  const y = v => P.t + ih - (v / top) * ih;
+
+  const grid = [0, top/2, top].map(v =>
+    `<line class="gl" x1="${P.l}" y1="${y(v)}" x2="${W-P.r}" y2="${y(v)}"/>
+     <text class="ax" x="${P.l-7}" y="${y(v)+3.5}" text-anchor="end">${fmt(Math.round(v))}</text>`).join('');
+
+  const bars = data.map((v,i) => {
+    const cx = P.l + band*i + band/2;
+    const h = Math.max(0, P.t + ih - y(v));
+    if(h <= 0) return `<rect x="${cx-bw/2}" y="${P.t+ih-1}" width="${bw}" height="1" fill="${color}" opacity=".25"><title>${esc(days[i])}: ${fmt(v)}</title></rect>`;
+    /* 4px rounded cap, square at the baseline — a path, because rx on a rect
+       rounds all four corners and detaches the bar from its baseline. */
+    const r = Math.min(4, h, bw/2), yt = y(v);
+    const d = `M${cx-bw/2},${P.t+ih} L${cx-bw/2},${yt+r} Q${cx-bw/2},${yt} ${cx-bw/2+r},${yt}
+               L${cx+bw/2-r},${yt} Q${cx+bw/2},${yt} ${cx+bw/2},${yt+r} L${cx+bw/2},${P.t+ih} Z`;
+    return `<path d="${d}" fill="${color}"><title>${esc(days[i])}: ${fmt(v)}</title></path>`;
+  }).join('');
+
+  const step = Math.max(1, Math.ceil(days.length / (narrow ? 4 : 6)));
+  const xlab = days.map((d,i) => showTick(i, days.length, step)
+    ? `<text class="ax" x="${P.l + band*i + band/2}" y="${H-6}" text-anchor="middle">${d.slice(5)}</text>` : '').join('');
+
+  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="รายวัน">${grid}${bars}${xlab}</svg>`;
+}
+
+/* Every `step`th day gets a date, and the last day always does — it is the one
+   the reader looks for. Those two rules collided: with 14 days and a step of 3,
+   the label for day 12 landed on top of the label for day 13 and printed
+   "08-2108-22". A stepped tick too close to the end now yields to it. */
+function showTick(i, len, step){
+  const last = len - 1;
+  if(i === last) return true;
+  if(i % step !== 0) return false;
+  return last - i >= Math.max(2, step * 0.75);
+}
+
+function niceMax(v){
+  if(v <= 5) return 5;
+  const mag = Math.pow(10, Math.floor(Math.log10(v)));
+  return Math.ceil(v / (mag/2)) * (mag/2);
+}
+
+/* ---- the page ----------------------------------------------------------- */
+function render(){
+  const d = LAST;
+  const t = d.traffic || {};
+  const s = d.sales;
+  const days = t.days || [];
+  const views = (t.series && t.series.views) || days.map(()=>0);
+  const visits = (t.series && t.series.visits) || days.map(()=>0);
+  const tot = t.totals || {};
+  const orders = s ? s.orders : 0;
+
+  $('#stamp').textContent = 'อัปเดต ' + new Date(d.at).toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'});
+  $('#range').textContent = `${d.from} → ${d.to}`;
+
+  const noTraffic = !views.some(v => v > 0);
+
+  const kpis = [
+    ['คนเข้าเว็บ', n(tot.visits||0), 'visits · ครั้งที่เปิดเว็บ', true],
+    ['หน้าที่เปิด', n(tot.views||0), 'page views'],
+    ['ออเดอร์', n(orders), s && s.customers ? n(s.customers)+' เบอร์' : ''],
+    ['ยอดขาย', s ? baht(s.revenue) : '—', s && s.average ? 'เฉลี่ย '+baht(s.average)+'/บิล' : '', true],
+    ['คุยกับ AI', n(tot.chats||0), 'ครั้งที่เปิดแชท'],
+    ['หมุนวงล้อ', n(tot.spins||0), 'spins'],
+  ];
+
+  let html = '';
+
+  if(noTraffic){
+    html += `<div class="warn">ยังไม่มีตัวเลขคนเข้าเว็บในช่วงนี้ — การนับเพิ่งเริ่มตอนอัปเดตล่าสุด
+      เลยยังไม่มีข้อมูลย้อนหลัง ส่วน <b>ออเดอร์กับยอดขายมีครบ</b> ตั้งแต่บิลแรก
+      เพราะอ่านจากออเดอร์จริงที่บันทึกไว้อยู่แล้ว</div>`;
+  } else if(d.countingSince){
+    html += `<div class="warn">เริ่มนับคนเข้าเว็บตั้งแต่ <b>${esc(d.countingSince)}</b> — ก่อนหน้านั้นไม่มีข้อมูล
+      (ออเดอร์กับยอดขายมีครบตั้งแต่บิลแรก)</div>`;
+  }
+  if(s && s.truncated){
+    html += `<div class="warn">ออเดอร์เยอะเกินที่อ่านได้ในครั้งเดียว ตัวเลขนี้เป็น<b>ขั้นต่ำ</b> ของจริงมากกว่านี้</div>`;
+  }
+
+  html += `<div class="kpis">${kpis.map(([lab,val,note,hero]) => `
+    <div class="kpi${hero?' hero':''}">
+      <div class="lab">${esc(lab)}</div>
+      <div class="val">${esc(val)}</div>
+      ${note ? `<div class="note">${esc(note)}</div>` : ''}
+    </div>`).join('')}</div>`;
+
+  /* Traffic — two series, so a legend is not optional. */
+  html += `<div class="card">
+    <h2>คนเข้าเว็บ รายวัน</h2>
+    <div class="cs">เส้นบน = จำนวนหน้าที่เปิด · เส้นล่าง = จำนวนครั้งที่มีคนเข้ามาเยี่ยม</div>
+    <div class="legend">
+      <span class="lg"><i style="background:var(--s1)"></i>หน้าที่เปิด (views)</span>
+      <span class="lg"><i style="background:var(--s2)"></i>คนเข้า (visits)</span>
+    </div>
+    ${lineChart(days, [
+      {name:'หน้าที่เปิด', data:views,  color:'#1faa63'},
+      {name:'คนเข้า',      data:visits, color:'#3987e5'},
+    ])}
+    ${tableView(days, [['หน้าที่เปิด',views],['คนเข้า',visits]])}
+  </div>`;
+
+  /* Sales — money and order count are different scales, so they are two
+     charts side by side, never two axes on one. */
+  if(s){
+    const rev = s.perDay.map(x => x.revenue);
+    const ord = s.perDay.map(x => x.orders);
+    html += `<div class="two">
+      <div class="card">
+        <h2>ยอดขาย รายวัน</h2>
+        <div class="cs">บาท · จากออเดอร์ที่ลูกค้าสั่งผ่านเว็บ</div>
+        ${colChart(days, rev, '#1faa63', v => '฿'+n(v))}
+      </div>
+      <div class="card">
+        <h2>จำนวนออเดอร์ รายวัน</h2>
+        <div class="cs">กี่บิล</div>
+        ${colChart(days, ord, '#1faa63', v => n(v))}
+      </div>
+    </div>`;
+  }
+
+  /* Funnel — an ordered scale, so one hue and each step measured against the
+     step above it, not against the biggest. */
+  const steps = [
+    ['คนเข้าเว็บ', tot.visits||0],
+    ['ใส่ตะกร้า', tot.carts||0],
+    ['กดสั่งซื้อ', tot.checkouts||0],
+    ['สั่งสำเร็จ', orders],
+  ];
+  const topStep = Math.max(1, ...steps.map(x => x[1]));
+  html += `<div class="card funnel">
+    <h2>ลูกค้าเดินไปถึงไหน</h2>
+    <div class="cs">จากคนที่เข้ามา มีกี่คนที่ใส่ตะกร้า แล้วกี่คนที่สั่งจริง</div>
+    ${steps.map(([nm,v],i) => `
+      <div class="row">
+        <span class="nm">${esc(nm)}</span>
+        <span class="tr"><i style="width:${(v/topStep*100).toFixed(1)}%"></i></span>
+        <span class="vv">${n(v)} ${i ? `<span class="pc">${pct(v, steps[i-1][1])}%</span>` : ''}</span>
+      </div>`).join('')}
+    ${noTraffic ? '<div class="empty">สามขั้นแรกต้องรอให้มีคนเข้าเว็บหลังอัปเดตนี้ก่อน</div>' : ''}
+  </div>`;
+
+  if(s && s.top && s.top.length){
+    const mx = Math.max(...s.top.map(p => p.qty));
+    html += `<div class="card">
+      <h2>สินค้าขายดี</h2>
+      <div class="cs">นับจากออเดอร์ในช่วงนี้</div>
+      <table><thead><tr><th>สินค้า</th><th></th><th class="n">ชิ้น</th><th class="n">เงิน</th></tr></thead><tbody>
+      ${s.top.map(p => `<tr>
+        <td>${esc(p.name)}</td>
+        <td class="barcell"><i style="width:${Math.max(4, p.qty/mx*100)}%"></i></td>
+        <td class="n">${n(p.qty)}</td>
+        <td class="n">${baht(p.revenue)}</td>
+      </tr>`).join('')}
+      </tbody></table>
+    </div>`;
+  }
+
+  if(s){
+    html += `<div class="two">
+      ${miniTable('จ่ายด้วยอะไร', s.payments, 'บิล')}
+      ${miniTable('รับของยังไง', s.fulfilment, 'บิล')}
+    </div>`;
+  }
+
+  const pg = t.pages || {};
+  const pgRows = Object.entries(pg).filter(([,v]) => v > 0).sort((a,b) => b[1]-a[1]);
+  if(pgRows.length){
+    html += `<div class="card"><h2>หน้าไหนคนเปิดบ่อย</h2>
+      <table><tbody>${pgRows.map(([k,v]) =>
+        `<tr><td>${esc(k)}</td><td class="n">${n(v)}</td></tr>`).join('')}</tbody></table></div>`;
+  }
+
+  html += `<div class="card"><h2>สมาชิก</h2>
+    <div class="cs">คนที่สมัครสมาชิกไว้ทั้งหมด (ไม่ใช่แค่ช่วงนี้)</div>
+    <div style="font-size:27px;font-weight:800;color:var(--brand)">${s ? n(s.members) : '—'}</div></div>`;
+
+  html += `<p class="sub" style="margin-top:16px">
+    ตัวเลขคนเข้าเว็บนับแบบไม่เก็บข้อมูลส่วนตัวเลย — ไม่มีคุกกี้ ไม่มี IP ไม่รู้ว่าใครเป็นใคร
+    เก็บแค่ว่า “วันนี้มีคนเปิดกี่ครั้ง” · <a href="/staff.html">← กลับหน้าพนักงาน</a></p>`;
+
+  $('#body').innerHTML = html;
+}
+
+function miniTable(title, rows, unit){
+  if(!rows || !rows.length) return `<div class="card"><h2>${esc(title)}</h2><div class="empty">ยังไม่มีข้อมูล</div></div>`;
+  return `<div class="card"><h2>${esc(title)}</h2>
+    <table><tbody>${rows.map(r =>
+      `<tr><td>${esc(r.name)}</td><td class="n">${n(r.n)} ${esc(unit)}</td></tr>`).join('')}</tbody></table></div>`;
+}
+
+/* Every chart keeps a table behind it, so nothing on this page is readable
+   only by telling two colours apart. */
+function tableView(days, series){
+  return `<details class="tv"><summary>ดูเป็นตาราง</summary>
+    <table><thead><tr><th>วันที่</th>${series.map(([nm]) => `<th class="n">${esc(nm)}</th>`).join('')}</tr></thead>
+    <tbody>${days.map((d,i) => `<tr><td>${esc(d)}</td>${series.map(([,arr]) => `<td class="n">${n(arr[i])}</td>`).join('')}</tr>`).join('')}</tbody>
+    </table></details>`;
+}
+
+renderRanges();
+if(KEY) load(); else show(false);
+
+/* Rotating the phone crosses the narrow/wide boundary, and the charts are
+   sized at draw time — so redraw, but only when the boundary was actually
+   crossed. Repainting on every pixel of a desktop drag would be waste. */
+let wasNarrow = window.innerWidth < 640, rzT = null;
+addEventListener('resize', () => {
+  clearTimeout(rzT);
+  rzT = setTimeout(() => {
+    const now = window.innerWidth < 640;
+    if(now !== wasNarrow){ wasNarrow = now; if(LAST) render(); }
+  }, 180);
+});
+</script>
+</body>
+</html>

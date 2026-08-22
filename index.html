@@ -1742,7 +1742,7 @@ tiers:{t:"Membership has its perks \ud83d\udc9a",b:`
 <div class="modal" id="infoModal"><div class="modal-card" style="max-width:520px" id="infoCard"></div></div>
 <div class="ck-bar" id="ckBar" role="dialog" aria-live="polite" aria-label="Cookie choices">
   <div class="ck-in">
-    <p class="ck-tx"><b>🍪 Cookies.</b> We keep your cart, your language and whether you are a member on this device — that part the shop cannot work without. May we also count anonymous visits to see which strains people look at?
+    <p class="ck-tx"><b>🍪 Cookies.</b> We keep your cart, your language and whether you are a member on this device — that part the shop cannot work without. Nothing here identifies you and nothing is sold or shared.
       <a href="#" onclick="openPrivacy();return false">What we keep</a></p>
     <div class="ck-btns">
       <button type="button" class="ck-no" onclick="ckChoose(false)">Essential only</button>
@@ -2132,6 +2132,43 @@ let crmTimer=null;   // drives the always-on members pop-up (keeps re-inviting u
 const LS={ get(k,d){ try{ const v=localStorage.getItem("dank_"+k); return v?JSON.parse(v):d; }catch(e){ return d; } },
            set(k,v){ try{ localStorage.setItem("dank_"+k,JSON.stringify(v)); }catch(e){} } };
 function saveCart(){ LS.set("cart",cart); }
+
+/* ---- counting how busy the shop is -----------------------------------------
+   Sends the name of a thing that happened and nothing else. No id, no cart,
+   no product, nothing that could be tied back to a person: the server adds 1
+   to a number for today and there is no way to take it apart afterwards. See
+   api/_analytics.js.
+
+   sendBeacon rather than fetch, so it survives the customer navigating away
+   mid-request — a page view that is only counted when the visitor lingers is
+   a page view that under-counts exactly the people who bounced. Wrapped
+   because a browser with the API missing, or an ad blocker refusing the call,
+   must lose a statistic and nothing else. */
+let statSent = {};
+function stat(...events){
+  try{
+    const fresh = events.filter(e => !statSent[e]);
+    if(!fresh.length) return;
+    fresh.forEach(e => { statSent[e] = 1; });
+    /* A visit is the first page of a browsing session, a view is every page.
+       sessionStorage rather than a cookie: it dies with the tab, it is never
+       sent anywhere, and when it is unavailable the visit is simply not
+       counted rather than counted twice. */
+    const body = JSON.stringify({ e: fresh, pg: "home" });
+    if(navigator.sendBeacon){
+      navigator.sendBeacon("/api/stats", new Blob([body], {type:"application/json"}));
+    } else {
+      fetch("/api/stats", {method:"POST", headers:{"Content-Type":"application/json"}, body, keepalive:true}).catch(()=>{});
+    }
+  }catch(e){}
+}
+function statPageOpen(){
+  let firstOfVisit = false;
+  try{
+    if(!sessionStorage.getItem("dank_seen")){ sessionStorage.setItem("dank_seen","1"); firstOfVisit = true; }
+  }catch(e){ /* private window: count the view, skip the visit */ }
+  stat(...(firstOfVisit ? ["views","visits"] : ["views"]));
+}
 /* memberOn is only ever honoured for an actual member. Membership can end (or the
    flag can be left behind by an older build), and without this check the shop
    would go on charging member prices to someone who is no longer one. */
@@ -2892,8 +2929,8 @@ function openPrivacy(){
     +'<div style="padding:2px 20px 24px;font-size:14px;line-height:1.65;color:var(--muted)">'
     +'<div class="pd-section-t">Essential — always on</div>'
     +'<p style="margin:0 0 12px">Your cart, your language, whether you are a member, whether you have answered the age question, and any coupon you have won. Kept in this browser only. We do not send it anywhere and it is not used to identify you.</p>'
-    +'<div class="pd-section-t">Optional — only if you allow it</div>'
-    +'<p style="margin:0 0 12px">Anonymous counts of which pages and strains get looked at, so we stock what people actually want. No names, no numbers, nothing that points back at a person.</p>'
+    +'<div class="pd-section-t">What the shop counts</div>'
+    +'<p style="margin:0 0 12px">We add 1 to a number when a page is opened, so we can see how busy the site is and stock what people actually want. That is the whole of it: a total per day, kept on our own server. No cookie, no advertising id, no IP address, nothing tied to you. Two people and one person visiting twice look exactly the same to us afterwards, and there is no way to unpick a total back into the visits that made it.</p>'
     +'<div class="pd-section-t">Changing your mind</div>'
     +'<p style="margin:0 0 14px">Press the button below to be asked again, or clear this site\'s data in your browser to erase everything above.</p>'
     +'<button class="btn btn-ghost btn-block" onclick="ckReset()">Ask me again</button></div>';
@@ -4046,7 +4083,7 @@ function repriceCart(){
     if(isFlower(p)){ const t=p.priceTiers&&p.priceTiers.find(t=>t.label===c.tierLabel); if(t) c.price=memberMode?(t.member||t.price):t.price; }
     else { c.price=memberMode?(p.member!=null?p.member:p.price):p.price; } });
 }
-function addToCart(p,tier){
+function addToCart(p,tier){ stat("carts");
   if(!tier&&p&&p.priceTiers&&p.priceTiers.length&&!(+p.price>0)) tier=p.priceTiers[0];   // tier-only product — use first size so price is never NaN
   const key=p.id+(tier?("|"+tier.label):"");
   const price=memberMode?(tier?(tier.member||tier.price):(p.member!=null?p.member:p.price)):(tier?tier.price:p.price);
@@ -4150,7 +4187,7 @@ function renderCart(){
 }
 
 /* ---- Checkout ---- */
-function openCheckout(){
+function openCheckout(){ stat("checkouts");
   /* Bonus lines are settled BEFORE the empty-cart test. Removing the last paid line
      leaves its free grams behind, and testing cart.length first let a cart that is
      really empty open the checkout on "0 items · ฿0" and POST an order the API then
@@ -4655,7 +4692,7 @@ function setAvatar(s){ const el=$("#aiAvatarImg"); if(!el)return; const src=av(s
 function avatarReply(){ const s=aiNextAvatar||"happy"; aiNextAvatar=null; setAvatar(s); clearTimeout(window._avT); window._avT=setTimeout(()=>setAvatar("neutral"), s==="celebrate"?3200:2400); }
 function showNudge(){ if(aiOpened)return; $("#aiNudge").classList.remove("hidden"); }
 function dismissNudge(e){ e.stopPropagation(); $("#aiNudge").classList.add("hidden"); }
-function openAI(seed){
+function openAI(seed){ stat("chats");
   aiOpened=true; $("#aiNudge").classList.add("hidden"); $("#aiPanel").classList.add("show");
   setAvatar("welcome"); clearTimeout(window._avT); window._avT=setTimeout(()=>setAvatar("neutral"),1900);
   if(!aiHistory.length){
@@ -5835,7 +5872,7 @@ function spinSyncBtn(){
   if(n) n.textContent=ok?"One free spin a day — free joints & up to 15% off":("Next spin in "+spinNextIn());
 }
 
-function ringSpin(){
+function ringSpin(){ stat("spins");
   if(spinning||!ringItems.length||!spinReady()) return;
   const prize=spinPrize(); if(!prize) return;
   spinning=true;
@@ -6201,7 +6238,7 @@ function fxMeasure(){
   ringLayout();
 }
 
-applyConfig(); loadPersisted(); loadData(); refreshWallet(); refreshFreeGifts(); refreshBoxGifts(); refreshPayGW(); handlePayReturn(); loadAdmin();
+applyConfig(); loadPersisted(); statPageOpen(); loadData(); refreshWallet(); refreshFreeGifts(); refreshBoxGifts(); refreshPayGW(); handlePayReturn(); loadAdmin();
 mount3D();
 
 /* ---- arriving from Build Your Joint ----

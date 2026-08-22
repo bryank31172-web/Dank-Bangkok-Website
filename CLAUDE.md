@@ -177,6 +177,37 @@ folded to `0`.
   hero text, all promo slides and the shop-tour links; publishes with
   `💾 Save changes`. Stored in `admin:overrides` under `site`.
 
+## Website numbers — `analytics.html`
+
+Bryan's own dashboard: **`/analytics.html`**, staff key, linked from the
+📊 Numbers button in the staff console header. Two halves, with different
+amounts of history, which the page says out loud rather than letting a flat
+line read as "no customers":
+
+- **Traffic** comes from counters `api/_analytics.js` keeps — views, visits,
+  baskets started, checkouts opened, chats, spins, and views per page. Only
+  exists from the day it shipped, because nobody was counting before.
+- **Sales** is worked out from the order records the shop already writes, the
+  same way `/api/sales` does. Complete from the first ever order.
+
+The counters are integers per day and nothing else — `an:2026-08-22:views`.
+No cookie, no IP, no device id, no per-person path. A total cannot be un-summed,
+which is the whole point: there is nothing in there to leak. The one thing that
+touches the device is a `sessionStorage` flag telling a second page view apart
+from a second visit, and when it is unavailable the visit is simply not counted.
+Because of that the cookie bar no longer asks permission to count — it would be
+asking about something that isn't happening. Do not "restore" that question
+without also gating `stat()` in `index.html`, or the bar starts lying.
+
+`/api/stats` POST is public (the visitors are the public) and rate limited to
+120 in 5 minutes per address; GET needs the staff key, because the same reply
+carries takings and customer counts.
+
+Chart colours are **not** the brand green and gold: that pair fails the
+colour-blindness check outright (ΔE 4.8 deuteran — a large minority of men
+cannot tell them apart). The validated pair is `#1faa63` and `#3987e5`. Brand
+green stays on headline numbers and buttons, which are text, not data.
+
 ## Open work, roughly in priority order
 
 As of 14 Aug 2026, `/api/health` reports every wired flag true and an empty
