@@ -46,6 +46,18 @@ mutation createOrder($order: OrderCreateOrderInput!) {
   }
 }`;
 
+/* Fields that make the order nicer to read in the admin but are not the order:
+   the sales-channel label, the discount code, the shipping line, the address.
+   If Shopify's schema disagrees with any of them on the version the shop is
+   pinned to, the whole mutation is refused and the sale never arrives — so a
+   rejection that looks like a schema complaint is retried without them.
+
+   This exists because the Shopify API cannot be reached from where this was
+   written to check field by field. Getting a plainer order is a much better
+   failure than getting none. */
+const OPTIONAL_FIELDS = ["sourceName", "discountCode", "shippingLines", "billingAddress", "customAttributes", "tags"];
+const SCHEMA_COMPLAINT = /is not defined|isn't defined|unknown field|invalid value|InvalidValue|not a valid|argument|coerce/i;
+
 /* Shopify rejects the whole order if the phone field is not a phone, and a
    table order carries "TABLE-T3" there on purpose (see api/order.js). So a
    value only travels as a phone number when it looks like one; otherwise it
@@ -137,6 +149,9 @@ export async function pushShopifyOrder(o, orderId, table) {
     /* Shopify keeps its own order numbering; this is the reference staff read
        back to a customer over the phone, so it goes where they will see it. */
     note: buildNote(o, orderId, table),
+    /* The admin's Orders list shows this in its own column, so staff can tell
+       a dankbangkok.com order from a dankbkk.com one without opening either. */
+    sourceName: "dankbangkok.com",
     tags,
     email: String(o.customer?.email || "").trim() || undefined,
     phone: phone || undefined,
@@ -171,6 +186,19 @@ export async function pushShopifyOrder(o, orderId, table) {
       : {}),
   };
 
+  const first = await send(order);
+  if (first.ok || !first.retryPlain) return first;
+
+  /* Second and last attempt: the order itself, nothing decorative. */
+  const plain = { ...order };
+  for (const f of OPTIONAL_FIELDS) delete plain[f];
+  console.error("shopify: retrying without", OPTIONAL_FIELDS.join(", "));
+  const second = await send(plain);
+  if (second.ok) return { ...second, degraded: true };
+  return second;
+}
+
+async function send(order) {
   try {
     const r = await fetch(`https://${store()}/admin/api/${API_VERSION}/graphql.json`, {
       method: "POST",
@@ -183,17 +211,21 @@ export async function pushShopifyOrder(o, orderId, table) {
     if (!r.ok) {
       /* 401 means the token is wrong or the app lacks write_orders; 404 means
          SHOPIFY_STORE is not the myshopify domain. Both are silent otherwise,
-         and both are the mistakes that actually happen. */
+         and both are the mistakes that actually happen. Neither is worth a
+         retry — the second attempt would fail identically. */
       console.error("shopify order failed:", r.status, r.statusText);
       return { ok: false, status: r.status };
     }
     const j = await r.json().catch(() => ({}));
     /* GraphQL answers 200 for a rejected mutation, so the body is where the
-       real outcome is. Without this a bad order looked like a success. */
-    const errs = j.errors || j.data?.orderCreate?.userErrors || [];
+       real outcome is. Without this a bad order looked like a success.
+       Top-level `errors` means the request itself was malformed — a bad field
+       name lands here; `userErrors` means Shopify understood and declined. */
+    const errs = (j.errors || []).concat(j.data?.orderCreate?.userErrors || []);
     if (errs.length) {
-      console.error("shopify order rejected:", JSON.stringify(errs).slice(0, 500));
-      return { ok: false, userErrors: errs };
+      const text = JSON.stringify(errs).slice(0, 500);
+      console.error("shopify order rejected:", text);
+      return { ok: false, userErrors: errs, retryPlain: SCHEMA_COMPLAINT.test(text) };
     }
     const made = j.data?.orderCreate?.order;
     if (!made) { console.error("shopify order: no order returned"); return { ok: false }; }

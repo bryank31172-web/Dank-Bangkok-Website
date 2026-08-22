@@ -209,6 +209,13 @@ As of 14 Aug 2026, `/api/health` reports every wired flag true and an empty
    inventory. Wiring stock would mean the two catalogues agreeing on every
    SKU, and a mismatch would fail the order rather than deliver it. It is a
    channel like the others: if Shopify is down the order is still taken.
+   Orders arrive in the admin's **Orders** list, tagged `dankbangkok.com` and
+   labelled with that sales channel — not in the Shopify **Inbox** app, which
+   is customer chat and has no way to receive an order. Staff track them on
+   Orders, or in the Shopify mobile app once Settings → Notifications → staff
+   order notifications is switched on. If Shopify's schema ever refuses one of
+   the decorative fields (`sourceName`, discount, shipping line, address), the
+   helper retries once with a plain order rather than losing the sale.
 6. Not set, so their features are dark: an AI key (AI chat and the LINE
    budtender — `api/_ai.js` accepts `GEMINI_API_KEY`, `GROQ_API_KEY`,
    `OPENROUTER_API_KEY`, `DEEPSEEK_API_KEY`, `OPENAI_API_KEY` or
