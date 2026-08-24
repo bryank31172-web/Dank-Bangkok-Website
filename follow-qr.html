@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml"/>
+<link rel="icon" href="/favicon.ico" sizes="32x32"/>
+<link rel="apple-touch-icon" href="/apple-touch-icon.png"/>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Follow-us QR posters · DANK BKK</title>
+<style>
+  /* Same palette and print conventions as table-qr.html, so the two printable
+     pages behave identically: dark on screen, white on paper, .noprint for the
+     controls, break-inside:avoid so nothing is cut in half by a page break. */
+  :root{ --bg:#0b100c; --panel:#121a13; --line2:#2a3a2e; --txt:#eaf3ec; --muted:#9db3a3; --green:#4ade80; --gold:#cfa85a; }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--txt);font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans Thai",sans-serif}
+  .wrap{max-width:1000px;margin:0 auto;padding:22px 16px 60px}
+  h1{font-size:22px;margin:0 0 6px}
+  p.lead{color:var(--muted);font-size:14px;line-height:1.6;margin:0 0 16px}
+  .sizes{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0 4px}
+  .sz{background:var(--panel);border:1px solid var(--line2);color:var(--muted);border-radius:999px;
+      padding:9px 17px;font-size:14px;font-weight:700;cursor:pointer;min-height:42px}
+  .sz.on{background:rgba(74,222,128,.15);border-color:var(--green);color:var(--green)}
+  .btn{display:inline-flex;align-items:center;gap:8px;margin-top:14px;padding:13px 20px;border-radius:12px;
+       font-weight:800;font-size:15px;border:none;cursor:pointer;
+       background:linear-gradient(135deg,var(--green),#16a34a);color:#04180d}
+  .note{background:rgba(207,168,90,.1);border:1px solid var(--gold);color:var(--gold);
+        border-radius:11px;padding:11px 13px;font-size:13px;line-height:1.6;margin-top:16px}
+
+  .sheet{display:grid;gap:14px;margin-top:24px}
+  /* One big poster for the wall, or a grid of small ones to cut into stickers. */
+  .sheet.poster{grid-template-columns:1fr}
+  .sheet.a5{grid-template-columns:repeat(2,1fr)}
+  .sheet.sticker{grid-template-columns:repeat(3,1fr)}
+
+  .card{background:#fff;color:#111;border-radius:16px;text-align:center;break-inside:avoid;
+        padding:26px 20px;display:flex;flex-direction:column;align-items:center;justify-content:center}
+  .card .brand{font-weight:900;letter-spacing:2px;font-size:13px;color:#137a44}
+  .card .head{font-weight:900;line-height:1.15;margin:6px 0 2px}
+  .card .sub{color:#444;line-height:1.45}
+  .card img{display:block;margin:14px auto 10px;width:100%;image-rendering:pixelated}
+  .card .foot{color:#666;line-height:1.5}
+
+  /* One rule per size instead of per element, so a size change cannot leave
+     the QR large and the caption tiny. */
+  .poster .card{padding:44px 30px}
+  .poster .head{font-size:34px} .poster .sub{font-size:17px}
+  .poster img{max-width:330px} .poster .foot{font-size:14px} .poster .brand{font-size:16px;letter-spacing:3px}
+
+  .a5 .head{font-size:23px} .a5 .sub{font-size:14px}
+  .a5 img{max-width:220px} .a5 .foot{font-size:12px}
+
+  .sticker .card{padding:16px 12px;border-radius:12px}
+  .sticker .head{font-size:15px} .sticker .sub{font-size:11px}
+  .sticker img{max-width:150px;margin:9px auto 6px} .sticker .foot{font-size:9.5px} .sticker .brand{font-size:10px}
+
+  @media print{
+    body{background:#fff}
+    .noprint{display:none !important}
+    .wrap{padding:0;max-width:none}
+    .sheet{gap:8px}
+    .card{border:1px dashed #bbb}
+    /* A poster is the page; the smaller sizes tile it. */
+    .sheet.poster .card{min-height:96vh}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="noprint">
+    <h1>🌿 Follow-us QR — print &amp; stick up</h1>
+    <p class="lead">
+      Customers scan this and land on your Linktree, where every channel already lives —
+      LINE, Instagram, the menu, everything. It is your Linktree's own QR, so every scan
+      is counted in your Linktree stats.
+      <br><br>
+      Pick a size, press Print, cut along the dashed lines.
+    </p>
+
+    <div class="sizes" id="sizes"></div>
+    <button class="btn" onclick="window.print()">🖨 พิมพ์ · Print</button>
+
+    <div class="note">
+      <b>ทดสอบก่อนพิมพ์เยอะ</b> — พิมพ์ 1 แผ่นแล้วลองสแกนด้วยกล้องมือถือจริงก่อน
+      โดยเฉพาะสติกเกอร์ใบเล็ก ถ้าเครื่องพิมพ์หมึกจาง QR เล็กอาจสแกนไม่ติด
+      <br><br>
+      Test one sheet with a real phone camera before printing a stack — a faint
+      printer and the smallest sticker size do not get along.
+    </div>
+  </div>
+
+  <div class="sheet poster" id="sheet"></div>
+</div>
+
+<script>
+/* The QR is a file, not something drawn here. table-qr.html generates its codes
+   with qr.js because each table needs a different link; this one is a single
+   fixed code that Linktree issued, and using their file is what keeps the scan
+   counting in Bryan's Linktree stats. Drawing our own would point at the same
+   Linktree but lose the numbers. */
+var QR = "assets/linktree-qr.png";
+
+var SIZES = [
+  { id:"poster",  label:"โปสเตอร์ A4 · 1 ใบ/หน้า", n:1,
+    head:"สแกนติดตามเรา", sub:"Scan to follow DANK",
+    foot:"LINE · Instagram · เมนู · โปรโมชั่น — ครบในที่เดียว" },
+  { id:"a5",      label:"A5 · 2 ใบ/หน้า", n:2,
+    head:"สแกนติดตามเรา", sub:"Scan to follow DANK",
+    foot:"LINE · Instagram · เมนู · โปรโมชั่น" },
+  { id:"sticker", label:"สติกเกอร์เล็ก · 9 ใบ/หน้า", n:9,
+    head:"สแกนติดตามเรา", sub:"Scan to follow", foot:"DANK Cannabis Club" },
+];
+var current = "poster";
+
+function build(){
+  var s = SIZES.filter(function(x){ return x.id === current; })[0];
+  var sheet = document.getElementById("sheet");
+  sheet.className = "sheet " + s.id;
+  var one =
+    '<div class="card">' +
+      '<div class="brand">DANK CANNABIS CLUB</div>' +
+      '<div class="head">' + s.head + '</div>' +
+      '<div class="sub">' + s.sub + '</div>' +
+      '<img src="' + QR + '" alt="QR code — scan to open the DANK Linktree">' +
+      '<div class="foot">' + s.foot + '</div>' +
+    '</div>';
+  var out = "";
+  for(var i = 0; i < s.n; i++) out += one;
+  sheet.innerHTML = out;
+
+  document.getElementById("sizes").innerHTML = SIZES.map(function(x){
+    return '<button class="sz' + (x.id === current ? ' on' : '') +
+           '" onclick="pick(\'' + x.id + '\')">' + x.label + '</button>';
+  }).join("");
+}
+function pick(id){ current = id; build(); }
+build();
+</script>
+</body>
+</html>

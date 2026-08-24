@@ -109,6 +109,26 @@ size). Strain cards go in `assets/strains/` (letterboxed, never cropped) and are
 marked `card: true` in `strain-db.json`, which makes their THC/type/flavour
 override the POS rather than fill a gap.
 
+## Printable pages
+
+Three pages exist only to be printed, and share their conventions — dark on
+screen, white on paper, `.noprint` on the controls, `break-inside:avoid` on each
+card:
+
+- `table-qr.html` — table ordering cards, T1–T6 and the two bars.
+- `labels.html` — product QR labels.
+- `follow-qr.html` — "scan to follow" posters and stickers, in three sizes.
+
+The first two **draw** their codes with `qr.js` locally: a card that phones a QR
+web service prints blank the day that service is slow or gone, and it hands
+every link to a third party. `follow-qr.html` is the exception — it uses
+`assets/linktree-qr.png`, the code Linktree itself issued, because it points at
+`linktr.ee/qr/<uuid>` rather than `linktr.ee/dankbkk` and that is what makes the
+scans show up in Bryan's Linktree stats. Redrawing it would reach the same page
+and lose the numbers.
+
+Anything printed must be scan-tested after a layout change, not just looked at.
+
 ## Content rules
 
 Product facts may come from leafly.com and weed.com, but **their photographs and

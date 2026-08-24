@@ -1573,7 +1573,22 @@ shops:{t:"All DANK shops 📍",b:`
     <a class="btn btn-ghost btn-block" style="justify-content:space-between;text-align:left" target="_blank" rel="noopener noreferrer" href="https://maps.app.goo.gl/QgbvTmwEQ3GzFvVo8?g_st=ic"><span>📍 <b>DANK Speakeasy — Pattanakarn</b><br><small style="color:var(--muted)">Phatthanakan 1 Alley · Bangkok 10250</small></span><span>Maps ↗</span></a>
   </div>
   <a class="btn btn-primary btn-block" href="tel:+66841620610">📞 Call +66 84 162 0610</a>
-  <a class="btn btn-ghost btn-block" style="margin-top:8px" target="_blank" rel="noopener noreferrer" href="https://linktr.ee/dankbkk">💬 Message DANK</a>`},
+  <a class="btn btn-ghost btn-block" style="margin-top:8px" target="_blank" rel="noopener noreferrer" href="https://linktr.ee/dankbkk">💬 Message DANK</a>
+  <!-- The button above is what anyone reading this on their own phone will use;
+       nobody can scan the screen they are holding. The code is here for the
+       other case: showing it to the person next to you, or screenshotting it to
+       send on. Loads lazily because it is below the fold of this popup. -->
+  <div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--line2);text-align:center">
+    <div style="color:var(--muted);font-size:12.5px;margin-bottom:10px">
+      ให้เพื่อนสแกน · Show a friend
+    </div>
+    <img src="assets/linktree-qr.png" alt="QR code — scan to open the DANK Linktree"
+         loading="lazy" width="672" height="672"
+         style="width:150px;height:auto;max-width:60%;border-radius:10px;background:#fff;padding:7px">
+    <div style="color:var(--muted);font-size:11.5px;margin-top:8px">
+      LINE · Instagram · เมนู · โปรโมชั่น
+    </div>
+  </div>`},
 box:{t:"Build your DANK box 📦",b:`
   <p style="color:var(--muted);font-size:14px;margin:0 0 12px">A dark-walnut DANK box packed with 28 grams — pick every strain yourself, or tell us your vibe and our budtenders curate it.</p>
   <div style="background:var(--panel2);border:1px solid var(--line2);border-radius:12px;padding:12px 14px;margin-bottom:12px">
