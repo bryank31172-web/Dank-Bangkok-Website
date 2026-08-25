@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml"/>
+<link rel="icon" href="/favicon.ico" sizes="32x32"/>
+<link rel="apple-touch-icon" href="/apple-touch-icon.png"/>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Review QR posters · DANK BKK</title>
+<style>
+  /* Same conventions as table-qr.html and follow-qr.html: dark on screen,
+     white on paper, .noprint on the controls, break-inside:avoid per card. */
+  :root{ --bg:#0b100c; --panel:#121a13; --panel2:#0a0f0b; --line2:#2a3a2e;
+         --txt:#eaf3ec; --muted:#9db3a3; --green:#4ade80; --gold:#cfa85a; }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--txt);
+       font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans Thai",sans-serif}
+  .wrap{max-width:1000px;margin:0 auto;padding:22px 16px 60px}
+  h1{font-size:22px;margin:0 0 6px}
+  p.lead{color:var(--muted);font-size:14px;line-height:1.6;margin:0 0 16px}
+  label{display:block;font-size:12px;color:var(--muted);margin:0 0 5px}
+  input{width:100%;background:var(--panel);border:1px solid var(--line2);color:var(--txt);
+        padding:11px 12px;border-radius:10px;font-size:14px;outline:none}
+  input:focus{border-color:var(--green)}
+  .branch{display:grid;grid-template-columns:1fr 2fr;gap:10px;margin-bottom:10px;align-items:end}
+  @media (max-width:720px){ .branch{grid-template-columns:1fr} }
+  .row-tools{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+  .btn{display:inline-flex;align-items:center;gap:8px;padding:12px 19px;border-radius:12px;
+       font-weight:800;font-size:15px;border:none;cursor:pointer;min-height:44px;
+       background:linear-gradient(135deg,var(--green),#16a34a);color:#04180d}
+  .btn.ghost{background:var(--panel);border:1px solid var(--line2);color:var(--txt);font-weight:700}
+  .sizes{display:flex;gap:8px;flex-wrap:wrap;margin:16px 0 2px}
+  .sz{background:var(--panel);border:1px solid var(--line2);color:var(--muted);border-radius:999px;
+      padding:9px 17px;font-size:14px;font-weight:700;cursor:pointer;min-height:42px}
+  .sz.on{background:rgba(74,222,128,.15);border-color:var(--green);color:var(--green)}
+  .note{background:rgba(207,168,90,.1);border:1px solid var(--gold);color:var(--gold);
+        border-radius:11px;padding:12px 14px;font-size:13px;line-height:1.65;margin-top:16px}
+  .note b{color:#e8d9a8}
+
+  .sheet{display:grid;gap:14px;margin-top:24px}
+  .sheet.poster{grid-template-columns:1fr}
+  .sheet.a5{grid-template-columns:repeat(2,1fr)}
+  .sheet.sticker{grid-template-columns:repeat(3,1fr)}
+
+  .card{background:#fff;color:#111;border-radius:16px;text-align:center;break-inside:avoid;
+        padding:26px 20px;display:flex;flex-direction:column;align-items:center;justify-content:center}
+  .card .brand{font-weight:900;letter-spacing:2px;color:#137a44}
+  .card .head{font-weight:900;line-height:1.2;margin:7px 0 2px}
+  .card .sub{color:#444;line-height:1.45}
+  .card .stars{color:#e0a800;letter-spacing:3px;margin-top:8px}
+  .card img{display:block;margin:13px auto 9px;width:100%;image-rendering:pixelated}
+  .card .who{font-weight:800;color:#137a44}
+  .card .foot{color:#666;line-height:1.5}
+
+  .poster .card{padding:44px 30px}
+  .poster .brand{font-size:16px;letter-spacing:3px}
+  .poster .head{font-size:33px} .poster .sub{font-size:17px} .poster .stars{font-size:22px}
+  .poster img{max-width:320px} .poster .who{font-size:19px} .poster .foot{font-size:14px}
+
+  .a5 .brand{font-size:12px}
+  .a5 .head{font-size:22px} .a5 .sub{font-size:13.5px} .a5 .stars{font-size:17px}
+  .a5 img{max-width:215px} .a5 .who{font-size:15px} .a5 .foot{font-size:11.5px}
+
+  .sticker .card{padding:16px 12px;border-radius:12px}
+  .sticker .brand{font-size:9.5px;letter-spacing:1.5px}
+  .sticker .head{font-size:14px} .sticker .sub{font-size:10.5px} .sticker .stars{font-size:12px}
+  .sticker img{max-width:145px;margin:9px auto 6px} .sticker .who{font-size:11px} .sticker .foot{font-size:9px}
+
+  @media print{
+    body{background:#fff}
+    .noprint{display:none !important}
+    .wrap{padding:0;max-width:none}
+    .sheet{gap:8px}
+    .card{border:1px dashed #bbb}
+    .sheet.poster .card{min-height:96vh}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="noprint">
+    <h1>⭐ ป้ายขอรีวิว · Review QR</h1>
+    <p class="lead">
+      ใส่ชื่อสาขากับลิงก์ให้ตรงกัน แล้วกดพิมพ์ — แต่ละสาขาจะได้ป้ายของตัวเอง
+      รีวิวจะได้ลงถูกร้าน<br>
+      Name each branch next to its own link, pick a size, print, cut.
+    </p>
+
+    <div id="branches"></div>
+    <div class="row-tools">
+      <button class="btn ghost" onclick="addBranch()">+ เพิ่มสาขา</button>
+      <button class="btn ghost" onclick="reset()">↺ ค่าเริ่มต้น</button>
+    </div>
+
+    <div class="sizes" id="sizes"></div>
+    <button class="btn" onclick="window.print()">🖨 พิมพ์ · Print</button>
+
+    <div class="note" id="linkNote"></div>
+  </div>
+
+  <div class="sheet poster" id="sheet"></div>
+</div>
+
+<script src="qr.js"></script>
+<script>
+/* Drawn locally with qr.js, like the table cards — a printed sign that has to
+   phone a QR service prints blank the day that service is slow or gone, and it
+   hands every branch's link to somebody else's logs. (follow-qr.html is the one
+   exception, and only because Linktree's own code is what counts the scans.)
+
+   Level Q: about a third of the symbol stays recoverable, which is the right
+   margin for something taped to a wall or a counter and living with
+   fingerprints, glare and a tired printer.
+
+   The branch names are typed in rather than written in here on purpose. The
+   three links Bryan supplied are maps.app.goo.gl short links, which cannot be
+   resolved from where this was built — so guessing which one is Sathorn and
+   which is Pattanakarn would have put the wrong QR on the wrong wall. */
+function qr(data){ return DankQR.dataUrl(data, { ecl: "Q", quiet: 2 }); }
+
+var DEFAULTS = [
+  { name:"", url:"https://maps.app.goo.gl/YTj1xiA9ePaMjFkQ7?g_st=ic" },
+  { name:"", url:"https://maps.app.goo.gl/GjoMbkJLXtPmpN7i6?g_st=ic" },
+  { name:"", url:"https://maps.app.goo.gl/sYRmxaTCPNEGKxhe9?g_st=ic" },
+];
+var KEY = "dankReviewBranches";
+var rows = load();
+
+function load(){
+  try{
+    var v = JSON.parse(localStorage.getItem(KEY));
+    if(Array.isArray(v) && v.length) return v;
+  }catch(e){}
+  return DEFAULTS.map(function(d){ return { name:d.name, url:d.url }; });
+}
+function save(){ try{ localStorage.setItem(KEY, JSON.stringify(rows)); }catch(e){} }
+function reset(){ rows = DEFAULTS.map(function(d){ return { name:d.name, url:d.url }; }); save(); render(); }
+function addBranch(){ rows.push({ name:"", url:"" }); save(); render(); }
+
+function setField(i, field, val){ rows[i][field] = val; save(); build(); }
+
+var SIZES = [
+  { id:"poster",  label:"โปสเตอร์ A4 · 1 ใบ/หน้า" },
+  { id:"a5",      label:"A5 · 2 ใบ/หน้า" },
+  { id:"sticker", label:"สติกเกอร์เล็ก · 3 ใบ/แถว" },
+];
+var current = "poster";
+function pick(id){ current = id; build(); renderSizes(); }
+
+function esc(s){ return String(s == null ? "" : s)
+  .replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
+
+function render(){
+  document.getElementById("branches").innerHTML = rows.map(function(r,i){
+    return '<div class="branch">' +
+      '<div><label for="n'+i+'">ชื่อสาขา · Branch name</label>' +
+      '<input id="n'+i+'" value="'+esc(r.name)+'" placeholder="เช่น Sathorn" ' +
+      'oninput="setField('+i+',\'name\',this.value)"></div>' +
+      '<div><label for="u'+i+'">ลิงก์รีวิว · Review link</label>' +
+      '<input id="u'+i+'" value="'+esc(r.url)+'" placeholder="https://…" ' +
+      'oninput="setField('+i+',\'url\',this.value)"></div>' +
+    '</div>';
+  }).join("");
+  renderSizes(); build();
+}
+function renderSizes(){
+  document.getElementById("sizes").innerHTML = SIZES.map(function(s){
+    return '<button class="sz'+(s.id===current?' on':'')+'" onclick="pick(\''+s.id+'\')">'+s.label+'</button>';
+  }).join("");
+}
+
+function build(){
+  var sheet = document.getElementById("sheet");
+  sheet.className = "sheet " + current;
+  var live = rows.filter(function(r){ return (r.url||"").trim(); });
+  if(!live.length){
+    sheet.innerHTML = '<div class="card"><div class="sub">ใส่ลิงก์รีวิวอย่างน้อย 1 อันก่อน</div></div>';
+    return;
+  }
+  sheet.innerHTML = live.map(function(r){
+    var who = (r.name||"").trim();
+    return '<div class="card">' +
+      '<div class="brand">DANK CANNABIS CLUB</div>' +
+      '<div class="head">ถูกใจ DANK มั้ย?</div>' +
+      '<div class="sub">รีวิวให้เราหน่อยนะ 💕</div>' +
+      '<div class="stars">★ ★ ★ ★ ★</div>' +
+      '<img src="' + qr(r.url.trim()) + '" alt="QR code — leave a review' + (who ? " for " + esc(who) : "") + '">' +
+      (who ? '<div class="who">' + esc(who) + '</div>' : '') +
+      '<div class="foot">Enjoyed your visit? A review means a lot to us.</div>' +
+    '</div>';
+  }).join("");
+  note();
+}
+
+/* Said out loud on the page rather than only in chat, because whoever prints
+   this next may not have been in that conversation. */
+function note(){
+  var maps = rows.some(function(r){ return /maps\.app\.goo\.gl|google\.[a-z.]+\/maps/i.test(r.url||""); });
+  var unnamed = rows.filter(function(r){ return (r.url||"").trim() && !(r.name||"").trim(); }).length;
+  var out = "";
+  if(unnamed) out += '<b>ยังไม่ได้ตั้งชื่อ ' + unnamed + ' สาขา</b> — ใส่ชื่อก่อนพิมพ์ ไม่งั้นแยกไม่ออกว่าป้ายไหนของร้านไหน<br><br>';
+  if(maps) out +=
+    '<b>ลิงก์ที่ใส่อยู่เป็นลิงก์ Google Maps</b> — สแกนแล้วเปิดหน้าร้าน ลูกค้าต้องกด Reviews → Write a review เองอีก 2 ที<br>' +
+    'ถ้าอยากให้กล่องให้ดาวเด้งขึ้นมาเลย ใช้ลิงก์จาก Google Business Profile → <b>ขอรีวิว / Ask for reviews</b> ' +
+    '(หน้าตาแบบ g.page/r/…/review) แล้วเอามาวางแทน<br><br>';
+  out += '<b>ทดสอบก่อนพิมพ์เยอะ</b> — พิมพ์ 1 แผ่นแล้วลองสแกนด้วยกล้องมือถือจริง ' +
+         'ดูว่าไปลงสาขาที่ถูกต้อง';
+  document.getElementById("linkNote").innerHTML = out;
+}
+
+render();
+</script>
+</body>
+</html>

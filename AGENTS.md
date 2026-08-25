@@ -118,6 +118,15 @@ card:
 - `table-qr.html` — table ordering cards, T1–T6 and the two bars.
 - `labels.html` — product QR labels.
 - `follow-qr.html` — "scan to follow" posters and stickers, in three sizes.
+- `review-qr.html` — one "please review us" poster per branch, three sizes.
+  Branch names and links are typed into the page and kept in `localStorage`,
+  not written into the file: the links Bryan supplied are `maps.app.goo.gl`
+  short links that cannot be resolved from a sandbox, so guessing which was
+  Sathorn and which was Pattanakarn would have put the wrong code on the wrong
+  wall. The page says so itself, and warns while any branch is still unnamed.
+  Its wording asks for **a review**, never for five stars, and stays clear of
+  the free-joint offer — Google removes reviews solicited with a rating or an
+  incentive, and can suspend the business profile for it.
 
 The first two **draw** their codes with `qr.js` locally: a card that phones a QR
 web service prints blank the day that service is slow or gone, and it hands
