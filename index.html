@@ -1093,7 +1093,7 @@
   </div>
 </header>
 <div class="promo-banner" id="promoBanner">
-  <span>🎁 <b id="pbTitle">First order? Buy 1G get 1G FREE</b> — register to unlock.</span>
+  <span>🚬 <b id="pbTitle">สมัครใหม่ รับ joint ฟรี</b> — สั่งครบ ฿500 ขึ้นไป</span>
   <button onclick="openRegister()">Register free</button>
   <button class="pb-x" onclick="dismissBanner()" title="Dismiss">×</button>
 </div>
@@ -1221,8 +1221,8 @@
     <div class="promo" onclick="openPromo('first')" style="background-color:#181208;background-image:url('promo-first.jpg')">
       <div class="promo-shade"></div><span class="tagchip">MEMBERS' FIRST ORDER</span>
       <div class="promo-txt"><div class="promo-kick">Sign up free &middot; 10% off every order</div>
-        <h3>First order? 1g + 1g free</h3>
-        <p>Join DANK Members, buy your first gram — a second gram rides along free.</p>
+        <h3>สมัครใหม่ รับ joint ฟรี 🚬</h3>
+        <p>สมาชิกใหม่ สั่งครบ ฿500 ขึ้นไป รับ joint ฟรี 1 อัน · ลด 10% ทุกออเดอร์</p>
         <span class="promo-btn">Join &amp; claim</span></div>
     </div>
   </div>
@@ -1245,8 +1245,8 @@ let SITE_SLIDES=[
  {key:"b3g1", tag:"EVERY STRAIN", kick:"Automatic in your cart", title:"Buy 3g, get 1g free",
   text:"Stack it: 5g \u2192 2 free \u00b7 9g \u2192 3 \u00b7 12g \u2192 4 \u00b7 15g \u2192 5. The cart adds them itself.",
   btn:"Shop flower", img:"https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-6890.png?v=1782732640&width=1600", bg:"#0f1c12", detail:""},
- {key:"first", tag:"MEMBERS' FIRST ORDER", kick:"Sign up free \u00b7 10% off every order", title:"First order? 1g + 1g free",
-  text:"Join DANK Members, buy your first gram \u2014 a second gram rides along free.",
+ {key:"first", tag:"MEMBERS' FIRST ORDER", kick:"สมัครฟรี · ลด 10% ทุกออเดอร์", title:"สมัครใหม่ รับ joint ฟรี 🚬",
+  text:"สมาชิกใหม่ สั่งครบ ฿500 ขึ้นไป รับ joint ฟรี 1 อัน · ลด 10% ทุกออเดอร์",
   btn:"Join & claim", img:"promo-first.jpg", bg:"#181208", detail:""},
  {key:"happyhour", tag:"HAPPY HOUR", kick:"Sathorn 5\u20137pm \u00b7 Pattanakarn 4\u20137pm", title:"Happy Hour \u2014 buy 3g, get 2g free",
   text:"Time to buy, time to save: every day during Happy Hour the volume deal is boosted \u2014 the cart adds the free grams itself.",
@@ -1610,15 +1610,15 @@ b3g1:{t:"Buy 3g — get 1g FREE 🔥",b:`
   <div style="background:var(--panel2);border:1px solid var(--line2);border-radius:12px;padding:6px 14px;margin-bottom:14px">${lrows}</div>
   <p style="color:var(--muted);font-size:12.5px;margin:0 0 14px">Free grams come from the strain you bought most of — switch them in the cart.</p>
   <button class="btn btn-primary btn-block" onclick="closeAll();document.getElementById('menu').scrollIntoView({behavior:'smooth'})">🌿 Shop flower</button>`},
-first:{t:"First order — 1g + 1g free 💚",b:`
-  <p style="color:var(--muted);font-size:14px;margin:0 0 12px">New here? Join DANK Members free — you get 10% off every order, and on your first order of 1g or more a second gram comes free.</p>
+first:{t:"สมัครใหม่ รับ joint ฟรี 🚬",b:`
+  <p style="color:var(--muted);font-size:14px;margin:0 0 12px">New here? Join DANK Members free — a free joint on your first order of ${money(memberJointMin())} or more, and 10% off every order for as long as you stay logged in.</p>
   <div style="background:var(--panel2);border:1px solid var(--line2);border-radius:12px;padding:12px 14px;margin-bottom:14px;font-size:14px;line-height:1.9">
-    1️⃣ Join free (10 seconds)<br>2️⃣ Add 1g+ of any strain<br>3️⃣ Your free gram appears in the cart 💚</div>
-  ${isMember()?(LS.get("first_free_used",0)?
-    `<p style="color:var(--muted);font-size:13px;margin:0 0 12px">✅ Your first-order gift has been claimed — the 3g→1g ladder still works every order.</p>
+    1️⃣ สมัครฟรี ใช้เวลา 10 วินาที<br>2️⃣ สั่งซื้อครบ ${money(memberJointMin())} ขึ้นไป<br>3️⃣ joint ขึ้นในตะกร้าให้เอง 🚬</div>
+  ${isMember()?(memberJointUsed()?
+    `<p style="color:var(--muted);font-size:13px;margin:0 0 12px">✅ รับ joint ฟรีไปแล้ว — ส่วนลด 10% กับของแถมตามน้ำหนัก (3g→1g) ยังได้ทุกออเดอร์</p>
      <button class="btn btn-primary btn-block" onclick="closeAll();document.getElementById('menu').scrollIntoView({behavior:'smooth'})">🌿 Shop flower</button>`:
-    `<p style="color:var(--green2);font-size:13.5px;font-weight:700;margin:0 0 12px">You're a member — your first-order gram is waiting. Add 1g+ to claim it.</p>
-     <button class="btn btn-primary btn-block" onclick="closeAll();document.getElementById('menu').scrollIntoView({behavior:'smooth'})">🌿 Claim my free gram</button>`):
+    `<p style="color:var(--green2);font-size:13.5px;font-weight:700;margin:0 0 12px">คุณเป็นสมาชิกแล้ว — สั่งครบ ${money(memberJointMin())} รับ joint ฟรีได้เลย</p>
+     <button class="btn btn-primary btn-block" onclick="closeAll();document.getElementById('menu').scrollIntoView({behavior:'smooth'})">🚬 รับ joint ฟรีของฉัน</button>`):
     `<button class="btn btn-primary btn-block" onclick="closeAll();openCRM('join')">💚 Join free &amp; claim</button>
      <button class="btn btn-ghost btn-block" style="margin-top:8px" onclick="closeAll();openCRM('login')">👤 Member log in</button>`}`},
 happyhour:{t:"Happy Hour \u2014 buy 3g, get 2g FREE \ud83d\udd25",b:`
@@ -2677,13 +2677,12 @@ function ensureBonus(){
   if(strain) for(let i=0;i<free;i++){
     cart.push({key:"BONUS|"+strain.id+"|"+i,id:strain.id,name:strain.name,tierLabel:hhActive()?"1g · HAPPY HOUR FREE 🔥":"1g · FREE 🌿",price:0,qty:1,image:strain.image,type:strain.type,category:strain.category,bonus:true});
   }
-  /* Members' first order: buy 1g+, a second gram rides along free. Only when
-     the ladder hasn't already granted (3g+ orders get the ladder gram instead),
-     and only once — clearCartAfterOrder marks it used when the order goes out. */
-  if(free===0&&G>=1&&isMember()&&!LS.get("first_free_used",0)){
-    const s1=freeGramStrain();
-    if(s1) cart.push({key:"BONUS1ST|"+s1.id,id:s1.id,name:s1.name,tierLabel:"1g · FIRST ORDER FREE 💚",price:0,qty:1,image:s1.image,type:s1.type,category:s1.category,bonus:true,bonus1st:true});
-  }
+  /* The members' first order used to add a second gram free. Bryan retired it
+     on 25 Aug 2026 in favour of the free joint (memberJointDue) — one first-
+     order gift, not two. Deliberately gone rather than disabled: a dormant
+     grant that still writes cart lines is the kind of thing that comes back on
+     by accident. The volume ladder above is untouched and still gives free
+     grams at 3g, 5g, 7g and 10g on every order. */
   /* This function rewrites the cart — it strips the old free lines and grants a
      fresh set — so it has to persist and re-badge like any other cart mutation.
      It used to do neither. The header badge went on counting lines the drawer had
@@ -4412,7 +4411,7 @@ async function tokenizeCard(pk,{num,name,exp,cvc}){
 /* Everything that has to be forgotten once an order has genuinely left. Six screens each
    carried their own copy of the first three lines and not one of them cleared coFulfill,
    so the next order in the same session silently inherited Pickup from the last one. */
-function clearCartAfterOrder(){ if(cart.some(c=>c.bonus1st)) LS.set("first_free_used",1);
+function clearCartAfterOrder(){
   if(memberJointDue()) LS.set("member_joint_used",1); cart=[]; appliedPromo=null; coFulfill="delivery"; boxMode=false; LS.set("boxmode",0); saveCart(); updateCartCount(); }
 function showQRScreen(orderId,chargeId,qr,amount){
   clearCartAfterOrder();

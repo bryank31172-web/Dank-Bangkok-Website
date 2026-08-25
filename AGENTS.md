@@ -164,8 +164,9 @@ disagreed in front of the customer. If the offer changes, change `CONFIG.crm`
 — the title, the sub and the badge all read from there.
 
 The joint is wired, not just written: `memberJointDue()` in `index.html` grants
-it when a member with an unspent claim has at least one **paid** item in the
-cart ("with any order" — no minimum weight), it shows as a ฿0 totals row, the
+it when a member with an unspent claim has a cart subtotal of at least
+`CONFIG.crm.jointMin` (฿500). Below that the cart shows an "add ฿X more" nudge
+instead. It shows as a ฿0 totals row, the
 order posts `memberJoint:true`, and `api/order.js` puts
 `🚬 NEW MEMBER — ADD ONE FREE JOINT` in every staff channel and the owner's
 email. `clearCartAfterOrder()` spends the claim only when the order actually
@@ -175,10 +176,11 @@ It is deliberately **not** `appliedPromo`. That holds one coupon at a time, so
 putting the joint there would silently cancel a discount code the customer
 typed — or be cancelled by one. It stacks with both, and with the wheel prize.
 
-Separately, a **free second gram on a first 1g+ order** is an older promo that
-is still running and still wired into the cart (the "first" panel, tracked by
-`first_free_used`). Nobody has said whether it should survive alongside the
-free joint — do not quietly delete it, and do not assume it is intentional.
+A **free second gram on a first 1g+ order** used to run alongside this. Bryan
+retired it on 25 Aug 2026 — one first-order gift, not two — so `ensureBonus()`
+no longer grants it and `first_free_used` is no longer written. Do not put it
+back without him asking. The volume ladder is a different thing and is
+untouched: 3g→1g, 5g→2g, 7g→3g, 10g→4g free on **every** order, member or not.
 
 ## Content rules
 
