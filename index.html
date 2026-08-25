@@ -1860,9 +1860,9 @@ const CONFIG = {
      disagreed in front of the customer. Both are named here now. The free
      SECOND GRAM on a first 1g+ order is a separate, older promo that is still
      running and still wired into the cart — see the "first" panel. */
-  crm:{ enabled:true, discountPct:10, code:"CRM10",
+  crm:{ enabled:true, discountPct:10, code:"CRM10", jointMin:500,
         title:"Join DANK Members — free joint + 10% OFF 💚",
-        sub:"Sign up free: a free joint with your first order, and 10% off every order after that. Takes 10 seconds.",
+        sub:"Sign up free: a free joint on your first order over ฿500, and 10% off every order for as long as you stay logged in.",
         firstDelayMs:1200, repeatMs:60000 },   // shows on entry, then re-invites every ~60s until they join
   // ---- Volume deal: buy more grams of flower, get grams free (cart-wide total) ----
   gramLadder:[ [3,1],[5,2],[7,3],[10,4] ],   // [buy grams, free grams]
@@ -2230,14 +2230,22 @@ function bonusEligible(){ return CONFIG.firstOrder&&CONFIG.firstOrder.enabled&&i
    the joint there would silently cancel a discount code the customer typed, or
    be cancelled by one. This is a separate entitlement and stacks with both.
 
-   "With any order" means exactly that — one paid item is enough, no minimum
-   weight — which is the difference between this and the first-order free gram
-   above it. Claimed once; clearCartAfterOrder marks it spent when the order
+   The bar is a spend, not a weight: CONFIG.crm.jointMin baht of goods, before
+   delivery. Measured on cartSubtotal(), which is what the customer is actually
+   paying for the products — so member prices count toward it, and the delivery
+   fee does not. Claimed once; clearCartAfterOrder marks it spent when the order
    actually goes out, not when the drawer is opened. */
 function memberJointUsed(){ return !!LS.get("member_joint_used",0); }
+function memberJointMin(){ const v=Number(CONFIG.crm&&CONFIG.crm.jointMin); return Number.isFinite(v)&&v>0?v:0; }
 function memberJointDue(){
   if(!isMember() || memberJointUsed()) return false;
-  return cart.some(c=>!c.bonus && (Number(c.price)||0) > 0);
+  return cartSubtotal() >= memberJointMin();
+}
+/* How much more to spend to earn it. Zero once it is earned, or when there is
+   nothing to earn — so the cart can show a nudge without a second condition. */
+function memberJointShort(){
+  if(!isMember() || memberJointUsed()) return 0;
+  return Math.max(0, memberJointMin() - cartSubtotal());
 }
 async function refreshFreeGifts(){
   if(location.protocol==="file:"){ freeGiftIds=DATA.filter(p=>p.freeGift).map(p=>p.id); return; }
@@ -2282,10 +2290,10 @@ function openCRM(tab){
   $("#infoCard").innerHTML=`<div class="drawer-head" style="border:none;padding:18px 20px 4px"><h2>${esc(c.title||"Join DANK Members — free joint + 10% OFF 💚")}</h2><button class="close-x" onclick="dismissCRM()">×</button></div>
     <div style="padding:6px 20px 22px">
       <div style="background:linear-gradient(135deg,#0e3a24,#0a2417);border:1px solid var(--line2);border-radius:14px;padding:15px 16px;margin:2px 0 14px;text-align:center">
-        <div style="font-size:30px;font-weight:900;color:var(--green2);line-height:1.15;letter-spacing:.3px">🚬 FREE JOINT<div style="font-size:15px;font-weight:800;color:var(--gold);margin-top:2px">with your first order</div></div>
+        <div style="font-size:30px;font-weight:900;color:var(--green2);line-height:1.15;letter-spacing:.3px">🚬 FREE JOINT<div style="font-size:15px;font-weight:800;color:var(--gold);margin-top:2px">first order over ${money((CONFIG.crm&&CONFIG.crm.jointMin)||500)}</div></div>
         <div style="height:1px;background:var(--line2);margin:11px 14px"></div>
         <div style="font-size:26px;font-weight:900;color:var(--green2);line-height:1;letter-spacing:.5px">10% OFF</div>
-        <div style="font-size:12.5px;color:var(--gold);margin-top:3px;font-weight:700">every order · free to join · members-only drops</div>
+        <div style="font-size:12.5px;color:var(--gold);margin-top:3px;font-weight:700">every order, while you are logged in · free to join</div>
       </div>
       <div class="seg" style="margin-bottom:14px">
         <button class="${t==='join'?'active':''}" onclick="openCRM('join')">💚 Join free</button>
@@ -4216,6 +4224,7 @@ function renderCart(){
           Shown as goods, not money — the price column says FREE. */''}
     ${appliedPromo&&appliedPromo.type==="gift"?`<div class="cart-total-row" style="color:var(--gold)"><span>🚬 ${esc(appliedPromo.gift||"Free gift")}</span><span>FREE</span></div>`:''}
     ${memberJointDue()?`<div class="cart-total-row" style="color:var(--green2)"><span>🚬 New member — free joint</span><span>FREE</span></div>`:''}
+    ${memberJointShort()>0?`<div class="cart-total-row" style="color:var(--gold)"><span>🚬 Add ${money(memberJointShort())} more for your free joint</span><span>${money(memberJointMin())}+</span></div>`:''}
     <div class="cart-total-row"><span>Delivery</span><span>${coFulfill==="pickup"?'Pickup':fee===0?'Free':money(fee)}</span></div>
     <div class="cart-total-row grand"><span>Total</span><span>${money(tot)}</span></div>
     ${below?`<div class="minorder">Minimum order ${money(CONFIG.minOrder)} — add ${money(CONFIG.minOrder-sub)} more</div>`:''}

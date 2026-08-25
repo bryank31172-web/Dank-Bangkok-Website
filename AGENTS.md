@@ -118,6 +118,13 @@ card:
 - `table-qr.html` — table ordering cards, T1–T6 and the two bars.
 - `labels.html` — product QR labels.
 - `follow-qr.html` — "scan to follow" posters and stickers, in three sizes.
+- `member-qr.html` — the new-member poster (free joint + 10%), A4 or two-up A5.
+  Its terms are written to match `CONFIG.crm`; change one and change the other,
+  or the sign on the wall and the cart disagree in front of the customer. Its
+  left code is `/?open=member`, not the home page — the storefront honours that
+  deep link and opens the sign-up form, where Bryan's own artwork had both
+  codes pointing at the home page and the "JOIN MEMBERS" label was a lie the
+  scanner could not see.
 - `review-qr.html` — one "please review us" poster per branch, three sizes.
   Branch names and links are typed into the page and kept in `localStorage`,
   not written into the file: the links Bryan supplied are `maps.app.goo.gl`
@@ -144,10 +151,13 @@ Anything printed must be scan-tested after a layout change, not just looked at.
 
 ## What a member gets
 
-Two things, and the wording lives in `CONFIG.crm` in `index.html`:
+Two things, and the terms live in `CONFIG.crm` in `index.html`:
 
-- **a free joint with the first order** — what the shop's poster promises
-- **10% off every order** — `discountPct:10`, code `CRM10`
+- **a free joint on the first order of ฿500 or more** — `jointMin:500`, once
+  per member. The bar is a spend, not a weight, measured on `cartSubtotal()`:
+  member prices count toward it, the delivery fee does not.
+- **10% off every order, for as long as they stay logged in** —
+  `discountPct:10`, code `CRM10`
 
 The pop-up used to say 10% only, so the sign on the wall and the site
 disagreed in front of the customer. If the offer changes, change `CONFIG.crm`
