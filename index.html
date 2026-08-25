@@ -1880,6 +1880,19 @@ const CONFIG = {
   firstOrder:{ enabled:false, code:"FIRST1G", title:"Buy 1G get 1G FREE 🎁",
     sub:"First order only — register and get a free gram on any 1g flower." },
   wallet:{ enabled:true, bonusPct:10, amounts:[500,1000,2000,5000] },
+  /* MaxMe Wallet (PTG's app, maxme.co.th). Bryan asked for it alongside Beam.
+     It is here as a merchant QR plus a slip, not as an API call, because MaxMe
+     publishes no developer documentation that could be found and its merchant
+     product is built around scanning in the shop. That is not a downgrade: it
+     is exactly how PromptPay above already works here, and it is honest —
+     guessing at the request shape of something that moves a customer's money
+     is not a thing to do quietly.
+
+     To switch it on: export the shop's merchant QR from the MaxMe app, save it
+     as assets/maxme-qr.png, and set enabled:true. If MaxMe ever hands over API
+     docs this becomes a gateway like Beam and the option stays where it is. */
+  maxme:{ enabled:false, name:"", accNo:"", image:"assets/maxme-qr.png",
+    note:"เปิดแอป MaxMe \u2192 สแกนจ่าย \u2192 ใส่ยอดตามบิล แล้วอัปสลิปให้เราด้วยครับ \u00b7 Open MaxMe, scan, pay the exact amount, then upload your slip." },
   promptpay:{ enabled:true, id:"", note:"Scan with any banking app — accepts all banks. Enter the amount, pay, then upload your slip.",
     accounts:[
       {label:"KBank ···1146", name:"อรรฆพร ก้องธรนินทร์", accNo:"xxx-x-x1146-x", image:"assets/promptpay.png"},
@@ -4299,6 +4312,7 @@ function paymentMethods(){
   if(payGW.twoc2p) m.push({p:"2C2P",label:"Card / e-wallet",icon:"🏦"});
   if(payGW.gbp) m.push({p:"GBPrimePay",label:"PromptPay / Card",icon:"🏧"});
   if(CONFIG.promptpay&&CONFIG.promptpay.enabled&&!payGW.omise&&!payGW.beam) m.push({p:"PromptPayQR",label:"PromptPay",icon:"📱"});
+  if(CONFIG.maxme&&CONFIG.maxme.enabled) m.push({p:"MaxMe",label:"MaxMe Wallet",icon:"👛"});
   if(CONFIG.bank&&CONFIG.bank.enabled) m.push({p:"Transfer",label:"Bank transfer",icon:"🏦"});
   if(CONFIG.cod) m.push({p:"Cash",label:"Cash / COD",icon:"💵"});
   if(CONFIG.crypto&&CONFIG.crypto.enabled) m.push({p:"Crypto",label:"Crypto",icon:"₿"});
@@ -4311,6 +4325,7 @@ function paymentMethods(){
    spending. The button has to say that, or the customer taps "Pay" and nothing is paid. */
 function payBtnLabel(p){ if(p==="Wallet") return "💚 Place order · "+money(cartTotal())+" from wallet";
   if(["PromptPay","Card","2C2P","GBPrimePay","PromptPayQR","BeamQR","BeamCard"].includes(p)) return "💳 Pay "+money(cartTotal());
+  if(p==="MaxMe") return "👛 Place order & show MaxMe QR";
   if(p==="Transfer") return "🏦 Place order & show transfer details";
   if(p==="Crypto") return "₿ Place order & pay crypto";
   return "✅ Place order · "+money(cartTotal()); }
@@ -4524,6 +4539,7 @@ async function submitOrder(method){
     return showSuccess("order",`Order ${orderId} placed — we'll send a PromptPay QR, or pay on arrival.`);
   }
   if(coPay==="PromptPayQR"&&orderId){ return showPromptPayQR(orderId,o.total); }
+  if(coPay==="MaxMe"&&orderId){ return showMaxMe(orderId,o.total); }
   if(coPay==="Transfer"&&orderId){ return showBankTransfer(orderId,o.total); }
   if(coPay==="Crypto"&&orderId){ return showCryptoPay(orderId,o.total); }
   if(online&&coPay==="PromptPay"&&orderId){
@@ -4625,6 +4641,30 @@ function renderPP(orderId,amount){
       <button class="btn btn-primary btn-block" style="margin-top:12px" onclick="closeAll()">Done</button>
     </div>`;
   if(!a.image){ const payload=ppPayload(a.id||pp.id,amount); loadQRlib().then(()=>{ const el=$("#ppQR"); if(!el)return; if(window.QRCode){ el.innerHTML=""; new QRCode(el,{text:payload,width:210,height:210,correctLevel:QRCode.CorrectLevel.M}); } else { el.innerHTML="<div style='color:#333;font-size:11px;word-break:break-all;padding:6px'>"+payload+"</div>"; } }); }
+}
+/* MaxMe Wallet: the shop's own merchant QR, the exact amount, and a slip.
+   Same shape as renderPP() above, deliberately — a customer who has paid one
+   of them already knows how the other works, and staff confirm both the same
+   way on the Orders tab. The amount is printed large because a wallet QR is
+   usually a fixed-merchant code with no amount baked in, so the customer types
+   it, and a customer typing the wrong number is the whole failure mode here. */
+function showMaxMe(orderId,amount){
+  clearCartAfterOrder();
+  const mm=CONFIG.maxme||{};
+  const qrHTML = mm.image
+    ? `<img src="${esc(mm.image)}" alt="MaxMe QR" style="width:230px;height:230px;object-fit:contain;background:#fff;border-radius:14px;padding:8px" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'minorder',style:'color:var(--gold)',textContent:'QR ยังไม่ได้ตั้งค่า — แจ้งพนักงานได้เลยครับ'}))">`
+    : `<div class="minorder" style="color:var(--gold)">QR ยังไม่ได้ตั้งค่า — แจ้งพนักงานได้เลยครับ</div>`;
+  $("#coCard").innerHTML=`<div class="drawer-head" style="border:none;padding:18px 20px 4px"><h2>\u{1f45b} MaxMe Wallet \u00b7 ${money(amount)}</h2><button class="close-x" onclick="closeAll()">\u00d7</button></div>
+    <div style="padding:6px 20px 22px;text-align:center">
+      <div style="font-weight:800;color:var(--green2);font-size:13px;margin-bottom:8px">MaxMe Wallet \u00b7 สแกนจ่ายในแอป</div>
+      ${qrHTML}
+      <div style="font-size:13px;margin-top:8px">${mm.name?("\u{1f3ea} "+esc(mm.name)):""}${mm.accNo?("<br>"+esc(mm.accNo)):""}</div>
+      <p style="color:var(--muted);font-size:12.5px;margin:6px 0 2px">${esc(mm.note||"")}</p>
+      <div class="cart-total-row grand" style="justify-content:center;gap:10px;margin-top:6px"><span>ยอดที่ต้องโอน</span><span>${money(amount)}</span></div>
+      <p style="color:var(--muted2);font-size:11.5px;margin:2px 0 12px">ออเดอร์ <b>${orderId}</b> \u00b7 จ่าย ${money(amount)} ให้ตรงยอด แล้วอัปสลิป เราจะยืนยันและเตรียมของให้ครับ</p>
+      <div style="text-align:left">${slipBoxHTML(orderId)}</div>
+      <button class="btn btn-primary btn-block" style="margin-top:12px" onclick="closeAll()">เสร็จแล้ว \u00b7 Done</button>
+    </div>`;
 }
 function showGatewayQR(orderId,qr,amount,who,verifyUrl){
   clearCartAfterOrder();

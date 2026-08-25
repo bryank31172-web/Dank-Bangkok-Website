@@ -290,7 +290,7 @@ As of 14 Aug 2026, `/api/health` reports every wired flag true and an empty
    `BEAM_MERCHANT_ID` + `BEAM_API_KEY` are set; Omise, 2C2P and GBPrimePay stay
    wired and working behind it. `/api/health` → `wired.payments.beam`.
 
-   **`BEAM.md` is the setup page, and its step 5 is not optional.** Beam's docs
+   **`PAYMENTS.md` is the setup page, and its step 5 is not optional.** Beam's docs
    are refused by the sandbox network policy, so the integration was written
    from search results. The one thing that could not be confirmed from Beam's
    own documentation is whether `amount` is in satang or baht. It is
@@ -305,10 +305,22 @@ As of 14 Aug 2026, `/api/health` reports every wired flag true and an empty
    type rather than the paperwork, and Beam may answer the same way — better to
    ask them outright than to lose another month.
 
-   **MaxMe** was recommended in the same thread and is deliberately not built:
-   no public API documentation could be found, and the recommender said an
-   introduction to their team was needed to get keys. Do not write a payment
-   integration against a guessed API.
+   **MaxMe Wallet** (PTG's app) is offered alongside Beam — Bryan asked for
+   both, and the two appear together at checkout. It is a **merchant QR plus a
+   slip**, not an API call: `CONFIG.maxme` in `index.html` and `showMaxMe()`,
+   the same shape as `renderPP()`. Switch it on by saving the shop's QR as
+   `assets/maxme-qr.png` and setting `enabled:true`; until then the option is
+   hidden, and a missing image degrades to "ask a member of staff" rather than
+   a broken picture.
+
+   That is deliberate, not a shortcut. No public MaxMe API documentation could
+   be found — `maxme.co.th` and `maxenterpriseconnect.com` are both refused by
+   the network policy and no developer portal surfaced in Thai or English
+   search — and their merchant product reads as in-store scan-to-pay. Beam's
+   e-wallet list (TrueMoney, ShopeePay, LINE Pay, Alipay, WeChat Pay) does not
+   include MaxMe, so it cannot be reached through Beam either. Do not write a
+   payment integration against a guessed API; `PAYMENTS.md` lists the five
+   things to get from MaxMe's team before one can be built properly.
 7. Not set, so their features are dark: an AI key (AI chat and the LINE
    budtender — `api/_ai.js` accepts `GEMINI_API_KEY`, `GROQ_API_KEY`,
    `OPENROUTER_API_KEY`, `DEEPSEEK_API_KEY`, `OPENAI_API_KEY` or

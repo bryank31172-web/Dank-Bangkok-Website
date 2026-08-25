@@ -65,7 +65,7 @@ Roughly in the order that matters. `CLAUDE.md` has the detail on each.
    is how nearly everyone here pays. Set `BEAM_MERCHANT_ID` + `BEAM_API_KEY`
    and `WEBHOOK_SECRET`, point Beam's webhook at
    `/api/beam-webhook?secret=<WEBHOOK_SECRET>`, then **run one small real
-   payment before advertising it** — see `BEAM.md` for why that step is not
+   payment before advertising it** — see `PAYMENTS.md` for why that step is not
    optional. Omise, 2C2P and GBPrimePay are all still wired and still work; the
    checkout simply prefers Beam when it is configured.
 3. Set `SHOPIFY_STORE` + `SHOPIFY_ADMIN_TOKEN` to
