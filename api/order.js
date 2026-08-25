@@ -207,9 +207,15 @@ export default async function handler(req, res) {
   const promoBlock = promoCode
     ? `\n🎟️ Code: ${promoCode}${/^FREEJOINT$/.test(promoCode) ? "  ← 🚬 ADD ONE FREE JOINT" : ""}`
     : "";
+  /* A new member's free joint is an entitlement, not a coupon — it never
+     reaches o.promo, and it costs nothing, so it is invisible in the totals.
+     Without its own line the only person who needs to know never finds out and
+     the customer is promised a joint nobody puts in the bag. The wheel's prize
+     had exactly that bug once; this is the same fix for the other path. */
+  const jointBlock = o.memberJoint ? "\n🚬 NEW MEMBER — ADD ONE FREE JOINT" : "";
 
   const staffAlert =
-    `🛒 NEW ORDER ${orderId} — dankbkk.com\n\n${itemLines}${giftBlock}${promoBlock}\n\n` +
+    `🛒 NEW ORDER ${orderId} — dankbkk.com\n\n${itemLines}${giftBlock}${promoBlock}${jointBlock}\n\n` +
     `Total: ฿${o.total ?? o.subtotal}${o.member ? " (member ⭐)" : ""}\n` +
     `Pay: ${o.payment}\n${where}\n` +
     `Customer: ${o.customer?.name || "-"} · ${o.customer?.phone}\n` +
@@ -317,9 +323,11 @@ export default async function handler(req, res) {
       const lines = o.items
         .map((i) => `• ${i.name} (${i.option}) ×${i.qty} — ฿${i.lineTotal}`)
         .join("<br>");
+      const jointHtml = o.memberJoint
+        ? `<p style="color:#137a44"><b>🚬 New member — add one free joint</b></p>` : "";
       const html = `<h2>🌿 New order ${orderId} — dankbkk.com</h2>
         <p>${lines}</p>
-        ${giftHtml}
+        ${giftHtml}${jointHtml}
         <p><b>Subtotal:</b> ฿${o.subtotal}${o.member ? " (member)" : ""}<br>
         <b>Payment:</b> ${o.payment}<br>
         <b>Fulfilment:</b> ${o.fulfilment}<br>

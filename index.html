@@ -2219,6 +2219,26 @@ function rememberOrder(id){ const a=myOrders(); if(id&&!a.includes(id)){ a.unshi
 function isRegistered(){ return !!LS.get("reg",null); }
 function firstUsed(){ return !!LS.get("firstUsed",false); }
 function bonusEligible(){ return CONFIG.firstOrder&&CONFIG.firstOrder.enabled&&isRegistered()&&!firstUsed(); }
+
+/* ---- new member's free joint ------------------------------------------------
+   The shop's poster promises a first-time member a free joint with any order.
+   It is handed over at the counter rather than picked off the shelf, so it is a
+   totals row like the wheel's prize, not a cart line: a line needs a product to
+   point at, and the pre-roll shelf is deliberately hidden from the storefront.
+
+   Deliberately NOT appliedPromo. That holds one coupon at a time, so putting
+   the joint there would silently cancel a discount code the customer typed, or
+   be cancelled by one. This is a separate entitlement and stacks with both.
+
+   "With any order" means exactly that — one paid item is enough, no minimum
+   weight — which is the difference between this and the first-order free gram
+   above it. Claimed once; clearCartAfterOrder marks it spent when the order
+   actually goes out, not when the drawer is opened. */
+function memberJointUsed(){ return !!LS.get("member_joint_used",0); }
+function memberJointDue(){
+  if(!isMember() || memberJointUsed()) return false;
+  return cart.some(c=>!c.bonus && (Number(c.price)||0) > 0);
+}
 async function refreshFreeGifts(){
   if(location.protocol==="file:"){ freeGiftIds=DATA.filter(p=>p.freeGift).map(p=>p.id); return; }
   try{ const r=await fetch("/api/freegifts"); if(r.ok){ const j=await r.json(); freeGiftIds=Array.isArray(j.skus)?j.skus:[]; } }
@@ -4195,6 +4215,7 @@ function renderCart(){
           customer sees an empty code box and no sign of the thing they won.
           Shown as goods, not money — the price column says FREE. */''}
     ${appliedPromo&&appliedPromo.type==="gift"?`<div class="cart-total-row" style="color:var(--gold)"><span>🚬 ${esc(appliedPromo.gift||"Free gift")}</span><span>FREE</span></div>`:''}
+    ${memberJointDue()?`<div class="cart-total-row" style="color:var(--green2)"><span>🚬 New member — free joint</span><span>FREE</span></div>`:''}
     <div class="cart-total-row"><span>Delivery</span><span>${coFulfill==="pickup"?'Pickup':fee===0?'Free':money(fee)}</span></div>
     <div class="cart-total-row grand"><span>Total</span><span>${money(tot)}</span></div>
     ${below?`<div class="minorder">Minimum order ${money(CONFIG.minOrder)} — add ${money(CONFIG.minOrder-sub)} more</div>`:''}
@@ -4334,11 +4355,12 @@ function collectOrder(){
   const pickTime=coFulfill==="pickup"?F("coTime").trim():"";
   return {brand:CONFIG.brand,items:cart.map(c=>({name:c.name,shId:c.shId||"",option:c.tierLabel,qty:c.qty,price:c.price,lineTotal:c.price*c.qty,category:c.category||"",bonus:!!c.bonus})),
     subtotal:cartSubtotal(),discount:discountAmt(),promo:appliedPromo?appliedPromo.code:"",deliveryFee:deliveryFeeAmt(),total:cartTotal(),
-    fulfilment:coFulfill,payment:coPay,member:memberMode,
+    fulfilment:coFulfill,payment:coPay,member:memberMode,memberJoint:memberJointDue(),
     customer:{name,phone},delivery:{zone,address:addr},pickup:{branch:pickBranch,time:pickTime},notes,source:"dankbkk.com",firstOrder:bonusEligible(),registered:LS.get("reg",null)||undefined};
 }
 function orderText(o){
-  const lines=o.items.map(i=>`• ${i.name} (${i.option}) ×${i.qty} — ${money(i.lineTotal)}`).join("\n");
+  const lines=o.items.map(i=>`• ${i.name} (${i.option}) ×${i.qty} — ${money(i.lineTotal)}`).join("\n")
+    + (o.memberJoint?"\n🚬 NEW MEMBER — ADD ONE FREE JOINT":"");
   /* The LINE and WhatsApp handoffs go to a person, not to api/order.js, so the
      box has to be spelled out here too \u2014 otherwise a 28-gram order that arrives
      by LINE reads as flower with no gifts attached, and somebody packs it that way. */
@@ -4381,7 +4403,8 @@ async function tokenizeCard(pk,{num,name,exp,cvc}){
 /* Everything that has to be forgotten once an order has genuinely left. Six screens each
    carried their own copy of the first three lines and not one of them cleared coFulfill,
    so the next order in the same session silently inherited Pickup from the last one. */
-function clearCartAfterOrder(){ if(cart.some(c=>c.bonus1st)) LS.set("first_free_used",1); cart=[]; appliedPromo=null; coFulfill="delivery"; boxMode=false; LS.set("boxmode",0); saveCart(); updateCartCount(); }
+function clearCartAfterOrder(){ if(cart.some(c=>c.bonus1st)) LS.set("first_free_used",1);
+  if(memberJointDue()) LS.set("member_joint_used",1); cart=[]; appliedPromo=null; coFulfill="delivery"; boxMode=false; LS.set("boxmode",0); saveCart(); updateCartCount(); }
 function showQRScreen(orderId,chargeId,qr,amount){
   clearCartAfterOrder();
   $("#coCard").innerHTML=`<div class="success">

@@ -153,6 +153,18 @@ The pop-up used to say 10% only, so the sign on the wall and the site
 disagreed in front of the customer. If the offer changes, change `CONFIG.crm`
 — the title, the sub and the badge all read from there.
 
+The joint is wired, not just written: `memberJointDue()` in `index.html` grants
+it when a member with an unspent claim has at least one **paid** item in the
+cart ("with any order" — no minimum weight), it shows as a ฿0 totals row, the
+order posts `memberJoint:true`, and `api/order.js` puts
+`🚬 NEW MEMBER — ADD ONE FREE JOINT` in every staff channel and the owner's
+email. `clearCartAfterOrder()` spends the claim only when the order actually
+goes out.
+
+It is deliberately **not** `appliedPromo`. That holds one coupon at a time, so
+putting the joint there would silently cancel a discount code the customer
+typed — or be cancelled by one. It stacks with both, and with the wheel prize.
+
 Separately, a **free second gram on a first 1g+ order** is an older promo that
 is still running and still wired into the cart (the "first" panel, tracked by
 `first_free_used`). Nobody has said whether it should survive alongside the
