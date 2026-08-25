@@ -178,6 +178,16 @@ folded to `0`.
   POS over a `BroadcastChannel` (same machine) or `POST /api/cds` with a
   pairing code (separate tablet). The contract the POS has to send is in
   `CDS.md`; it needs `POS_SYNC_KEY` for the network path only.
+- **Photo audit**: `/photo-audit.html`. Loads every product photo from the live
+  menu **in Bryan's own browser** — nothing is uploaded — and reports what is
+  missing, broken, duplicated or on a drawn tile, then walks him through them
+  one at a time to confirm each picture is of the right product.
+  It applies the storefront's own hide rules (copied from `shopHidden()` in
+  `index.html` — **keep the two in step**), so the headline number is the gaps a
+  customer can actually see on something in stock, and the shooting list is
+  split into "take these today" and "the other N can wait". Before that split it
+  counted the bar's cocktails too, which turned a two-photograph job into a
+  seventeen-photograph one and buried the two that matter.
 - **Homepage editor**: Owner mode → `🎬 Homepage` on the green bar. Edits the
   hero text, all promo slides and the shop-tour links; publishes with
   `💾 Save changes`. Stored in `admin:overrides` under `site`.
@@ -218,16 +228,34 @@ green stays on headline numbers and buttons, which are text, not data.
 As of 14 Aug 2026, `/api/health` reports every wired flag true and an empty
 `warnings` list. Nothing below is breaking the shop.
 
-1. **Product photographs — nearly done, and the old count was wrong.** "271
-   products still show a borrowed stand-in" was true when it was written and
-   is not true now. Counted off the live feed on 21 Aug 2026: of 391 products,
-   280 match a photograph by name, 56 carry one straight from the POS, 15 get
-   a keyword or category photo, and **19 still fall through to a drawn
-   `/api/tile`** — 12 of those in stock. Twelve of the nineteen are bar
-   cocktails that belong on the 224 menu rather than the cannabis shelf. What
-   is actually left: `Kamagra`, `MonkeyKing Tip` (out of stock), and the bar
-   list. `IMAGE-QUEUE.csv` and `IMAGE-PROMPTS-ALL.csv` predate this and
-   overstate the work; recount before trusting either.
+1. **Product photographs — two of them, not two hundred.** Every earlier number
+   here has been wrong in the same direction, so this one is dated and the
+   method is written down. Recounted off the live feed on **25 Aug 2026**: of
+   **395** products, 284 match a photograph by name, 56 carry one straight from
+   the POS, 38 get a keyword or category photo, and **17 fall through to a
+   drawn `/api/tile`**.
+
+   Thirteen of those seventeen are the bar's, and the storefront hides the bar.
+   On the shelf a customer actually sees, **4** show a drawn tile and only
+   **2 are in stock**:
+
+   | Product | Category | Stock | Note |
+   |---|---|---|---|
+   | `Kamagra` | Edibles | 66 | |
+   | `Frezzer Jam` | Weed | 60 | a flower — probably "Freezer Jam" misspelt in the POS |
+   | `MonkeyKing Tip` | Exotics | 0 | |
+   | `ขิงผง โชคดี เขาค้อ` | CBD | 0 | `flatNameIntl()` gives it a usable key now |
+
+   Do **not** point either of the two at an existing photograph to clear the
+   count. Four SKUs sharing two pictures was logged as a defect and fixed;
+   re-creating it silently tells a customer they are buying a different strain.
+
+   **Run `/photo-audit.html` rather than trusting this paragraph.** It reads the
+   live feed in Bryan's own browser, applies the storefront's own hide rules,
+   and leads its shooting list with what is on the shelf and in stock — the
+   number that costs a sale. `IMAGE-QUEUE.csv`, `IMAGE-PROMPTS-ALL.csv`,
+   `PROMPTS.md`, `CODEX-HANDOVER.md` and `CHATGPT-START.md` all predate this and
+   say 296, 271 or 19.
 2. Delete the duplicate Vercel project `dankbkk-site-4jrn` (failed build,
    confuses which deployment is live), and the now-unused `KV_*`, `KV_URL`,
    `REDIS_URL` variables left over from Upstash.
@@ -257,19 +285,33 @@ As of 14 Aug 2026, `/api/health` reports every wired flag true and an empty
    `OPENROUTER_API_KEY`, `DEEPSEEK_API_KEY`, `OPENAI_API_KEY` or
    `XAI_API_KEY`, first one found wins, free tiers first; `/api/health` →
    `ai.provider` names the one actually live),
-   `TELEGRAM_BOT_TOKEN`/`TELEGRAM_CHAT_ID` and `RESEND_API_KEY` (order
-   notifications), `OMISE_*`/`TWOC2P_*`/`GBP_SECRET_KEY` (card payments).
+   `RESEND_API_KEY` (order notification email) and
+   `OMISE_*`/`TWOC2P_*`/`GBP_SECRET_KEY` (card payments).
    The storefront answers ~55 common questions on its own with no key at
    all, so a key only buys the long, unusual sentences.
 
-Things for Bryan to fix in the POS rather than in code:
+   **Telegram is live again** as of 25 Aug 2026 — `TELEGRAM_CHAT_ID` was wrong
+   and the log said `chat not found`; Bryan corrected it. `/api/health` →
+   `wired.notify.telegram` is `true` and `warnings` is empty. The orders that
+   were saved but never announced while it was broken are still in
+   `staff.html` → Orders; announcing them retroactively is not something the
+   code does, so they have to be worked through by hand.
+
+Things for Bryan to fix in the POS rather than in code. Re-checked against the
+live feed on 25 Aug 2026 — the negative-stock item that used to head this list
+is gone, so check before repeating any of it back to him:
 
 - `Gin tonic` 321 and `vodka` 214 are 300 and 200 with 7% applied a second
   time. Both are bar items, which the storefront hides, so customers never
-  see them — but the till's totals are wrong.
-- Eight bar lines carry negative stock.
-- Three `onion ring` products, one holding 4999. Cappuccino, Latte, Mocha and
-  Strawberry are each in there three times.
+  see them — but the till's totals are wrong. **Still true.**
+- **True duplicates** — same name, same price, twice or more: `Onion Ring` ×3
+  at ฿150 (one holding 4999), `Backwood pack` ×2, `stash pro lighter` ×2,
+  `Lemon cherry gelato` ×2.
+- **Not duplicates, though they look like it**: 18 more names repeat at
+  *different* prices — Cappuccino 60/80/120, Latte, Mocha, Americano, Espresso,
+  and the fruit sodas at 100/150. Those are sizes. They want the size written
+  into the name, not deleting; deleting one loses a real price point.
+- ~~Eight bar lines carry negative stock~~ — **fixed.** The live feed has none.
 - `(cbd product) ขิงผง โชคดี เขาค้อ` still has no photograph, but it no longer
   "can never" have one: `flatNameIntl()` in `api/_menu.js` gives a Thai-only
   name a real key (`ขิงผงโชคดีเขาค้อ`) when the ASCII one comes out empty, so a

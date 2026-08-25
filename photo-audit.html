@@ -73,7 +73,7 @@
   </header>
 
   <div class="bar">
-    <input type="text" id="src" value="https://dankbkk-site.vercel.app/api/products">
+    <input type="text" id="src" value="https://www.dankbangkok.com/api/products">
     <button class="p" id="run">Run the audit</button>
     <button class="g" id="review-start" disabled>Check each picture →</button>
   </div>
@@ -88,7 +88,9 @@
     <div class="stat warn"><b id="s-dup">0</b><i>Another SKU's photo</i></div>
     <div class="stat"><b id="s-stock">0</b><i>Generic stock photo</i></div>
     <div class="stat bad"><b id="s-wrong">0</b><i>You marked wrong</i></div>
+    <div class="stat bad"><b id="s-real">0</b><i>On the shop &amp; in stock</i></div>
   </div>
+  <p class="note" id="realnote" style="display:none"></p>
 
   <div id="sections"></div>
 
@@ -176,6 +178,32 @@ function promptFor(p, why){
     "\n\n" + BODY[k](p.name) + " " + LIGHT + " " + PALETTE + "\n";
 }
 
+/* ---- can a customer actually see this product? --------------------------
+   The audit reads /api/products, which is the whole till — bar cocktails, the
+   duplicate pre-rolls the joint builder replaced, and the staff's own test
+   lines included. The storefront hides all of those, so counting them as
+   missing photographs turns a two-photograph job into a seventeen-photograph
+   one and buries the two that a customer is looking at right now.
+
+   Counted off the live feed on 25 Aug 2026: 17 products draw a placeholder
+   tile, but 13 of them are the bar's, and only 2 of the rest are in stock.
+
+   These three patterns are copied from shopHidden() in index.html. Keep them
+   in step: if the storefront starts hiding something new, this page will go on
+   telling Bryan to photograph it. */
+var HIDE_CAT = /^(bars?|cocktails?|liquors?|spirits?|whisk(e)?ys?|vodkas?|gins?|rums?|tequilas?|wines?|sake|soju)\b/i;
+var HIDE_NAME = /\b(gin|vodka|rum|tequila|whisk(?:e)?y|brandy|soju|sake|cognac|absinthe|fireball|sangsom|sang\s*som|hong\s*thong|regency|s[au]ntor[yi]|suntory|cocktail|margarita|mojito|martini|negroni|highball|shot)\b|on\s*the\s*rocks?/i;
+var HIDE_PREROLL = /^(pre[\s-]?roll|joint)s?\b/i;
+var KEEP_PREROLL = /\b(hash|rocket|fuzz|cigar|wax|blunt|backwood|blackwood)/i;
+var HIDE_TEST = /\breview\b|\btest(ing)?\b|\(\s*inventory\s*\)/i;
+function offShelf(p){
+  var c = String(p.category || ""), n = String(p.name || "");
+  if(HIDE_CAT.test(c) || HIDE_NAME.test(n)) return "bar — sold at 224, not on this site";
+  if(HIDE_TEST.test(n)) return "a staff test line, never listed";
+  if(HIDE_PREROLL.test(c) && !KEEP_PREROLL.test(n)) return "the joint builder replaces this";
+  return null;
+}
+
 /* Why does this product have the photo it has? The menu feed tells us, and it
    is the single most useful thing on the review screen: a photo the shop set by
    hand is rarely wrong, one matched on a keyword often is. */
@@ -246,6 +274,7 @@ async function run(){
       p: p, url: full, state: state,
       isTile: /\/api\/tile/.test(raw),
       isStock: /images\.unsplash\.com|pexels|pixabay/.test(raw),
+      offShelf: offShelf(p), inStock: (p.stock || 0) > 0,
       shared: shared, prov: provenance(p), verdict: null
     });
     done++;
@@ -280,6 +309,24 @@ function render(){
   $("s-dup").textContent   = dup.length;
   $("s-stock").textContent = stock.length;
   $("s-wrong").textContent = wrong.length;
+
+  /* The number that actually costs the shop a sale: a gap the customer can see,
+     on something they can buy today. Everything else is still listed below, it
+     just is not what to do this afternoon. */
+  var gaps = wrong.concat(bad, tile, dup, stock);
+  var seenG = {}, real = 0, offs = 0;
+  gaps.forEach(function(r){
+    var k = r.p.id || r.p.name; if(seenG[k]) return; seenG[k] = 1;
+    if(r.offShelf) offs++; else if(r.inStock) real++;
+  });
+  $("s-real").textContent = real;
+  var note = $("realnote");
+  note.style.display = "";
+  note.textContent = real
+    ? ("Photograph these " + real + " first — they are on the shop and in stock right now. "
+       + offs + " of the rest are hidden from customers (the bar, the staff test lines, and the pre-rolls the joint builder replaced), so they can wait.")
+    : ("Nothing with a photo problem is both on the shop and in stock. "
+       + offs + " of the gaps below are hidden from customers altogether.");
 
   $("sections").innerHTML =
       section("You marked these as the wrong picture", wrong, "t-wrong", "WRONG")
@@ -317,9 +364,11 @@ function section(title, rows, cls, tag){
   var h = '<h2>' + title + ' — ' + rows.length + '</h2><div class="grid">';
   rows.forEach(function(r){
     var img = r.state === "ok" ? '<img src="' + esc(r.url) + '" referrerpolicy="no-referrer" alt="">' : '<em>no image</em>';
+    var where = r.offShelf
+      ? '<div class="c" style="color:var(--dim)">' + esc(r.p.category || "—") + ' · not on the shop</div>'
+      : '<div class="c">' + esc(r.p.category || "—") + (r.inStock ? '' : ' · out of stock') + '</div>';
     h += '<div class="card"><div class="ph"><span class="tag ' + cls + '">' + tag + '</span>' + img + '</div>' +
-         '<div class="m"><div class="n">' + esc(r.p.name || r.p.id || "—") + '</div>' +
-         '<div class="c">' + esc(r.p.category || "—") + '</div></div></div>';
+         '<div class="m"><div class="n">' + esc(r.p.name || r.p.id || "—") + '</div>' + where + '</div></div>';
   });
   return h + '</div>';
 }
@@ -332,31 +381,50 @@ function priceOf(p){
 }
 var SHOOT = "";
 function buildShootList(needs){
-  var seen = {}, byCat = {}, n = 0;
+  /* Split before grouping. The old list was one alphabetical run of categories,
+     which put "Bar" at the top and a customer-visible strain near the bottom, so
+     the first thing on a walk round the shop was a cocktail nobody can order
+     from this site. The shop's own shelf comes first now, and everything the
+     storefront hides is a separate, clearly labelled tail. */
+  var seen = {}, now = [], later = [], n = 0;
   needs.forEach(function(pair){
-    var p = pair[0].p, k = p.id || p.name;
+    var r = pair[0], p = r.p, k = p.id || p.name;
     if (seen[k]) return; seen[k] = 1; n++;
-    var c = p.category || "Uncategorised";
-    (byCat[c] = byCat[c] || []).push({ p: p, why: pair[1] });
+    ((!r.offShelf && r.inStock) ? now : later).push({ p: p, why: pair[1], r: r });
   });
   if (!n) { SHOOT = "Nothing to photograph — every product already has a real picture of its own."; $("shootlist").textContent = SHOOT; return; }
-  var cats = Object.keys(byCat).sort();
+
+  function group(rows){
+    var byCat = {};
+    rows.forEach(function(x){ var c = x.p.category || "Uncategorised"; (byCat[c] = byCat[c] || []).push(x); });
+    var out = "";
+    Object.keys(byCat).sort().forEach(function(c){
+      var list = byCat[c].slice().sort(function(a,b){ return (b.p.stock||0) - (a.p.stock||0); });
+      out += "\n== " + c + "  (" + list.length + ") ==\n";
+      list.forEach(function(x){
+        var pr = priceOf(x.p), st = x.p.stock, bits = [];
+        if (pr) bits.push("฿" + pr);
+        if (st !== undefined && st !== null) bits.push(st > 0 ? (st + " in stock") : "OUT OF STOCK");
+        if (x.r.offShelf) bits.push(x.r.offShelf);
+        out += "  [ ] " + (x.p.name || x.p.id) + (bits.length ? "   (" + bits.join(" · ") + ")" : "") + "\n";
+        out += "        why: " + x.why + "\n";
+      });
+    });
+    return out;
+  }
+
   var out = "DANK — photograph these " + n + " products\n" +
             "From " + $("src").value + "\n" +
             "Generated " + new Date().toLocaleString() + "\n" +
             "\nTip: shoot on the shop counter, same angle and light each time. Square (1:1) crops best.\n";
-  cats.forEach(function(c){
-    var list = byCat[c].slice().sort(function(a,b){ return (b.p.stock||0) - (a.p.stock||0); });
-    out += "\n== " + c + "  (" + list.length + ") ==\n";
-    list.forEach(function(r){
-      var pr = priceOf(r.p), st = r.p.stock;
-      var bits = [];
-      if (pr) bits.push("\u0e3f" + pr);
-      if (st !== undefined && st !== null) bits.push(st > 0 ? (st + " in stock") : "OUT OF STOCK");
-      out += "  [ ] " + (r.p.name || r.p.id) + (bits.length ? "   (" + bits.join(" \u00b7 ") + ")" : "") + "\n";
-      out += "        why: " + r.why + "\n";
-    });
-  });
+  out += "\n\n######## TAKE THESE " + now.length + " TODAY — on the shop, in stock ########\n";
+  out += now.length ? group(now) : "\n  (none — every gap left is hidden from customers, or out of stock)\n";
+  if (later.length){
+    out += "\n\n######## THE OTHER " + later.length + " CAN WAIT ########\n" +
+           "Hidden from customers (the bar, the staff test lines, the pre-rolls the\n" +
+           "joint builder replaced) or out of stock — a photo here changes nothing today.\n" +
+           group(later);
+  }
   SHOOT = out;
   $("shootlist").textContent = out;
 }
