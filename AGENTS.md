@@ -124,9 +124,13 @@ card:
   short links that cannot be resolved from a sandbox, so guessing which was
   Sathorn and which was Pattanakarn would have put the wrong code on the wrong
   wall. The page says so itself, and warns while any branch is still unnamed.
-  Its wording asks for **a review**, never for five stars, and stays clear of
-  the free-joint offer — Google removes reviews solicited with a rating or an
-  incentive, and can suspend the business profile for it.
+  Its wording is a switch with three presets, defaulting to **both** (a
+  five-star ask and a review ask) because that is what Bryan chose after being
+  told the trade: Google forbids soliciting a specific rating and can remove
+  reviews collected that way, so the page says so and the "ขอรีวิว" preset
+  reverts to the safe wording in one tap. Keep the poster a separate sign from
+  the free-joint offer either way — an incentive attached to a review ask is
+  the part that gets a business profile suspended.
 
 The first two **draw** their codes with `qr.js` locally: a card that phones a QR
 web service prints blank the day that service is slow or gone, and it hands
@@ -137,6 +141,22 @@ scans show up in Bryan's Linktree stats. Redrawing it would reach the same page
 and lose the numbers.
 
 Anything printed must be scan-tested after a layout change, not just looked at.
+
+## What a member gets
+
+Two things, and the wording lives in `CONFIG.crm` in `index.html`:
+
+- **a free joint with the first order** — what the shop's poster promises
+- **10% off every order** — `discountPct:10`, code `CRM10`
+
+The pop-up used to say 10% only, so the sign on the wall and the site
+disagreed in front of the customer. If the offer changes, change `CONFIG.crm`
+— the title, the sub and the badge all read from there.
+
+Separately, a **free second gram on a first 1g+ order** is an older promo that
+is still running and still wired into the cart (the "first" panel, tracked by
+`first_free_used`). Nobody has said whether it should survive alongside the
+free joint — do not quietly delete it, and do not assume it is intentional.
 
 ## Content rules
 

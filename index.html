@@ -1855,9 +1855,14 @@ const CONFIG = {
     ] },
   // ---- CRM membership: join free, get 10% off every order (a pop-up invites
   //      every non-member on each visit; signing up unlocks member prices) ----
+  /* The shop's poster promises a first-time member a free joint; this pop-up
+     promised 10% off and nothing else, so the sign on the wall and the site
+     disagreed in front of the customer. Both are named here now. The free
+     SECOND GRAM on a first 1g+ order is a separate, older promo that is still
+     running and still wired into the cart — see the "first" panel. */
   crm:{ enabled:true, discountPct:10, code:"CRM10",
-        title:"Join DANK Members — 10% OFF 💚",
-        sub:"Sign up free and save 10% on every order, plus members-only drops. Takes 10 seconds.",
+        title:"Join DANK Members — free joint + 10% OFF 💚",
+        sub:"Sign up free: a free joint with your first order, and 10% off every order after that. Takes 10 seconds.",
         firstDelayMs:1200, repeatMs:60000 },   // shows on entry, then re-invites every ~60s until they join
   // ---- Volume deal: buy more grams of flower, get grams free (cart-wide total) ----
   gramLadder:[ [3,1],[5,2],[7,3],[10,4] ],   // [buy grams, free grams]
@@ -2227,7 +2232,7 @@ function showBannerMaybe(){ const el=$("#promoBanner"); if(!el)return;
   const c=CONFIG.crm||{};
   const show=c.enabled&&!isMember()&&!LS.get("bannerX",false);
   el.style.display=show?"flex":"none";
-  const t=$("#pbTitle"); if(t) t.textContent="Join DANK Members — 10% off every order 💚"; }
+  const t=$("#pbTitle"); if(t) t.textContent="Join DANK Members — free joint + 10% off 💚"; }
 function dismissBanner(){ LS.set("bannerX",true); $("#promoBanner").style.display="none"; }
 /* "Is the customer in the middle of something?" — asked by the members pop-up before it
    interrupts. It only looked at the modal overlay, and the AI chat panel is not backed by
@@ -2254,10 +2259,12 @@ function openCRM(tab){
   if(isMember()){ openMemberCard(); return; }
   showModal("#infoModal");
   const t=tab==="login"?"login":"join";
-  $("#infoCard").innerHTML=`<div class="drawer-head" style="border:none;padding:18px 20px 4px"><h2>${esc(c.title||"Join DANK Members — 10% OFF 💚")}</h2><button class="close-x" onclick="dismissCRM()">×</button></div>
+  $("#infoCard").innerHTML=`<div class="drawer-head" style="border:none;padding:18px 20px 4px"><h2>${esc(c.title||"Join DANK Members — free joint + 10% OFF 💚")}</h2><button class="close-x" onclick="dismissCRM()">×</button></div>
     <div style="padding:6px 20px 22px">
       <div style="background:linear-gradient(135deg,#0e3a24,#0a2417);border:1px solid var(--line2);border-radius:14px;padding:15px 16px;margin:2px 0 14px;text-align:center">
-        <div style="font-size:34px;font-weight:900;color:var(--green2);line-height:1;letter-spacing:.5px">10% OFF</div>
+        <div style="font-size:30px;font-weight:900;color:var(--green2);line-height:1.15;letter-spacing:.3px">🚬 FREE JOINT<div style="font-size:15px;font-weight:800;color:var(--gold);margin-top:2px">with your first order</div></div>
+        <div style="height:1px;background:var(--line2);margin:11px 14px"></div>
+        <div style="font-size:26px;font-weight:900;color:var(--green2);line-height:1;letter-spacing:.5px">10% OFF</div>
         <div style="font-size:12.5px;color:var(--gold);margin-top:3px;font-weight:700">every order · free to join · members-only drops</div>
       </div>
       <div class="seg" style="margin-bottom:14px">

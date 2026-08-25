@@ -93,8 +93,13 @@
       <button class="btn ghost" onclick="reset()">↺ ค่าเริ่มต้น</button>
     </div>
 
+    <label style="margin-top:18px">ข้อความบนป้าย · Wording</label>
+    <div class="sizes" id="words"></div>
+
+    <label style="margin-top:14px">ขนาด · Size</label>
     <div class="sizes" id="sizes"></div>
-    <button class="btn" onclick="window.print()">🖨 พิมพ์ · Print</button>
+
+    <button class="btn" style="margin-top:16px" onclick="window.print()">🖨 พิมพ์ · Print</button>
 
     <div class="note" id="linkNote"></div>
   </div>
@@ -134,11 +139,41 @@ function load(){
   }catch(e){}
   return DEFAULTS.map(function(d){ return { name:d.name, url:d.url }; });
 }
-function save(){ try{ localStorage.setItem(KEY, JSON.stringify(rows)); }catch(e){} }
+function save(){
+  try{
+    localStorage.setItem(KEY, JSON.stringify(rows));
+    localStorage.setItem(KEY + "Words", words);
+  }catch(e){}
+}
 function reset(){ rows = DEFAULTS.map(function(d){ return { name:d.name, url:d.url }; }); save(); render(); }
 function addBranch(){ rows.push({ name:"", url:"" }); save(); render(); }
 
 function setField(i, field, val){ rows[i][field] = val; save(); build(); }
+
+/* Bryan asked for both asks on the poster. Keeping them as switchable presets
+   rather than hard-coded text, because the choice has a consequence he may want
+   to reverse in one tap: Google's review policy forbids soliciting a specific
+   rating, and reviews collected that way can be removed after the fact. The
+   note under the controls says so; the switch makes acting on it trivial. */
+var WORDS = {
+  both:   { label:"ทั้งคู่ (5 ดาว + รีวิว)",
+            head:"ถูกใจ DANK มั้ย?",
+            main:"ขอ 5 ดาวให้เราหน่อยนะ 💕",
+            foot:"รีวิวให้เราหน่อย · A review means a lot to us." },
+  stars:  { label:"ขอ 5 ดาว",
+            head:"ถูกใจ DANK มั้ย?",
+            main:"ขอ 5 ดาวให้เราหน่อยนะ 💕",
+            foot:"Love DANK? Give us 5 stars 💕" },
+  review: { label:"ขอรีวิว (ปลอดภัยกับ Google ที่สุด)",
+            head:"ถูกใจ DANK มั้ย?",
+            main:"รีวิวให้เราหน่อยนะ 💕",
+            foot:"Enjoyed your visit? A review means a lot to us." },
+};
+var words = "both";
+/* After WORDS exists, not before it: `var` hoists the name but not the value,
+   so reading WORDS[w] any earlier throws on a browser that has a saved choice. */
+try{ var saved = localStorage.getItem(KEY + "Words"); if(saved && WORDS[saved]) words = saved; }catch(e){}
+function pickWords(k){ words = k; save(); build(); renderWords(); }
 
 var SIZES = [
   { id:"poster",  label:"โปสเตอร์ A4 · 1 ใบ/หน้า" },
@@ -162,7 +197,12 @@ function render(){
       'oninput="setField('+i+',\'url\',this.value)"></div>' +
     '</div>';
   }).join("");
-  renderSizes(); build();
+  renderWords(); renderSizes(); build();
+}
+function renderWords(){
+  document.getElementById("words").innerHTML = Object.keys(WORDS).map(function(k){
+    return '<button class="sz'+(k===words?' on':'')+'" onclick="pickWords(\''+k+'\')">'+WORDS[k].label+'</button>';
+  }).join("");
 }
 function renderSizes(){
   document.getElementById("sizes").innerHTML = SIZES.map(function(s){
@@ -178,16 +218,17 @@ function build(){
     sheet.innerHTML = '<div class="card"><div class="sub">ใส่ลิงก์รีวิวอย่างน้อย 1 อันก่อน</div></div>';
     return;
   }
+  var W = WORDS[words] || WORDS.both;
   sheet.innerHTML = live.map(function(r){
     var who = (r.name||"").trim();
     return '<div class="card">' +
       '<div class="brand">DANK CANNABIS CLUB</div>' +
-      '<div class="head">ถูกใจ DANK มั้ย?</div>' +
-      '<div class="sub">รีวิวให้เราหน่อยนะ 💕</div>' +
+      '<div class="head">' + esc(W.head) + '</div>' +
+      '<div class="sub">' + esc(W.main) + '</div>' +
       '<div class="stars">★ ★ ★ ★ ★</div>' +
       '<img src="' + qr(r.url.trim()) + '" alt="QR code — leave a review' + (who ? " for " + esc(who) : "") + '">' +
       (who ? '<div class="who">' + esc(who) + '</div>' : '') +
-      '<div class="foot">Enjoyed your visit? A review means a lot to us.</div>' +
+      '<div class="foot">' + esc(W.foot) + '</div>' +
     '</div>';
   }).join("");
   note();
@@ -199,6 +240,9 @@ function note(){
   var maps = rows.some(function(r){ return /maps\.app\.goo\.gl|google\.[a-z.]+\/maps/i.test(r.url||""); });
   var unnamed = rows.filter(function(r){ return (r.url||"").trim() && !(r.name||"").trim(); }).length;
   var out = "";
+  if(words !== "review") out +=
+    '<b>ป้ายนี้ขอ 5 ดาว</b> — Google ห้ามขอเรตติ้งเจาะจง รีวิวที่ได้มาแบบนี้อาจโดนลบย้อนหลัง ' +
+    'ถ้าวันไหนอยากเปลี่ยน กดปุ่ม "ขอรีวิว" ด้านบนแล้วพิมพ์ใหม่ ได้ป้ายที่ปลอดภัยทันที<br><br>';
   if(unnamed) out += '<b>ยังไม่ได้ตั้งชื่อ ' + unnamed + ' สาขา</b> — ใส่ชื่อก่อนพิมพ์ ไม่งั้นแยกไม่ออกว่าป้ายไหนของร้านไหน<br><br>';
   if(maps) out +=
     '<b>ลิงก์ที่ใส่อยู่เป็นลิงก์ Google Maps</b> — สแกนแล้วเปิดหน้าร้าน ลูกค้าต้องกด Reviews → Write a review เองอีก 2 ที<br>' +
