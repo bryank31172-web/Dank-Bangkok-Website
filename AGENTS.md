@@ -60,13 +60,21 @@ Roughly in the order that matters. `CLAUDE.md` has the detail on each.
 
 1. Delete the duplicate Vercel project `dankbkk-site-4jrn` — it builds the same
    repo on every push and holds no domain.
-2. Set `SHOPIFY_STORE` + `SHOPIFY_ADMIN_TOKEN` to
+2. **Card / QR payments now go through Beam, not Omise.** Bryan gave up on
+   Omise after a month of approval limbo; Beam takes 0% on PromptPay QR, which
+   is how nearly everyone here pays. Set `BEAM_MERCHANT_ID` + `BEAM_API_KEY`
+   and `WEBHOOK_SECRET`, point Beam's webhook at
+   `/api/beam-webhook?secret=<WEBHOOK_SECRET>`, then **run one small real
+   payment before advertising it** — see `BEAM.md` for why that step is not
+   optional. Omise, 2C2P and GBPrimePay are all still wired and still work; the
+   checkout simply prefers Beam when it is configured.
+3. Set `SHOPIFY_STORE` + `SHOPIFY_ADMIN_TOKEN` to
    turn on the Shopify order push. The shop handle is `dankclubbkk`, so the
    store value is most likely `dankclubbkk.myshopify.com` — confirm it in
    Shopify → Settings → Domains rather than assuming; the public domain
    dankbkk.com is not the API host and answers 404. `GEMINI_API_KEY` (free
    tier) turns on the AI budtender. `/api/health` reports both.
-3. In the POS, checked against the live feed on 25 Aug 2026:
+4. In the POS, checked against the live feed on 25 Aug 2026:
    - `Gin tonic` is ฿321 and `vodka` ฿214 — 300 and 200 with 7% applied a
      second time. Both are bar items the storefront hides, so no customer sees
      the number, but the till's own totals are wrong.
@@ -79,12 +87,12 @@ Roughly in the order that matters. `CLAUDE.md` has the detail on each.
      rather than deleting.
    - Two spellings, both mapped either way so no picture is lost: "Grape
      Gasolin" (no e), "Galic Man" / "White Galic" (no r).
-4. `staff.html#box` — pick a POS product on each of the 7 gift rows, or the
+5. `staff.html#box` — pick a POS product on each of the 7 gift rows, or the
    custom-box free items never decrement.
 
 **Code:**
 
-5. **Product photographs — far smaller than any older note claims.** Recounted
+6. **Product photographs — far smaller than any older note claims.** Recounted
    off the live feed on **25 Aug 2026**: of **395** products, **17** fall
    through to a drawn `/api/tile`. Thirteen of those are the bar's, which the
    storefront hides. On the shelf a customer actually sees there are **4**, and
@@ -99,13 +107,13 @@ Roughly in the order that matters. `CLAUDE.md` has the detail on each.
    `IMAGE-QUEUE.csv` and `IMAGE-PROMPTS-ALL.csv` all predate this and say 296,
    271 or 19.** The method they describe is still correct; the size of the job
    is not.
-6. 26 strain cards served from `cdn.shopify.com` have never been checked against
+7. 26 strain cards served from `cdn.shopify.com` have never been checked against
    `strain-db.json`. All twelve local cards in `assets/strains/` agree; the
    remote ones could not be fetched from the sandbox they were checked in.
    Re-checked 25 Aug 2026: `cdn.shopify.com`, `images.unsplash.com` and
    `linktr.ee` are all still refused by the network policy, so this still needs
    a browser outside the sandbox.
-7. Shop tour: Bryan has an Insta360, nothing shot yet.
+8. Shop tour: Bryan has an Insta360, nothing shot yet.
 
 Fixed since the last handover, kept here so nobody re-reports them:
 

@@ -4287,15 +4287,18 @@ function setFulfill(f){
 }
 function setPay(p){ coPay=p; document.querySelectorAll("#coCard .pay").forEach(el=>el.classList.toggle("active",el.dataset.p===p));
   const cf=$("#cardForm"); if(cf) cf.style.display=p==="Card"?"block":"none";
-  const pn=$("#ppNote"); if(pn) pn.style.display=(p==="PromptPay"||p==="PromptPayQR")?"block":"none";
+  const pn=$("#ppNote"); if(pn) pn.style.display=(p==="PromptPay"||p==="PromptPayQR"||p==="BeamQR")?"block":"none";
   const pb=$("#placeBtn"); if(pb) pb.textContent=payBtnLabel(p); }
 function paymentMethods(){
   const m=[];
   if(walletBalance>0) m.push({p:"Wallet",label:"Wallet "+money(walletBalance),icon:"💚"});
-  if(payGW.omise){ m.push({p:"PromptPay",label:"PromptPay",icon:"📱"}); m.push({p:"Card",label:"Card",icon:"💳"}); }
+  /* Beam first when it is on. Its PromptPay is 0% to the shop, so it should
+     be the tap that costs nothing, not the third option down the list. */
+  if(payGW.beam){ m.push({p:"BeamQR",label:"PromptPay",icon:"📱"}); m.push({p:"BeamCard",label:"Card",icon:"💳"}); }
+  if(payGW.omise&&!payGW.beam){ m.push({p:"PromptPay",label:"PromptPay",icon:"📱"}); m.push({p:"Card",label:"Card",icon:"💳"}); }
   if(payGW.twoc2p) m.push({p:"2C2P",label:"Card / e-wallet",icon:"🏦"});
   if(payGW.gbp) m.push({p:"GBPrimePay",label:"PromptPay / Card",icon:"🏧"});
-  if(CONFIG.promptpay&&CONFIG.promptpay.enabled&&!payGW.omise) m.push({p:"PromptPayQR",label:"PromptPay",icon:"📱"});
+  if(CONFIG.promptpay&&CONFIG.promptpay.enabled&&!payGW.omise&&!payGW.beam) m.push({p:"PromptPayQR",label:"PromptPay",icon:"📱"});
   if(CONFIG.bank&&CONFIG.bank.enabled) m.push({p:"Transfer",label:"Bank transfer",icon:"🏦"});
   if(CONFIG.cod) m.push({p:"Cash",label:"Cash / COD",icon:"💵"});
   if(CONFIG.crypto&&CONFIG.crypto.enabled) m.push({p:"Crypto",label:"Crypto",icon:"₿"});
@@ -4307,7 +4310,7 @@ function paymentMethods(){
    them, because a phone number in an unauthenticated request body is not proof of who is
    spending. The button has to say that, or the customer taps "Pay" and nothing is paid. */
 function payBtnLabel(p){ if(p==="Wallet") return "💚 Place order · "+money(cartTotal())+" from wallet";
-  if(["PromptPay","Card","2C2P","GBPrimePay","PromptPayQR"].includes(p)) return "💳 Pay "+money(cartTotal());
+  if(["PromptPay","Card","2C2P","GBPrimePay","PromptPayQR","BeamQR","BeamCard"].includes(p)) return "💳 Pay "+money(cartTotal());
   if(p==="Transfer") return "🏦 Place order & show transfer details";
   if(p==="Crypto") return "₿ Place order & pay crypto";
   return "✅ Place order · "+money(cartTotal()); }
@@ -4389,7 +4392,7 @@ function orderText(o){
   return t;
 }
 /* ---- Omise (Opn) online payment ---- */
-let payCfg=null, payGW={omise:false,twoc2p:false,gbp:false,omisePublicKey:""}, lastOrderId="";
+let payCfg=null, payGW={beam:false,omise:false,twoc2p:false,gbp:false,omisePublicKey:""}, lastOrderId="";
 async function fetchPayCfg(){
   if(payCfg!==null) return payCfg;
   if(location.protocol==="file:"){ payCfg={configured:false}; return payCfg; }
@@ -4495,6 +4498,20 @@ async function submitOrder(method){
   } else {
     copyText(text); window.open(CONFIG.lineUrl,"_blank");
     return showSuccess("LINE","We've opened LINE and copied your order — just paste & send it to confirm.");
+  }
+  if(coPay==="BeamQR"&&orderId){
+    try{ const r=await fetch("/api/paybeam",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({orderId,action:"qr"})});
+      const j=await r.json(); if(j.ok&&j.qr){ return showGatewayQR(orderId,j.qr,o.total,"Beam",
+        j.chargeId?("/api/paybeam?chargeId="+encodeURIComponent(j.chargeId)):null); } }catch(e){}
+    /* The order is already saved. Never leave the customer on a spinner with a
+       full cart and nothing to show for it - say what happened and let the shop
+       take it from there. */
+    return showSuccess("order",`Order ${orderId} placed \u2014 the QR couldn't start, so we'll send you a PromptPay QR, or you can pay on arrival.`);
+  }
+  if(coPay==="BeamCard"&&orderId){
+    try{ const r=await fetch("/api/paybeam",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({orderId,action:"card"})});
+      const j=await r.json(); if(j.ok&&j.redirect){ location.href=j.redirect; return; } }catch(e){}
+    return showSuccess("order",`Order ${orderId} placed \u2014 we couldn't open the card page. We'll send a payment link, or pay on arrival.`);
   }
   if(coPay==="2C2P"&&orderId){
     try{ const r=await fetch("/api/pay2c2p",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({orderId})});
@@ -4609,15 +4626,33 @@ function renderPP(orderId,amount){
     </div>`;
   if(!a.image){ const payload=ppPayload(a.id||pp.id,amount); loadQRlib().then(()=>{ const el=$("#ppQR"); if(!el)return; if(window.QRCode){ el.innerHTML=""; new QRCode(el,{text:payload,width:210,height:210,correctLevel:QRCode.CorrectLevel.M}); } else { el.innerHTML="<div style='color:#333;font-size:11px;word-break:break-all;padding:6px'>"+payload+"</div>"; } }); }
 }
-function showGatewayQR(orderId,qr,amount,who){
+function showGatewayQR(orderId,qr,amount,who,verifyUrl){
   clearCartAfterOrder();
   $("#coCard").innerHTML=`<div class="success"><h2>Scan to pay ${money(amount)}</h2>
-    <p>${esc(who)} · PromptPay</p><img src="${esc(qr)}" style="width:220px;height:220px;object-fit:contain;background:#fff;border-radius:14px;padding:10px;margin:12px auto;display:block">
-    <p id="gwWait" style="color:var(--gold)">⏳ Waiting for payment…</p>
+    <p>${esc(who)} \u00b7 PromptPay</p><img src="${esc(qr)}" style="width:220px;height:220px;object-fit:contain;background:#fff;border-radius:14px;padding:10px;margin:12px auto;display:block">
+    <p id="gwWait" style="color:var(--gold)">\u23f3 Waiting for payment\u2026</p>
     <button class="btn btn-ghost btn-block" onclick="closeAll()">Close</button></div>`;
   clearInterval(window._gwPoll);
-  window._gwPoll=setInterval(async()=>{ try{ const r=await fetch("/api/track?id="+encodeURIComponent(orderId)); const j=await r.json();
-    if(j.found&&j.payStatus==="paid"){ clearInterval(window._gwPoll); showSuccess("paid",`Payment received — order ${orderId} confirmed! 🌿`); } }catch(e){} },3000);
+  /* Two ways to learn the money arrived, because relying on one of them strands
+     a customer who has genuinely paid.
+
+     The order record is the normal path: the gateway's webhook stamps it and
+     this poll sees it. But if that webhook is misconfigured - wrong secret, URL
+     not saved in the dashboard - the bank still debits the customer and this
+     screen would spin forever, which reads as "your payment failed" to the one
+     person who definitely did pay. So every fourth tick we also ask the gateway
+     about the charge directly; that call marks the order paid server-side too,
+     so the shop's own records catch up as well. */
+  let n=0;
+  window._gwPoll=setInterval(async()=>{
+    n++;
+    try{ const r=await fetch("/api/track?id="+encodeURIComponent(orderId)); const j=await r.json();
+      if(j.found&&j.payStatus==="paid"){ clearInterval(window._gwPoll); return showSuccess("paid",`Payment received \u2014 order ${orderId} confirmed! \u2705`); } }catch(e){}
+    if(verifyUrl&&n%4===0){
+      try{ const r=await fetch(verifyUrl); const j=await r.json();
+        if(j.paid){ clearInterval(window._gwPoll); return showSuccess("paid",`Payment received \u2014 order ${orderId} confirmed! \u2705`); } }catch(e){}
+    }
+  },3000);
 }
 function showBankTransfer(orderId,amount){
   const bk=CONFIG.bank; clearCartAfterOrder();

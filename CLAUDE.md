@@ -280,7 +280,36 @@ As of 14 Aug 2026, `/api/health` reports every wired flag true and an empty
    order notifications is switched on. If Shopify's schema ever refuses one of
    the decorative fields (`sourceName`, discount, shipping line, address), the
    helper retries once with a plain order rather than losing the sale.
-6. Not set, so their features are dark: an AI key (AI chat and the LINE
+6. **Card and QR payments — Beam, not Omise.** Bryan gave up on Omise on
+   25 Aug 2026 after a month without approval, and switched to **Beam**
+   (`beamcheckout.com`) on a recommendation: **PromptPay QR costs the shop 0%**
+   there, which is how nearly every customer here pays; cards are ~1.8%.
+   `api/paybeam.js` + `api/beam-webhook.js`, wired the same way as every other
+   gateway — the amount is read from the saved order server-side, and the
+   webhook is guarded by `?secret=<WEBHOOK_SECRET>`. Checkout prefers Beam when
+   `BEAM_MERCHANT_ID` + `BEAM_API_KEY` are set; Omise, 2C2P and GBPrimePay stay
+   wired and working behind it. `/api/health` → `wired.payments.beam`.
+
+   **`BEAM.md` is the setup page, and its step 5 is not optional.** Beam's docs
+   are refused by the sandbox network policy, so the integration was written
+   from search results. The one thing that could not be confirmed from Beam's
+   own documentation is whether `amount` is in satang or baht. It is
+   implemented as satang — the Thai convention, the one Omise uses, and
+   consistent with the `10000` in Beam's example being a round ฿100 — isolated
+   in `toMinorUnits()` so there is a single line to change. If that guess is
+   wrong every order is billed **100× over**, and only one small real payment
+   proves which it is.
+
+   Worth saying to Bryan once: this is a cannabis dispensary, and gateways have
+   merchant-category rules. Omise taking a month may have been the business
+   type rather than the paperwork, and Beam may answer the same way — better to
+   ask them outright than to lose another month.
+
+   **MaxMe** was recommended in the same thread and is deliberately not built:
+   no public API documentation could be found, and the recommender said an
+   introduction to their team was needed to get keys. Do not write a payment
+   integration against a guessed API.
+7. Not set, so their features are dark: an AI key (AI chat and the LINE
    budtender — `api/_ai.js` accepts `GEMINI_API_KEY`, `GROQ_API_KEY`,
    `OPENROUTER_API_KEY`, `DEEPSEEK_API_KEY`, `OPENAI_API_KEY` or
    `XAI_API_KEY`, first one found wins, free tiers first; `/api/health` →
