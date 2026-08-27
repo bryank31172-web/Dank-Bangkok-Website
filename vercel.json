@@ -1,4 +1,43 @@
 {
+  "redirects": [
+    { "source": "/products", "destination": "/products/", "permanent": true },
+    { "source": "/products/:category", "destination": "/products/:category/", "permanent": true },
+    { "source": "/products/:category/:product", "destination": "/products/:category/:product/", "permanent": true },
+    { "source": "/locations", "destination": "/locations/", "permanent": true },
+    { "source": "/locations/:location", "destination": "/locations/:location/", "permanent": true },
+    { "source": "/about", "destination": "/about/", "permanent": true },
+    { "source": "/faq", "destination": "/faq/", "permanent": true },
+    { "source": "/contact", "destination": "/contact/", "permanent": true },
+    { "source": "/blog", "destination": "/blog/", "permanent": true }
+  ],
+  "rewrites": [
+    { "source": "/products/", "destination": "/api/seo?view=products" },
+    { "source": "/products/:category/", "destination": "/api/seo?view=category&category=:category" },
+    { "source": "/products/:category/:product/", "destination": "/api/seo?view=product&category=:category&product=:product" },
+    { "source": "/locations/", "destination": "/api/seo?view=locations" },
+    { "source": "/locations/:location/", "destination": "/api/seo?view=location&location=:location" },
+    { "source": "/about/", "destination": "/api/seo?view=about" },
+    { "source": "/faq/", "destination": "/api/seo?view=faq" },
+    { "source": "/contact/", "destination": "/api/seo?view=contact" },
+    { "source": "/blog/", "destination": "/api/seo?view=blog" },
+    { "source": "/sitemap-pages.xml", "destination": "/api/seo?sitemap=pages" },
+    { "source": "/sitemap-products.xml", "destination": "/api/seo?sitemap=products" },
+    { "source": "/sitemap-product-categories.xml", "destination": "/api/seo?sitemap=product-categories" },
+    { "source": "/sitemap-blog.xml", "destination": "/api/seo?sitemap=blog" },
+    { "source": "/sitemap-locations.xml", "destination": "/api/seo?sitemap=locations" }
+  ],
+  "headers": [
+    { "source": "/staff.html", "headers": [{ "key": "X-Robots-Tag", "value": "noindex, nofollow" }] },
+    { "source": "/customer-display.html", "headers": [{ "key": "X-Robots-Tag", "value": "noindex, nofollow" }] },
+    { "source": "/pos.html", "headers": [{ "key": "X-Robots-Tag", "value": "noindex, nofollow" }] },
+    { "source": "/labels.html", "headers": [{ "key": "X-Robots-Tag", "value": "noindex, nofollow" }] },
+    { "source": "/table-qr.html", "headers": [{ "key": "X-Robots-Tag", "value": "noindex, nofollow" }] },
+    { "source": "/sku-margins.html", "headers": [{ "key": "X-Robots-Tag", "value": "noindex, nofollow" }] },
+    { "source": "/photo-audit.html", "headers": [{ "key": "X-Robots-Tag", "value": "noindex, nofollow" }] },
+    { "source": "/status.html", "headers": [{ "key": "X-Robots-Tag", "value": "noindex, nofollow" }] },
+    { "source": "/analytics.html", "headers": [{ "key": "X-Robots-Tag", "value": "noindex, nofollow" }] },
+    { "source": "/follow-qr.html", "headers": [{ "key": "X-Robots-Tag", "value": "noindex, nofollow" }] }
+  ],
   "crons": [
     { "path": "/api/line-summary", "schedule": "0 15 * * *" }
   ]

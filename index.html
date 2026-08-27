@@ -482,7 +482,7 @@
   .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:16px;padding:18px 0 60px}
   .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;display:flex;flex-direction:column;transition:.18s;position:relative}
   .card:hover{border-color:var(--line2);transform:translateY(-3px);box-shadow:var(--shadow)}
-  .card .thumb{aspect-ratio:1/1;position:relative;overflow:hidden;cursor:pointer}
+  .card .thumb{display:block;aspect-ratio:1/1;position:relative;overflow:hidden;cursor:pointer}
   .card .thumb img{width:100%;height:100%;object-fit:cover}
   /* The shop's own Botanical Legends cards are finished 3:2 artwork with the
      strain name down the left and the THC strip along the bottom. Cropping
@@ -1709,7 +1709,8 @@ tiers:{t:"Membership has its perks \ud83d\udc9a",b:`
       </div>
       <div>
         <h4>Shop</h4>
-        <a href="#menu">Full menu</a>
+        <a href="/products/">Browse all product pages</a>
+        <a href="#menu">Interactive shop menu</a>
         <a href="build-your-joint.html">Build your joint 🚬</a>
         <a href="#" onclick="openCart();return false;">Your cart</a>
         <a href="#" onclick="openAI('Hi! What are you looking for today?');return false;">Ask DANK AI</a>
@@ -1721,6 +1722,10 @@ tiers:{t:"Membership has its perks \ud83d\udc9a",b:`
       </div>
       <div>
         <h4>Visit & Contact</h4>
+        <a href="/locations/">All DANK locations</a>
+        <a href="/about/">About DANK BKK</a>
+        <a href="/faq/">Frequently asked questions</a>
+        <a href="/contact/">Contact DANK</a>
         <p id="footHours"></p>
         <a id="footPhone"></a>
         <a id="footMaps" target="_blank" rel="noopener">Get directions</a>
@@ -2832,7 +2837,7 @@ function showTopupQR(chargeId,qr,amount,willReceive,phone){
         $("#infoCard").innerHTML=`<div class="success"><div class="big">✅</div><h2>Top-up complete!</h2><p>Your balance is now <b style="color:var(--green2)">${money(j.balance)}</b>. Thanks! 🌿</p><button class="btn btn-primary btn-block" style="margin-top:16px" onclick="closeAll()">Done</button></div>`; } }catch(e){}
   },3000);
 }
-let menuRev="", menuSource="", menuSync=null, MENU_POLL_MS=30000;   // near-real-time menu sync
+let menuRev="", menuSource="", menuSync=null, menuLoaded=false, MENU_POLL_MS=30000;   // near-real-time menu sync
 const $=s=>document.querySelector(s);
 /* Real escaping, for text nodes and for quoted attribute values alike. The old
    escapeHtml() covered & < > only and threw outright on anything that was not a string.
@@ -2849,6 +2854,18 @@ const esc=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;'
    server actually generates (DK + base36 + 4 symbols) at the one point it arrives. */
 const oid=s=>String(s==null?"":s).replace(/[^A-Za-z0-9_-]/g,"");
 const money=n=>CONFIG.currency+Number(n).toLocaleString("en-US");
+/* Stable crawlable URLs shared with api/_seo.js. The interactive cards keep
+   opening their existing modal when JavaScript runs; their real href lets a
+   crawler, keyboard user or no-JavaScript visitor reach the product page. */
+function seoSlug(v,fallback){
+  const s=String(v||"").normalize("NFKD").toLowerCase()
+    .replace(/[^\p{Letter}\p{Number}]+/gu,"-").replace(/^-+|-+$/g,"").slice(0,96);
+  return s||fallback;
+}
+function seoProductPath(p){
+  return "/products/"+encodeURIComponent(seoSlug(p&&p.category,"other"))+"/"+
+    encodeURIComponent(seoSlug(p&&(p.slug||p.name),"product"))+"/";
+}
 const typeColor=t=>/^indica/i.test(t||"")?"var(--indica)":/^sativa/i.test(t||"")?"var(--sativa)":"var(--hybrid)";
 /* What the little corner badge should say. A strain type only means something
    on flower, so anything else names its category — an onion ring labelled
@@ -2972,6 +2989,7 @@ async function loadData(){
     catch(e){ console.warn("Live feed unavailable, using built-in menu.",e); }
   }
   buildBranches(); buildChips(); render(); ringSync();
+  menuLoaded=true; runDeepLink();
   setLiveDot(menuSource); startMenuSync();
 }
 function startMenuSync(){
@@ -3325,6 +3343,7 @@ function gridSentinel(){
 }
 function cardHTML(p){
   const out=p.stock<=0;
+  const detail=seoProductPath(p);
   const stockTag=out?`<span class="stock-tag out">Sold out</span>`:p.stock<=5?`<span class="stock-tag low">Only ${p.stock} left</span>`:`<span class="stock-tag">In stock</span>`;
   const thumb=imgTag(p,true);
   const potency=potencyHTML(p);
@@ -3340,9 +3359,9 @@ function cardHTML(p){
   return `<article class="card${adminMode&&p._hidden?' adm-hidden':''}">
     <button class="fav-btn ${isFav(p.id)?'on':''}" onclick="toggleFav('${p.id}',event)" title="Save">${isFav(p.id)?'❤':'♡'}</button>
     ${adminMode?`<button class="adm-edit-btn" onclick="openEdit('${p.id}',event)" title="Edit product">✎ Edit</button>`:''}
-      <div class="thumb" data-pid="${p.id}" onclick="openPD('${p.id}')">${typeTagHTML(p)}${p.isNew?'<span class="new-tag">🔥 NEW</span>':''}${adminMode&&p._hidden?'<span class="new-tag" style="background:#b23">🚫 HIDDEN</span>':''}${stockTag}${thumb}</div>
+      <a class="thumb" href="${esc(detail)}" data-pid="${p.id}" onclick="event.preventDefault();openPD('${p.id}')">${typeTagHTML(p)}${p.isNew?'<span class="new-tag">🔥 NEW</span>':''}${adminMode&&p._hidden?'<span class="new-tag" style="background:#b23">🚫 HIDDEN</span>':''}${stockTag}${thumb}</a>
     <div class="body">
-      <h3 onclick="openPD('${p.id}')">${esc(p.name)}</h3>
+      <h3><a href="${esc(detail)}" onclick="event.preventDefault();openPD('${p.id}')">${esc(p.name)}</a></h3>
       <div class="potency">${potency}${starsHTML(p)}</div>
       <div class="tags">${fx}</div>
       ${foot}
@@ -4079,9 +4098,9 @@ function renderRelated(p){
   if(!rel.length){ box.innerHTML=""; return; }
   box.innerHTML=`<div class="pd-section-t">You may also like</div><div class="rel-row">${rel.map(r=>{
     const pr=isFlower(r)?(memberMode?r.priceTiers[0].member:r.priceTiers[0].price):(memberMode?r.member:r.price);
-    return `<div class="rel-card" onclick="openPD('${r.id}')">
+    return `<a class="rel-card" href="${esc(seoProductPath(r))}" onclick="event.preventDefault();openPD('${r.id}')">
       <div class="rel-thumb">${imgTag(r,true)}</div>
-      <div class="rel-name">${esc(r.name)}</div><div class="rel-price">${isFlower(r)?'from ':''}${money(pr)}</div></div>`;}).join("")}</div>`;
+      <div class="rel-name">${esc(r.name)}</div><div class="rel-price">${isFlower(r)?'from ':''}${money(pr)}</div></a>`;}).join("")}</div>`;
 }
 function selTier(i){ pdTierIdx=i; document.querySelectorAll("#tierOpts .tier").forEach((el,idx)=>el.classList.toggle("active",idx===i)); const t=pdCurrent.priceTiers[i]; const el=$("#pdPrice"); if(!el) return;
   /* Rewriting textContent here used to strip the member markup the popup was
@@ -6281,7 +6300,9 @@ const DEEPLINK={
 function handleBuilderReturn(){
   const q=new URLSearchParams(location.search);
   const open=(q.get("open")||"").toLowerCase();
-  const want = q.get("checkout")==="1" ? "checkout"
+  const product=safeId(q.get("product")||"",0);
+  const want = q.get("product") ? "product:"+product
+             : q.get("checkout")==="1" ? "checkout"
              : q.get("cart")==="1"     ? "cart"
              : (DEEPLINK[open] ? open : null);
   if(!want) return;
@@ -6296,6 +6317,12 @@ function runDeepLink(){
   const want=pendingDeepLink;
   setTimeout(()=>{
     if(DEEPLINK[want]){ try{ DEEPLINK[want](); }catch(e){} pendingDeepLink=null; return; }
+    if(want.indexOf("product:")===0){
+      const id=want.slice(8), p=DATA.find(x=>x.id===id);
+      if(p){ openPD(p.id); pendingDeepLink=null; }
+      else if(menuLoaded){ pendingDeepLink=null; toast("This product is no longer available"); }
+      return;
+    }
     // the joint was written to the shared cart by the builder — make sure it is loaded
     if(!cart.length){ cart=LS.get("cart",[])||[]; updateCartCount(); }
     if(!cart.length){ pendingDeepLink=null; toast("Your cart is empty"); return; }
