@@ -911,6 +911,33 @@
   .success h2{margin:8px 0 6px}
   .success p{color:var(--muted);font-size:14px}
 
+  /* ---------- Google review proof ---------- */
+  .google-proof{padding:18px 0 10px;background:linear-gradient(180deg,rgba(61,220,132,.035),transparent)}
+  .google-proof-card{
+    display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:18px;
+    padding:20px 22px;border:1px solid var(--line2);border-radius:20px;
+    background:linear-gradient(125deg,rgba(22,36,26,.96),rgba(9,17,12,.96));
+    box-shadow:0 12px 34px rgba(0,0,0,.28);transition:border-color .18s,transform .18s,box-shadow .18s;
+  }
+  .google-proof-card:hover{border-color:var(--green);transform:translateY(-2px);box-shadow:0 16px 38px rgba(0,0,0,.36)}
+  .gp-pin{width:58px;height:58px;border-radius:18px;display:grid;place-items:center;flex-shrink:0;
+    background:rgba(61,220,132,.11);border:1px solid rgba(123,227,137,.26);font-size:28px}
+  .gp-kick{color:var(--green2);font-size:11px;font-weight:900;letter-spacing:1.7px;text-transform:uppercase}
+  .gp-line{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin:3px 0 2px}
+  .gp-line h2{font-size:clamp(21px,3vw,29px);line-height:1.1;margin:0}
+  .gp-stars{color:#fbbc04;font-size:19px;letter-spacing:2px;white-space:nowrap;text-shadow:0 1px 10px rgba(251,188,4,.2)}
+  .gp-copy p{margin:4px 0 0;color:var(--muted);font-size:13.5px}
+  .gp-cta{display:inline-flex;align-items:center;justify-content:center;min-height:46px;padding:0 17px;border-radius:12px;
+    background:var(--txt);color:#0b120d;font-size:13.5px;font-weight:850;white-space:nowrap}
+  @media(max-width:620px){
+    .google-proof{padding:12px 0 4px}
+    .google-proof-card{grid-template-columns:auto minmax(0,1fr);gap:13px;padding:16px}
+    .gp-pin{width:48px;height:48px;border-radius:14px;font-size:23px}
+    .gp-line{gap:6px 9px}.gp-line h2{font-size:20px}.gp-stars{font-size:16px}
+    .gp-copy p{font-size:12.5px}
+    .gp-cta{grid-column:1/-1;width:100%;min-height:44px}
+  }
+
   /* ---------- Footer ---------- */
   footer{border-top:1px solid var(--line);background:var(--bg2);padding:36px 0;margin-top:30px}
   .foot-grid{display:grid;grid-template-columns:2fr 1fr 1fr;gap:28px}
@@ -1135,6 +1162,28 @@
     </div>
   </div>
   <div class="hero-scroll" aria-hidden="true"><i></i>Scroll</div>
+</section>
+
+<!-- Google Maps evidence supplied by the owner on 27 Aug 2026: 5.0 from
+     1,174 reviews. Keep the count as 1,174+ so new reviews do not make this
+     statement false. This is visible trust content only, not review schema. -->
+<section class="google-proof" aria-labelledby="googleProofTitle">
+  <div class="wrap">
+    <a class="google-proof-card" href="https://maps.app.goo.gl/Q8KQq5noTHABf4HN6?g_st=ic"
+       target="_blank" rel="noopener noreferrer"
+       aria-label="Read more than 1,174 Google reviews for DANK Cannabis Club Pattanakarn">
+      <span class="gp-pin" aria-hidden="true">📍</span>
+      <span class="gp-copy">
+        <span class="gp-kick">Google Maps · Pattanakarn</span>
+        <span class="gp-line">
+          <h2 id="googleProofTitle">5.0 from 1,174+ reviews</h2>
+          <span class="gp-stars" aria-label="5 out of 5 stars">★★★★★</span>
+        </span>
+        <p>See why customers choose DANK Cannabis Club.</p>
+      </span>
+      <span class="gp-cta">Read Google reviews ↗</span>
+    </a>
+  </div>
 </section>
 
 <!-- ============ 3D SHELF — the live menu, on a turntable ============ -->
