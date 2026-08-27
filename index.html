@@ -938,6 +938,34 @@
     .gp-cta{grid-column:1/-1;width:100%;min-height:44px}
   }
 
+  /* ---------- All shops: full details inside the hero ----------
+     The locations slide used to be only a picture plus "tap for details".
+     This panel puts the complete useful content directly in the page, under
+     that picture, so a phone visitor can choose a branch without a modal. */
+  .hero-shop-details[hidden]{display:none}
+  .hero-shop-details{max-width:min(100%,620px);margin:0 0 34px;padding:22px;border:1px solid var(--line2);
+    border-radius:20px;background:rgba(7,16,10,.94);box-shadow:0 18px 44px rgba(0,0,0,.38);backdrop-filter:blur(12px)}
+  .hero-shop-details .shop-kick{font-size:11px;font-weight:900;letter-spacing:1.7px;text-transform:uppercase;color:var(--green2)}
+  .hero-shop-details h2{margin:5px 0 9px;font-size:clamp(25px,5.8vw,36px);line-height:1.05}
+  .shop-detail-intro{color:var(--muted);font-size:14px;margin:0 0 16px}
+  .shop-location-list{display:grid;gap:10px;margin-bottom:14px}
+  .shop-location{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:14px;min-height:82px;
+    padding:14px 16px;border:1px solid var(--line2);border-radius:14px;background:rgba(10,20,13,.72);transition:.16s}
+  .shop-location:hover{border-color:var(--green);background:rgba(17,34,22,.9)}
+  .shop-location-name{display:block;font-size:15px;font-weight:850;line-height:1.32}
+  .shop-location-address{display:block;margin-top:4px;color:var(--muted);font-size:12.5px;line-height:1.4}
+  .shop-location-map{color:var(--green2);font-size:13px;font-weight:850;white-space:nowrap}
+  .shop-detail-actions{display:grid;gap:9px}
+  .shop-detail-actions .btn{min-height:50px}
+  .shop-detail-qr{margin-top:16px;padding-top:16px;border-top:1px solid var(--line2);text-align:center}
+  .shop-detail-qr img{width:150px;height:auto;max-width:60%;margin:0 auto;border-radius:10px;background:#fff;padding:7px}
+  @media(min-width:900px){.hero-shop-details{max-width:min(44vw,560px)}}
+  @media(max-width:520px){
+    .hero-shop-details{padding:16px;border-radius:17px;margin-bottom:28px}
+    .shop-location{padding:13px;gap:9px;min-height:76px}
+    .shop-location-name{font-size:14px}.shop-location-address{font-size:12px}.shop-location-map{font-size:12.5px}
+  }
+
   /* ---------- Footer ---------- */
   footer{border-top:1px solid var(--line);background:var(--bg2);padding:36px 0;margin-top:30px}
   .foot-grid{display:grid;grid-template-columns:2fr 1fr 1fr;gap:28px}
@@ -1425,6 +1453,7 @@ function renderHeroSlides(){
      slide being shown and its immediate neighbours, nothing else. */
   holder.innerHTML=SITE_SLIDES.map(()=>'<div class="hs"></div>').join("");
   hfsBuildNav();
+  hfsBuildDetails();
   hfsLoad(heroIdx);
 }
 function hfsLoad(i){
@@ -1440,7 +1469,7 @@ function hfsBuildNav(){
   let nav=document.getElementById("hfsNav");
   if(!nav){
     nav=document.createElement("div"); nav.id="hfsNav"; nav.className="hfs-nav";
-    nav.innerHTML='<button type="button" class="hfs-tap" aria-label="Open promotion details" onclick="hfsTap()"></button>'+
+    nav.innerHTML='<button type="button" class="hfs-tap" id="hfsTap" aria-label="Open promotion details" onclick="hfsTap()"></button>'+
                   '<button type="button" class="hfs-arrow hfs-prev" aria-label="Previous promotion" onclick="hfsGo(-1)">\u2039</button>'+
                   '<button type="button" class="hfs-arrow hfs-next" aria-label="Next promotion" onclick="hfsGo(1)">\u203a</button>'+
                   '<div class="hfs-dots" id="hfsDots"></div>';
@@ -1451,10 +1480,26 @@ function hfsBuildNav(){
     SITE_SLIDES.map((s,k)=>'<button type="button" aria-label="'+pEsc(s.title||("Promotion "+(k+1)))+'" onclick="heroShow('+(k+1)+',1)"></button>').join("");
   nav.style.display=SITE_SLIDES.length?"":"none";
 }
+function hfsBuildDetails(){
+  const inner=document.querySelector(".hero-inner"); if(!inner) return;
+  let details=document.getElementById("heroShopDetails");
+  if(!details){
+    details=document.createElement("section");
+    details.id="heroShopDetails"; details.className="hero-shop-details"; details.hidden=true;
+    details.setAttribute("aria-label","All DANK shop locations");
+    details.innerHTML='<div class="shop-kick">4 DANK locations</div><h2>All DANK shops <span aria-hidden="true">\ud83d\udccd</span></h2>'+shopDetailsHTML(false);
+    inner.insertBefore(details,inner.firstChild);
+  }
+}
 function hfsGo(d){ heroShow(heroIdx+d,1); }
 /* Tapping the poster opens its details - but a swipe ends in a click too, so a
-   gesture that moved is not a tap. On the brand slide there is nothing to open. */
-function hfsTap(){ if(hfsMoved) return; if(heroIdx>0) openPromoIdx(heroIdx-1); }
+   gesture that moved is not a tap. The shops slide already shows every detail
+   in the page, so it deliberately has no second click target. */
+function hfsTap(){
+  if(hfsMoved||heroIdx<=0) return;
+  const slide=SITE_SLIDES[heroIdx-1];
+  if(slide&&slide.key!=="shops") openPromoIdx(heroIdx-1);
+}
 let heroIdx=0, heroOn=true, heroHold=0, hfsMoved=false;
 function heroShow(i,manual){
   const stage=document.getElementById("heroStage"), holder=document.getElementById("heroSlides"), chip=document.getElementById("heroPromoChip");
@@ -1462,6 +1507,8 @@ function heroShow(i,manual){
   const n=SITE_SLIDES.length; if(!n) return;
   heroIdx=((i%(n+1))+(n+1))%(n+1);
   const on=heroIdx>0;
+  const slide=on?SITE_SLIDES[heroIdx-1]:null;
+  const showShops=!!(slide&&slide.key==="shops");
   hfsLoad(heroIdx);
   stage.classList.toggle("hpromo",on);
   Array.prototype.forEach.call(holder.children,(el,k)=>el.classList.toggle("on",on&&k===heroIdx-1));
@@ -1472,8 +1519,12 @@ function heroShow(i,manual){
   }
   const dots=document.getElementById("hfsDots");
   if(dots) Array.prototype.forEach.call(dots.children,(el,k)=>el.classList.toggle("on",k===heroIdx));
-  if(chip){ chip.classList.toggle("on",on);
-    if(on) chip.textContent="\ud83c\udf89 "+(SITE_SLIDES[heroIdx-1].title||"Promotion")+" \u2014 tap for details"; }
+  const details=document.getElementById("heroShopDetails");
+  if(details) details.hidden=!showShops;
+  const tap=document.getElementById("hfsTap");
+  if(tap){ tap.hidden=!on||showShops; tap.setAttribute("aria-label",on&&!showShops?"Open "+(slide.title||"promotion")+" details":""); }
+  if(chip){ chip.classList.toggle("on",on&&!showShops);
+    if(on&&!showShops) chip.textContent="\ud83c\udf89 "+(slide.title||"Promotion")+" \u2014 tap for details"; }
   /* A visitor who just pressed an arrow is reading that slide - do not yank it
      away three seconds later. Autoplay stands down for a quarter of a minute. */
   if(manual) heroHold=Date.now()+15000;
@@ -1544,7 +1595,7 @@ function heroShow(i,manual){
     sub:(document.getElementById("heroSub")||{}).textContent||"" };
   const inner=document.querySelector(".hero-inner");
   if(inner){ const c=document.createElement("button"); c.id="heroPromoChip"; c.type="button";
-    c.onclick=()=>{ if(heroIdx>0) openPromoIdx(heroIdx-1); };
+    c.onclick=hfsTap;
     inner.insertBefore(c,inner.firstChild); }
   renderPromoTrack(); renderHeroSlides(); heroShow(0);
 
@@ -1587,7 +1638,12 @@ function heroShow(i,manual){
       const hero=document.getElementById("hero");
       if(hero) new IntersectionObserver(es=>{ es.forEach(en=>{ heroOn=en.isIntersecting; }); },{rootMargin:"80px"}).observe(hero);
     }
-    setInterval(()=>{ if(heroOn && document.visibilityState==="visible" && Date.now()>heroHold) heroShow(heroIdx+1); },7000);
+    setInterval(()=>{
+      const slide=heroIdx>0?SITE_SLIDES[heroIdx-1]:null;
+      /* Full location details must stay put long enough to be useful. The
+         arrows, dots and swipe still move away whenever the visitor chooses. */
+      if(heroOn && document.visibilityState==="visible" && Date.now()>heroHold && !(slide&&slide.key==="shops")) heroShow(heroIdx+1);
+    },7000);
   }
 })();
 function promoTilt(ev,el){
@@ -1606,6 +1662,21 @@ function promoTiltTap(el,ev){
   if(ev&&ev.pointerType==="mouse") return;
   el.classList.toggle("tilt-on");
 }
+function shopDetailsHTML(includeQr){
+  return `
+  <p class="shop-detail-intro">Choose a location to view it in Google Maps, call ahead, or message the DANK team.</p>
+  <div class="shop-location-list">
+    <a class="shop-location" target="_blank" rel="noopener noreferrer" href="https://maps.app.goo.gl/zivxFn4nf6RpBysC6?g_st=ic"><span><span class="shop-location-name">\ud83d\udccd DANK Cannabis Club \u2014 Pattanakarn</span><span class="shop-location-address">223 Phatthanakan Rd \u00b7 Bangkok 10250</span></span><span class="shop-location-map">Maps \u2197</span></a>
+    <a class="shop-location" target="_blank" rel="noopener noreferrer" href="https://maps.app.goo.gl/X2j67wBR3q4ueNEU8?g_st=ic"><span><span class="shop-location-name">\ud83d\udccd DANK \u2014 Sathorn</span><span class="shop-location-address">76/10 Nang Linchi Rd \u00b7 Bangkok 10120</span></span><span class="shop-location-map">Maps \u2197</span></a>
+    <a class="shop-location" target="_blank" rel="noopener noreferrer" href="https://maps.app.goo.gl/ZxrDoRr3iUxJmUWFA?g_st=ic"><span><span class="shop-location-name">\ud83d\udccd DANK Lomsak Phetchabun</span><span class="shop-location-address">56/2 Khotchaseni Rd \u00b7 Phetchabun 67110</span></span><span class="shop-location-map">Maps \u2197</span></a>
+    <a class="shop-location" target="_blank" rel="noopener noreferrer" href="https://maps.app.goo.gl/QgbvTmwEQ3GzFvVo8?g_st=ic"><span><span class="shop-location-name">\ud83d\udccd DANK Speakeasy \u2014 Pattanakarn</span><span class="shop-location-address">Phatthanakan 1 Alley \u00b7 Bangkok 10250</span></span><span class="shop-location-map">Maps \u2197</span></a>
+  </div>
+  <div class="shop-detail-actions">
+    <a class="btn btn-primary btn-block" href="tel:+66841620610">\ud83d\udcde Call +66 84 162 0610</a>
+    <a class="btn btn-ghost btn-block" target="_blank" rel="noopener noreferrer" href="https://linktr.ee/dankbkk">\ud83d\udcac Message DANK</a>
+  </div>
+  ${includeQr?`<div class="shop-detail-qr"><div style="color:var(--muted);font-size:12.5px;margin-bottom:10px">\u0e43\u0e2b\u0e49\u0e40\u0e1e\u0e37\u0e48\u0e2d\u0e19\u0e2a\u0e41\u0e01\u0e19 \u00b7 Show a friend</div><img src="assets/linktree-qr.png" alt="QR code \u2014 scan to open the DANK Linktree" loading="lazy" width="672" height="672"><div style="color:var(--muted);font-size:11.5px;margin-top:8px">LINE \u00b7 Instagram \u00b7 \u0e40\u0e21\u0e19\u0e39 \u00b7 \u0e42\u0e1b\u0e23\u0e42\u0e21\u0e0a\u0e31\u0e48\u0e19</div></div>`:""}`;
+}
 function openPromo(key,back){
   const _sl=SITE_SLIDES.find(s=>s.key===key)||null;
   const img=pUrl((_sl&&_sl.img)||{box:"assets/products/toadvenom.jpg",joint:"assets/products/alienmint.jpg",
@@ -1613,31 +1684,7 @@ function openPromo(key,back){
   const ladder=(CONFIG.gramLadder||[[3,1],[5,2],[9,3],[12,4],[15,5]]).slice().sort((a,b)=>a[0]-b[0]);
   const lrows=ladder.map(([b,f])=>`<div style="display:flex;justify-content:space-between;padding:8px 2px;border-bottom:1px solid var(--line2);font-size:14.5px"><span><b>Buy ${b}g</b></span><span style="color:var(--green2);font-weight:800">+${f}g FREE 🌿</span></div>`).join("");
   let H={
-shops:{t:"All DANK shops 📍",b:`
-  <p style="color:var(--muted);font-size:14px;margin:0 0 14px">Choose a location to view it in Google Maps, call ahead, or message the DANK team.</p>
-  <div style="display:grid;gap:10px;margin-bottom:14px">
-    <a class="btn btn-ghost btn-block" style="justify-content:space-between;text-align:left" target="_blank" rel="noopener noreferrer" href="https://maps.app.goo.gl/zivxFn4nf6RpBysC6?g_st=ic"><span>📍 <b>DANK Cannabis Club — Pattanakarn</b><br><small style="color:var(--muted)">223 Phatthanakan Rd · Bangkok 10250</small></span><span>Maps ↗</span></a>
-    <a class="btn btn-ghost btn-block" style="justify-content:space-between;text-align:left" target="_blank" rel="noopener noreferrer" href="https://maps.app.goo.gl/X2j67wBR3q4ueNEU8?g_st=ic"><span>📍 <b>DANK — Sathorn</b><br><small style="color:var(--muted)">76/10 Nang Linchi Rd · Bangkok 10120</small></span><span>Maps ↗</span></a>
-    <a class="btn btn-ghost btn-block" style="justify-content:space-between;text-align:left" target="_blank" rel="noopener noreferrer" href="https://maps.app.goo.gl/ZxrDoRr3iUxJmUWFA?g_st=ic"><span>📍 <b>DANK Lomsak Phetchabun</b><br><small style="color:var(--muted)">56/2 Khotchaseni Rd · Phetchabun 67110</small></span><span>Maps ↗</span></a>
-    <a class="btn btn-ghost btn-block" style="justify-content:space-between;text-align:left" target="_blank" rel="noopener noreferrer" href="https://maps.app.goo.gl/QgbvTmwEQ3GzFvVo8?g_st=ic"><span>📍 <b>DANK Speakeasy — Pattanakarn</b><br><small style="color:var(--muted)">Phatthanakan 1 Alley · Bangkok 10250</small></span><span>Maps ↗</span></a>
-  </div>
-  <a class="btn btn-primary btn-block" href="tel:+66841620610">📞 Call +66 84 162 0610</a>
-  <a class="btn btn-ghost btn-block" style="margin-top:8px" target="_blank" rel="noopener noreferrer" href="https://linktr.ee/dankbkk">💬 Message DANK</a>
-  <!-- The button above is what anyone reading this on their own phone will use;
-       nobody can scan the screen they are holding. The code is here for the
-       other case: showing it to the person next to you, or screenshotting it to
-       send on. Loads lazily because it is below the fold of this popup. -->
-  <div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--line2);text-align:center">
-    <div style="color:var(--muted);font-size:12.5px;margin-bottom:10px">
-      ให้เพื่อนสแกน · Show a friend
-    </div>
-    <img src="assets/linktree-qr.png" alt="QR code — scan to open the DANK Linktree"
-         loading="lazy" width="672" height="672"
-         style="width:150px;height:auto;max-width:60%;border-radius:10px;background:#fff;padding:7px">
-    <div style="color:var(--muted);font-size:11.5px;margin-top:8px">
-      LINE · Instagram · เมนู · โปรโมชั่น
-    </div>
-  </div>`},
+shops:{t:"All DANK shops 📍",b:shopDetailsHTML(true)},
 box:{t:"Build your DANK box 📦",b:`
   <p style="color:var(--muted);font-size:14px;margin:0 0 12px">A dark-walnut DANK box packed with 28 grams — pick every strain yourself, or tell us your vibe and our budtenders curate it.</p>
   <div style="background:var(--panel2);border:1px solid var(--line2);border-radius:12px;padding:12px 14px;margin-bottom:12px">
