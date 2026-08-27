@@ -63,6 +63,35 @@ function posNum(v) {
   const n = Number(cleaned);
   return isFinite(n) ? n : undefined;
 }
+
+/* Preserve real commerce variants when an upstream catalogue supplies them.
+   The current DANK POS feed is flat, so this is a backwards-compatible pass-
+   through rather than a database migration. SEO schema may use these fields
+   only when the values genuinely exist. */
+function normalizeVariant(raw, index) {
+  if (!raw || typeof raw !== "object") return null;
+  const price = posNum(raw.price ?? raw.salePrice ?? raw.sale_price);
+  const stock = posNum(raw.stock ?? raw.quantity ?? raw.qty ?? raw.inventory ?? raw.onHand);
+  const images = (Array.isArray(raw.images) ? raw.images : [raw.image ?? raw.imageUrl ?? raw.image_url])
+    .filter(Boolean).map(String);
+  const variant = {
+    id: String(raw.id ?? raw._id ?? raw.sku ?? `variant-${index + 1}`),
+    name: String(raw.name ?? raw.title ?? ""),
+    slug: String(raw.slug ?? ""),
+    sku: String(raw.sku ?? ""),
+    color: String(raw.color ?? raw.attributes?.color ?? ""),
+    colorCode: String(raw.colorCode ?? raw.color_code ?? ""),
+    size: String(raw.size ?? raw.attributes?.size ?? ""),
+    material: String(raw.material ?? raw.attributes?.material ?? ""),
+    price: price === undefined ? undefined : Math.round(price),
+    stock,
+    image: images[0] || "",
+    images,
+  };
+  const meaningful = variant.name || variant.sku || variant.color || variant.size || variant.material ||
+    variant.image || variant.price !== undefined || variant.stock !== undefined;
+  return meaningful ? variant : null;
+}
 /* Bookkeeping lines. The till keeps its tender types and account adjustments
    in the same product list as the stock - "Delivery", "Visa", "TF to Cash",
    "Pay In Advance", "pay old bill" - and they arrived on the storefront as
@@ -118,6 +147,9 @@ function normItem(x, i) {
   const category = pickCat([x.category, x.categoryName, x.category_name, x.group], nc.cat);
   const out = {
     id, name: String(name),
+    slug: String(x.slug ?? ""),
+    sku: String(x.sku ?? ""),
+    productGroupID: String(x.productGroupID ?? x.product_group_id ?? x.parentId ?? x.parent_id ?? ""),
     /* ?? is the wrong operator here: the POS sends category:"" rather than
        omitting it, and an empty string is not null, so it sailed through and
        every product arrived uncategorised. Take the first non-blank value,
@@ -133,6 +165,8 @@ function normItem(x, i) {
     description: String(x.description ?? x.desc ?? x.details ?? ""),
     effects: Array.isArray(x.effects) ? x.effects : [],
     flavors: Array.isArray(x.flavors) ? x.flavors : [],
+    attributes: x.attributes && typeof x.attributes === "object" ? x.attributes : {},
+    variants: Array.isArray(x.variants) ? x.variants.map(normalizeVariant).filter(Boolean) : [],
   };
   /* Same rounding as api/pos-feed.js, for the sources that do not go through
      it (MENU_FEED_URL, a POS serving its own JSON, StoreHub). A net price with
@@ -192,9 +226,27 @@ async function fetchPOS() {
 }
 
 function revOf(data) {
-  // Hash the fields that matter for "did the menu change": stock + price.
+  /* Hash every field that changes a customer or search-engine page. The old
+     revision only watched top-level stock and one price, so a renamed product,
+     new photograph, description edit or real variant could change without the
+     storefront refreshing or the product sitemap receiving a new lastmod. */
   const s = data
-    .map((p) => `${p.id}:${p.stock}:${p.price ?? p.priceTiers?.[0]?.price ?? ""}`)
+    .map((p) => JSON.stringify({
+      id: p.id,
+      name: p.name,
+      slug: p.slug,
+      category: p.category,
+      type: p.type,
+      description: p.description,
+      sku: p.sku,
+      stock: p.stock,
+      price: p.price,
+      member: p.member,
+      priceTiers: p.priceTiers,
+      image: p.image,
+      images: p.images,
+      variants: p.variants,
+    }))
     .join("|");
   let h = 2166136261;
   for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); }
