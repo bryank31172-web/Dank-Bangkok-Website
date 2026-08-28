@@ -56,6 +56,11 @@ substitution (`node --check <(...)`) does not work.
 
 Roughly in the order that matters. `CLAUDE.md` has the detail on each.
 
+Two files exist for handing work to an assistant outside this sandbox:
+`GROK-PROMPT.md` is the onboarding prompt to paste first (it carries the rules
+that stop a model rewriting the 645 KB `index.html` from memory), and `GROK.md`
+is three self-contained jobs that are blocked here purely by network policy.
+
 **Bryan's, not code:**
 
 1. Delete the duplicate Vercel project `dankbkk-site-4jrn` — it builds the same
