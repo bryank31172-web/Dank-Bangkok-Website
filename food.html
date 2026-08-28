@@ -510,6 +510,7 @@ var COCKTAIL_NAME = /\b(cocktail|cosmopolitan|espresso martini|long island iced 
 var COCKTAIL_IMAGES = {
   "dank fireball":"assets/products/cocktail-dank-fireball.jpg",
   "cosmopolitan":"assets/products/cocktail-cosmopolitan.jpg",
+  "espresso martini":"assets/products/cocktail-espresso-martini.webp",
   "lost cherry":"assets/products/cocktail-lost-cherry.jpg",
   "manhattan":"assets/products/cocktail-manhattan.jpg",
   "martini":"assets/products/cocktail-martini.jpg",
@@ -585,7 +586,8 @@ function posToItem(p, catId){
   if (CAT_CANNA.test(String(p.name || ""))) tags.push("edible");
   var originalImg = p.image || p.img || "";
   var madeImg = COCKTAIL_IMAGES[cocktailKey(p.name)] || "";
-  var img = madeImg && (!originalImg || /^\/api\/tile\b/.test(originalImg)) ? madeImg : originalImg;
+  /* Curated menu artwork wins over old POS/Unsplash placeholders. */
+  var img = madeImg || originalImg;
   return { id: String(p.id || p.sku || p.name), name: String(p.name), cat: catId,
            price: price, tags: tags, img: img,
            out: p.stock !== undefined && Number(p.stock) <= 0 };
