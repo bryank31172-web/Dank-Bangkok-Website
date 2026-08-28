@@ -1074,7 +1074,7 @@
     <div class="brand" onclick="openAI()"><img class="logo-img" id="logoImg" alt="DANK BKK mascot"><span class="full" id="brandName">DANK BKK</span></div>
     <div class="search">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
-      <input id="searchInput" type="search" placeholder="Search strains, edibles, drinks…" oninput="render()" />
+      <input id="searchInput" type="search" placeholder="Search strains, edibles, drinks…" oninput="render();crmSearchInvite()" />
     </div>
     <div class="top-actions">
       <select class="branch-sel" id="branchSel" onchange="render()" title="Branch"></select>
@@ -2240,20 +2240,20 @@ function dismissBanner(){ LS.set("bannerX",true); $("#promoBanner").style.displa
    got the join-us popup thrown at them every minute. */
 function anyModalOpen(){ const o=$("#overlay"); if(o&&o.classList.contains("show")) return true;
   const ai=$("#aiPanel"); return !!ai&&ai.classList.contains("show"); }
-/* ---- CRM membership pop-up: always shown to non-members. It appears shortly
-   after entry and keeps re-inviting (every crm.repeatMs) until they join, so
-   the 10%-off offer is always in front of anyone who isn't a member yet. ---- */
-function scheduleCRM(delay){ const c=CONFIG.crm||{};
-  if(!c.enabled||isMember()) return;
-  clearTimeout(crmTimer);
-  crmTimer=setTimeout(function tick(){
-    if(isMember()) return;                                   // stop the moment they join
-    if(anyModalOpen()){ crmTimer=setTimeout(tick,c.retryMs||4000); return; }   // busy (cart/checkout/popup already open) → check again soon
-    openCRM();
-    crmTimer=setTimeout(tick,c.repeatMs||60000);             // keep the cycle alive — survives any dismiss path until they join
-  }, delay);
+/* ---- CRM membership prompts -----------------------------------------------
+   Never interrupt entry. A non-member sees the invite once after they actively
+   search the menu, and once when they first attempt checkout. The flags are per
+   tab/session, so normal navigation cannot create a repeating popup loop. */
+let crmResumeCheckout=false;
+function crmSeen(key){ try{ return sessionStorage.getItem("dank_crm_"+key)==="1"; }catch(e){ return false; } }
+function markCRMSeen(key){ try{ sessionStorage.setItem("dank_crm_"+key,"1"); }catch(e){} }
+function scheduleCRM(){ /* legacy no-op: automatic entry/repeat prompts removed */ }
+function maybeShowCRM(){ /* deliberately quiet until search or checkout */ }
+function crmSearchInvite(){
+  const q=($("#searchInput")?.value||"").trim();
+  if(q.length<2||isMember()||crmSeen("search")||anyModalOpen()) return;
+  markCRMSeen("search"); openCRM("join");
 }
-function maybeShowCRM(){ scheduleCRM((CONFIG.crm&&CONFIG.crm.firstDelayMs)||1200); }
 function openCRM(tab){
   const c=CONFIG.crm||{};
   if(isMember()){ openMemberCard(); return; }
@@ -2324,6 +2324,7 @@ async function loginMember(){
     repriceCart(); render(); showBannerMaybe(); refreshWallet();
     if($("#cartDrawer")?.classList.contains("show")) renderCart();
     closeAll(); toast("💚 Welcome back"+(name?", "+name:"")+(points>0?" — "+points.toLocaleString()+" points ⭐":" — 10% off is on!"));
+    resumeCheckoutAfterCRM();
   } else {
     if(btn){ btn.textContent="👤 Log in"; btn.style.pointerEvents="auto"; }
     toast("Number not found — join free below 💚");
@@ -2463,8 +2464,13 @@ function memberLogout(){
   closeAll(); toast("Logged out — see you soon 🌿"); maybeShowCRM();
 }
 function openRegister(){ openCRM(); }          // back-compat alias
-function dismissCRM(){ if(memberMode&&!isMember()){ memberMode=false; LS.set("memberOn",false); reflectMember(); repriceCart(); render(); } closeAll();
-  scheduleCRM((CONFIG.crm&&CONFIG.crm.repeatMs)||60000); }   // "Maybe later" → invite again shortly, until they join
+function resumeCheckoutAfterCRM(){
+  if(!crmResumeCheckout) return;
+  crmResumeCheckout=false;
+  setTimeout(()=>openCheckout(true),0);
+}
+function dismissCRM(){ if(memberMode&&!isMember()){ memberMode=false; LS.set("memberOn",false); reflectMember(); repriceCart(); render(); }
+  closeAll(); resumeCheckoutAfterCRM(); }
 function joinMember(){
   const name=($("#regName").value||"").trim(), phone=($("#regPhone").value||"").trim(), age=$("#regAge")?$("#regAge").checked:true;
   if(!name||!validContact(phone)){ toast("Please add your name and phone"); return; }
@@ -2476,6 +2482,7 @@ function joinMember(){
   if($("#cartDrawer")?.classList.contains("show")) renderCart();
   closeAll(); toast("💚 You're a member — 10% off is on!");
   submitMemberLead(name,phone);
+  resumeCheckoutAfterCRM();
 }
 function register(){ joinMember(); }           // back-compat alias
 /* best-effort: push the new member to your CRM/POS if an endpoint exists */
@@ -4225,7 +4232,7 @@ function renderCart(){
 }
 
 /* ---- Checkout ---- */
-function openCheckout(){ stat("checkouts");
+function openCheckout(skipCRM){ stat("checkouts");
   /* Bonus lines are settled BEFORE the empty-cart test. Removing the last paid line
      leaves its free grams behind, and testing cart.length first let a cart that is
      really empty open the checkout on "0 items · ฿0" and POST an order the API then
@@ -4246,6 +4253,9 @@ function openCheckout(){ stat("checkouts");
      own "🛒 Checkout now" button, the drawer opens UNDERNEATH the chat and cannot be
      tapped. The success path below has always closed the AI; these two did not. */
   if(short>0){ toast("Minimum order "+money(CONFIG.minOrder)+" — add "+money(short)+" more"); closeAI(); openCart(); return; }
+  if(!skipCRM&&!isMember()&&!crmSeen("checkout")){
+    markCRMSeen("checkout"); crmResumeCheckout=true; closeDrawerOnly(); closeAI(); openCRM("join"); return;
+  }
   coPay=paymentMethods()[0].p; renderCheckout(); closeDrawerOnly(); closeAI(); showModal("#coModal");
 }
 /* Read whatever is on screen into coDraft. Called before anything that will destroy the

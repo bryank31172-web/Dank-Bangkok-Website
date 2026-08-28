@@ -376,7 +376,10 @@ var TABLES = ["T1","T2","T3","T4","T5","T6","Bar 1","Bar 2"];
 var MENU = { categories: [], items: [] };
 var cart = {};            // id -> qty
 var table = null;         // "T3" or null
-var cat = "all";
+/* The bar's cocktails are the reason most guests open this menu, so the live
+   POS menu opens on that shelf. applyMenu() falls back to All when a feed has
+   no cocktails (including the under-20 menu). */
+var cat = "pos-cocktails";
 var payment = "cash";
 
 /* ---------- table from the QR ---------- */
@@ -500,6 +503,27 @@ var CAT_KITCHEN = /(food|kitchen|snack|munch|bakery|dessert|noodle|rice|burger|p
 var CAT_DRINKS  = /(drink|beverage|coffee|tea|juice|shake|smoothie|water|soda|soft|mocktail|latte)/i;
 var CAT_BAR     = /(beer|alcohol|liquor|wine|spirit|cocktail|\bbar\b|whisky|vodka|gin|rum)/i;
 var CAT_CANNA   = /(edible|cannabis|weed|thc|hash|exotic|topshelf|midgrade|premium|joint|vape|flower|pre-?roll|merch|accessor|gram)/i;
+/* Cocktail SKUs have drifted across Bar, Beer, Edibles and Exotics in the POS.
+   Recognise the actual drink name and put every one on a single shelf. Utility
+   lines such as ice, tonic and straight shots deliberately stay where they are. */
+var COCKTAIL_NAME = /\b(cocktail|cosmopolitan|espresso martini|long island iced tea|lost cherry|manhattan|martini|matcha forest|negroni|old fashioned|daiquiri|gin fizz|margarita|mojito|whiskey sour|whisky sour|dank fireball)\b/i;
+var COCKTAIL_IMAGES = {
+  "dank fireball":"assets/products/cocktail-dank-fireball.jpg",
+  "cosmopolitan":"assets/products/cocktail-cosmopolitan.jpg",
+  "lost cherry":"assets/products/cocktail-lost-cherry.jpg",
+  "manhattan":"assets/products/cocktail-manhattan.jpg",
+  "martini":"assets/products/cocktail-martini.jpg",
+  "negroni":"assets/products/cocktail-negroni.jpg",
+  "old fashioned":"assets/products/cocktail-old-fashioned.jpg",
+  "daiquiri":"assets/products/cocktail-daiquiri.jpg",
+  "gin fizz":"assets/products/cocktail-gin-fizz.jpg",
+  "margarita":"assets/products/cocktail-margarita.jpg",
+  "mojito":"assets/products/cocktail-mojito.jpg",
+  "whiskey sour":"assets/products/cocktail-whiskey-sour.jpg"
+};
+function cocktailKey(name){
+  return String(name || "").replace(/^\s*\[\s*bar\s*\]\s*/i, "").trim().toLowerCase();
+}
 /* A bottle recognised by its name, for the six the POS files with no category
    at all - "Fireball shot", "gin shot", "vodka", "Gin tonic", "Regency on
    therock", "santory ontherock". Without this they are dropped by the empty
@@ -533,8 +557,11 @@ function posToItem(p, catId){
   var tags = [];
   if (CAT_BAR.test(String(p.category || "")) || BAR_NAME.test(String(p.name || ""))) tags.push("21+");
   if (CAT_CANNA.test(String(p.name || ""))) tags.push("edible");
+  var originalImg = p.image || p.img || "";
+  var madeImg = COCKTAIL_IMAGES[cocktailKey(p.name)] || "";
+  var img = madeImg && (!originalImg || /^\/api\/tile\b/.test(originalImg)) ? madeImg : originalImg;
   return { id: String(p.id || p.sku || p.name), name: String(p.name), cat: catId,
-           price: price, tags: tags, img: p.image || p.img || "",
+           price: price, tags: tags, img: img,
            out: p.stock !== undefined && Number(p.stock) <= 0 };
 }
 
@@ -543,6 +570,7 @@ function menuFromPOS(list){
   (list || []).forEach(function(p){
     if (!p || !p.name) return;
     var cname = String(p.category || "").trim();
+    if (COCKTAIL_NAME.test(String(p.name || ""))) cname = "Cocktails";
     /* An uncategorised bottle still belongs on this menu, so it is filed under
        Bar by its name rather than dropped with the rest of the blanks. */
     if (!cname && BAR_NAME.test(String(p.name || ""))) cname = "Bar";
@@ -564,6 +592,7 @@ function applyMenu(m, source){
   MENU.items = (MENU.items || []).filter(function(i){ return i && i.name && i.price != null; });
   MENU.source = source;
   if (U20) restrictMenu();
+  if (!(MENU.categories || []).some(function(c){ return c.id === "pos-cocktails"; })) cat = "all";
   renderTabs(); render();
 }
 
@@ -594,11 +623,16 @@ function baht(n){ return "฿" + Number(n || 0).toLocaleString("en-US"); }
 
 function renderTabs(){
   var row = document.getElementById("tabRow");
-  var html = '<button class="tab' + (cat === "all" ? " active" : "") + '" onclick="setCat(\'all\')">✨ All</button>';
+  var cocktail = (MENU.categories || []).filter(function(c){ return c.id === "pos-cocktails"; })[0];
+  var html = cocktail
+    ? '<button class="tab' + (cat === cocktail.id ? " active" : "") + '" onclick="setCat(\'' + cocktail.id + '\')">🍸 Cocktails</button>'
+    : '';
+  html += '<button class="tab' + (cat === "all" ? " active" : "") + '" onclick="setCat(\'all\')">✨ All</button>';
   if ((MENU.bundles || []).length){
     html += '<button class="tab' + (cat === "deals" ? " active" : "") + '" onclick="setCat(\'deals\')">🔥 Deals</button>';
   }
   (MENU.categories || []).forEach(function(c){
+    if (c.id === "pos-cocktails") return;
     html += '<button class="tab' + (cat === c.id ? " active" : "") + '" onclick="setCat(\'' + esc(c.id) + '\')">' +
             esc(c.emoji || "") + " " + esc(c.name) + "</button>";
   });
