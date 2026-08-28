@@ -107,12 +107,18 @@ Roughly in the order that matters. `CLAUDE.md` has the detail on each.
    `IMAGE-QUEUE.csv` and `IMAGE-PROMPTS-ALL.csv` all predate this and say 296,
    271 or 19.** The method they describe is still correct; the size of the job
    is not.
-7. 26 strain cards served from `cdn.shopify.com` have never been checked against
-   `strain-db.json`. All twelve local cards in `assets/strains/` agree; the
-   remote ones could not be fetched from the sandbox they were checked in.
-   Re-checked 25 Aug 2026: `cdn.shopify.com`, `images.unsplash.com` and
-   `linktr.ee` are all still refused by the network policy, so this still needs
-   a browser outside the sandbox.
+7. **27 strain cards on `cdn.shopify.com` have never been checked against
+   `strain-db.json`** — and three of the cards that *were* checked disagreed
+   with the site (King Cherry 19% vs 28%, Ztupid, and a Gelato 41 card carrying
+   Granddaddy Purple's text), so this is not a formality. All twelve local cards
+   in `assets/strains/` agree. Re-checked 25 Aug 2026: `cdn.shopify.com`,
+   `images.unsplash.com`, `linktr.ee`, `maxme.co.th` and
+   `maxenterpriseconnect.com` are all still refused by the network policy.
+   **`GROK.md` is this job written out for an assistant that can reach them** —
+   all 27 cards with the site's current values beside each URL, plus the two
+   missing product photographs and the MaxMe API question. Hand that file over
+   rather than re-deriving the list; regenerate it from `strain-db.json` +
+   `product-images.json` if the catalogue moves on.
 8. Shop tour: Bryan has an Insta360, nothing shot yet.
 
 Fixed since the last handover, kept here so nobody re-reports them:
