@@ -376,10 +376,10 @@ var TABLES = ["T1","T2","T3","T4","T5","T6","Bar 1","Bar 2"];
 var MENU = { categories: [], items: [] };
 var cart = {};            // id -> qty
 var table = null;         // "T3" or null
-/* The bar's cocktails are the reason most guests open this menu, so the live
-   POS menu opens on that shelf. applyMenu() falls back to All when a feed has
-   no cocktails (including the under-20 menu). */
-var cat = "pos-cocktails";
+/* Birthday bottle service is the event menu's lead offer, followed by the
+   cocktails. applyMenu() falls back to the first available adult/safe shelf
+   when a section is unavailable (including the under-20 menu). */
+var cat = "pos-birthday-bottle-service";
 var payment = "cash";
 
 /* ---------- table from the QR ---------- */
@@ -521,6 +521,32 @@ var COCKTAIL_IMAGES = {
   "mojito":"assets/products/cocktail-mojito.jpg",
   "whiskey sour":"assets/products/cocktail-whiskey-sour.jpg"
 };
+var BIRTHDAY_BOTTLE_CATEGORY = {
+  id: "pos-birthday-bottle-service",
+  name: "Birthday Bottle Service",
+  emoji: "🎂"
+};
+var BIRTHDAY_BOTTLES = [
+  { id:"birthday-regency", name:"Regency", price:750, img:"assets/products/regencyontherock.jpg" },
+  { id:"birthday-suntory", name:"Whisky (Suntory)", price:1400, img:"assets/products/santoryontherock.jpg" },
+  { id:"birthday-wine", name:"Wine", price:1200, img:"https://images.unsplash.com/photo-1522997169209-1629f3f89fdf?auto=format&fit=crop&w=640&h=480&q=70" },
+  { id:"birthday-pink-gin", name:"Gin – Pink", price:1700, img:"assets/products/ginshot.jpg" },
+  { id:"birthday-hendricks", name:"Gin – Hendrick’s", price:2700, img:"assets/products/gintonic.jpg" },
+  { id:"birthday-small-beers", name:"Small Beers", price:120, img:"https://images.unsplash.com/photo-1671118720259-026c46d4a67c?auto=format&fit=crop&w=640&h=480&q=70" },
+  { id:"birthday-soft-drinks", name:"Soft Drinks (All)", price:60, img:"https://images.unsplash.com/photo-1629654613528-5d0a2e4166de?auto=format&fit=crop&w=640&h=480&q=70" }
+];
+function addBirthdayBottleService(m){
+  m.categories = m.categories || [];
+  m.items = m.items || [];
+  m.categories = m.categories.filter(function(c){ return c.id !== BIRTHDAY_BOTTLE_CATEGORY.id; });
+  m.items = m.items.filter(function(i){ return i.cat !== BIRTHDAY_BOTTLE_CATEGORY.id; });
+  m.categories.unshift(BIRTHDAY_BOTTLE_CATEGORY);
+  BIRTHDAY_BOTTLES.forEach(function(b){
+    m.items.push({ id:b.id, name:b.name, cat:BIRTHDAY_BOTTLE_CATEGORY.id,
+                   price:b.price, tags:["21+"], img:b.img, out:false,
+                   desc:"Birthday bottle service" });
+  });
+}
 function cocktailKey(name){
   return String(name || "").replace(/^\s*\[\s*bar\s*\]\s*/i, "").trim().toLowerCase();
 }
@@ -589,10 +615,13 @@ function menuFromPOS(list){
 
 function applyMenu(m, source){
   MENU = m;
+  addBirthdayBottleService(MENU);
   MENU.items = (MENU.items || []).filter(function(i){ return i && i.name && i.price != null; });
   MENU.source = source;
   if (U20) restrictMenu();
-  if (!(MENU.categories || []).some(function(c){ return c.id === "pos-cocktails"; })) cat = "all";
+  if (!(MENU.categories || []).some(function(c){ return c.id === cat; })){
+    cat = (MENU.categories || []).some(function(c){ return c.id === "pos-cocktails"; }) ? "pos-cocktails" : "all";
+  }
   renderTabs(); render();
 }
 
@@ -623,8 +652,12 @@ function baht(n){ return "฿" + Number(n || 0).toLocaleString("en-US"); }
 
 function renderTabs(){
   var row = document.getElementById("tabRow");
+  var birthday = (MENU.categories || []).filter(function(c){ return c.id === BIRTHDAY_BOTTLE_CATEGORY.id; })[0];
   var cocktail = (MENU.categories || []).filter(function(c){ return c.id === "pos-cocktails"; })[0];
-  var html = cocktail
+  var html = birthday
+    ? '<button class="tab' + (cat === birthday.id ? " active" : "") + '" onclick="setCat(\'' + birthday.id + '\')">🎂 Birthday Bottle Service</button>'
+    : '';
+  html += cocktail
     ? '<button class="tab' + (cat === cocktail.id ? " active" : "") + '" onclick="setCat(\'' + cocktail.id + '\')">🍸 Cocktails</button>'
     : '';
   html += '<button class="tab' + (cat === "all" ? " active" : "") + '" onclick="setCat(\'all\')">✨ All</button>';
@@ -632,7 +665,7 @@ function renderTabs(){
     html += '<button class="tab' + (cat === "deals" ? " active" : "") + '" onclick="setCat(\'deals\')">🔥 Deals</button>';
   }
   (MENU.categories || []).forEach(function(c){
-    if (c.id === "pos-cocktails") return;
+    if (c.id === BIRTHDAY_BOTTLE_CATEGORY.id || c.id === "pos-cocktails") return;
     html += '<button class="tab' + (cat === c.id ? " active" : "") + '" onclick="setCat(\'' + esc(c.id) + '\')">' +
             esc(c.emoji || "") + " " + esc(c.name) + "</button>";
   });
