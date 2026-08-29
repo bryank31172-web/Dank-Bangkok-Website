@@ -1,0 +1,25 @@
+{
+  "id": "/",
+  "name": "DANK BKK",
+  "short_name": "DANK",
+  "description": "DANK BKK premium cannabis menu, cart, checkout and order tracking.",
+  "lang": "en",
+  "dir": "ltr",
+  "start_url": "/?source=pwa",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
+  "orientation": "any",
+  "background_color": "#060a07",
+  "theme_color": "#060a07",
+  "categories": ["shopping", "lifestyle"],
+  "icons": [
+    {"src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable"},
+    {"src": "/apple-touch-icon.png", "sizes": "180x180", "type": "image/png", "purpose": "any"}
+  ],
+  "shortcuts": [
+    {"name": "Shop menu", "short_name": "Shop", "url": "/?source=pwa-shortcut", "icons": [{"src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml"}]},
+    {"name": "Checkout", "short_name": "Checkout", "url": "/checkout", "icons": [{"src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml"}]}
+  ],
+  "prefer_related_applications": false
+}
