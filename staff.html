@@ -94,6 +94,7 @@ main{flex:1;display:flex;min-height:0}
 .quicks{display:flex;gap:6px;padding:0 16px 10px;flex-wrap:wrap}
 .quicks button{font-size:12px;padding:6px 11px;border-radius:99px;background:var(--panel);border:1px solid var(--line2);color:var(--green2)}
 .emptyc{margin:auto;color:var(--muted2);text-align:center;font-size:14px}
+.alert-health{padding:16px;display:grid;gap:12px}.alert-health .panel{background:var(--panel);border:1px solid var(--line2);border-radius:14px;padding:14px}.health-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:8px}.health-item{border:1px solid var(--line2);border-radius:10px;padding:10px}.health-item.ok{border-color:var(--green)}.health-item.bad{border-color:var(--danger)}.accept-btn{background:var(--green);color:#03180b;font-weight:900;padding:11px 16px;border-radius:10px;flex:1}.mute-on{border-color:var(--gold)!important;color:var(--gold)!important}
 /* login() sets display on these two inline, and an inline style beats a
    stylesheet — so without !important the chat pane stayed visible on a phone
    after logging in and its "Select a conversation" placeholder hung 90px past
@@ -107,7 +108,8 @@ main{flex:1;display:flex;min-height:0}
 <header>
   <span style="font-size:22px">🌿</span><h1>DANK BKK · Staff Console</h1>
   <span class="st" id="storeStat"></span>
-  <button class="ghost" id="alertBtn" style="display:none" type="button">🔕 Alerts off</button>
+  <button class="ghost" id="alertBtn" style="display:none" type="button">🔔 Enable push</button>
+  <button class="ghost" id="muteBtn" style="display:none" type="button">🔊 Sound on</button>
   <!-- The staff key is already in this browser's storage, so analytics.html
        opens straight into the numbers rather than asking for it again. -->
   <a class="ghost" id="statsBtn" href="/analytics.html" style="display:none;text-decoration:none">📊 Numbers</a>
@@ -132,6 +134,7 @@ main{flex:1;display:flex;min-height:0}
       <button id="tabBox" onclick="setTab('box')">🧢 Box gifts</button>
       <button id="tabLab" onclick="setTab('lab')">🧪 Lab</button>
       <button id="tabMember" onclick="setTab('member')">👤 Member</button>
+      <button id="tabAlerts" onclick="setTab('alerts')">🔔 Alert health</button>
     </div>
     <div id="list"></div>
   </div>
@@ -144,7 +147,8 @@ const API='/api/thread';
 let KEY=localStorage.getItem('dankStaffKey')||'';
 let cur=null, curSeq=0, pollT=null, listT=null, ordersT=null, lastSeen={};   // threadId -> last seq seen
 let TAB='chats', ORDERS=[], knownOrders=new Set(), firstOrderLoad=true, LIVE=false;
-let alertEnabled=localStorage.getItem('dankOrderAlerts')==='1', audioCtx=null, orderPopT=null;
+let alertEnabled=localStorage.getItem('dankOrderAlerts')==='1', soundMuted=localStorage.getItem('dankAlertSoundMuted')==='1', audioCtx=null, orderPopT=null;
+let ALERT_STATE=new Map(), alertStateT=null, alertSweepT=null;
 const BASE_TITLE='🌿 DANK BKK — Staff Console';
 const $=s=>document.querySelector(s);
 
@@ -208,37 +212,140 @@ function authPost(url,body,legacy){
 }
 
 const ago=t=>{const s=(Date.now()-t)/1e3; if(s<60)return 'now'; if(s<3600)return Math.floor(s/60)+'m'; if(s<86400)return Math.floor(s/3600)+'h'; return Math.floor(s/86400)+'d';};
-function updateAlertButton(){ const b=$('#alertBtn'); if(!b)return;
-  b.textContent=alertEnabled?'🔔 Alerts on':'🔕 Alerts off'; b.classList.toggle('active',alertEnabled); }
+function updateAlertButton(){
+  const b=$('#alertBtn'); if(!b)return;
+  const permission=('Notification' in window)?Notification.permission:'unsupported';
+  b.textContent=alertEnabled&&permission==='granted'?'✅ Push on':permission==='denied'?'⛔ Push blocked':'🔔 Enable push';
+  b.classList.toggle('active',alertEnabled&&permission==='granted');
+}
+function updateMuteButton(){
+  const b=$('#muteBtn'); if(!b)return;
+  b.textContent=soundMuted?'🔇 Sound muted':'🔊 Sound on';
+  b.classList.toggle('mute-on',soundMuted);
+}
 function warmAudio(){ try{ if(!audioCtx){ const AC=window.AudioContext||window.webkitAudioContext; if(AC)audioCtx=new AC(); }
   if(audioCtx?.state==='suspended') audioCtx.resume(); }catch(e){} }
-function beep(){ try{ warmAudio(); if(!audioCtx)return; const o=audioCtx.createOscillator(),g=audioCtx.createGain();
-  o.connect(g); g.connect(audioCtx.destination); o.frequency.value=880; g.gain.setValueAtTime(.07,audioCtx.currentTime);
-  g.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+.25); o.start(); o.stop(audioCtx.currentTime+.26);}catch(e){} }
-async function toggleAlerts(){
-  if(alertEnabled){ alertEnabled=false; localStorage.removeItem('dankOrderAlerts'); updateAlertButton(); return; }
-  warmAudio();
-  if('Notification' in window&&Notification.permission==='default'){ try{ await Notification.requestPermission(); }catch(e){} }
-  alertEnabled=true; localStorage.setItem('dankOrderAlerts','1'); updateAlertButton();
-  boxToast('Order alerts are on — sound, vibration and phone notifications when available');
+function beep(){ try{ warmAudio(); if(!audioCtx||soundMuted)return; const o=audioCtx.createOscillator(),g=audioCtx.createGain();
+  o.connect(g); g.connect(audioCtx.destination); o.frequency.value=880; g.gain.setValueAtTime(.11,audioCtx.currentTime);
+  g.gain.exponentialRampToValueAtTime(.001,audioCtx.currentTime+.45); o.start(); o.stop(audioCtx.currentTime+.46);}catch(e){} }
+function alarmBurst(){
+  if(!ALERT_STATE.size)return;
+  if(!soundMuted){ beep(); setTimeout(beep,650); setTimeout(beep,1300); }
+  try{ navigator.vibrate?.([250,120,250,120,450]); }catch(e){}
+}
+function deviceLabel(){
+  let label=localStorage.getItem('dankAlertDeviceLabel');
+  if(!label){ label=(/iPhone|iPad|iPod/i.test(navigator.userAgent)?'iPhone/iPad':/Android/i.test(navigator.userAgent)?'Android':'Staff browser')+' · '+Math.random().toString(36).slice(-4).toUpperCase(); localStorage.setItem('dankAlertDeviceLabel',label); }
+  return label;
+}
+function vapidBytes(value){
+  const pad='='.repeat((4-value.length%4)%4), raw=atob((value+pad).replace(/-/g,'+').replace(/_/g,'/'));
+  return Uint8Array.from([...raw].map(ch=>ch.charCodeAt(0)));
+}
+async function disablePushNotifications(){
+  try{
+    const reg=await navigator.serviceWorker?.getRegistration('/');
+    const sub=await reg?.pushManager?.getSubscription();
+    if(sub){
+      await fetch('/api/alert-subscriptions',{method:'DELETE',headers:{'Content-Type':'application/json','X-Staff-Key':KEY},body:JSON.stringify({endpoint:sub.endpoint})});
+      await sub.unsubscribe();
+    }
+  }catch(e){}
+  alertEnabled=false; localStorage.removeItem('dankOrderAlerts'); updateAlertButton();
+}
+async function enablePushNotifications(){
+  if(!('serviceWorker' in navigator)||!('PushManager' in window)||!('Notification' in window)){
+    boxToast('Push notifications are not supported in this browser'); return false;
+  }
+  if(Notification.permission==='denied'){
+    boxToast('Notifications are blocked. Enable them in this site’s phone settings.'); updateAlertButton(); return false;
+  }
+  const permission=await Notification.requestPermission();
+  if(permission!=='granted'){ alertEnabled=false; updateAlertButton(); boxToast('Notifications were not allowed'); return false; }
+  try{
+    const reg=await navigator.serviceWorker.register('/sw.js',{scope:'/'});
+    const health=await (await authGet('/api/alert-subscriptions')).json();
+    if(!health.publicKey){ boxToast('Push keys are not configured on the server'); return false; }
+    let sub=await reg.pushManager.getSubscription();
+    if(!sub) sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:vapidBytes(health.publicKey)});
+    const saved=await authPost('/api/alert-subscriptions',{subscription:sub.toJSON(),label:deviceLabel()});
+    if(!saved.ok) throw new Error('registration failed');
+    alertEnabled=true; localStorage.setItem('dankOrderAlerts','1'); updateAlertButton();
+    boxToast('Push notifications enabled on '+deviceLabel());
+    return true;
+  }catch(e){ boxToast('Could not enable push: '+e.message); return false; }
+}
+async function toggleAlerts(){ if(alertEnabled) await disablePushNotifications(); else await enablePushNotifications(); }
+function toggleSound(){
+  soundMuted=!soundMuted;
+  localStorage.setItem('dankAlertSoundMuted',soundMuted?'1':'0');
+  updateMuteButton(); if(!soundMuted) warmAudio();
+  boxToast(soundMuted?'Sound muted — locked-screen notifications stay on':'Sound is on');
+}
+async function foregroundNotification(order){
+  if(!alertEnabled||Notification.permission!=='granted')return;
+  const items=(order.items||[]).map(i=>i.name).filter(Boolean);
+  const body=`${items.slice(0,2).join(', ')}${items.length>2?' +'+(items.length-2)+' more':''} · ฿${order.total??order.subtotal??0} · ${order.customer?.name||'Customer'}`;
+  try{
+    const reg=await navigator.serviceWorker.ready;
+    await reg.showNotification('DANK BKK · New order',{body,tag:'dank-order-'+order.orderId,data:{url:'/staff.html#orders',orderId:order.orderId},requireInteraction:true,renotify:true,icon:'/apple-touch-icon.png',vibrate:[250,120,250,120,450]});
+  }catch(e){}
 }
 function showOrderAlert(fresh){
   if(!fresh.length)return;
-  const first=fresh[0], count=fresh.length;
-  if(alertEnabled){ beep(); try{ navigator.vibrate?.([180,100,180]); }catch(e){} }
-  document.title=`(${count}) New order · DANK BKK`;
+  if(alertEnabled) alarmBurst();
+  document.title=`(${fresh.length}) New order · DANK BKK`;
   let pop=$('#orderPop');
   if(!pop){ pop=document.createElement('button'); pop.id='orderPop'; pop.type='button'; pop.className='order-pop';
-    const title=document.createElement('b'), detail=document.createElement('span'); pop.append(title,detail);
-    pop.addEventListener('click',()=>{ setTab('orders'); pop.classList.remove('on'); }); document.body.appendChild(pop); }
-  pop.querySelector('b').textContent=count===1?'🛒 New order':`🛒 ${count} new orders`;
-  pop.querySelector('span').textContent=`${first.orderId||''} · ฿${first.total??first.subtotal??0} · tap to open Orders`;
+    const title=document.createElement('b'),detail=document.createElement('span'); pop.append(title,detail);
+    pop.addEventListener('click',()=>{setTab('orders');pop.classList.remove('on');}); document.body.appendChild(pop); }
+  pop.querySelector('b').textContent=fresh.length===1?'🛒 New order':`🛒 ${fresh.length} new orders`;
+  const first=fresh[0], names=(first.items||[]).map(i=>i.name).filter(Boolean).slice(0,2).join(', ');
+  pop.querySelector('span').textContent=`${names||first.orderId||''} · ฿${first.total??first.subtotal??0} · ${first.customer?.name||'Customer'}`;
   pop.classList.add('on'); clearTimeout(orderPopT); orderPopT=setTimeout(()=>pop.classList.remove('on'),10000);
-  if(alertEnabled&&'Notification' in window&&Notification.permission==='granted'){
-    try{ const n=new Notification(count===1?'DANK BKK · New order':`DANK BKK · ${count} new orders`,{
-      body:`${first.orderId||''} · ฿${first.total??first.subtotal??0} · ${first.customer?.name||'Customer'}`,tag:'dank-new-order'});
-      n.onclick=()=>{ window.focus(); setTab('orders'); n.close(); }; }catch(e){}
-  }
+  fresh.forEach(foregroundNotification);
+}
+async function syncAlertState(){
+  if(!LIVE)return;
+  try{
+    const r=await authGet('/api/alert-state'); if(!r.ok)return;
+    const list=(await r.json()).alerts||[], before=ALERT_STATE.size;
+    ALERT_STATE=new Map(list.map(a=>[a.orderId,a]));
+    if(ALERT_STATE.size&&before===0) alarmBurst();
+    if(!ALERT_STATE.size){ document.title=BASE_TITLE; $('#orderPop')?.classList.remove('on'); }
+    if(TAB==='orders') renderOrders();
+  }catch(e){}
+}
+function startAlertLoops(){
+  clearInterval(alertStateT); clearInterval(alertSweepT);
+  syncAlertState();
+  alertStateT=setInterval(syncAlertState,5000);
+  alertSweepT=setInterval(async()=>{ if(!LIVE||!ALERT_STATE.size)return; alarmBurst(); try{await authGet('/api/alert-sweep');}catch(e){} },30000);
+}
+async function acceptAlert(id){
+  const r=await authPost('/api/alert-accept',{orderId:id,acceptedBy:deviceLabel()});
+  if(r.ok){ ALERT_STATE.delete(id); boxToast('Order accepted — alarms stopped on all devices'); pollOrders(); syncAlertState(); }
+  else boxToast('Could not accept order');
+}
+async function testPush(){
+  if(!alertEnabled&&!(await enablePushNotifications()))return;
+  try{ const reg=await navigator.serviceWorker.ready; await reg.showNotification('DANK BKK · Test notification',{body:'Push notifications are working on '+deviceLabel(),tag:'dank-test-'+Date.now(),icon:'/apple-touch-icon.png'}); }
+  catch(e){ boxToast('Test failed: '+e.message); }
+}
+async function loadAlertHealth(){
+  const el=$('#list'); el.innerHTML='<div class="ghdr">Checking notification channels…</div>';
+  try{
+    const r=await authGet('/api/alert-history?limit=30'), j=await r.json();
+    const channelNames={webPush:'Push notifications',telegram:'Telegram',line:'LINE',whatsapp:'WhatsApp',email:'Email'};
+    const cards=Object.entries(channelNames).map(([key,label])=>{
+      const configured=!!j.configured?.[key];
+      const latest=(j.alerts||[]).map(a=>a.channels?.[key]).find(Boolean);
+      const state=!configured?'Not configured':latest?(latest.ok?'Last delivery OK':'Last delivery failed'):'Configured · not tested yet';
+      return `<div class="health-item ${configured?(latest&&!latest.ok?'bad':'ok'):'bad'}"><b>${esc(label)}</b><div style="font-size:12px;color:var(--muted);margin-top:4px">${esc(state)}</div>${latest?.at?`<div style="font-size:11px;color:var(--muted2)">${ago(latest.at)}</div>`:''}</div>`;
+    }).join('');
+    const history=(j.alerts||[]).map(a=>`<div style="border-top:1px solid var(--line2);padding:9px 0"><b>${esc(a.orderId)}</b> · ${esc(a.status)} ${a.acceptedBy?'by '+esc(a.acceptedBy):''}<div style="font-size:12px;color:var(--muted)">${esc((a.order?.items||[]).map(i=>i.name).join(', '))} · ฿${esc(a.order?.total||0)}</div></div>`).join('')||'<div style="color:var(--muted)">No alert history yet.</div>';
+    el.innerHTML=`<div class="alert-health"><div class="panel"><h3 style="margin-top:0">Phone & tablet push notifications</h3><p style="color:var(--muted);font-size:13px">iPhone/iPad: add this site to the Home Screen, open it there, then tap Enable push. Android and desktop browsers can allow directly.</p><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="done-btn" data-act="push-enable">🔔 Enable push notifications</button><button class="undo-btn" data-act="push-test">Send test notification</button><button class="undo-btn" data-act="sound-toggle">${soundMuted?'🔇 Sound muted':'🔊 Sound on'}</button></div><p style="font-size:12px;color:var(--muted2)">Registered devices: ${esc(j.push?.subscribers||0)}</p></div><div class="panel"><h3 style="margin-top:0">Channel health</h3><div class="health-grid">${cards}</div></div><div class="panel"><h3 style="margin-top:0">Alert history / missed alerts</h3>${history}</div></div>`;
+  }catch(e){ el.innerHTML='<div class="ghdr">Could not load alert health.</div>'; }
 }
 
 async function login(){
@@ -251,7 +358,7 @@ async function login(){
   const j=await r.json();
   $('#storeStat').innerHTML=j.redis?'<span class="pill">● storage: redis</span>':'<span class="pill warn">● storage: memory (set up Upstash for production)</span>';
   $('#login').style.display='none'; $('#listWrap').style.display='flex'; $('#chatWrap').style.display='flex'; $('#logoutBtn').style.display='';
-  $('#alertBtn').style.display=''; updateAlertButton();
+  $('#alertBtn').style.display=''; $('#muteBtn').style.display=''; updateAlertButton(); updateMuteButton(); startAlertLoops();
   { const sb=$('#statsBtn'); if(sb) sb.style.display=''; }
   renderList(j.threads); startListPoll(); pollOrders(); startOrderPoll();
   /* The Telegram and LINE alerts link back here as staff.html#orders and
@@ -261,7 +368,7 @@ async function login(){
      the `chatting` class it sets hid the order list behind an empty chat pane.
      Exactly one branch runs now. */
   const hash=decodeURIComponent(location.hash.slice(1));
-  if(hash==='orders'||hash==='count'||hash==='gifts'||hash==='box'||hash==='lab'||hash==='chats'||hash==='member'||hash==='sales') setTab(hash);
+  if(hash==='orders'||hash==='count'||hash==='gifts'||hash==='box'||hash==='lab'||hash==='chats'||hash==='member'||hash==='sales'||hash==='alerts') setTab(hash);
   /* A member card scanned with the phone's own camera lands here:
      staff.html#m=XXXXXXXXXXXX. The code rides in the fragment on purpose —
      fragments never leave the browser, so a customer's card code does not
@@ -276,7 +383,7 @@ async function login(){
 }
 function logout(){ localStorage.removeItem('dankStaffKey'); LIVE=false; location.reload(); }
 
-function setTab(t){ if(typeof stopCamScan==='function') stopCamScan(); TAB=t; $('#tabChats').classList.toggle('active',t==='chats'); $('#tabOrders').classList.toggle('active',t==='orders'); $('#tabGifts').classList.toggle('active',t==='gifts'); $('#tabCount').classList.toggle('active',t==='count'); $('#tabBox').classList.toggle('active',t==='box'); $('#tabLab').classList.toggle('active',t==='lab'); $('#tabMember').classList.toggle('active',t==='member'); $('#tabSales').classList.toggle('active',t==='sales');
+function setTab(t){ if(typeof stopCamScan==='function') stopCamScan(); TAB=t; $('#tabChats').classList.toggle('active',t==='chats'); $('#tabOrders').classList.toggle('active',t==='orders'); $('#tabGifts').classList.toggle('active',t==='gifts'); $('#tabCount').classList.toggle('active',t==='count'); $('#tabBox').classList.toggle('active',t==='box'); $('#tabLab').classList.toggle('active',t==='lab'); $('#tabMember').classList.toggle('active',t==='member'); $('#tabSales').classList.toggle('active',t==='sales'); $('#tabAlerts').classList.toggle('active',t==='alerts');
   if(t==='orders'){ renderOrders(); $('#ordCnt').style.display='none'; knownOrders=new Set(ORDERS.map(o=>o.orderId)); document.title=BASE_TITLE; $('#orderPop')?.classList.remove('on'); }
   else if(t==='gifts'){ loadGifts(); }
   else if(t==='count'){ loadCount(); }
@@ -284,6 +391,7 @@ function setTab(t){ if(typeof stopCamScan==='function') stopCamScan(); TAB=t; $(
   else if(t==='lab'){ loadLab(); }
   else if(t==='member'){ renderMember(); }
   else if(t==='sales'){ loadSales(); }
+  else if(t==='alerts'){ loadAlertHealth(); }
   else refreshChats(); }
 let GIFT_MENU=[], GIFT_SEL=new Set();
 async function loadGifts(){
@@ -709,7 +817,7 @@ function renderOrders(){
       <div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap">${o.slipUploaded?`<button class="undo-btn" data-act="slip" data-id="${id}">🧾 View slip</button>`:''}<button class="undo-btn" data-act="upload" data-id="${id}">📎 Upload proof</button></div>
       <div class="orow">${o.status==='done'
         ?`<button class="undo-btn" data-act="order" data-id="${id}" data-status="new">↩ Reopen</button>`
-        :`<button class="done-btn" data-act="order" data-id="${id}" data-status="done">✓ Mark done</button>`}</div>
+        :`${ALERT_STATE.has(o.orderId)?`<button class="accept-btn" data-act="alert-accept" data-id="${id}">👋 Accept & stop alarms</button>`:o.alertAcceptedBy?`<span class="pill">Accepted by ${esc(o.alertAcceptedBy)}</span>`:''}<button class="done-btn" data-act="order" data-id="${id}" data-status="done">✓ Mark done</button>`}</div>
     </div>`;}).join('');
 }
 async function viewSlip(id){
@@ -749,7 +857,7 @@ function staffUploadSlip(id){ _slipUpId=id; let inp=document.getElementById('sta
   inp.click();
 }
 async function setOrder(id,status){
-  await authPost('/api/orders',{orderId:id,status});
+  await authPost('/api/orders',{orderId:id,status,acceptedBy:deviceLabel()});
   pollOrders();
 }
 function startListPoll(){ clearInterval(listT); listT=setInterval(async()=>{ if(TAB!=='chats')return;
@@ -775,6 +883,7 @@ document.addEventListener('visibilitychange',()=>{
   if(cur){ pull(false); startThreadPoll(); }
 });
 $('#alertBtn').addEventListener('click',toggleAlerts);
+$('#muteBtn').addEventListener('click',toggleSound);
 
 function renderList(threads){
   const el=$('#list');
@@ -1793,6 +1902,10 @@ $('#list').addEventListener('click',e=>{
     case 'slip':       viewSlip(d.id); break;
     case 'upload':     staffUploadSlip(d.id); break;
     case 'order':      setOrder(d.id,d.status); break;
+    case 'alert-accept': acceptAlert(d.id); break;
+    case 'push-enable': enablePushNotifications().then(loadAlertHealth); break;
+    case 'push-test': testPush(); break;
+    case 'sound-toggle': toggleSound(); loadAlertHealth(); break;
     case 'count-view': viewCount(d.id); break;
     case 'scale':      applyScale(d.code); break;
     case 'proof-del':  COUNT_PROOFS.splice(Number(d.i),1); renderProofGrid(); break;
