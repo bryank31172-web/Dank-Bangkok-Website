@@ -44,15 +44,6 @@
      wrapped onto two lines. The subtitle is decoration, so it goes first. */
   @media(max-width:520px){ .brand .sub{display:none} }
 
-  /* ---------- Age gate (beer and edibles are on this menu too) ---------- */
-  #gate{position:fixed;inset:0;z-index:120;display:flex;align-items:center;justify-content:center;padding:24px;
-        background:radial-gradient(circle at 50% 30%,#0c1a11,#040705 70%)}
-  #gate .card{max-width:400px;width:100%;background:var(--panel);border:1px solid var(--line2);border-radius:20px;padding:30px 24px;text-align:center;box-shadow:var(--shadow)}
-  #gate .leaf{font-size:48px;line-height:1}
-  #gate h1{margin:12px 0 6px;font-size:23px}
-  #gate p{color:var(--muted);font-size:14px;line-height:1.6;margin:6px 0 20px}
-  #gate .badge{display:inline-block;background:rgba(239,68,68,.13);border:1px solid #6b2626;color:#ff9a9a;font-weight:800;font-size:12.5px;letter-spacing:.5px;border-radius:999px;padding:6px 13px}
-
   /* ---------- Table banner ---------- */
   .tablebar{
     margin:14px 0 6px;padding:14px 16px;border-radius:var(--radius);
@@ -305,20 +296,6 @@
 </head>
 <body>
 
-<div id="gate">
-  <div class="card">
-    <div class="leaf">🌿</div>
-    <div class="badge">20+ ONLY · เฉพาะอายุ 20 ปีขึ้นไป</div>
-    <h1>DANK Kitchen &amp; Bar</h1>
-    <p>
-      This menu includes beer and cannabis edibles.<br>
-      เมนูนี้มีเบียร์และขนมกัญชา — สำหรับผู้ที่มีอายุ 20 ปีขึ้นไป
-    </p>
-    <button class="btn btn-primary" style="margin-top:0" onclick="askMotion();passGate()">✅ I am 20+ · เข้าสู่เมนู</button>
-    <button class="btn btn-ghost" id="gateExit" onclick="location.href='index.html'">Exit</button>
-  </div>
-</div>
-
 <header>
   <div class="wrap hd">
     <a class="brand" id="brandLink" href="index.html"><span class="leaf">🌿</span> DANK <span class="sub">Kitchen &amp; Bar</span></a>
@@ -481,11 +458,9 @@ function restrictMenu(){
   });
 }
 
-/* An adult who tapped the under-20 tile by mistake is not stuck with a
-   soft-drinks menu: this clears the flag and reloads into the full one, which
-   brings back this page's own 20+ gate. */
+/* An adult who tapped the under-20 tile by mistake can reload the full menu. */
 function exitU20(){
-  try{ sessionStorage.removeItem("dankU20"); sessionStorage.removeItem("dankAge20"); }catch(e){}
+  try{ sessionStorage.removeItem("dankU20"); }catch(e){}
   location.href = "food.html?u20=0";
 }
 
@@ -1150,29 +1125,11 @@ function toast(msg){
 
 document.addEventListener("keydown", function(e){ if (e.key === "Escape") closeSheet(); });
 
-/* ---------- age gate ----------
-   Asked once per visit, not once per page view: a customer at a table will
-   reopen this menu three or four times over an evening and being challenged
-   every round of drinks is what makes people stop using the QR at all. */
-function passGate(){
-  try{ sessionStorage.setItem("dankAge20", "1"); }catch(e){}
-  var g = document.getElementById("gate");
-  g.style.transition = "opacity .25s"; g.style.opacity = "0";
-  setTimeout(function(){ g.remove(); }, 250);
-}
-
 /* ---------- boot ---------- */
 (function init(){
-  var seen = false;
-  try{ seen = sessionStorage.getItem("dankAge20") === "1"; }catch(e){}
-  if (seen){ var g = document.getElementById("gate"); if (g) g.remove(); }
-
   if (U20){
-    /* Nothing age-restricted survives restrictMenu(), so the 20+ gate has
-       nothing left to gate - and its wording ("includes beer and cannabis
-       edibles") would be a lie in this mode. It goes; a quiet banner takes
-       its place, with a way back for an adult who tapped the wrong tile. */
-    var g2 = document.getElementById("gate"); if (g2) g2.remove();
+    /* U20 mode keeps only food and soft drinks and shows a quiet banner
+       with a way back for an adult who tapped the wrong tile. */
     var back = document.getElementById("backLink"); if (back) back.remove();
     var bn = document.createElement("div");
     bn.className = "u20-note";
