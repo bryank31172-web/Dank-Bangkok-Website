@@ -8,6 +8,23 @@
 
 <!-- Progressive Web App: installability and iOS support -->
 <link rel="manifest" href="/manifest.webmanifest"/>
+<link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png"/>
+<link rel="icon" type="image/png" sizes="512x512" href="/icons/icon-512.png"/>
+<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png"/>
+
+<!-- Capture Android's native install event before deferred scripts run. -->
+<script>
+window.DANK_PWA = window.DANK_PWA || { installPrompt: null };
+window.addEventListener("beforeinstallprompt", function (event) {
+  event.preventDefault();
+  window.DANK_PWA.installPrompt = event;
+  window.dispatchEvent(new CustomEvent("dank-pwa-install-ready"));
+});
+window.addEventListener("appinstalled", function () {
+  window.DANK_PWA.installPrompt = null;
+  document.documentElement.classList.add("pwa-installed");
+});
+</script>
 <meta name="mobile-web-app-capable" content="yes"/>
 <meta name="application-name" content="DANK BKK"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
@@ -6958,7 +6975,7 @@ async function pushOverrides(){
 <!-- PWA client: service-worker registration, install prompt, online/offline
      feedback and safe update handling. Order/payment API responses remain
      network-only through service-worker.js. -->
-<script src="/pwa-client.js" defer></script>
+<script src="/pwa-client.js?v=20260830-2" defer></script>
 <noscript>
   <p style="position:fixed;left:12px;right:12px;bottom:12px;z-index:9999;margin:0;padding:12px 14px;border-radius:12px;background:#101a12;color:#e8f5ec;border:1px solid #294634;font:600 13px/1.45 system-ui">
     JavaScript is required for cart, checkout and offline app support.
