@@ -53,6 +53,8 @@ export async function createOrderAlert(order) {
   };
   await setJSON(alertKey(order.orderId), rec, ALERT_TTL);
   await indexAdd(order.orderId, "order-alerts:index");
+  const pending = (await getJSON("order-alerts:pending")) || [];
+  if (!pending.includes(order.orderId)) await setJSON("order-alerts:pending", [order.orderId, ...pending].slice(0, 100), ALERT_TTL);
   return rec;
 }
 
@@ -80,6 +82,8 @@ export async function acceptOrderAlert(orderId, acceptedBy) {
     rec.acceptedAt = Date.now();
     rec.acceptedBy = String(acceptedBy || "Staff device").trim().slice(0, 80);
     await setJSON(alertKey(orderId), rec, ALERT_TTL);
+    const pending = (await getJSON("order-alerts:pending")) || [];
+    await setJSON("order-alerts:pending", pending.filter((id) => id !== orderId), ALERT_TTL);
     await sendPushPayload({
       type: "accepted",
       orderId,
@@ -89,6 +93,18 @@ export async function acceptOrderAlert(orderId, acceptedBy) {
     });
   }
   return rec;
+}
+
+export async function listPendingAlerts() {
+  const ids = (await getJSON("order-alerts:pending")) || [];
+  const out = [];
+  const live = [];
+  for (const id of ids.slice(0, 100)) {
+    const rec = await getOrderAlert(id);
+    if (rec?.status === "pending") { out.push(rec); live.push(id); }
+  }
+  if (live.length !== ids.length) await setJSON("order-alerts:pending", live, ALERT_TTL);
+  return out;
 }
 
 export async function listOrderAlerts(limit = 100) {
@@ -232,7 +248,7 @@ async function escalate(alert, stage) {
 }
 
 export async function sweepPendingAlerts() {
-  const alerts = await listOrderAlerts(100);
+  const alerts = await listPendingAlerts();
   const now = Date.now();
   const report = { checked: alerts.length, pending: 0, pushed: 0, escalated: 0 };
   for (const alert of alerts) {
