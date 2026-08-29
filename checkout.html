@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=5">
+<meta name="theme-color" content="#eff6f0">
+<title>Checkout · DANK BKK</title>
+<style>
+:root{--bg:#edf3ee;--card:#fff;--text:#15241a;--muted:#6f8174;--line:#dfe8e1;--green:#88b997;--green-dark:#527c5f;--green-soft:#e8f3eb;--danger:#b85f5f;--shadow:0 18px 55px rgba(29,54,36,.10);--radius:20px;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+*{box-sizing:border-box}body{margin:0;background:linear-gradient(180deg,#e8efea,#f6f8f6);color:var(--text);min-height:100vh}button,input,select,textarea{font:inherit}.shell{max-width:1180px;margin:0 auto;padding:28px 18px 52px}.top{display:flex;align-items:center;justify-content:space-between;margin-bottom:22px}.brand{display:flex;align-items:center;gap:11px;font-weight:850;letter-spacing:.2px}.mark{width:36px;height:36px;border-radius:12px;background:#13291b;color:#e9f5ec;display:grid;place-items:center;font-size:19px}.back{color:var(--muted);text-decoration:none;font-weight:700}.steps{background:rgba(255,255,255,.75);border:1px solid rgba(223,232,225,.9);border-radius:18px;padding:18px 24px;margin-bottom:20px;display:grid;grid-template-columns:repeat(3,1fr);gap:10px;box-shadow:0 8px 30px rgba(29,54,36,.05)}.step{display:flex;align-items:center;gap:10px;color:#8a988d;font-weight:750;font-size:14px;position:relative}.step:not(:last-child):after{content:"";height:1px;background:var(--line);flex:1;margin-left:10px}.dot{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;background:#f2f5f3;border:1px solid var(--line);font-size:12px}.step.active{color:var(--text)}.step.active .dot,.step.done .dot{background:var(--green);border-color:var(--green);color:#fff}.step.done{color:var(--green-dark)}.layout{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(310px,.8fr);gap:22px}.panel{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow)}.main{padding:26px}.side{padding:22px;align-self:start;position:sticky;top:18px}.title{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:22px}.title h1{font-size:25px;margin:0}.small{font-size:13px;color:var(--muted)}.seg{display:grid;grid-template-columns:1fr 1fr;background:#f4f7f5;border:1px solid var(--line);padding:5px;border-radius:14px;margin-bottom:20px}.seg button{border:0;background:transparent;padding:12px;border-radius:10px;color:var(--muted);font-weight:800;cursor:pointer}.seg button.on{background:#fff;color:var(--text);box-shadow:0 4px 14px rgba(29,54,36,.08)}.grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.field{display:flex;flex-direction:column;gap:7px}.field.full{grid-column:1/-1}.field label{font-size:12px;font-weight:800;color:#506257}.field input,.field select,.field textarea{width:100%;border:1px solid var(--line);background:#fbfcfb;color:var(--text);border-radius:12px;padding:13px 14px;outline:none;transition:.18s}.field input:focus,.field select:focus,.field textarea:focus{border-color:#9bc5a6;box-shadow:0 0 0 4px rgba(136,185,151,.16)}.field textarea{resize:vertical;min-height:86px}.payment-list{display:grid;gap:10px}.pay{display:flex;align-items:center;gap:13px;width:100%;padding:15px;border:1px solid var(--line);border-radius:14px;background:#fff;cursor:pointer;text-align:left;color:var(--text)}.pay.on{border-color:#8db99a;background:var(--green-soft);box-shadow:0 0 0 3px rgba(136,185,151,.12)}.radio{width:18px;height:18px;border:2px solid #b7c5ba;border-radius:50%;position:relative;flex:0 0 auto}.pay.on .radio{border-color:var(--green-dark)}.pay.on .radio:after{content:"";position:absolute;inset:3px;background:var(--green-dark);border-radius:50%}.pay-icon{margin-left:auto;font-size:20px}.pay strong{display:block}.pay span.meta{display:block;color:var(--muted);font-size:12px;margin-top:2px}.payment-detail{margin-top:12px;padding:15px;border-radius:14px;background:#f7faf8;border:1px solid var(--line);font-size:13px;color:var(--muted)}.cards{display:grid;grid-template-columns:2fr 1fr 1fr;gap:10px;margin-top:12px}.items{display:grid;gap:13px;margin:14px 0 20px}.item{display:grid;grid-template-columns:48px 1fr auto;gap:11px;align-items:center}.thumb{width:48px;height:48px;border-radius:12px;background:var(--green-soft);display:grid;place-items:center;font-size:22px}.item-name{font-weight:800;font-size:14px}.item-meta{font-size:12px;color:var(--muted);margin-top:2px}.price{font-weight:850}.divider{height:1px;background:var(--line);margin:18px 0}.rows{display:grid;gap:11px}.row{display:flex;justify-content:space-between;gap:14px;color:var(--muted);font-size:14px}.row.total{font-size:18px;color:var(--text);font-weight:900;padding-top:12px;border-top:1px solid var(--line)}.promo{display:flex;gap:8px;margin-top:14px}.promo input{min-width:0;flex:1;border:1px solid var(--line);border-radius:11px;padding:11px 12px}.secondary,.primary{border:0;border-radius:12px;padding:13px 17px;font-weight:850;cursor:pointer}.secondary{background:#f1f5f2;color:var(--green-dark)}.primary{background:var(--green);color:#102318;box-shadow:0 9px 22px rgba(82,124,95,.18)}.primary:hover{background:#7cac89}.primary:disabled{opacity:.55;cursor:not-allowed}.actions{display:flex;justify-content:space-between;gap:12px;margin-top:24px}.hidden{display:none!important}.confirm{text-align:center;padding:34px 12px}.check{width:72px;height:72px;margin:0 auto 18px;border-radius:50%;display:grid;place-items:center;background:var(--green-soft);color:var(--green-dark);font-size:36px}.confirm h2{font-size:27px;margin:0 0 8px}.confirm p{color:var(--muted);max-width:520px;margin:0 auto 20px}.notice{padding:12px 14px;border-radius:12px;background:#fff7e8;color:#7b6338;font-size:13px;margin-top:14px}.error{color:var(--danger);font-size:13px;margin-top:10px}.mobile-total{display:none}
+@media(max-width:820px){.shell{padding:16px 12px 34px}.layout{grid-template-columns:1fr}.side{position:static;order:-1}.steps{padding:13px 12px}.step span.label{display:none}.step:not(:last-child):after{margin-left:4px}.main{padding:20px}.side{padding:18px}.mobile-total{display:block}.grid{grid-template-columns:1fr}.field.full{grid-column:auto}.cards{grid-template-columns:1fr 1fr}.cards .field:first-child{grid-column:1/-1}.actions{position:sticky;bottom:0;background:rgba(255,255,255,.94);padding:12px 0 2px;backdrop-filter:blur(10px)}}
+</style>
+</head>
+<body>
+<div class="shell">
+  <div class="top"><div class="brand"><div class="mark">🌿</div><span>DANK BKK</span></div><a class="back" href="/">← Continue shopping</a></div>
+  <div class="steps" id="steps">
+    <div class="step active" data-step="1"><span class="dot">1</span><span class="label">Shopping details</span></div>
+    <div class="step" data-step="2"><span class="dot">2</span><span class="label">Payment method</span></div>
+    <div class="step" data-step="3"><span class="dot">3</span><span class="label">Confirmation</span></div>
+  </div>
+  <div class="layout">
+    <section class="panel main">
+      <div id="screen1">
+        <div class="title"><div><h1>Shopping details</h1><div class="small">Where and how should we prepare your order?</div></div></div>
+        <div class="seg"><button id="deliveryBtn" class="on" onclick="setFulfilment('delivery')">🚚 Delivery</button><button id="pickupBtn" onclick="setFulfilment('pickup')">🏬 Pickup / Reserve</button></div>
+        <div class="grid">
+          <div class="field"><label>YOUR NAME</label><input id="name" autocomplete="name" placeholder="Full name"></div>
+          <div class="field"><label>PHONE OR LINE</label><input id="phone" autocomplete="tel" inputmode="tel" placeholder="+66… or LINE ID"></div>
+          <div id="deliveryFields" class="field full"><div class="grid"><div class="field"><label>DELIVERY AREA</label><select id="zone"><option>Bangkok central</option><option>Pattanakarn / Srinakarin</option><option>Sathorn / Rama 3</option><option>Other Bangkok area</option></select></div><div class="field"><label>PREFERRED TIME</label><input id="time" placeholder="e.g. Today, 7 PM"></div><div class="field full"><label>DELIVERY ADDRESS</label><textarea id="address" placeholder="Condo, street, room number and useful directions"></textarea></div></div></div>
+          <div id="pickupFields" class="field full hidden"><div class="grid"><div class="field"><label>PICKUP BRANCH</label><select id="branch"><option>Pattanakarn</option><option>Sathorn / Rama 3</option></select></div><div class="field"><label>PICKUP TIME</label><input id="pickupTime" placeholder="e.g. Today, 7 PM"></div></div></div>
+          <div class="field full"><label>ORDER NOTES (OPTIONAL)</label><textarea id="notes" placeholder="Gate code, preferred contact method, product notes…"></textarea></div>
+        </div>
+        <div id="detailError" class="error"></div>
+        <div class="actions"><a class="secondary" href="/" style="text-decoration:none">Back to cart</a><button class="primary" onclick="goStep(2)">Continue to payment →</button></div>
+      </div>
+      <div id="screen2" class="hidden">
+        <div class="title"><div><h1>Payment method</h1><div class="small">Choose the easiest way to pay.</div></div></div>
+        <div class="payment-list" id="payments"></div>
+        <div id="paymentDetail" class="payment-detail"></div>
+        <div id="payError" class="error"></div>
+        <div class="actions"><button class="secondary" onclick="goStep(1)">← Shopping details</button><button class="primary" id="placeBtn" onclick="placeOrder()">Place order</button></div>
+      </div>
+      <div id="screen3" class="hidden confirm">
+        <div class="check">✓</div><h2>Order received</h2><p id="confirmText">Thank you. Our team will confirm stock, delivery and payment with you shortly.</p><div id="orderRef" class="notice"></div><div class="actions" style="justify-content:center"><a class="primary" href="/" style="text-decoration:none">Return to shop</a></div>
+      </div>
+    </section>
+    <aside class="panel side">
+      <div class="title"><div><h1 style="font-size:20px">Your order</h1><div class="small" id="itemCount">0 items</div></div></div>
+      <div class="items" id="items"></div>
+      <div class="promo"><input id="promo" placeholder="Promo code"><button class="secondary" onclick="applyPromo()">Apply</button></div>
+      <div class="divider"></div>
+      <div class="rows"><div class="row"><span>Subtotal</span><strong id="subtotal">฿0</strong></div><div class="row" id="discountRow" style="display:none"><span>Discount</span><strong id="discount">−฿0</strong></div><div class="row"><span>Delivery</span><strong id="deliveryFee">฿100</strong></div><div class="row total"><span>Total</span><span id="total">฿0</span></div></div>
+      <div class="notice">20+ ID is required. Stock and final delivery timing are confirmed by our team.</div>
+    </aside>
+  </div>
+</div>
+<script>
+const STORE='dank_cart';
+const state={step:1,fulfilment:'delivery',payment:'Cash',discount:0,promo:'',deliveryFee:100};
+const money=n=>'฿'+Math.max(0,Number(n)||0).toLocaleString('en-US');
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+function loadCart(){try{return JSON.parse(localStorage.getItem(STORE)||'[]')||[]}catch(e){return[]}}
+let cart=loadCart();
+function subtotal(){return cart.reduce((s,x)=>s+(Number(x.price)||0)*(Number(x.qty)||1),0)}
+function total(){return Math.max(0,subtotal()-state.discount+(state.fulfilment==='delivery'?state.deliveryFee:0))}
+function renderSummary(){
+ const el=document.getElementById('items');
+ if(!cart.length){el.innerHTML='<div class="small">Your cart is empty. Add products before checkout.</div>';document.getElementById('placeBtn')?.setAttribute('disabled','disabled')}
+ else el.innerHTML=cart.map(x=>`<div class="item"><div class="thumb">${x.bonus?'🎁':'🌿'}</div><div><div class="item-name">${esc(x.name||'Product')}</div><div class="item-meta">${esc(x.tierLabel||x.option||'')} · Qty ${Number(x.qty)||1}</div></div><div class="price">${x.bonus?'FREE':money((Number(x.price)||0)*(Number(x.qty)||1))}</div></div>`).join('');
+ document.getElementById('itemCount').textContent=cart.reduce((s,x)=>s+(Number(x.qty)||1),0)+' items';
+ document.getElementById('subtotal').textContent=money(subtotal());
+ document.getElementById('deliveryFee').textContent=state.fulfilment==='pickup'?'Pickup':money(state.deliveryFee);
+ document.getElementById('discountRow').style.display=state.discount?'flex':'none';document.getElementById('discount').textContent='−'+money(state.discount);document.getElementById('total').textContent=money(total());
+ document.getElementById('placeBtn').textContent=state.payment==='Cash'?'Place order · '+money(total()):'Continue · '+money(total());
+}
+function setFulfilment(v){state.fulfilment=v;document.getElementById('deliveryBtn').classList.toggle('on',v==='delivery');document.getElementById('pickupBtn').classList.toggle('on',v==='pickup');document.getElementById('deliveryFields').classList.toggle('hidden',v!=='delivery');document.getElementById('pickupFields').classList.toggle('hidden',v!=='pickup');renderSummary()}
+function goStep(n){
+ if(n===2){const name=document.getElementById('name').value.trim(),phone=document.getElementById('phone').value.trim(),address=document.getElementById('address').value.trim();if(!name||phone.length<5||(state.fulfilment==='delivery'&&!address)){document.getElementById('detailError').textContent='Please add your name, contact details'+(state.fulfilment==='delivery'?' and delivery address.':'.');return}document.getElementById('detailError').textContent=''}
+ state.step=n;[1,2,3].forEach(i=>{document.getElementById('screen'+i).classList.toggle('hidden',i!==n);const s=document.querySelector(`.step[data-step="${i}"]`);s.classList.toggle('active',i===n);s.classList.toggle('done',i<n)});window.scrollTo({top:0,behavior:'smooth'})
+}
+const methods=[
+ {id:'PromptPayQR',label:'PromptPay QR',meta:'Scan a QR in your Thai banking app',icon:'📱'},
+ {id:'Transfer',label:'Bank transfer',meta:'Manual Thai bank, Wise or Revolut transfer',icon:'🏦'},
+ {id:'Cash',label:'Cash / Cash on delivery',meta:'Pay when your order arrives or at pickup',icon:'💵'},
+ {id:'Crypto',label:'Cryptocurrency',meta:'BTC or ETH wallet details after confirmation',icon:'₿'}
+];
+function renderPayments(){document.getElementById('payments').innerHTML=methods.map(m=>`<button class="pay ${state.payment===m.id?'on':''}" onclick="selectPay('${m.id}')"><span class="radio"></span><span><strong>${m.label}</strong><span class="meta">${m.meta}</span></span><span class="pay-icon">${m.icon}</span></button>`).join('');selectPay(state.payment)}
+function selectPay(id){state.payment=id;document.querySelectorAll('.pay').forEach((b,i)=>b.classList.toggle('on',methods[i].id===id));const d=document.getElementById('paymentDetail');if(id==='PromptPayQR')d.innerHTML='<strong>PromptPay QR</strong><br>Your order is created first, then the QR and slip-upload area are shown.';else if(id==='Transfer')d.innerHTML='<strong>Manual bank transfer</strong><br>Thai bank, Wise or Revolut details are displayed after the order is created. Upload your receipt to confirm.';else if(id==='Crypto')d.innerHTML='<strong>Cryptocurrency</strong><br>Choose BTC or ETH after confirmation, copy the wallet address and upload your transfer screenshot.';else d.innerHTML='<strong>Cash / COD</strong><br>No online payment is required. Please prepare the exact amount when possible.';renderSummary()}
+function applyPromo(){const code=document.getElementById('promo').value.trim().toUpperCase();state.promo=code;state.discount=code==='DANK10'?Math.round(subtotal()*.10):0;if(code&&!state.discount)alert('Promo code not recognised');renderSummary()}
+function orderPayload(){return {brand:'DANK BKK',items:cart.map(x=>({name:x.name,shId:x.shId||'',option:x.tierLabel||x.option||'',qty:Number(x.qty)||1,price:Number(x.price)||0,lineTotal:(Number(x.price)||0)*(Number(x.qty)||1),category:x.category||'',bonus:!!x.bonus})),subtotal:subtotal(),discount:state.discount,promo:state.promo,deliveryFee:state.fulfilment==='delivery'?state.deliveryFee:0,total:total(),fulfilment:state.fulfilment,payment:state.payment,customer:{name:document.getElementById('name').value.trim(),phone:document.getElementById('phone').value.trim()},delivery:{zone:document.getElementById('zone').value,address:document.getElementById('address').value.trim()},pickup:{branch:document.getElementById('branch').value,time:document.getElementById('pickupTime').value.trim()},notes:document.getElementById('notes').value.trim(),source:'dankbangkok.com/checkout.html'} }
+async function placeOrder(){if(!cart.length){document.getElementById('payError').textContent='Your cart is empty.';return}const btn=document.getElementById('placeBtn');btn.disabled=true;btn.textContent='Placing order…';try{const r=await fetch('/api/order',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(orderPayload())});if(!r.ok)throw new Error('Could not place order');const j=await r.json().catch(()=>({}));const id=j.orderId||j.id||'Pending confirmation';localStorage.removeItem(STORE);cart=[];document.getElementById('orderRef').innerHTML='<strong>Order reference:</strong> '+esc(id)+'<br><strong>Payment:</strong> '+esc(state.payment);document.getElementById('confirmText').textContent=state.payment==='Cash'?'Your order is in. Our team will confirm delivery or pickup with you shortly.':'Your order is in. Continue with the payment instructions shown by our team or in the payment screen.';goStep(3);renderSummary()}catch(e){document.getElementById('payError').textContent='We could not reach the order system. Please try again or contact us on LINE.';btn.disabled=false;renderSummary()}}
+renderSummary();renderPayments();
+</script>
+</body>
+</html>
