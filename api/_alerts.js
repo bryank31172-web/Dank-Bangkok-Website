@@ -234,6 +234,8 @@ async function sendEmail(alert, text) {
 async function escalate(alert, stage) {
   const ageMin = Math.max(1, Math.floor((Date.now() - alert.createdAt) / 60000));
   const text = `🚨 UNACCEPTED ORDER ${alert.orderId} · waiting ${ageMin} min · ฿${alert.order?.total || 0}\nOpen: https://dankbangkok.com/staff.html#orders`;
+  alert.escalationStage = stage;
+  await setJSON(alertKey(alert.orderId), alert, ALERT_TTL);
   const attempts = [
     ["telegram", await sendTelegram(text)],
     ["line", await notifyStaffLine(text).catch((e) => ({ skipped: false, ok: false, detail: e.message }))],
@@ -243,8 +245,6 @@ async function escalate(alert, stage) {
   for (const [name, result] of attempts) {
     if (!result.skipped) await recordAlertChannel(alert.orderId, name + "Escalation" + stage, result.ok, result.detail || "");
   }
-  alert.escalationStage = stage;
-  await setJSON(alertKey(alert.orderId), alert, ALERT_TTL);
 }
 
 export async function sweepPendingAlerts() {
