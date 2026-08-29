@@ -26,6 +26,7 @@ import { notifyStaffLine } from "./_line.js";
 import { notifyStaffWhatsApp } from "./_whatsapp.js";
 import { pushShopifyOrder } from "./_shopify.js";
 import { requireRate } from "./_ratelimit.js";
+import { createOrderAlert, recordAlertChannel, sendOrderPush } from "./_alerts.js";
 
 const OWNER_EMAIL = process.env.ORDER_EMAIL_TO || "dankclubbkk@gmail.com";
 
@@ -241,6 +242,19 @@ export default async function handler(req, res) {
     saved = true;
   } catch (e) { console.error("order save failed:", e.message); }
 
+  // Create the shared pending alert before any messenger runs. Every phone and
+  // tablet reads this same record, so one acceptance stops alarms everywhere.
+  if (saved) {
+    try {
+      const alert = await createOrderAlert({ ...o, orderId });
+      const pushed = await sendOrderPush(alert, "new");
+      results.push(pushed.ok);
+    } catch (e) {
+      console.error("web push alert failed:", e.message);
+      await recordAlertChannel(orderId, "webPush", false, e.message).catch(() => {});
+    }
+  }
+
   // 0b) Telegram ping — staff phones buzz instantly (same bot as chat handoffs)
   if (process.env.TELEGRAM_BOT_TOKEN && process.env.TELEGRAM_CHAT_ID) {
     try {
@@ -254,25 +268,35 @@ export default async function handler(req, res) {
          Log that sentence: it names the fix, and without it a silent false is
          indistinguishable from the network being down. The token is never
          logged, only Telegram's own words. */
-      if (!r.ok) {
-        const why = await r.json().catch(() => ({}));
-        console.error("telegram send failed:", r.status, why.description || "");
-      }
-      results.push(r.ok);
-    } catch (e) { console.error("telegram send threw:", e.message); results.push(false); }
+      const reply = await r.json().catch(() => ({}));
+      const ok = r.ok && reply.ok !== false;
+      if (!ok) console.error("telegram send failed:", r.status, reply.description || "");
+      results.push(ok);
+      await recordAlertChannel(orderId, "telegram", ok, reply.description || "");
+    } catch (e) {
+      console.error("telegram send threw:", e.message);
+      results.push(false);
+      await recordAlertChannel(orderId, "telegram", false, e.message).catch(() => {});
+    }
   }
 
   // 0b-LINE) Same alert pushed to LINE (Bryan / staff group) if LINE_TO is set
   try {
     const r = await notifyStaffLine(staffAlert);
-    if (!r.skipped) results.push(r.ok);
-  } catch (e) { /* non-fatal */ }
+    if (!r.skipped) {
+      results.push(r.ok);
+      await recordAlertChannel(orderId, "line", r.ok, r.detail || "");
+    }
+  } catch (e) { await recordAlertChannel(orderId, "line", false, e.message).catch(() => {}); }
 
   // 0b-WhatsApp) Meta Cloud API alert to one or more staff phones
   try {
     const r = await notifyStaffWhatsApp(staffAlert);
-    if (!r.skipped) results.push(r.ok);
-  } catch (e) { /* non-fatal */ }
+    if (!r.skipped) {
+      results.push(r.ok);
+      await recordAlertChannel(orderId, "whatsapp", r.ok, r.detail || "");
+    }
+  } catch (e) { await recordAlertChannel(orderId, "whatsapp", false, e.message).catch(() => {}); }
 
   /* 0c) Push into StoreHub as an online transaction (optional; STOREHUB_PUSH_ORDERS=1).
      giftLines ride along as ฿0 lines so the POS takes the hash, brownie, tee and
@@ -344,7 +368,11 @@ export default async function handler(req, res) {
         }),
       });
       results.push(r.ok);
-    } catch (e) { results.push(false); }
+      await recordAlertChannel(orderId, "email", r.ok, r.ok ? "" : "HTTP " + r.status);
+    } catch (e) {
+      results.push(false);
+      await recordAlertChannel(orderId, "email", false, e.message).catch(() => {});
+    }
   }
 
   if (results.some(Boolean)) return res.status(200).json({ ok: true, orderId, delivered: true, ...walletInfo });
