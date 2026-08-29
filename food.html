@@ -122,6 +122,8 @@
     width:100%;height:100%;object-fit:cover;display:block;
     transform:translateZ(28px) scale(1.06);transition:transform .3s;
   }
+  .photo.contain{background:#f3f1ec}
+  .photo.contain img{object-fit:contain;transform:translateZ(28px) scale(.92)}
   .item:hover .photo img{ transform:translateZ(38px) scale(1.12) }
   .photo .emofb{
     position:absolute;inset:0;display:none;align-items:center;justify-content:center;font-size:52px;
@@ -528,13 +530,13 @@ var BIRTHDAY_BOTTLE_CATEGORY = {
   emoji: "🎂"
 };
 var BIRTHDAY_BOTTLES = [
-  { id:"birthday-regency", name:"Regency", price:750, img:"assets/products/regencyontherock.jpg" },
-  { id:"birthday-suntory", name:"Whisky (Suntory)", price:1400, img:"assets/products/santoryontherock.jpg" },
-  { id:"birthday-wine", name:"Wine", price:1200, img:"https://images.unsplash.com/photo-1522997169209-1629f3f89fdf?auto=format&fit=crop&w=640&h=480&q=70" },
-  { id:"birthday-pink-gin", name:"Gin – Pink", price:1700, img:"assets/products/ginshot.jpg" },
-  { id:"birthday-hendricks", name:"Gin – Hendrick’s", price:2700, img:"assets/products/gintonic.jpg" },
-  { id:"birthday-small-beers", name:"Small Beers", price:120, img:"https://images.unsplash.com/photo-1671118720259-026c46d4a67c?auto=format&fit=crop&w=640&h=480&q=70" },
-  { id:"birthday-soft-drinks", name:"Soft Drinks (All)", price:60, img:"https://images.unsplash.com/photo-1629654613528-5d0a2e4166de?auto=format&fit=crop&w=640&h=480&q=70" }
+  { id:"birthday-regency", name:"Regency", price:750, img:"assets/products/birthday-regency.png", fit:"contain" },
+  { id:"birthday-suntory", name:"Whisky (Suntory)", price:1400, img:"assets/products/birthday-suntory.jpeg", fit:"contain" },
+  { id:"birthday-wine", name:"Wine", price:1200, img:"assets/products/birthday-wine.jpeg", fit:"contain" },
+  { id:"birthday-pink-gin", name:"Gin – Pink", price:1700, img:"assets/products/birthday-pink-gin.jpeg", fit:"contain" },
+  { id:"birthday-hendricks", name:"Gin – Hendrick’s", price:2700, img:"assets/products/birthday-hendricks.jpeg", fit:"contain" },
+  { id:"birthday-small-beers", name:"Small Beers", price:120, img:"assets/products/birthday-small-beer.jpeg", fit:"contain" },
+  { id:"birthday-soft-drinks", name:"Soft Drinks (All)", price:60, img:"assets/products/birthday-soft-drinks.webp", fit:"contain" }
 ];
 function addBirthdayBottleService(m){
   m.categories = m.categories || [];
@@ -544,7 +546,7 @@ function addBirthdayBottleService(m){
   m.categories.unshift(BIRTHDAY_BOTTLE_CATEGORY);
   BIRTHDAY_BOTTLES.forEach(function(b){
     m.items.push({ id:b.id, name:b.name, cat:BIRTHDAY_BOTTLE_CATEGORY.id,
-                   price:b.price, tags:["21+"], img:b.img, out:false,
+                   price:b.price, tags:["21+"], img:b.img, fit:b.fit, out:false,
                    desc:"Birthday bottle service" });
   });
 }
@@ -691,7 +693,7 @@ function tagHtml(t){
    can never leave a customer staring at a blank square mid-order. */
 function photoHtml(it, cls){
   var src = it.img || "";
-  return '<div class="' + cls + (src ? "" : " noimg") + '">' +
+  return '<div class="' + cls + (it.fit === "contain" ? " contain" : "") + (src ? "" : " noimg") + '">' +
     (src ? '<img loading="lazy" decoding="async" alt="' + esc(it.name) + '" src="' + esc(src) +
            '" onerror="this.parentNode.classList.add(\'noimg\')">' : "") +
     '<div class="emofb">' + esc(it.emoji || "🍽") + "</div>" +
