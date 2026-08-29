@@ -1981,6 +1981,10 @@ const CONFIG = {
       {label:"KBank ···1146", name:"อรรฆพร ก้องธรนินทร์", accNo:"xxx-x-x1146-x", image:"assets/promptpay.png"},
       {label:"Backup ···7256", name:"อรรฆพร ก้องธรนินทร์", accNo:"xxx-x-x7256-x", image:"assets/promptpay-2.png"} ] },
   bank:{ enabled:true, name:"Kasikorn (KBank)", accName:"Mr. Arkaporn Kongtoranin", accNo:"664-2-17256-3" },
+  internationalTransfer:{ enabled:true, label:"International Wire / Revolut or Wise",
+    bankName:"Kasikornbank (KBank)", beneficiary:"Mr. Arkaporn Kongtoranin", accountNumber:"664-2-17256-3",
+    swift:"KASITHBK", currency:"THB",
+    note:"Thailand does not use IBAN. In Revolut or Wise, choose Thailand and send THB using the account number and SWIFT code. Transfer time and fees depend on the sending service and intermediary banks." },
   cod:true,
   crypto:{ enabled:true, note:"Pick your coin, scan the QR (or copy the address), and send the crypto equivalent of the order amount. ⚠️ Send on the matching network only, then upload your slip — we confirm on receipt.",
     wallets:[
@@ -4386,6 +4390,7 @@ function paymentMethods(){
   if(payGW.gbp) m.push({p:"GBPrimePay",label:"PromptPay / Card",icon:"🏧"});
   if(CONFIG.promptpay&&CONFIG.promptpay.enabled&&!payGW.omise) m.push({p:"PromptPayQR",label:"PromptPay",icon:"📱"});
   if(CONFIG.bank&&CONFIG.bank.enabled) m.push({p:"Transfer",label:"Bank transfer",icon:"🏦"});
+  if(CONFIG.internationalTransfer&&CONFIG.internationalTransfer.enabled) m.push({p:"InternationalTransfer",label:"Revolut / Wise",icon:"🌍"});
   if(CONFIG.cod) m.push({p:"Cash",label:"Cash / COD",icon:"💵"});
   if(CONFIG.crypto&&CONFIG.crypto.enabled) m.push({p:"Crypto",label:"Crypto",icon:"₿"});
   if(!m.length) m.push({p:"Cash",label:"Pay on arrival",icon:"💵"});
@@ -4398,6 +4403,7 @@ function paymentMethods(){
 function payBtnLabel(p){ if(p==="Wallet") return "💚 Place order · "+money(cartTotal())+" from wallet";
   if(["PromptPay","Card","2C2P","GBPrimePay","PromptPayQR"].includes(p)) return "💳 Pay "+money(cartTotal());
   if(p==="Transfer") return "🏦 Place order & show transfer details";
+  if(p==="InternationalTransfer") return "🌍 Place order & show Revolut / Wise details";
   if(p==="Crypto") return "₿ Place order & pay crypto";
   return "✅ Place order · "+money(cartTotal()); }
 function renderCheckout(){
@@ -4595,6 +4601,7 @@ async function submitOrder(method){
   }
   if(coPay==="PromptPayQR"&&orderId){ return showPromptPayQR(orderId,o.total); }
   if(coPay==="Transfer"&&orderId){ return showBankTransfer(orderId,o.total); }
+  if(coPay==="InternationalTransfer"&&orderId){ return showInternationalTransfer(orderId,o.total); }
   if(coPay==="Crypto"&&orderId){ return showCryptoPay(orderId,o.total); }
   if(online&&coPay==="PromptPay"&&orderId){
     try{
@@ -4672,8 +4679,8 @@ function ppPayload(target,amount){
   let p=f("00","01")+f("01",amount?"12":"11")+merchant+f("53","764")+amt+f("58","TH");
   p=p+"6304"; return p+ppCRC(p);
 }
-var ppSel=0;
-function showPromptPayQR(orderId,amount){ clearCartAfterOrder(); ppSel=0; renderPP(orderId,amount); }
+var ppSel=0, ppReveal=false;
+function showPromptPayQR(orderId,amount){ clearCartAfterOrder(); ppSel=0; ppReveal=false; renderPP(orderId,amount); }
 function renderPP(orderId,amount){
   const pp=CONFIG.promptpay;
   const accs=(pp.accounts&&pp.accounts.length)?pp.accounts:[{label:"PromptPay",name:pp.name,accNo:pp.accNo,image:pp.image}];
@@ -4685,8 +4692,7 @@ function renderPP(orderId,amount){
     <div style="padding:6px 20px 22px;text-align:center">
       <div style="font-weight:800;color:var(--green2);font-size:13px;margin-bottom:8px">🇹🇭 Thai QR Payment · PromptPay</div>
       ${accs.length>1?`<div style="display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin-bottom:10px">${accs.map((x,i)=>`<button class="chip ${i===ppSel?'active':''}" onclick="ppSel=${i};renderPP('${orderId}',${amount})">${i===0?'QR '+(i+1):'Backup QR'}</button>`).join("")}</div>`:''}
-      ${qrHTML}
-      <div style="font-size:13px;margin-top:8px">${a.name?("ชื่อ: "+esc(a.name)):""}${a.accNo?("<br>บัญชี: "+esc(a.accNo)):""}</div>
+      ${ppReveal?`<div>${qrHTML}<div style="font-size:13px;margin-top:8px">${a.name?("ชื่อ: "+esc(a.name)):""}${a.accNo?("<br>บัญชี: "+esc(a.accNo)):""}</div></div>`:`<button class="btn btn-primary btn-block" onclick="ppReveal=true;renderPP('${orderId}',${amount})">📱 Show PromptPay QR</button><p style="color:var(--muted2);font-size:11.5px">The QR stays hidden until you tap the button.</p>`}
       ${accs.length>1?`<p style="color:var(--gold);font-size:12px;margin:6px 0 0">ถ้า QR แรกใช้ไม่ได้ กดปุ่ม "Backup QR" ด้านบน · If the first QR doesn't work, tap Backup QR.</p>`:''}
       <p style="color:var(--muted);font-size:12.5px;margin:6px 0 2px">${esc(pp.note||"")}</p>
       <div class="cart-total-row grand" style="justify-content:center;gap:10px;margin-top:6px"><span>Amount</span><span>${money(amount)}</span></div>
@@ -4694,7 +4700,7 @@ function renderPP(orderId,amount){
       <div style="text-align:left">${slipBoxHTML(orderId)}</div>
       <button class="btn btn-primary btn-block" style="margin-top:12px" onclick="closeAll()">Done</button>
     </div>`;
-  if(!a.image){ const payload=ppPayload(a.id||pp.id,amount); loadQRlib().then(()=>{ const el=$("#ppQR"); if(!el)return; if(window.QRCode){ el.innerHTML=""; new QRCode(el,{text:payload,width:210,height:210,correctLevel:QRCode.CorrectLevel.M}); } else { el.innerHTML="<div style='color:#333;font-size:11px;word-break:break-all;padding:6px'>"+payload+"</div>"; } }); }
+  if(ppReveal&&!a.image){ const payload=ppPayload(a.id||pp.id,amount); loadQRlib().then(()=>{ const el=$("#ppQR"); if(!el)return; if(window.QRCode){ el.innerHTML=""; new QRCode(el,{text:payload,width:210,height:210,correctLevel:QRCode.CorrectLevel.M}); } else { el.innerHTML="<div style='color:#333;font-size:11px;word-break:break-all;padding:6px'>"+payload+"</div>"; } }); }
 }
 function showGatewayQR(orderId,qr,amount,who){
   clearCartAfterOrder();
@@ -4719,6 +4725,36 @@ function showBankTransfer(orderId,amount){
     <button class="btn btn-primary btn-block" style="margin-top:8px" onclick="copyBankAcc()">Copy account no.</button>
     <div style="margin-top:12px">${slipBoxHTML(orderId)}</div>
     <button class="btn btn-ghost btn-block" style="margin-top:10px" onclick="closeAll()">Done</button></div>`;
+}
+function copyIntlField(field,label){
+  const value=String((CONFIG.internationalTransfer||{})[field]||"");
+  if(!value) return toast(label+" is not configured");
+  copyText(value); toast(label+" copied");
+}
+function copyIntlReference(orderId){ copyText(String(orderId)); toast("Order reference copied"); }
+function copyIntlAll(orderId,amount){
+  const x=CONFIG.internationalTransfer||{};
+  copyText(["DANK international transfer","Amount: "+money(amount),"Currency: "+x.currency,"Beneficiary: "+x.beneficiary,"Bank: "+x.bankName,"Account number: "+x.accountNumber,"SWIFT/BIC: "+x.swift,"Reference: "+orderId].join("\n"));
+  toast("Transfer details copied");
+}
+function intlRow(label,value,field){ return `<div style="display:grid;grid-template-columns:95px 1fr auto;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--line2)"><span style="color:var(--muted);font-size:12px">${esc(label)}</span><b style="font-size:13px;word-break:break-word">${esc(value||"—")}</b>${field?`<button class="promo-btn" onclick="copyIntlField('${field}','${label}')">Copy</button>`:""}</div>`; }
+function showInternationalTransfer(orderId,amount){
+  const x=CONFIG.internationalTransfer; clearCartAfterOrder();
+  $("#coCard").innerHTML=`<div class="drawer-head" style="border:none;padding:18px 20px 4px"><h2>🌍 Revolut / Wise transfer</h2><button class="close-x" onclick="closeAll()">×</button></div>
+    <div style="padding:6px 20px 22px">
+      <div class="note" style="margin-bottom:12px"><b>Manual international bank transfer</b><br>Your order remains payment-pending until staff verify the receipt and bank deposit.</div>
+      <div style="background:var(--panel);border:1px solid var(--line2);border-radius:12px;padding:6px 12px">
+        ${intlRow("Amount",money(amount),"")}${intlRow("Currency",x.currency,"currency")}${intlRow("Beneficiary",x.beneficiary,"beneficiary")}${intlRow("Bank",x.bankName,"bankName")}${intlRow("Account no.",x.accountNumber,"accountNumber")}${intlRow("SWIFT / BIC",x.swift,"swift")}
+        <div style="display:grid;grid-template-columns:95px 1fr auto;align-items:center;gap:8px;padding:8px 0"><span style="color:var(--muted);font-size:12px">Reference</span><b style="font-size:13px">${esc(orderId)}</b><button class="promo-btn" onclick="copyIntlReference('${orderId}')">Copy</button></div>
+      </div>
+      <button class="btn btn-primary btn-block" style="margin-top:10px" onclick="copyIntlAll('${orderId}',${Number(amount)||0})">📋 Copy all transfer details</button>
+      <div style="margin-top:14px;font-size:13px;line-height:1.55"><b>How to pay</b><ol style="padding-left:20px;margin:6px 0">
+        <li>Open Revolut or Wise and start a bank transfer.</li><li>Choose recipient country <b>Thailand</b> and currency <b>THB</b>.</li><li>Enter the beneficiary, account number and SWIFT/BIC above.</li><li>Use order <b>${esc(orderId)}</b> as the payment reference.</li><li>Transfer ${money(amount)}, then upload the receipt below.</li>
+      </ol></div>
+      <p style="color:var(--gold);font-size:12px;line-height:1.45">${esc(x.note)} If the app requires a recipient address or email, contact us on <a href="${esc(CONFIG.lineUrl)}" target="_blank" rel="noopener" style="color:var(--green2)">LINE</a> before sending.</p>
+      ${slipBoxHTML(orderId)}
+      <button class="btn btn-ghost btn-block" style="margin-top:10px" onclick="closeAll()">Done</button>
+    </div>`;
 }
 function showSuccess(via,msg){
   if(bonusEligible()) LS.set("firstUsed",true);
