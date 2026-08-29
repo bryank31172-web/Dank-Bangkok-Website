@@ -4,6 +4,7 @@
      POST {orderId, status:"done"|"new", key}       → update order status  */
 import { getJSON, setJSON, indexList } from "./_store.js";
 import { requireStaff } from "./_auth.js";
+import { acceptOrderAlert } from "./_alerts.js";
 
 export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
@@ -40,6 +41,10 @@ export default async function handler(req, res) {
       const o = await getJSON("order:" + b.orderId);
       if (!o) return res.status(404).json({ error: "not found" });
       o.status = b.status === "done" ? "done" : "new";
+      if (o.status === "done") {
+        const alert = await acceptOrderAlert(b.orderId, String(b.acceptedBy || "Marked done by staff"));
+        if (alert) { o.alertAcceptedAt = alert.acceptedAt; o.alertAcceptedBy = alert.acceptedBy; }
+      }
       await setJSON("order:" + b.orderId, o);
       return res.status(200).json({ ok: true });
     }
