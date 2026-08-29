@@ -257,7 +257,7 @@ export function configuredChannels() {
     webPush: pushConfigured(),
     telegram: Boolean(process.env.TELEGRAM_BOT_TOKEN && process.env.TELEGRAM_CHAT_ID),
     line: Boolean(process.env.LINE_CHANNEL_ACCESS_TOKEN && (process.env.LINE_TO || process.env.LINE_USER_ID || process.env.LINE_GROUP_ID)),
-    whatsapp: Boolean(process.env.WHATSAPP_TOKEN && process.env.WHATSAPP_PHONE_NUMBER_ID && (process.env.WHATSAPP_TO || process.env.WHATSAPP_STAFF_TO)),
+    whatsapp: Boolean(process.env.WHATSAPP_ACCESS_TOKEN && process.env.WHATSAPP_PHONE_NUMBER_ID && process.env.WHATSAPP_TO),
     email: Boolean(process.env.RESEND_API_KEY),
   };
 }
