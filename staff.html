@@ -857,7 +857,7 @@ function staffUploadSlip(id){ _slipUpId=id; let inp=document.getElementById('sta
   inp.click();
 }
 async function setOrder(id,status){
-  await authPost('/api/orders',{orderId:id,status});
+  await authPost('/api/orders',{orderId:id,status,acceptedBy:deviceLabel()});
   pollOrders();
 }
 function startListPoll(){ clearInterval(listT); listT=setInterval(async()=>{ if(TAB!=='chats')return;
