@@ -5,6 +5,17 @@
 <link rel="icon" href="/favicon.svg" type="image/svg+xml"/>
 <link rel="icon" href="/favicon.ico" sizes="32x32"/>
 <link rel="apple-touch-icon" href="/apple-touch-icon.png"/>
+
+<!-- Progressive Web App: installability and iOS support -->
+<link rel="manifest" href="/manifest.webmanifest"/>
+<meta name="mobile-web-app-capable" content="yes"/>
+<meta name="application-name" content="DANK BKK"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="DANK BKK"/>
+<meta name="msapplication-TileColor" content="#060a07"/>
+<meta name="msapplication-TileImage" content="/apple-touch-icon.png"/>
+
 <!-- Table QR guard: a code scanned at a table must open the food & drinks page,
      never the shop. If a ?table= (or ?t=/?tb=) lands here it is forwarded on
      before anything else renders. -->
@@ -6943,5 +6954,16 @@ async function pushOverrides(){
   });
 })();
 </script>
+
+<!-- PWA client: service-worker registration, install prompt, online/offline
+     feedback and safe update handling. Order/payment API responses remain
+     network-only through service-worker.js. -->
+<script src="/pwa-client.js" defer></script>
+<noscript>
+  <p style="position:fixed;left:12px;right:12px;bottom:12px;z-index:9999;margin:0;padding:12px 14px;border-radius:12px;background:#101a12;color:#e8f5ec;border:1px solid #294634;font:600 13px/1.45 system-ui">
+    JavaScript is required for cart, checkout and offline app support.
+  </p>
+</noscript>
+
 </body>
 </html>
