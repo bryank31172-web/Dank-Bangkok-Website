@@ -4332,31 +4332,62 @@ function renderCart(){
 }
 
 /* ---- Checkout ---- */
-function openCheckout(skipCRM){ stat("checkouts");
-  /* Bonus lines are settled BEFORE the empty-cart test. Removing the last paid line
-     leaves its free grams behind, and testing cart.length first let a cart that is
-     really empty open the checkout on "0 items · ฿0" and POST an order the API then
-     rejected — while the customer was looking at a success screen.
+function openCheckout(skipCRM){
+  stat("checkouts");
 
-     coFulfill is no longer reset to "delivery" here either. It is whatever the drawer
-     just quoted a total against, so resetting it re-opened a Pickup cart at the
-     Delivery price: the button said ฿800 and the modal opened at ฿900.
-
-     And the ฿300 minimum is enforced here rather than only by the greyed-out button
-     in renderCart(): the builder's ?checkout=1 handoff and the AI assistant's
-     "Checkout now" both call this directly and never see that button. */
+  /*
+   * Full-page checkout flow.
+   *
+   * The cart is already persisted through LS whenever it changes, so the
+   * checkout page can read the same cart data. This function only performs
+   * storefront validation and then navigates away. It never opens #coModal.
+   */
   ensureBonus();
-  if(!cart.length){ toast("Your cart is empty"); closeAI(); return; }
-  const short=CONFIG.minOrder-cartSubtotal();
-  /* closeAI() before openCart(), on both bail-outs. #aiPanel sits at z-index 95 and the
-     drawer at 70, and on a phone the panel is full-screen — so when this fires on the AI's
-     own "🛒 Checkout now" button, the drawer opens UNDERNEATH the chat and cannot be
-     tapped. The success path below has always closed the AI; these two did not. */
-  if(short>0){ toast("Minimum order "+money(CONFIG.minOrder)+" — add "+money(short)+" more"); closeAI(); openCart(); return; }
-  if(!skipCRM&&!isMember()&&!crmSeen("checkout")){
-    markCRMSeen("checkout"); crmResumeCheckout=true; closeDrawerOnly(); closeAI(); openCRM("join"); return;
+
+  if(!cart.length){
+    toast("Your cart is empty");
+    closeAI();
+    return;
   }
-  coPay=paymentMethods()[0].p; renderCheckout(); closeDrawerOnly(); closeAI(); showModal("#coModal");
+
+  const short = CONFIG.minOrder - cartSubtotal();
+  if(short > 0){
+    toast("Minimum order " + money(CONFIG.minOrder) + " — add " + money(short) + " more");
+    closeAI();
+    openCart();
+    return;
+  }
+
+  /*
+   * Keep the one-time checkout membership prompt. After the customer joins or
+   * dismisses it, resumeCheckoutAfterCRM() calls this function again with true.
+   */
+  if(!skipCRM && !isMember() && !crmSeen("checkout")){
+    markCRMSeen("checkout");
+    crmResumeCheckout = true;
+    closeDrawerOnly();
+    closeAI();
+    openCRM("join");
+    return;
+  }
+
+  /*
+   * Persist the latest cart and checkout context before leaving the storefront.
+   * checkout.html can use these keys without relying on the old popup state.
+   */
+  try{
+    LS.set("cart", cart);
+    LS.set("checkoutFulfillment", coFulfill || "delivery");
+    LS.set("checkoutStartedAt", Date.now());
+  }catch(e){
+    console.warn("Could not persist checkout state", e);
+  }
+
+  closeDrawerOnly();
+  closeAI();
+
+  // Use the clean Vercel route. No modal or popup is opened.
+  window.location.assign("/checkout");
 }
 /* Read whatever is on screen into coDraft. Called before anything that will destroy the
    form — a fulfilment switch, a bail-out that closes the modal — and never destructive
