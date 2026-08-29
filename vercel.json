@@ -1,5 +1,6 @@
 {
   "redirects": [
+    { "source": "/checkout.html", "destination": "/checkout", "permanent": true },
     { "source": "/products", "destination": "/products/", "permanent": true },
     { "source": "/products/:category", "destination": "/products/:category/", "permanent": true },
     { "source": "/products/:category/:product", "destination": "/products/:category/:product/", "permanent": true },
@@ -11,6 +12,8 @@
     { "source": "/blog", "destination": "/blog/", "permanent": true }
   ],
   "rewrites": [
+    { "source": "/", "destination": "/api/index-page" },
+    { "source": "/checkout", "destination": "/checkout.html" },
     { "source": "/products/", "destination": "/api/seo?view=products" },
     { "source": "/products/:category/", "destination": "/api/seo?view=category&category=:category" },
     { "source": "/products/:category/:product/", "destination": "/api/seo?view=product&category=:category&product=:product" },
