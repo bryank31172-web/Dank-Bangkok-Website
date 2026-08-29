@@ -17,6 +17,11 @@ export const LOCATIONS = [
     phone: "+66841620610",
     hours: "Open daily · call 24/7",
     map: "https://maps.app.goo.gl/zivxFn4nf6RpBysC6?g_st=ic",
+    /* Owner-supplied Google Maps screenshot, checked 27 Aug 2026. This is
+       visible trust content only; it is intentionally not added to schema. */
+    googleRating: 5,
+    googleReviewCount: 1174,
+    googleReviewsUrl: "https://maps.app.goo.gl/Q8KQq5noTHABf4HN6?g_st=ic",
   },
   {
     slug: "sathorn",
@@ -384,7 +389,7 @@ export function renderLocationsPage() {
     description: "Addresses, contact details and map links for DANK locations.",
     canonical: path,
     entities: [breadcrumbEntity(items, SITE_URL + path)],
-    body: `${breadcrumbs(items)}<h1>Locations</h1><p class="lede">Addresses and directions from the current DANK location list.</p><div class="grid">${LOCATIONS.map((location) => `<a class="card" href="/locations/${location.slug}/"><h2>${escapeHtml(location.name)}</h2><div class="meta">${escapeHtml(location.address)}</div></a>`).join("")}</div>`,
+    body: `${breadcrumbs(items)}<h1>Locations</h1><p class="lede">Addresses and directions from the current DANK location list.</p><div class="grid">${LOCATIONS.map((location) => `<a class="card" href="/locations/${location.slug}/"><h2>${escapeHtml(location.name)}</h2><div class="meta">${escapeHtml(location.address)}${location.googleRating ? `<br>★★★★★ ${escapeHtml(Number(location.googleRating).toFixed(1))} on Google · ${escapeHtml(Number(location.googleReviewCount).toLocaleString("en-US"))}+ reviews` : ""}</div></a>`).join("")}</div>`,
   });
 }
 
@@ -415,7 +420,7 @@ export function renderLocationPage(slug) {
     description: `${location.name}: address, contact information and directions.`,
     canonical: path,
     entities: [breadcrumbEntity(items, url), localBusiness],
-    body: `${breadcrumbs(items)}<h1>${escapeHtml(location.name)}</h1><div class="facts"><div class="fact"><small>Address</small>${escapeHtml(location.address)}</div><div class="fact"><small>Hours</small>${escapeHtml(location.hours)}</div><div class="fact"><small>Phone</small><a href="tel:${escapeHtml(location.phone)}">084-162-0610</a></div></div><div class="actions"><a class="button" href="${escapeHtml(location.map)}" target="_blank" rel="noopener noreferrer">Get directions</a>${location.venueUrl ? `<a class="button secondary" href="${escapeHtml(location.venueUrl)}">Open venue page</a>` : ""}</div>`,
+    body: `${breadcrumbs(items)}<h1>${escapeHtml(location.name)}</h1><div class="facts"><div class="fact"><small>Address</small>${escapeHtml(location.address)}</div><div class="fact"><small>Hours</small>${escapeHtml(location.hours)}</div><div class="fact"><small>Phone</small><a href="tel:${escapeHtml(location.phone)}">084-162-0610</a></div></div>${location.googleReviewsUrl ? `<h2>Customer reviews</h2><a class="card" href="${escapeHtml(location.googleReviewsUrl)}" target="_blank" rel="noopener noreferrer"><h3>★★★★★ ${escapeHtml(Number(location.googleRating).toFixed(1))} on Google</h3><div class="meta">Based on ${escapeHtml(Number(location.googleReviewCount).toLocaleString("en-US"))}+ Google reviews · Read reviews on Google Maps ↗</div></a>` : ""}<div class="actions"><a class="button" href="${escapeHtml(location.map)}" target="_blank" rel="noopener noreferrer">Get directions</a>${location.venueUrl ? `<a class="button secondary" href="${escapeHtml(location.venueUrl)}">Open venue page</a>` : ""}</div>`,
   });
 }
 
