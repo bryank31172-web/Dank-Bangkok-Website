@@ -10,6 +10,13 @@ function replaceRequired(source, search, replacement, label) {
   return source.replace(search, replacement);
 }
 
+function replaceRegexRequired(source, pattern, replacement, label) {
+  if (!pattern.test(source)) {
+    throw new Error(`Storefront cart migration failed: ${label}`);
+  }
+  return source.replace(pattern, replacement);
+}
+
 function storefrontHtml() {
   if (cached) return cached;
 
@@ -45,7 +52,7 @@ function storefrontHtml() {
   html = replaceRequired(
     html,
     `function updateCartCount(){ const n=cart.reduce((s,c)=>s+c.qty,0); const el=$("#cartCount"); el.textContent=n; el.classList.toggle("hidden",n===0); }\nfunction cartSubtotal(){ return cart.reduce((s,c)=>s+c.price*c.qty,0); }`,
-    `function updateCartCount(){ const n=window.Cart?Cart.count(cart):cart.reduce((s,c)=>s+c.qty,0); const el=$("#cartCount"); el.textContent=n; el.classList.toggle("hidden",n===0); }\nfunction cartSubtotal(){ return window.Cart?Cart.subtotal(cart):cart.reduce((s,c)=>s+c.price*c.qty,0); }`,
+    `function updateCartCount(){ const n=window.Cart?Cart.count(cart):cart.reduce((s,c)=>s+c.qty,0); const el=$("#cartCount"); el.textContent=n; el.classList.toggle("hidden",n===0); }\nfunction cartSubtotal(){ return window.Cart?Cart.calculate({items:cart}).subtotal:cart.reduce((s,c)=>s+c.price*c.qty,0); }`,
     "cart totals"
   );
 
@@ -70,6 +77,67 @@ function storefrontHtml() {
     "clear cart"
   );
 
+  html = replaceRegexRequired(
+    html,
+    /function cartSubtotal\(\)\{[\s\S]*?(?=function applyPromo\(\))/,
+    `function memberCodeStacks(p){
+  const cc=String((CONFIG.crm&&CONFIG.crm.code)||"").toUpperCase();
+  return !!(memberMode&&cc&&p&&String(p.code||"").toUpperCase()===cc);
+}
+function dropStackedMemberCode(){ if(memberCodeStacks(appliedPromo)) appliedPromo=null; }
+function sharedCartSummary(){
+  if(!window.Cart){
+    const subtotal=cart.reduce((sum,item)=>sum+(Number(item.price)||0)*(Number(item.qty)||1),0);
+    return {items:cart,subtotal,discount:0,deliveryFee:0,total:subtotal,shortfall:Math.max(0,(Number(CONFIG.minOrder)||0)-subtotal)};
+  }
+
+  const membership=memberMode?{active:true,source:"storefront"}:null;
+  const pricingMeta={
+    membership,
+    fulfilment:coFulfill||"delivery",
+    minimumOrder:Number(CONFIG.minOrder)||0,
+    source:"storefront"
+  };
+  const base=Cart.calculate({items:cart,meta:{...pricingMeta,discount:0,deliveryFee:0,promo:""}});
+  const promo=appliedPromo;
+  let discount=0;
+
+  if(promo&&!memberCodeStacks(promo)&&(!promo.min||base.subtotal>=Number(promo.min))){
+    if(promo.type==="pct") discount=Math.round(base.subtotal*(Number(promo.value)||0)/100);
+    else if(promo.type==="fixed") discount=Math.min(Number(promo.value)||0,base.subtotal);
+  }
+
+  let deliveryFee=0;
+  if((coFulfill||"delivery")==="delivery"&&!(promo&&promo.type==="freedelivery")){
+    const freeOver=Number(CONFIG.freeDeliveryOver)||0;
+    deliveryFee=(base.subtotal-discount)>=freeOver?0:(Number(CONFIG.deliveryFee)||0);
+  }
+
+  Cart.setMeta({
+    ...pricingMeta,
+    promo:promo?String(promo.code||"").toUpperCase():"",
+    discount,
+    deliveryFee
+  },false);
+
+  return Cart.calculate({items:cart});
+}
+`,
+    "shared pricing engine"
+  );
+
+  html = replaceRequired(
+    html,
+    `  const box=boxesInCart();\n  body.innerHTML=cart.map(cartLineHTML).join("")+(box.boxes>=1?boxGiftsHTML(box.boxes):"");\n  const sub=cartSubtotal(), disc=discountAmt(), fee=deliveryFeeAmt(), tot=cartTotal();`,
+    `  const summary=sharedCartSummary();\n  cart=summary.items;\n  const box=boxesInCart();\n  body.innerHTML=summary.items.map(cartLineHTML).join("")+(box.boxes>=1?boxGiftsHTML(box.boxes):"");\n  const {subtotal:sub,discount:disc,deliveryFee:fee,total:tot}=summary;`,
+    "cart drawer summary"
+  );
+
+  html = html.replaceAll("cartSubtotal()", "sharedCartSummary().subtotal");
+  html = html.replaceAll("discountAmt()", "sharedCartSummary().discount");
+  html = html.replaceAll("deliveryFeeAmt()", "sharedCartSummary().deliveryFee");
+  html = html.replaceAll("cartTotal()", "sharedCartSummary().total");
+
   const declaration = "function openCheckout(skipCRM){";
   if (!html.includes(declaration)) throw new Error("Storefront checkout function was not found");
   html = html.replace(declaration, "function openCheckoutModal(skipCRM){");
@@ -77,26 +145,20 @@ function storefrontHtml() {
   const redirectCheckout = `
 <script>
 function syncCheckoutPricing(){
-  if(!window.Cart) return;
-  Cart.setMeta({
-    promo: appliedPromo ? String(appliedPromo.code||"").toUpperCase() : "",
-    discount: Number(discountAmt()) || 0,
-    deliveryFee: Number(deliveryFeeAmt()) || 0,
-    membership: memberMode ? { active:true, source:"storefront" } : null,
-    fulfilment: coFulfill || "delivery",
-    minimumOrder: Number(CONFIG.minOrder)||0,
-    source: "storefront"
-  }, false);
-  cart=Cart.save(cart);
+  if(!window.Cart) return sharedCartSummary();
+  const summary=sharedCartSummary();
+  cart=Cart.save(summary.items);
+  return Cart.calculate();
 }
 
 function openCheckout(skipCRM){
   stat("checkouts");
   ensureBonus();
+  const summary=sharedCartSummary();
+  cart=summary.items;
   if(!cart.length){ toast("Your cart is empty"); closeAI(); return; }
-  const short=CONFIG.minOrder-cartSubtotal();
-  if(short>0){
-    toast("Minimum order "+money(CONFIG.minOrder)+" — add "+money(short)+" more");
+  if(summary.shortfall>0){
+    toast("Minimum order "+money(CONFIG.minOrder)+" — add "+money(summary.shortfall)+" more");
     closeAI(); openCart(); return;
   }
   if(!skipCRM&&!isMember()&&!crmSeen("checkout")){
