@@ -70,7 +70,7 @@
           <div class="cart-row"><span>Shipping</span><strong id="deliveryFee">฿100</strong></div>
           <div class="cart-row total"><span>Total</span><span id="total">฿0</span></div>
         </div>
-        <button class="cart-checkout" id="cartActionBtn" type="button" onclick="handleCartAction()">Proceed to Checkout</button>
+        <button class="cart-checkout" id="cartActionBtn" type="button" onclick="handleCartAction()">Go to Payment</button>
       </div>
     </aside>
   </div>
@@ -161,11 +161,11 @@ function updateCartAction(){
  const btn=document.getElementById('cartActionBtn');
  if(!btn) return;
  if(state.step===1){
-   btn.textContent='Proceed to Checkout';
+   btn.textContent='Go to Payment';
    btn.onclick=handleCartAction;
    btn.classList.remove('hidden');
  }else if(state.step===2){
-   btn.textContent='Place Order · '+money(total());
+   btn.textContent='Proceed to Checkout';
    btn.onclick=placeOrder;
    btn.classList.remove('hidden');
  }else{
