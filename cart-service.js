@@ -5,8 +5,7 @@
   const HANDOFF_KEY = 'dank_checkout_cart';
   const META_KEY = 'dank_cart_meta';
   const EVENT_NAME = 'dank:cart-changed';
-  const VERSION = 2;
-
+  const VERSION = 3;
   const ruleHandlers = new Map();
 
   function safeParse(raw, fallback) {
@@ -26,11 +25,16 @@
     const key = source.key || [id, tierLabel].filter(Boolean).join('|') || String(index);
     return {
       ...source,
-      key: String(key), id,
+      key: String(key),
+      id,
       shId: source.shId ?? source.sku ?? '',
-      name: String(name), tierLabel: String(tierLabel || ''),
-      price, qty, image,
-      category: source.category ?? '', type: source.type ?? '',
+      name: String(name),
+      tierLabel: String(tierLabel || ''),
+      price,
+      qty,
+      image,
+      category: source.category ?? '',
+      type: source.type ?? '',
       bonus: Boolean(source.bonus)
     };
   }
@@ -50,12 +54,31 @@
   }
 
   function getItems() {
+    /* localStorage is canonical. sessionStorage is only a fallback for legacy
+       redirects. This prevents an older checkout handoff from overriding the
+       newer storefront cart. */
+    const stored = readItems(global.localStorage, STORAGE_KEY);
+    if (stored.length) return stored;
     const handoff = readItems(global.sessionStorage, HANDOFF_KEY);
-    return handoff.length ? handoff : readItems(global.localStorage, STORAGE_KEY);
+    if (handoff.length) {
+      try { global.localStorage.setItem(STORAGE_KEY, JSON.stringify(handoff)); } catch (error) {}
+    }
+    return handoff;
   }
 
   function defaultMeta() {
-    return { version: VERSION, promo: '', discount: 0, deliveryFee: 100, membership: null, loyaltyPoints: 0 };
+    return {
+      version: VERSION,
+      updatedAt: 0,
+      promo: '',
+      discount: 0,
+      deliveryFee: 100,
+      membership: null,
+      loyaltyPoints: 0,
+      fulfilment: 'delivery',
+      minimumOrder: 0,
+      source: ''
+    };
   }
 
   function getMeta() {
@@ -68,21 +91,21 @@
     catch (error) {}
   }
 
+  function setMeta(patch, shouldEmit = true) {
+    const meta = { ...getMeta(), ...(patch || {}), version: VERSION, updatedAt: Date.now() };
+    try { global.localStorage.setItem(META_KEY, JSON.stringify(meta)); } catch (error) {}
+    if (shouldEmit) emit(getItems(), meta);
+    return meta;
+  }
+
   function save(items, metaPatch) {
     const normalized = normalize(items);
-    const meta = setMeta(metaPatch || {}, false);
     const payload = JSON.stringify(normalized);
+    const meta = setMeta(metaPatch || {}, false);
     try { global.localStorage.setItem(STORAGE_KEY, payload); } catch (error) {}
     try { global.sessionStorage.setItem(HANDOFF_KEY, payload); } catch (error) {}
     emit(normalized, meta);
     return normalized;
-  }
-
-  function setMeta(patch, shouldEmit = true) {
-    const meta = { ...getMeta(), ...(patch || {}), version: VERSION };
-    try { global.localStorage.setItem(META_KEY, JSON.stringify(meta)); } catch (error) {}
-    if (shouldEmit) emit(getItems(), meta);
-    return meta;
   }
 
   function findIndex(items, identifier) {
@@ -147,12 +170,17 @@
   function calculate(options) {
     const items = normalize(options?.items ?? getItems());
     const meta = { ...getMeta(), ...(options?.meta || {}) };
+    const baseSubtotal = subtotal(items);
     let summary = {
-      items, subtotal: subtotal(items),
+      items,
+      subtotal: baseSubtotal,
       discount: Math.max(0, Number(meta.discount) || 0),
-      deliveryFee: Math.max(0, Number(meta.deliveryFee) || 0),
-      promo: meta.promo || '', membership: meta.membership || null,
+      deliveryFee: baseSubtotal > 0 ? Math.max(0, Number(meta.deliveryFee) || 0) : 0,
+      promo: meta.promo || '',
+      membership: meta.membership || null,
       loyaltyPoints: Math.max(0, Number(meta.loyaltyPoints) || 0),
+      fulfilment: meta.fulfilment || 'delivery',
+      minimumOrder: Math.max(0, Number(meta.minimumOrder) || 0),
       adjustments: []
     };
     ruleHandlers.forEach((handler, name) => {
@@ -161,9 +189,10 @@
         if (result && typeof result === 'object') summary = { ...summary, ...result };
       } catch (error) { console.error('Cart rule failed:', name, error); }
     });
-    summary.discount = Math.max(0, Number(summary.discount) || 0);
-    summary.deliveryFee = Math.max(0, Number(summary.deliveryFee) || 0);
+    summary.discount = Math.min(summary.subtotal, Math.max(0, Number(summary.discount) || 0));
+    summary.deliveryFee = summary.subtotal > 0 ? Math.max(0, Number(summary.deliveryFee) || 0) : 0;
     summary.total = Math.max(0, summary.subtotal - summary.discount + summary.deliveryFee);
+    summary.shortfall = Math.max(0, summary.minimumOrder - summary.subtotal);
     return summary;
   }
 
@@ -216,9 +245,28 @@
   }
 
   global.Cart = Object.freeze({
-    version: VERSION, storageKey: STORAGE_KEY, handoffKey: HANDOFF_KEY, metaKey: META_KEY,
-    normalize, getItems, getMeta, setMeta, save, add, remove, updateQty, clear,
-    count, subtotal, calculate, applyPromo, applyMembership, applyBonusGrams,
-    calculateDelivery, registerRule, handoff, subscribe
+    version: VERSION,
+    storageKey: STORAGE_KEY,
+    handoffKey: HANDOFF_KEY,
+    metaKey: META_KEY,
+    normalize,
+    getItems,
+    getMeta,
+    setMeta,
+    save,
+    add,
+    remove,
+    updateQty,
+    clear,
+    count,
+    subtotal,
+    calculate,
+    applyPromo,
+    applyMembership,
+    applyBonusGrams,
+    calculateDelivery,
+    registerRule,
+    handoff,
+    subscribe
   });
 })(window);
