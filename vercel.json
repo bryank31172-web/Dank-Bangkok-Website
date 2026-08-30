@@ -14,7 +14,7 @@
   ],
   "rewrites": [
     { "source": "/shop", "destination": "/api/index-page" },
-    { "source": "/checkout", "destination": "/checkout.html" },
+    { "source": "/checkout", "destination": "/api/checkout-page" },
     { "source": "/products/", "destination": "/api/seo?view=products" },
     { "source": "/products/:category/", "destination": "/api/seo?view=category&category=:category" },
     { "source": "/products/:category/:product/", "destination": "/api/seo?view=product&category=:category&product=:product" },
