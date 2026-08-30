@@ -4,9 +4,7 @@ import path from "node:path";
 let cached = "";
 
 function replaceRequired(source, search, replacement, label) {
-  if (!source.includes(search)) {
-    throw new Error(`Checkout cart migration failed: ${label}`);
-  }
+  if (!source.includes(search)) throw new Error(`Checkout cart migration failed: ${label}`);
   return source.replace(search, replacement);
 }
 
@@ -19,8 +17,8 @@ function checkoutHtml() {
   html = replaceRequired(
     html,
     "<script>\nconst STORE='dank_cart';",
-    "<script src=\"/cart-service.js?v=4\"></script>\n<script>\nconst STORE='dank_cart';",
-    "cart service injection"
+    "<script src=\"/cart-service.js?v=5\"></script>\n<script src=\"/cart-ui.js?v=2\"></script>\n<script>\nconst STORE='dank_cart';",
+    "shared cart scripts"
   );
 
   html = replaceRequired(
@@ -33,7 +31,7 @@ function checkoutHtml() {
   html = replaceRequired(
     html,
     "function loadCart(){try{return JSON.parse(localStorage.getItem(STORE)||'[]')||[]}catch(e){return[]}}\nlet cart=loadCart();\nfunction subtotal(){return cart.reduce((s,x)=>s+(Number(x.price)||0)*(Number(x.qty)||1),0)}\nfunction total(){return Math.max(0,subtotal()-state.discount+state.deliveryFee)}",
-    "let summary=window.Cart?Cart.calculate():{items:[],subtotal:0,discount:0,promo:'',deliveryFee:0,total:0};\nlet cart=summary.items;\nfunction refreshCart(){summary=window.Cart?Cart.calculate():summary;cart=summary.items;}\nfunction subtotal(){return summary.subtotal}\nfunction total(){return summary.total}",
+    "let summary=window.CartUI?CartUI.calculate():(window.Cart?Cart.calculate():{items:[],subtotal:0,discount:0,promo:'',deliveryFee:0,total:0});\nlet cart=summary.items;\nfunction refreshCart(){summary=window.CartUI?CartUI.calculate():(window.Cart?Cart.calculate():summary);cart=summary.items;}\nfunction subtotal(){return summary.subtotal}\nfunction total(){return summary.total}",
     "cart initialization"
   );
 
@@ -46,19 +44,20 @@ function checkoutHtml() {
     .replace("document.getElementById('discountRow').style.display=state.discount?'flex':'none';", "document.getElementById('discountRow').style.display=summary.discount?'flex':'none';")
     .replace("document.getElementById('discount').textContent='−'+money(state.discount);", "document.getElementById('discount').textContent='−'+money(summary.discount);")
     .replace("document.getElementById('total').textContent=money(total());", "document.getElementById('total').textContent=money(summary.total);")
-    .replace("document.getElementById('placeBtn').textContent='Place order · '+money(total());", "document.getElementById('placeBtn').textContent='Place order · '+money(summary.total);");
+    .replace("document.getElementById('placeBtn').textContent='Place order · '+money(total());", "document.getElementById('placeBtn').textContent='Place order · '+money(summary.total);")
+    .replace("${x.bonus?'FREE':money((Number(x.price)||0)*(Number(x.qty)||1))}", "${x.bonus?'FREE':money((Number(x.appliedPrice??x.price)||0)*(Number(x.qty)||1))}");
 
   html = replaceRequired(
     html,
     "function persistCart(){localStorage.setItem(STORE,JSON.stringify(cart));renderSummary()}\nfunction changeQty(index,delta){const item=cart[index];if(!item)return;item.qty=Math.max(1,(Number(item.qty)||1)+delta);persistCart()}\nfunction removeCartItem(index){cart.splice(index,1);persistCart()}",
-    "function persistCart(){if(window.Cart)Cart.save(summary.items);refreshCart();renderSummary()}\nfunction changeQty(index,delta){const item=summary.items[index];if(!item)return;if(window.Cart)Cart.updateQty(item.key,delta,{mode:'delta',minimum:1,removeBelowMinimum:true});refreshCart();renderSummary()}\nfunction removeCartItem(index){const item=summary.items[index];if(!item)return;if(window.Cart)Cart.remove(item.key);refreshCart();renderSummary()}",
+    "function persistCart(){if(window.Cart)Cart.save(summary.items);refreshCart();renderSummary()}\nfunction changeQty(index,delta){const item=summary.items[index];if(!item)return;if(window.CartUI)summary=CartUI.changeQty(item.key,delta);else if(window.Cart)Cart.updateQty(item.key,delta,{mode:'delta',minimum:1,removeBelowMinimum:true});refreshCart();renderSummary()}\nfunction removeCartItem(index){const item=summary.items[index];if(!item)return;if(window.CartUI)summary=CartUI.remove(item.key);else if(window.Cart)Cart.remove(item.key);refreshCart();renderSummary()}",
     "cart mutations"
   );
 
   html = replaceRequired(
     html,
     "function applyPromo(){const code=document.getElementById('promo').value.trim().toUpperCase();state.promo=code;state.discount=code==='DANK10'?Math.round(subtotal()*.10):0;if(code&&!state.discount)alert('Promo code not recognised');renderSummary()}",
-    "function applyPromo(){const code=document.getElementById('promo').value.trim().toUpperCase();if(!window.Cart)return;summary=Cart.applyPromo(code);cart=summary.items;if(code&&!summary.discount)alert('Promo code not recognised');renderSummary()}",
+    "function applyPromo(){const code=document.getElementById('promo').value.trim().toUpperCase();if(!window.CartUI)return;const result=CartUI.setPromo(code,{promos:{DANK10:{type:'pct',value:10}}});if(!result.ok){alert(result.reason==='minimum'?'Minimum order '+money(result.minimum)+' required':'Promo code not recognised');return;}summary=result.summary;cart=summary.items;renderSummary()}",
     "promo handling"
   );
 
@@ -74,7 +73,7 @@ function checkoutHtml() {
 
   html = html.replace(
     "localStorage.removeItem(STORE);cart=[];",
-    "if(window.Cart)Cart.clear();summary=window.Cart?Cart.calculate():{items:[],subtotal:0,discount:0,promo:'',deliveryFee:0,total:0};cart=summary.items;"
+    "if(window.Cart)Cart.clear();summary={items:[],subtotal:0,discount:0,promo:'',deliveryFee:0,total:0};cart=[];"
   );
 
   html = replaceRequired(
@@ -97,7 +96,7 @@ export default function handler(req, res) {
   try {
     const html = checkoutHtml();
     res.setHeader("Content-Type", "text/html; charset=utf-8");
-    res.setHeader("Cache-Control", "public, max-age=0, s-maxage=60, stale-while-revalidate=300");
+    res.setHeader("Cache-Control", "public, max-age=0, s-maxage=0, must-revalidate");
     if (req.method === "HEAD") return res.status(200).end();
     return res.status(200).send(html);
   } catch (error) {
