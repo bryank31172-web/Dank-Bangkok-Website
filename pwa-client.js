@@ -1,7 +1,7 @@
 (function(){
   "use strict";
 
-  var deferredPrompt = null;
+  var deferredPrompt = (window.DANK_PWA && window.DANK_PWA.installPrompt) || null;
   var isStandalone = window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true;
   var isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
   var isMobile = window.matchMedia("(max-width: 820px)").matches || /android|iphone|ipad|ipod/i.test(navigator.userAgent);
@@ -63,26 +63,55 @@
     sheet.id = "pwa-ios-sheet";
     sheet.setAttribute("role","dialog");
     sheet.setAttribute("aria-modal","true");
-    sheet.setAttribute("aria-label","Install DANK App");
+    sheet.setAttribute("aria-label","Add DANK to Home Screen");
     sheet.style.cssText = "position:fixed;inset:0;z-index:10002;display:flex;align-items:flex-end;justify-content:center;background:rgba(2,5,3,.68);padding:14px";
-    sheet.innerHTML = '<div style="width:min(100%,520px);border-radius:22px;background:#101a12;color:#e8f5ec;border:1px solid #294634;box-shadow:0 24px 70px rgba(0,0,0,.55);padding:20px;font:500 15px/1.5 system-ui,-apple-system,Segoe UI,sans-serif"><div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px"><strong style="font-size:20px">Install DANK App</strong><button id="pwa-ios-close" type="button" aria-label="Close" style="width:44px;height:44px;border:1px solid #294634;border-radius:12px;background:#16241a;color:#e8f5ec;font-size:20px">×</button></div><p style="margin:0 0 14px;color:#b7c9bc">On iPhone or iPad:</p><ol style="margin:0;padding-left:22px;color:#e8f5ec"><li style="margin-bottom:8px">Tap the <strong>Share</strong> button in Safari.</li><li style="margin-bottom:8px">Tap <strong>Add to Home Screen</strong>.</li><li>Tap <strong>Add</strong>.</li></ol><p style="margin:14px 0 0;color:#8fae9a;font-size:13px">The app will open full-screen from your Home Screen.</p></div>';
+    sheet.innerHTML = '<div style="width:min(100%,520px);border-radius:22px;background:#101a12;color:#e8f5ec;border:1px solid #294634;box-shadow:0 24px 70px rgba(0,0,0,.55);padding:20px;font:500 15px/1.5 system-ui,-apple-system,Segoe UI,sans-serif"><div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px"><strong style="font-size:20px">Add DANK to Home Screen</strong><button id="pwa-ios-close" type="button" aria-label="Close" style="width:44px;height:44px;border:1px solid #294634;border-radius:12px;background:#16241a;color:#e8f5ec;font-size:20px">×</button></div><p style="margin:0 0 14px;color:#b7c9bc">On iPhone or iPad:</p><ol style="margin:0;padding-left:22px;color:#e8f5ec"><li style="margin-bottom:8px">Tap the <strong>Share</strong> button in Safari.</li><li style="margin-bottom:8px">Tap <strong>Add to Home Screen</strong>.</li><li>Tap <strong>Add</strong>.</li></ol><p style="margin:14px 0 0;color:#8fae9a;font-size:13px">The app will open full-screen from your Home Screen.</p></div>';
     sheet.addEventListener("click",function(event){if(event.target===sheet)sheet.remove();});
     document.body.appendChild(sheet);
     document.getElementById("pwa-ios-close").addEventListener("click",function(){sheet.remove();});
   }
 
-  function installApp(){
+  async function installApp(){
     if(isStandalone) return;
+
+    if(!deferredPrompt && window.DANK_PWA && window.DANK_PWA.installPrompt){
+      deferredPrompt = window.DANK_PWA.installPrompt;
+    }
+
     if(deferredPrompt){
-      deferredPrompt.prompt();
-      deferredPrompt.userChoice.catch(function(){}).finally(function(){
-        deferredPrompt = null;
-        removeInstallBanner();
-      });
+      try{
+        await deferredPrompt.prompt();
+        await deferredPrompt.userChoice;
+      }catch(error){
+        console.warn("PWA install prompt failed", error);
+      }
+      deferredPrompt = null;
+      if(window.DANK_PWA) window.DANK_PWA.installPrompt = null;
+      removeInstallBanner();
       return;
     }
-    if(isIOS){showIOSInstructions();return;}
-    makeToast("Install is not ready yet. Open this site in Chrome or Safari and try again.");
+
+    if(isIOS && navigator.share){
+      try{
+        await navigator.share({
+          title:"DANK BKK",
+          text:"Add DANK BKK to your Home Screen",
+          url:window.location.origin
+        });
+      }catch(error){
+        if(!error || error.name !== "AbortError"){
+          showIOSInstructions();
+        }
+      }
+      return;
+    }
+
+    if(isIOS){
+      showIOSInstructions();
+      return;
+    }
+
+    makeToast("Installation is not available in this browser. Open the site in Chrome or Safari.");
   }
 
   function injectStyles(){
@@ -125,13 +154,22 @@
     },1000);
   }
 
+  window.addEventListener("dank-pwa-install-ready",function(){
+    if(window.DANK_PWA && window.DANK_PWA.installPrompt){
+      deferredPrompt = window.DANK_PWA.installPrompt;
+    }
+  });
+
   window.addEventListener("beforeinstallprompt",function(event){
     event.preventDefault();
     deferredPrompt = event;
+    window.DANK_PWA = window.DANK_PWA || {};
+    window.DANK_PWA.installPrompt = event;
   });
 
   window.addEventListener("appinstalled",function(){
     deferredPrompt = null;
+    if(window.DANK_PWA) window.DANK_PWA.installPrompt = null;
     removeInstallBanner();
     makeToast("DANK App installed successfully.");
   });
