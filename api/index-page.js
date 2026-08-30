@@ -4,16 +4,12 @@ import path from "node:path";
 let cached = "";
 
 function replaceRequired(source, search, replacement, label) {
-  if (!source.includes(search)) {
-    throw new Error(`Storefront cart migration failed: ${label}`);
-  }
+  if (!source.includes(search)) throw new Error(`Storefront cart migration failed: ${label}`);
   return source.replace(search, replacement);
 }
 
 function replaceRegexRequired(source, pattern, replacement, label) {
-  if (!pattern.test(source)) {
-    throw new Error(`Storefront cart migration failed: ${label}`);
-  }
+  if (!pattern.test(source)) throw new Error(`Storefront cart migration failed: ${label}`);
   return source.replace(pattern, replacement);
 }
 
@@ -26,8 +22,8 @@ function storefrontHtml() {
   html = replaceRequired(
     html,
     `<script>\n/* ============================================================\n   1) CONFIG`,
-    `<script src="/cart-service.js?v=4"></script>\n<script>\n/* ============================================================\n   1) CONFIG`,
-    "cart service injection"
+    `<script src="/cart-service.js?v=5"></script>\n<script src="/cart-ui.js?v=2"></script>\n<script>\n/* ============================================================\n   1) CONFIG`,
+    "shared cart scripts"
   );
 
   html = replaceRequired(
@@ -52,7 +48,7 @@ function storefrontHtml() {
   html = replaceRequired(
     html,
     `function updateCartCount(){ const n=cart.reduce((s,c)=>s+c.qty,0); const el=$("#cartCount"); el.textContent=n; el.classList.toggle("hidden",n===0); }\nfunction cartSubtotal(){ return cart.reduce((s,c)=>s+c.price*c.qty,0); }`,
-    `function updateCartCount(){ const n=window.Cart?Cart.count(cart):cart.reduce((s,c)=>s+c.qty,0); const el=$("#cartCount"); el.textContent=n; el.classList.toggle("hidden",n===0); }\nfunction cartSubtotal(){ return window.Cart?Cart.calculate({items:cart}).subtotal:cart.reduce((s,c)=>s+c.price*c.qty,0); }`,
+    `function updateCartCount(){ const n=window.Cart?Cart.count(cart):cart.reduce((s,c)=>s+c.qty,0); const el=$("#cartCount"); el.textContent=n; el.classList.toggle("hidden",n===0); }\nfunction cartSubtotal(){ return sharedCartSummary().subtotal; }`,
     "cart totals"
   );
 
@@ -66,7 +62,7 @@ function storefrontHtml() {
   html = replaceRequired(
     html,
     `function changeQty(key,d){ const it=cart.find(c=>c.key===key); if(!it)return; it.qty+=d; if(it.qty<=0) cart=cart.filter(c=>c.key!==key); updateCartCount(); saveCart(); renderCart(); }\nfunction removeLine(key){ cart=cart.filter(c=>c.key!==key); updateCartCount(); saveCart(); renderCart(); }`,
-    `function changeQty(key,d){\n  if(window.Cart) cart=Cart.updateQty(key,d,{mode:"delta",minimum:1,removeBelowMinimum:true});\n  else { const it=cart.find(c=>c.key===key); if(!it)return; it.qty+=d; if(it.qty<=0) cart=cart.filter(c=>c.key!==key); }\n  updateCartCount(); saveCart(); renderCart();\n}\nfunction removeLine(key){\n  cart=window.Cart?Cart.remove(key):cart.filter(c=>c.key!==key);\n  updateCartCount(); saveCart(); renderCart();\n}`,
+    `function changeQty(key,d){\n  if(window.CartUI){ const summary=CartUI.changeQty(key,d); cart=summary.items; }\n  else { const it=cart.find(c=>c.key===key); if(!it)return; it.qty+=d; if(it.qty<=0) cart=cart.filter(c=>c.key!==key); }\n  updateCartCount(); renderCart();\n}\nfunction removeLine(key){\n  if(window.CartUI){ const summary=CartUI.remove(key); cart=summary.items; }\n  else cart=cart.filter(c=>c.key!==key);\n  updateCartCount(); renderCart();\n}`,
     "quantity and removal mutations"
   );
 
@@ -81,46 +77,33 @@ function storefrontHtml() {
     html,
     /function cartSubtotal\(\)\{[\s\S]*?(?=function applyPromo\(\))/,
     `function memberCodeStacks(p){
+  if(window.CartUI) return CartUI.memberCodeStacks(p,{membership:memberMode?{active:true}:null,memberCode:String((CONFIG.crm&&CONFIG.crm.code)||"")});
   const cc=String((CONFIG.crm&&CONFIG.crm.code)||"").toUpperCase();
   return !!(memberMode&&cc&&p&&String(p.code||"").toUpperCase()===cc);
 }
 function dropStackedMemberCode(){ if(memberCodeStacks(appliedPromo)) appliedPromo=null; }
 function sharedCartSummary(){
-  if(!window.Cart){
+  if(!window.CartUI){
     const subtotal=cart.reduce((sum,item)=>sum+(Number(item.price)||0)*(Number(item.qty)||1),0);
     return {items:cart,subtotal,discount:0,deliveryFee:0,total:subtotal,shortfall:Math.max(0,(Number(CONFIG.minOrder)||0)-subtotal)};
   }
-
-  const membership=memberMode?{active:true,source:"storefront"}:null;
-  const pricingMeta={
-    membership,
+  return CartUI.calculate({
+    items:cart,
+    membership:memberMode?{active:true,source:"storefront"}:null,
     fulfilment:coFulfill||"delivery",
     minimumOrder:Number(CONFIG.minOrder)||0,
+    deliveryFee:Number(CONFIG.deliveryFee)||0,
+    freeDeliveryOver:Number(CONFIG.freeDeliveryOver)||0,
+    memberCode:String((CONFIG.crm&&CONFIG.crm.code)||""),
+    promo:appliedPromo||null,
+    pricingConfig:{
+      minimumOrder:Number(CONFIG.minOrder)||0,
+      deliveryFee:Number(CONFIG.deliveryFee)||0,
+      freeDeliveryOver:Number(CONFIG.freeDeliveryOver)||0,
+      memberCode:String((CONFIG.crm&&CONFIG.crm.code)||"")
+    },
     source:"storefront"
-  };
-  const base=Cart.calculate({items:cart,meta:{...pricingMeta,discount:0,deliveryFee:0,promo:""}});
-  const promo=appliedPromo;
-  let discount=0;
-
-  if(promo&&!memberCodeStacks(promo)&&(!promo.min||base.subtotal>=Number(promo.min))){
-    if(promo.type==="pct") discount=Math.round(base.subtotal*(Number(promo.value)||0)/100);
-    else if(promo.type==="fixed") discount=Math.min(Number(promo.value)||0,base.subtotal);
-  }
-
-  let deliveryFee=0;
-  if((coFulfill||"delivery")==="delivery"&&!(promo&&promo.type==="freedelivery")){
-    const freeOver=Number(CONFIG.freeDeliveryOver)||0;
-    deliveryFee=(base.subtotal-discount)>=freeOver?0:(Number(CONFIG.deliveryFee)||0);
-  }
-
-  Cart.setMeta({
-    ...pricingMeta,
-    promo:promo?String(promo.code||"").toUpperCase():"",
-    discount,
-    deliveryFee
-  },false);
-
-  return Cart.calculate({items:cart});
+  });
 }
 `,
     "shared pricing engine"
@@ -145,10 +128,9 @@ function sharedCartSummary(){
   const redirectCheckout = `
 <script>
 function syncCheckoutPricing(){
-  if(!window.Cart) return sharedCartSummary();
   const summary=sharedCartSummary();
-  cart=Cart.save(summary.items);
-  return Cart.calculate();
+  if(window.Cart) cart=Cart.save(summary.items);
+  return window.CartUI?CartUI.calculate():summary;
 }
 
 function openCheckout(skipCRM){
@@ -195,7 +177,7 @@ export default function handler(req, res) {
   try {
     const html = storefrontHtml();
     res.setHeader("Content-Type", "text/html; charset=utf-8");
-    res.setHeader("Cache-Control", "public, max-age=0, s-maxage=60, stale-while-revalidate=300");
+    res.setHeader("Cache-Control", "public, max-age=0, s-maxage=0, must-revalidate");
     if (req.method === "HEAD") return res.status(200).end();
     return res.status(200).send(html);
   } catch (error) {
