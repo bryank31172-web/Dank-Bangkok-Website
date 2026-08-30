@@ -5,7 +5,7 @@
   const HANDOFF_KEY = 'dank_checkout_cart';
   const META_KEY = 'dank_cart_meta';
   const EVENT_NAME = 'dank:cart-changed';
-  const VERSION = 3;
+  const VERSION = 4;
   const ruleHandlers = new Map();
 
   function safeParse(raw, fallback) {
@@ -17,7 +17,10 @@
   function normalizeItem(item, index) {
     const source = item && typeof item === 'object' ? item : {};
     const qty = Math.max(1, Number(source.qty ?? source.quantity ?? source.count ?? 1) || 1);
-    const price = Number(source.price ?? source.unitPrice ?? source.salePrice ?? source.selectedPrice ?? 0) || 0;
+    const fallbackPrice = Number(source.price ?? source.unitPrice ?? source.salePrice ?? source.selectedPrice ?? 0) || 0;
+    const retailPrice = Number(source.retailPrice ?? source.regularPrice ?? fallbackPrice) || 0;
+    const memberPrice = Number(source.memberPrice ?? source.member ?? retailPrice) || retailPrice;
+    const appliedPrice = Number(source.appliedPrice ?? fallbackPrice ?? retailPrice) || retailPrice;
     const name = source.name ?? source.title ?? source.productName ?? source.label ?? 'Product';
     const tierLabel = source.tierLabel ?? source.option ?? source.variant ?? source.size ?? source.unit ?? '';
     const image = source.image ?? source.img ?? source.photo ?? source.imageUrl ?? source.thumbnail ?? '';
@@ -25,16 +28,14 @@
     const key = source.key || [id, tierLabel].filter(Boolean).join('|') || String(index);
     return {
       ...source,
-      key: String(key),
-      id,
+      key: String(key), id,
       shId: source.shId ?? source.sku ?? '',
-      name: String(name),
-      tierLabel: String(tierLabel || ''),
-      price,
-      qty,
-      image,
-      category: source.category ?? '',
-      type: source.type ?? '',
+      name: String(name), tierLabel: String(tierLabel || ''),
+      retailPrice, memberPrice, appliedPrice,
+      price: appliedPrice,
+      priceType: source.priceType || (appliedPrice === memberPrice && memberPrice !== retailPrice ? 'member' : 'retail'),
+      qty, image,
+      category: source.category ?? '', type: source.type ?? '',
       bonus: Boolean(source.bonus)
     };
   }
@@ -54,9 +55,6 @@
   }
 
   function getItems() {
-    /* localStorage is canonical. sessionStorage is only a fallback for legacy
-       redirects. This prevents an older checkout handoff from overriding the
-       newer storefront cart. */
     const stored = readItems(global.localStorage, STORAGE_KEY);
     if (stored.length) return stored;
     const handoff = readItems(global.sessionStorage, HANDOFF_KEY);
@@ -68,16 +66,10 @@
 
   function defaultMeta() {
     return {
-      version: VERSION,
-      updatedAt: 0,
-      promo: '',
-      discount: 0,
-      deliveryFee: 100,
-      membership: null,
-      loyaltyPoints: 0,
-      fulfilment: 'delivery',
-      minimumOrder: 0,
-      source: ''
+      version: VERSION, updatedAt: 0,
+      promo: '', discount: 0, deliveryFee: 100,
+      membership: null, loyaltyPoints: 0,
+      fulfilment: 'delivery', minimumOrder: 0, source: ''
     };
   }
 
@@ -98,10 +90,25 @@
     return meta;
   }
 
+  function applyPricing(items, meta) {
+    const memberActive = Boolean(meta?.membership?.active);
+    return normalize(items).map((item, index) => {
+      if (item.bonus) return normalizeItem({ ...item, price: 0, appliedPrice: 0, priceType: 'bonus' }, index);
+      const selected = memberActive ? item.memberPrice : item.retailPrice;
+      const appliedPrice = Number.isFinite(Number(selected)) ? Number(selected) : Number(item.appliedPrice || item.price || 0);
+      return normalizeItem({
+        ...item,
+        appliedPrice,
+        price: appliedPrice,
+        priceType: memberActive && item.memberPrice !== item.retailPrice ? 'member' : 'retail'
+      }, index);
+    });
+  }
+
   function save(items, metaPatch) {
-    const normalized = normalize(items);
-    const payload = JSON.stringify(normalized);
     const meta = setMeta(metaPatch || {}, false);
+    const normalized = applyPricing(items, meta);
+    const payload = JSON.stringify(normalized);
     try { global.localStorage.setItem(STORAGE_KEY, payload); } catch (error) {}
     try { global.sessionStorage.setItem(HANDOFF_KEY, payload); } catch (error) {}
     emit(normalized, meta);
@@ -157,8 +164,11 @@
     return normalize(items ?? getItems()).reduce((sum, item) => sum + (Number(item.qty) || 1), 0);
   }
 
-  function subtotal(items) {
-    return normalize(items ?? getItems()).reduce((sum, item) => sum + (Number(item.price) || 0) * (Number(item.qty) || 1), 0);
+  function subtotal(items, metaOverride) {
+    const meta = { ...getMeta(), ...(metaOverride || {}) };
+    return applyPricing(items ?? getItems(), meta).reduce(
+      (sum, item) => sum + (Number(item.appliedPrice) || 0) * (Number(item.qty) || 1), 0
+    );
   }
 
   function registerRule(name, handler) {
@@ -168,16 +178,15 @@
   }
 
   function calculate(options) {
-    const items = normalize(options?.items ?? getItems());
     const meta = { ...getMeta(), ...(options?.meta || {}) };
-    const baseSubtotal = subtotal(items);
+    const items = applyPricing(options?.items ?? getItems(), meta);
+    const baseSubtotal = items.reduce((sum, item) => sum + (Number(item.appliedPrice) || 0) * (Number(item.qty) || 1), 0);
     let summary = {
       items,
       subtotal: baseSubtotal,
       discount: Math.max(0, Number(meta.discount) || 0),
       deliveryFee: baseSubtotal > 0 ? Math.max(0, Number(meta.deliveryFee) || 0) : 0,
-      promo: meta.promo || '',
-      membership: meta.membership || null,
+      promo: meta.promo || '', membership: meta.membership || null,
       loyaltyPoints: Math.max(0, Number(meta.loyaltyPoints) || 0),
       fulfilment: meta.fulfilment || 'delivery',
       minimumOrder: Math.max(0, Number(meta.minimumOrder) || 0),
@@ -207,7 +216,9 @@
   }
 
   function applyMembership(membership) {
-    setMeta({ membership: membership || null });
+    const meta = setMeta({ membership: membership || null }, false);
+    const items = save(getItems(), meta);
+    emit(items, meta);
     return calculate();
   }
 
@@ -245,28 +256,9 @@
   }
 
   global.Cart = Object.freeze({
-    version: VERSION,
-    storageKey: STORAGE_KEY,
-    handoffKey: HANDOFF_KEY,
-    metaKey: META_KEY,
-    normalize,
-    getItems,
-    getMeta,
-    setMeta,
-    save,
-    add,
-    remove,
-    updateQty,
-    clear,
-    count,
-    subtotal,
-    calculate,
-    applyPromo,
-    applyMembership,
-    applyBonusGrams,
-    calculateDelivery,
-    registerRule,
-    handoff,
-    subscribe
+    version: VERSION, storageKey: STORAGE_KEY, handoffKey: HANDOFF_KEY, metaKey: META_KEY,
+    normalize, getItems, getMeta, setMeta, save, add, remove, updateQty, clear,
+    count, subtotal, calculate, applyPromo, applyMembership, applyBonusGrams,
+    calculateDelivery, registerRule, handoff, subscribe
   });
 })(window);
