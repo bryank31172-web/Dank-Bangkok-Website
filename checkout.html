@@ -10,7 +10,7 @@
 <style>
 :root{--bg:#eef3f9;--card:#fff;--text:#111827;--muted:#6b7280;--line:#e5e7eb;--blue:#1687f8;--blue-dark:#0b67c6;--blue-soft:#eef6ff;--danger:#b42318;--shadow:0 18px 55px rgba(15,23,42,.08);--radius:18px;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
 *{box-sizing:border-box}body{margin:0;background:linear-gradient(180deg,#e9eff8,#f7f9fc);color:var(--text);min-height:100vh}button,input,select,textarea{font:inherit}.header{background:#fff;border-bottom:1px solid var(--line)}.header-inner{max-width:1180px;margin:0 auto;padding:18px;display:flex;align-items:center;justify-content:space-between}.shell{max-width:1180px;margin:0 auto;padding:24px 18px 56px}.top{display:flex;align-items:center;justify-content:space-between}.brand img{height:56px;width:auto;display:block;background:transparent}.back{color:var(--muted);text-decoration:none;font-weight:700}.steps-wrap{display:flex;justify-content:center;margin-bottom:28px}.steps{width:min(760px,100%);display:grid;grid-template-columns:repeat(3,1fr);position:relative}.steps:before{content:"";position:absolute;left:16.666%;right:16.666%;top:15px;height:2px;background:#d8dee8;z-index:0}.step{display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:8px;color:#8a93a1;font-weight:750;font-size:14px;position:relative;text-align:center;min-width:0}.dot{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;background:#fff;border:1px solid #cfd7e2;font-size:12px;position:relative;z-index:1;box-shadow:0 0 0 6px var(--bg)}.step.active{color:var(--text)}.step.active .dot,.step.done .dot{background:var(--blue);border-color:var(--blue);color:#fff}.step.done{color:var(--blue-dark)}.layout{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(310px,.8fr);gap:22px}.panel{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow)}.main{padding:26px}.side{padding:22px;align-self:start;position:sticky;top:18px}.title{margin-bottom:22px}.title h1{font-size:25px;margin:0 0 4px}.small{font-size:13px;color:var(--muted)}.grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.field{display:flex;flex-direction:column;gap:7px}.field.full{grid-column:1/-1}.field label{font-size:12px;font-weight:800;color:#4b5563;letter-spacing:.02em}.field input,.field select,.field textarea{width:100%;border:1px solid var(--line);background:#fbfdff;color:var(--text);border-radius:12px;padding:13px 14px;outline:none;transition:.18s}.field input:focus,.field select:focus,.field textarea:focus{border-color:#6fb2ff;box-shadow:0 0 0 4px rgba(22,135,248,.12)}.field textarea{resize:vertical;min-height:92px}.payment-list{display:grid;gap:12px}.payment-card{border:1px solid var(--line);border-radius:14px;background:#fff;overflow:hidden;transition:.2s}.payment-card.on{border-color:#82bcff;box-shadow:0 0 0 3px rgba(22,135,248,.10)}.pay{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:13px;width:100%;padding:16px;border:0;background:#fff;cursor:pointer;text-align:left;color:var(--text)}.payment-card.on .pay{background:var(--blue-soft)}.radio{width:18px;height:18px;border:2px solid #b7c0cc;border-radius:50%;position:relative}.payment-card.on .radio{border-color:var(--blue)}.payment-card.on .radio:after{content:"";position:absolute;inset:3px;background:var(--blue);border-radius:50%}.pay strong{display:block;font-size:15px}.pay .meta{display:block;color:var(--muted);font-size:12px;margin-top:2px}.pay-icon{font-size:21px}.pay-detail{display:none;border-top:1px solid var(--line);padding:16px;background:#fbfdff;color:#4b5563;font-size:13px;line-height:1.55}.payment-card.on .pay-detail{display:block}.pay-detail input{width:100%;border:1px solid var(--line);border-radius:10px;padding:11px 12px;margin-top:10px;background:#fff}.qr{display:block;width:min(230px,80%);margin:14px auto;border-radius:14px;border:1px solid var(--line);background:#fff;padding:10px}.copyrow{display:flex;gap:8px;align-items:center;margin-top:10px}.copyrow code{flex:1;padding:10px;border-radius:10px;background:#f1f5f9;word-break:break-all}.copybtn,.secondary,.primary{border:0;border-radius:11px;padding:12px 16px;font-weight:850;cursor:pointer}.copybtn,.secondary{background:#eef2f7;color:#334155}.primary{background:var(--blue);color:#fff;box-shadow:0 8px 20px rgba(22,135,248,.22)}.primary:hover{background:var(--blue-dark)}.primary:disabled{opacity:.55;cursor:not-allowed}.actions{display:flex;justify-content:space-between;gap:12px;margin-top:24px}.hidden{display:none!important}.items{display:grid;gap:13px;margin:14px 0 20px}.item{display:grid;grid-template-columns:48px 1fr auto;gap:11px;align-items:center}.thumb{width:48px;height:48px;border-radius:12px;background:var(--blue-soft);display:grid;place-items:center;font-size:22px}.item-name{font-weight:800;font-size:14px}.item-meta{font-size:12px;color:var(--muted);margin-top:2px}.price{font-weight:850}.divider{height:1px;background:var(--line);margin:18px 0}.rows{display:grid;gap:11px}.row{display:flex;justify-content:space-between;gap:14px;color:var(--muted);font-size:14px}.row.total{font-size:18px;color:var(--text);font-weight:900;padding-top:12px;border-top:1px solid var(--line)}.promo{display:flex;gap:8px}.promo input{min-width:0;flex:1;border:1px solid var(--line);border-radius:11px;padding:11px 12px}.notice{padding:12px 14px;border-radius:12px;background:#fff7e8;color:#7b6338;font-size:13px;margin-top:14px}.error{color:var(--danger);font-size:13px;margin-top:10px}.confirm{text-align:center;padding:34px 12px}.check{width:72px;height:72px;margin:0 auto 18px;border-radius:50%;display:grid;place-items:center;background:var(--blue-soft);color:var(--blue);font-size:36px}.confirm h2{font-size:27px;margin:0 0 8px}.confirm p{color:var(--muted)}.policy-box{margin-top:18px;padding:14px;border:1px solid var(--line);border-radius:12px;background:#fbfdff}.policy-label{display:flex;align-items:flex-start;gap:10px;font-size:13px;line-height:1.45;color:#374151;cursor:pointer}.policy-label input{margin-top:2px;width:18px;height:18px;accent-color:var(--blue)}.help{position:relative;display:inline-grid;place-items:center;width:20px;height:20px;margin-left:4px;border:1px solid #b8c2cf;border-radius:50%;font-size:12px;font-weight:800;color:#64748b;cursor:help;background:#fff}.help-tip{position:absolute;left:50%;bottom:calc(100% + 10px);transform:translateX(-50%);width:280px;max-width:80vw;padding:12px;border-radius:10px;background:#111827;color:#fff;font-size:12px;line-height:1.5;box-shadow:0 14px 35px rgba(15,23,42,.28);opacity:0;visibility:hidden;pointer-events:none;transition:.18s;z-index:10}.help:hover .help-tip,.help:focus .help-tip{opacity:1;visibility:visible}.help-tip:after{content:"";position:absolute;left:50%;top:100%;transform:translateX(-50%);border:7px solid transparent;border-top-color:#111827}.policy-error{margin-top:8px;color:var(--danger);font-size:12px}
-@media(max-width:820px){.header-inner{padding:14px 12px}.shell{padding:16px 12px 34px}.top{align-items:flex-start}.brand img{height:44px}.layout{grid-template-columns:1fr}.side{position:static;order:-1}.steps{width:100%}.steps:before{left:16.666%;right:16.666%;top:14px}.step{font-size:12px;gap:6px}.step span.label{display:block;white-space:normal}.main{padding:20px}.side{padding:18px}.grid{grid-template-columns:1fr}.field.full{grid-column:auto}.actions{position:sticky;bottom:0;background:rgba(255,255,255,.94);padding:12px 0 2px;backdrop-filter:blur(10px)}}
+.field input.invalid,.field select.invalid{border:2px solid #dc2626;background:#fff5f5;box-shadow:0 0 0 4px rgba(220,38,38,.08)}.field-error{display:none;margin-top:2px;color:#dc2626;font-size:12px;font-weight:650}.field-error.show{display:block}.policy-box.invalid{border-color:#dc2626;background:#fff7f7}.policy-box.invalid .policy-label{color:#991b1b}@media(max-width:820px){.header-inner{padding:14px 12px}.shell{padding:16px 12px 34px}.top{align-items:flex-start}.brand img{height:44px}.layout{grid-template-columns:1fr}.side{position:static;order:-1}.steps{width:100%}.steps:before{left:16.666%;right:16.666%;top:14px}.step{font-size:12px;gap:6px}.step span.label{display:block;white-space:normal}.main{padding:20px}.side{padding:18px}.grid{grid-template-columns:1fr}.field.full{grid-column:auto}.actions{position:sticky;bottom:0;background:rgba(255,255,255,.94);padding:12px 0 2px;backdrop-filter:blur(10px)}}
 </style>
 </head>
 <body>
@@ -31,11 +31,11 @@
       <div id="screen1">
         <div class="title"><h1>Shopping details</h1><div class="small">Enter delivery and contact information.</div></div>
         <div class="grid">
-          <div class="field"><label>FULL NAME</label><input id="name" autocomplete="name" placeholder="Full name"></div>
-          <div class="field"><label>WHATSAPP</label><input id="phone" autocomplete="tel" inputmode="tel" placeholder="+66…"></div>
-          <div class="field full"><label>DELIVERY AREA</label><input id="zone" autocomplete="street-address" placeholder="Start typing your location"></div>
-          <div class="field"><label>PREFERRED TIME</label><select id="time"><option>Delivery now</option><option>15 minutes</option><option>30 minutes</option><option>45 minutes</option><option>1 hour</option><option>1 hour 30 minutes</option><option>2 hours</option><option>Schedule with staff</option></select></div>
-          <div class="field full"><label>NOTES</label><textarea id="notes" placeholder="Room number, landmark, gate code or special instructions"></textarea></div>
+          <div class="field"><label>FULL NAME</label><input id="name" autocomplete="name" placeholder="Full name" required aria-describedby="nameError"><div id="nameError" class="field-error" role="alert"></div></div>
+          <div class="field"><label>WHATSAPP</label><input id="phone" autocomplete="tel" inputmode="tel" placeholder="+66…" required aria-describedby="phoneError"><div id="phoneError" class="field-error" role="alert"></div></div>
+          <div class="field full"><label>DELIVERY AREA</label><input id="zone" autocomplete="street-address" placeholder="Start typing your location" required aria-describedby="zoneError"><div id="zoneError" class="field-error" role="alert"></div></div>
+          <div class="field"><label>PREFERRED TIME</label><select id="time" required aria-describedby="timeError"><option value="">Select delivery time</option><option>Delivery now</option><option>15 minutes</option><option>30 minutes</option><option>45 minutes</option><option>1 hour</option><option>1 hour 30 minutes</option><option>2 hours</option><option>Schedule with staff</option></select><div id="timeError" class="field-error" role="alert"></div></div>
+          <div class="field full"><label>NOTES <span class="small">(optional)</span></label><textarea id="notes" placeholder="Room number, landmark, gate code or special instructions"></textarea></div>
         </div>
         <div class="policy-box">
           <label class="policy-label">
@@ -72,7 +72,59 @@ let cart=loadCart();
 function subtotal(){return cart.reduce((s,x)=>s+(Number(x.price)||0)*(Number(x.qty)||1),0)}
 function total(){return Math.max(0,subtotal()-state.discount+state.deliveryFee)}
 function renderSummary(){const el=document.getElementById('items');if(!cart.length){el.innerHTML='<div class="small">Your cart is empty. Add products before checkout.</div>';document.getElementById('placeBtn')?.setAttribute('disabled','disabled')}else el.innerHTML=cart.map(x=>`<div class="item"><div class="thumb">${x.bonus?'🎁':'🌿'}</div><div><div class="item-name">${esc(x.name||'Product')}</div><div class="item-meta">${esc(x.tierLabel||x.option||'')} · Qty ${Number(x.qty)||1}</div></div><div class="price">${x.bonus?'FREE':money((Number(x.price)||0)*(Number(x.qty)||1))}</div></div>`).join('');document.getElementById('itemCount').textContent=cart.reduce((s,x)=>s+(Number(x.qty)||1),0)+' items';document.getElementById('subtotal').textContent=money(subtotal());document.getElementById('deliveryFee').textContent=money(state.deliveryFee);document.getElementById('discountRow').style.display=state.discount?'flex':'none';document.getElementById('discount').textContent='−'+money(state.discount);document.getElementById('total').textContent=money(total());document.getElementById('placeBtn').textContent='Place order · '+money(total())}
-function goStep(n){if(n===2){const name=nameEl().value.trim(),phone=phoneEl().value.trim(),zone=zoneEl().value.trim(),accepted=document.getElementById('policyAccept').checked;document.getElementById('detailError').textContent='';document.getElementById('policyError').textContent='';if(!name||phone.length<5||!zone){document.getElementById('detailError').textContent='Please add your full name, WhatsApp and delivery area.';return}if(!accepted){document.getElementById('policyError').textContent='You must confirm the age and purchase policy before continuing.';return}}state.step=n;[1,2,3].forEach(i=>{document.getElementById('screen'+i).classList.toggle('hidden',i!==n);const s=document.querySelector(`.step[data-step="${i}"]`);s.classList.toggle('active',i===n);s.classList.toggle('done',i<n)});window.scrollTo({top:0,behavior:'smooth'})}
+function clearFieldError(id){
+ const field=document.getElementById(id),error=document.getElementById(id+'Error');
+ field?.classList.remove('invalid');
+ field?.removeAttribute('aria-invalid');
+ if(error){error.textContent='';error.classList.remove('show')}
+}
+function invalidateField(id,message){
+ const field=document.getElementById(id),error=document.getElementById(id+'Error');
+ field?.classList.add('invalid');
+ field?.setAttribute('aria-invalid','true');
+ if(error){error.textContent=message;error.classList.add('show')}
+ return field;
+}
+function validateCheckout(){
+ let firstInvalid=null;
+ ['name','phone','zone','time'].forEach(clearFieldError);
+ const policyBox=document.querySelector('.policy-box');
+ const policyError=document.getElementById('policyError');
+ policyBox?.classList.remove('invalid');
+ policyError.textContent='';
+ const fullName=nameEl().value.trim();
+ const whatsapp=phoneEl().value.trim();
+ const digits=whatsapp.replace(/\D/g,'');
+ const zone=zoneEl().value.trim();
+ const time=document.getElementById('time').value;
+ if(!fullName) firstInvalid=firstInvalid||invalidateField('name','Please enter your full name.');
+ if(!whatsapp) firstInvalid=firstInvalid||invalidateField('phone','Please enter your WhatsApp number.');
+ else if(digits.length<8) firstInvalid=firstInvalid||invalidateField('phone','Please enter a valid WhatsApp number.');
+ if(!zone) firstInvalid=firstInvalid||invalidateField('zone','Please enter or select your delivery area.');
+ if(!time) firstInvalid=firstInvalid||invalidateField('time','Please select a delivery time.');
+ if(!document.getElementById('policyAccept').checked){
+   policyBox?.classList.add('invalid');
+   policyError.textContent='Please confirm that you are 20+ and accept the purchase policy.';
+   firstInvalid=firstInvalid||document.getElementById('policyAccept');
+ }
+ if(firstInvalid){
+   firstInvalid.scrollIntoView({behavior:'smooth',block:'center'});
+   setTimeout(()=>firstInvalid.focus({preventScroll:true}),350);
+   return false;
+ }
+ return true;
+}
+function goStep(n){
+ if(n===2&&!validateCheckout()) return;
+ state.step=n;
+ [1,2,3].forEach(i=>{
+   document.getElementById('screen'+i).classList.toggle('hidden',i!==n);
+   const s=document.querySelector(`.step[data-step="${i}"]`);
+   s.classList.toggle('active',i===n);
+   s.classList.toggle('done',i<n)
+ });
+ window.scrollTo({top:0,behavior:'smooth'})
+}
 const methods=[
 {id:'RevolutTransfer',label:'Revolut Transfer',meta:'Pay using your Revolut app',icon:'💳',html:'<strong>Revolut Transfer</strong><br>Transfer using the Revolut details provided by DANK staff, then upload your payment receipt below.<input type="file" accept="image/*,application/pdf">'},
 {id:'PromptPayQR',label:'Thai QR Payment',meta:'Scan DANK Shop QR with a Thai banking app',icon:'📱',html:'<strong>Thai QR Payment</strong><br><img class="qr" src="/promptpay-qr.png" alt="DANK Shop Thai payment QR" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'block\'"><div style="display:none" class="notice">QR image is not uploaded yet. Ask staff for the current DANK Shop QR.</div><input type="file" accept="image/*,application/pdf">'},
@@ -89,7 +141,12 @@ function orderPayload(){return {brand:'DANK BKK',items:cart.map(x=>({name:x.name
 async function placeOrder(){if(!cart.length){document.getElementById('payError').textContent='Your cart is empty.';return}const btn=document.getElementById('placeBtn');btn.disabled=true;btn.textContent='Placing order…';try{const r=await fetch('/api/order',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(orderPayload())});if(!r.ok)throw new Error('Could not place order');const j=await r.json().catch(()=>({}));const id=j.orderId||j.id||'Pending confirmation';localStorage.removeItem(STORE);cart=[];document.getElementById('orderRef').innerHTML='<strong>Order reference:</strong> '+esc(id)+'<br><strong>Payment:</strong> '+esc(state.payment);goStep(3);renderSummary()}catch(e){document.getElementById('payError').textContent='We could not reach the order system. Please try again or contact us on WhatsApp.';btn.disabled=false;renderSummary()}}
 async function initPlaces(){try{const r=await fetch('/api/maps-config');const {key}=await r.json();if(!key)return;const s=document.createElement('script');s.src='https://maps.googleapis.com/maps/api/js?key='+encodeURIComponent(key)+'&libraries=places&callback=initCheckoutPlaces';s.async=true;s.defer=true;document.head.appendChild(s)}catch(e){}}
 window.initCheckoutPlaces=function(){if(window.google?.maps?.places){const ac=new google.maps.places.Autocomplete(zoneEl(),{componentRestrictions:{country:'th'},fields:['formatted_address','geometry','name']});ac.addListener('place_changed',()=>{const p=ac.getPlace();zoneEl().value=p.formatted_address||p.name||zoneEl().value})}}
-document.getElementById('policyAccept').addEventListener('change',function(){document.getElementById('policyError').textContent='';});
+['name','phone','zone'].forEach(id=>document.getElementById(id).addEventListener('input',()=>clearFieldError(id)));
+document.getElementById('time').addEventListener('change',()=>clearFieldError('time'));
+document.getElementById('policyAccept').addEventListener('change',function(){
+ document.getElementById('policyError').textContent='';
+ document.querySelector('.policy-box')?.classList.remove('invalid');
+});
 renderSummary();renderPayments();initPlaces();
 </script>
 <script src="/pwa-client.js?v=20260830-3" defer></script>
