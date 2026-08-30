@@ -16,15 +16,13 @@ function storefrontHtml() {
   const file = path.join(process.cwd(), "index.html");
   let html = fs.readFileSync(file, "utf8");
 
-  /* Load the shared cart service before the storefront application script. */
   html = replaceRequired(
     html,
     `<script>\n/* ============================================================\n   1) CONFIG`,
-    `<script src="/cart-service.js?v=2"></script>\n<script>\n/* ============================================================\n   1) CONFIG`,
+    `<script src="/cart-service.js?v=4"></script>\n<script>\n/* ============================================================\n   1) CONFIG`,
     "cart service injection"
   );
 
-  /* Storefront cart state now starts from the shared service. */
   html = replaceRequired(
     html,
     `let cart=[], pdCurrent=null, pdTierIdx=0, coFulfill="delivery", coPay="Cash";`,
@@ -39,7 +37,10 @@ function storefrontHtml() {
     "saveCart"
   );
 
-  html = html.replaceAll(`cart=LS.get("cart",[])||[];`, `cart=window.Cart?Cart.getItems():(LS.get("cart",[])||[]);`);
+  html = html.replaceAll(
+    `cart=LS.get("cart",[])||[];`,
+    `cart=window.Cart?Cart.getItems():(LS.get("cart",[])||[]);`
+  );
 
   html = replaceRequired(
     html,
@@ -51,7 +52,7 @@ function storefrontHtml() {
   html = replaceRequired(
     html,
     `  const found=cart.find(c=>c.key===key);\n  if(found){ found.qty++; }\n  else cart.push({key,id:p.id,shId:(tier&&tier.shId)||p.shId||"",name:p.name,tierLabel:tier?tier.label:(p.unit||"each"),price,qty:1,image:p.image,type:p.type,category:p.category});\n  updateCartCount(); saveCart();`,
-    `  const line={key,id:p.id,shId:(tier&&tier.shId)||p.shId||"",name:p.name,tierLabel:tier?tier.label:(p.unit||"each"),price,qty:1,image:p.image,type:p.type,category:p.category};\n  if(window.Cart) cart=Cart.add(line,1);\n  else { const found=cart.find(c=>c.key===key); if(found) found.qty++; else cart.push(line); }\n  updateCartCount(); saveCart();`,
+    `  const retailPrice=Number(tier?tier.price:p.price)||0;\n  const memberPrice=Number(tier?(tier.member||tier.price):(p.member!=null?p.member:p.price))||retailPrice;\n  const line={key,id:p.id,shId:(tier&&tier.shId)||p.shId||"",name:p.name,tierLabel:tier?tier.label:(p.unit||"each"),price,retailPrice,memberPrice,appliedPrice:price,priceType:memberMode?"member":"retail",qty:1,image:p.image,type:p.type,category:p.category};\n  if(window.Cart) cart=Cart.add(line,1);\n  else { const found=cart.find(c=>c.key===key); if(found) found.qty++; else cart.push(line); }\n  updateCartCount(); saveCart();`,
     "addToCart mutation"
   );
 
@@ -70,14 +71,25 @@ function storefrontHtml() {
   );
 
   const declaration = "function openCheckout(skipCRM){";
-  if (!html.includes(declaration)) {
-    throw new Error("Storefront checkout function was not found");
-  }
+  if (!html.includes(declaration)) throw new Error("Storefront checkout function was not found");
   html = html.replace(declaration, "function openCheckoutModal(skipCRM){");
 
   const redirectCheckout = `
 <script>
-/* Full-page checkout entry point backed by the shared Cart service. */
+function syncCheckoutPricing(){
+  if(!window.Cart) return;
+  Cart.setMeta({
+    promo: appliedPromo ? String(appliedPromo.code||"").toUpperCase() : "",
+    discount: Number(discountAmt()) || 0,
+    deliveryFee: Number(deliveryFeeAmt()) || 0,
+    membership: memberMode ? { active:true, source:"storefront" } : null,
+    fulfilment: coFulfill || "delivery",
+    minimumOrder: Number(CONFIG.minOrder)||0,
+    source: "storefront"
+  }, false);
+  cart=Cart.save(cart);
+}
+
 function openCheckout(skipCRM){
   stat("checkouts");
   ensureBonus();
@@ -92,16 +104,11 @@ function openCheckout(skipCRM){
     crmResumeCheckout=true;
     closeDrawerOnly(); closeAI(); openCRM("join"); return;
   }
-  saveCart();
-  if(window.Cart){
-    cart=Cart.save(cart);
-    Cart.handoff();
-  }
+  syncCheckoutPricing();
+  if(window.Cart) Cart.handoff();
   location.assign("/checkout");
 }
 
-/* Keep the storefront mirror synchronized when another tab or the checkout
-   changes the shared cart. Do not re-render the drawer unless it is open. */
 if(window.Cart){
   Cart.subscribe(function(items){
     cart=items;
@@ -126,7 +133,7 @@ export default function handler(req, res) {
   try {
     const html = storefrontHtml();
     res.setHeader("Content-Type", "text/html; charset=utf-8");
-    res.setHeader("Cache-Control", "public, max-age=0, s-maxage=300, stale-while-revalidate=86400");
+    res.setHeader("Cache-Control", "public, max-age=0, s-maxage=60, stale-while-revalidate=300");
     if (req.method === "HEAD") return res.status(200).end();
     return res.status(200).send(html);
   } catch (error) {
