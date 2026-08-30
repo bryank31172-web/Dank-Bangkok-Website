@@ -19,7 +19,7 @@ function checkoutHtml() {
   html = replaceRequired(
     html,
     "<script>\nconst STORE='dank_cart';",
-    "<script src=\"/cart-service.js?v=2\"></script>\n<script>\nconst STORE='dank_cart';",
+    "<script src=\"/cart-service.js?v=4\"></script>\n<script>\nconst STORE='dank_cart';",
     "cart service injection"
   );
 
@@ -33,12 +33,13 @@ function checkoutHtml() {
   html = replaceRequired(
     html,
     "function loadCart(){try{return JSON.parse(localStorage.getItem(STORE)||'[]')||[]}catch(e){return[]}}\nlet cart=loadCart();\nfunction subtotal(){return cart.reduce((s,x)=>s+(Number(x.price)||0)*(Number(x.qty)||1),0)}\nfunction total(){return Math.max(0,subtotal()-state.discount+state.deliveryFee)}",
-    "let cart=window.Cart?Cart.getItems():[];\nlet summary=window.Cart?Cart.calculate():{items:cart,subtotal:0,discount:0,promo:'',deliveryFee:100,total:100};\nfunction refreshCart(){cart=window.Cart?Cart.getItems():cart;summary=window.Cart?Cart.calculate():summary;}\nfunction subtotal(){return summary.subtotal}\nfunction total(){return summary.total}",
+    "let summary=window.Cart?Cart.calculate():{items:[],subtotal:0,discount:0,promo:'',deliveryFee:0,total:0};\nlet cart=summary.items;\nfunction refreshCart(){summary=window.Cart?Cart.calculate():summary;cart=summary.items;}\nfunction subtotal(){return summary.subtotal}\nfunction total(){return summary.total}",
     "cart initialization"
   );
 
   html = html
-    .replace("document.getElementById('itemCount').textContent=cart.reduce((sum,x)=>sum+(Number(x.qty)||1),0)+' items';", "document.getElementById('itemCount').textContent=(window.Cart?Cart.count(cart):cart.reduce((sum,x)=>sum+(Number(x.qty)||1),0))+' items';")
+    .replace("document.getElementById('itemCount').textContent=cart.reduce((sum,x)=>sum+(Number(x.qty)||1),0)+' items';", "document.getElementById('itemCount').textContent=(window.Cart?Cart.count(summary.items):summary.items.reduce((sum,x)=>sum+(Number(x.qty)||1),0))+' items';")
+    .replace("document.getElementById('cartItems').innerHTML=cart.length?cart.map((x,index)=>", "document.getElementById('cartItems').innerHTML=summary.items.length?summary.items.map((x,index)=>")
     .replace("document.getElementById('subtotal').textContent=money(subtotal());", "document.getElementById('subtotal').textContent=money(summary.subtotal);")
     .replace("document.getElementById('deliveryFee').textContent=state.deliveryFee===0?'FREE':money(state.deliveryFee);", "document.getElementById('deliveryFee').textContent=summary.deliveryFee===0?'FREE':money(summary.deliveryFee);")
     .replace("document.getElementById('deliveryFee').classList.toggle('cart-free',state.deliveryFee===0);", "document.getElementById('deliveryFee').classList.toggle('cart-free',summary.deliveryFee===0);")
@@ -50,15 +51,20 @@ function checkoutHtml() {
   html = replaceRequired(
     html,
     "function persistCart(){localStorage.setItem(STORE,JSON.stringify(cart));renderSummary()}\nfunction changeQty(index,delta){const item=cart[index];if(!item)return;item.qty=Math.max(1,(Number(item.qty)||1)+delta);persistCart()}\nfunction removeCartItem(index){cart.splice(index,1);persistCart()}",
-    "function persistCart(){if(window.Cart)cart=Cart.save(cart);refreshCart();renderSummary()}\nfunction changeQty(index,delta){const item=cart[index];if(!item)return;if(window.Cart)cart=Cart.updateQty(item.key,delta,{mode:'delta',minimum:1,removeBelowMinimum:true});refreshCart();renderSummary()}\nfunction removeCartItem(index){const item=cart[index];if(!item)return;if(window.Cart)cart=Cart.remove(item.key);refreshCart();renderSummary()}",
+    "function persistCart(){if(window.Cart)Cart.save(summary.items);refreshCart();renderSummary()}\nfunction changeQty(index,delta){const item=summary.items[index];if(!item)return;if(window.Cart)Cart.updateQty(item.key,delta,{mode:'delta',minimum:1,removeBelowMinimum:true});refreshCart();renderSummary()}\nfunction removeCartItem(index){const item=summary.items[index];if(!item)return;if(window.Cart)Cart.remove(item.key);refreshCart();renderSummary()}",
     "cart mutations"
   );
 
   html = replaceRequired(
     html,
     "function applyPromo(){const code=document.getElementById('promo').value.trim().toUpperCase();state.promo=code;state.discount=code==='DANK10'?Math.round(subtotal()*.10):0;if(code&&!state.discount)alert('Promo code not recognised');renderSummary()}",
-    "function applyPromo(){const code=document.getElementById('promo').value.trim().toUpperCase();if(!window.Cart)return;summary=Cart.applyPromo(code);if(code&&!summary.discount)alert('Promo code not recognised');refreshCart();renderSummary()}",
+    "function applyPromo(){const code=document.getElementById('promo').value.trim().toUpperCase();if(!window.Cart)return;summary=Cart.applyPromo(code);cart=summary.items;if(code&&!summary.discount)alert('Promo code not recognised');renderSummary()}",
     "promo handling"
+  );
+
+  html = html.replace(
+    "items:cart.map(x=>({shId:x.shId||'',name:x.name,option:x.tierLabel||'',qty:Number(x.qty)||1,unitPrice:Number(x.price)||0,lineTotal:(Number(x.price)||0)*(Number(x.qty)||1})),",
+    "items:summary.items.map(x=>({shId:x.shId||'',name:x.name,option:x.tierLabel||'',qty:Number(x.qty)||1,unitPrice:Number(x.appliedPrice??x.price)||0,lineTotal:(Number(x.appliedPrice??x.price)||0)*(Number(x.qty)||1)})),"
   );
 
   html = html.replace(
@@ -68,13 +74,13 @@ function checkoutHtml() {
 
   html = html.replace(
     "localStorage.removeItem(STORE);cart=[];",
-    "if(window.Cart)Cart.clear();cart=[];summary=window.Cart?Cart.calculate():summary;"
+    "if(window.Cart)Cart.clear();summary=window.Cart?Cart.calculate():{items:[],subtotal:0,discount:0,promo:'',deliveryFee:0,total:0};cart=summary.items;"
   );
 
   html = replaceRequired(
     html,
     "renderSummary();renderPayments();initPlaces();updateCartAction();",
-    "if(window.Cart){Cart.subscribe(function(items){cart=items;summary=Cart.calculate();renderSummary();});}\nrefreshCart();renderSummary();renderPayments();initPlaces();updateCartAction();",
+    "if(window.Cart){Cart.subscribe(function(){refreshCart();renderSummary();});}\nrefreshCart();renderSummary();renderPayments();initPlaces();updateCartAction();",
     "checkout initialization"
   );
 
