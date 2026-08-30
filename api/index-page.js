@@ -34,8 +34,18 @@ function openCheckout(skipCRM){
     crmResumeCheckout=true;
     closeDrawerOnly(); closeAI(); openCRM("join"); return;
   }
+
+  /* Use both localStorage and sessionStorage. The checkout reads the session
+     handoff first, then the canonical dank_cart key. This prevents stale or
+     differently shaped cart data from appearing after navigation. */
   saveCart();
-  location.href="/checkout";
+  try{
+    localStorage.setItem("dank_cart",JSON.stringify(cart));
+    sessionStorage.setItem("dank_checkout_cart",JSON.stringify(cart));
+  }catch(error){
+    console.warn("Could not prepare checkout cart",error);
+  }
+  location.assign("/checkout");
 }
 </script>`;
 
