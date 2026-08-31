@@ -23,15 +23,15 @@ function checkoutHtml() {
 
   html = replaceRequired(
     html,
-    "const state={step:1,payment:'RevolutTransfer',discount:0,promo:'',deliveryFee:100};",
-    "const state={step:1,payment:'RevolutTransfer'};",
+    "const state={step:1,payment:CANNABIS_TABLE?'Cash':'RevolutTransfer',discount:0,promo:'',deliveryFee:CANNABIS_TABLE?0:100};",
+    "const state={step:1,payment:CANNABIS_TABLE?'Cash':'RevolutTransfer'};",
     "checkout state"
   );
 
   html = replaceRequired(
     html,
     "function loadCart(){try{return JSON.parse(localStorage.getItem(STORE)||'[]')||[]}catch(e){return[]}}\nlet cart=loadCart();\nfunction subtotal(){return cart.reduce((s,x)=>s+(Number(x.price)||0)*(Number(x.qty)||1),0)}\nfunction total(){return Math.max(0,subtotal()-state.discount+state.deliveryFee)}",
-    "let summary=window.CartUI?CartUI.calculate():(window.Cart?Cart.calculate():{items:[],subtotal:0,discount:0,promo:'',deliveryFee:0,total:0});\nlet cart=summary.items;\nfunction refreshCart(){summary=window.CartUI?CartUI.calculate():(window.Cart?Cart.calculate():summary);cart=summary.items;}\nfunction subtotal(){return summary.subtotal}\nfunction total(){return summary.total}",
+    "let summary=window.CartUI?CartUI.calculate():(window.Cart?Cart.calculate():{items:[],subtotal:0,discount:0,promo:'',deliveryFee:0,total:0});\nlet cart=summary.items;\nfunction refreshCart(){summary=window.CartUI?CartUI.calculate():(window.Cart?Cart.calculate():summary);if(CANNABIS_TABLE){summary.deliveryFee=0;summary.total=Math.max(0,summary.subtotal-summary.discount);}cart=summary.items;}\nfunction subtotal(){return summary.subtotal}\nfunction total(){return summary.total}",
     "cart initialization"
   );
 
@@ -78,8 +78,8 @@ function checkoutHtml() {
 
   html = replaceRequired(
     html,
-    "renderSummary();renderPayments();initPlaces();updateCartAction();",
-    "if(window.Cart){Cart.subscribe(function(){refreshCart();renderSummary();});}\nrefreshCart();renderSummary();renderPayments();initPlaces();updateCartAction();",
+    "setupCannabisTable();renderSummary();renderPayments();initPlaces();updateCartAction();",
+    "if(window.Cart){Cart.subscribe(function(){refreshCart();renderSummary();});}\nrefreshCart();setupCannabisTable();renderSummary();renderPayments();initPlaces();updateCartAction();",
     "checkout initialization"
   );
 
