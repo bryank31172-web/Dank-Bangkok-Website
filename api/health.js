@@ -130,6 +130,7 @@ export default async function handler(req, res) {
       promoPin: Boolean(process.env.MASTER_PIN),
       shopify: shopifyConfigured(),   // orders also land in the dankbkk.com admin
       payments: {
+        beam: Boolean(process.env.BEAM_MERCHANT_ID && process.env.BEAM_API_KEY),
         omise: Boolean(process.env.OMISE_PUBLIC_KEY && process.env.OMISE_SECRET_KEY),
         twoc2p: Boolean(process.env.TWOC2P_MERCHANT_ID && process.env.TWOC2P_SECRET),
         gbp: Boolean(process.env.GBP_SECRET_KEY),
@@ -222,6 +223,27 @@ export default async function handler(req, res) {
       warnings.push(
         "⚠️ WhatsApp order alerts are using plain text, which Meta accepts only during an open " +
         "customer-service window. Add an approved utility WHATSAPP_TEMPLATE_NAME for reliable staff alerts.",
+      );
+    }
+    /* A gateway whose callback cannot authenticate takes the customer's money
+       and never tells the shop. The QR would scan, the bank would debit, and
+       the order would sit unpaid in staff.html forever — the worst possible
+       failure, because it looks like the customer is lying. */
+    const gatewaysOn = Object.entries(wired.payments || {}).filter(([, on]) => on).map(([n]) => n);
+    if (gatewaysOn.length && !process.env.WEBHOOK_SECRET) {
+      warnings.push(
+        `⚠️ ${gatewaysOn.join(", ")} ${gatewaysOn.length > 1 ? "are" : "is"} switched on but WEBHOOK_SECRET ` +
+        "is not set, so every payment callback is refused and paid orders will never be marked paid. " +
+        "Set WEBHOOK_SECRET, then put ?secret=<that value> on the webhook URL in the gateway's dashboard.",
+      );
+    }
+    if (wired.payments?.beam && !process.env.BEAM_API_BASE) {
+      /* Not a fault — just the one thing worth saying out loud, because the
+         satang/baht question is settled by a ฿1 Playground charge and nothing
+         else. See BEAM.md. */
+      warnings.push(
+        "ℹ️ Beam is live against production. If you have not yet run one small real payment end to end, " +
+        "do that before advertising card payments — check the amount charged matches the order exactly.",
       );
     }
 

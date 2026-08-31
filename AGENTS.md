@@ -56,42 +56,86 @@ substitution (`node --check <(...)`) does not work.
 
 Roughly in the order that matters. `CLAUDE.md` has the detail on each.
 
+Two files exist for handing work to an assistant outside this sandbox:
+`GROK-PROMPT.md` is the onboarding prompt to paste first (it carries the rules
+that stop a model rewriting the 645 KB `index.html` from memory), and `GROK.md`
+is three self-contained jobs that are blocked here purely by network policy.
+
 **Bryan's, not code:**
 
-1. **Telegram is broken** — `TELEGRAM_CHAT_ID` is wrong; the log says
-   `chat not found`. Vercel → Settings → Environment Variables → **Edit** that
-   variable (not Add) → Redeploy. Five orders from 20 Aug were saved but never
-   announced; they are in `staff.html` → Orders.
-2. Delete the duplicate Vercel project `dankbkk-site-4jrn` — it builds the same
+1. Delete the duplicate Vercel project `dankbkk-site-4jrn` — it builds the same
    repo on every push and holds no domain.
+2. **Card / QR payments now go through Beam, not Omise.** Bryan gave up on
+   Omise after a month of approval limbo; Beam takes 0% on PromptPay QR, which
+   is how nearly everyone here pays. Set `BEAM_MERCHANT_ID` + `BEAM_API_KEY`
+   and `WEBHOOK_SECRET`, point Beam's webhook at
+   `/api/beam-webhook?secret=<WEBHOOK_SECRET>`, then **run one small real
+   payment before advertising it** — see `PAYMENTS.md` for why that step is not
+   optional. Omise, 2C2P and GBPrimePay are all still wired and still work; the
+   checkout simply prefers Beam when it is configured.
 3. Set `SHOPIFY_STORE` + `SHOPIFY_ADMIN_TOKEN` to
    turn on the Shopify order push. The shop handle is `dankclubbkk`, so the
    store value is most likely `dankclubbkk.myshopify.com` — confirm it in
    Shopify → Settings → Domains rather than assuming; the public domain
    dankbkk.com is not the API host and answers 404. `GEMINI_API_KEY` (free
    tier) turns on the AI budtender. `/api/health` reports both.
-4. In the POS: seven bottles are filed under **Exotics with unit "g"**, so the
-   site priced a tequila shot per gram. `[bar] Whiskey Sour` is under Edibles.
-   Also `Gin tonic` and `vodka` have VAT applied twice, eight bar lines carry
-   negative stock, and several products are duplicated.
+4. In the POS, checked against the live feed on 25 Aug 2026:
+   - `Gin tonic` is ฿321 and `vodka` ฿214 — 300 and 200 with 7% applied a
+     second time. Both are bar items the storefront hides, so no customer sees
+     the number, but the till's own totals are wrong.
+   - `Onion Ring` exists three times at the same ฿150, one holding **4999**.
+     `Backwood pack`, `stash pro lighter` and `Lemon cherry gelato` are each in
+     twice at one price. Those four are true duplicates.
+   - Another 18 names appear two or three times at *different* prices —
+     Cappuccino at 60/80/120, Latte, Mocha, Americano, Espresso and the fruit
+     sodas. Those are almost certainly sizes, and want the size in the name
+     rather than deleting.
+   - Two spellings, both mapped either way so no picture is lost: "Grape
+     Gasolin" (no e), "Galic Man" / "White Galic" (no r).
 5. `staff.html#box` — pick a POS product on each of the 7 gift rows, or the
    custom-box free items never decrement.
 
 **Code:**
 
-6. **Product photographs — much smaller than the old notes claim.** Counted off
-   the live feed on 21 Aug: of 391 products, **19 fall through to a drawn
-   `/api/tile`**, and twelve of those are bar cocktails that belong on the 224
-   menu rather than the cannabis shelf. What is genuinely missing: `Kamagra`,
-   `MonkeyKing Tip` (out of stock), and the bar list.
+6. **Product photographs — far smaller than any older note claims.** Recounted
+   off the live feed on **25 Aug 2026**: of **395** products, **17** fall
+   through to a drawn `/api/tile`. Thirteen of those are the bar's, which the
+   storefront hides. On the shelf a customer actually sees there are **4**, and
+   only **2 are in stock**: **`Kamagra`** (66) and **`Frezzer Jam`** (60, a
+   flower — probably "Freezer Jam" misspelt in the POS). The other two,
+   `MonkeyKing Tip` and `ขิงผง โชคดี เขาค้อ`, are out of stock.
+   Do not alias either to an existing photo — four SKUs once shared two
+   pictures and that was logged as a defect, not a shortcut.
+   `/photo-audit.html` now works this out itself and leads with the shop's own
+   shelf, so **run that page rather than trusting a number written down here**.
    **`PROMPTS.md`, `CODEX-HANDOVER.md`, `CHATGPT-START.md`, `IMAGE-PROMPTS.md`,
-   `IMAGE-QUEUE.csv` and `IMAGE-PROMPTS-ALL.csv` all predate this and say 296 or
-   271. Recount before trusting any of them** — the method they describe is
-   still correct, the size of the job is not.
-7. 26 strain cards served from `cdn.shopify.com` have never been checked against
-   `strain-db.json`. All twelve local cards in `assets/strains/` agree; the
-   remote ones could not be fetched from the sandbox they were checked in.
+   `IMAGE-QUEUE.csv` and `IMAGE-PROMPTS-ALL.csv` all predate this and say 296,
+   271 or 19.** The method they describe is still correct; the size of the job
+   is not.
+7. **27 strain cards on `cdn.shopify.com` have never been checked against
+   `strain-db.json`** — and three of the cards that *were* checked disagreed
+   with the site (King Cherry 19% vs 28%, Ztupid, and a Gelato 41 card carrying
+   Granddaddy Purple's text), so this is not a formality. All twelve local cards
+   in `assets/strains/` agree. Re-checked 25 Aug 2026: `cdn.shopify.com`,
+   `images.unsplash.com`, `linktr.ee`, `maxme.co.th` and
+   `maxenterpriseconnect.com` are all still refused by the network policy.
+   **`GROK.md` is this job written out for an assistant that can reach them** —
+   all 27 cards with the site's current values beside each URL, plus the two
+   missing product photographs and the MaxMe API question. Hand that file over
+   rather than re-deriving the list; regenerate it from `strain-db.json` +
+   `product-images.json` if the catalogue moves on.
 8. Shop tour: Bryan has an Insta360, nothing shot yet.
+
+Fixed since the last handover, kept here so nobody re-reports them:
+
+- **Telegram.** `TELEGRAM_CHAT_ID` was wrong and the log said `chat not found`.
+  Bryan corrected it; `/api/health` → `wired.notify.telegram` is now `true` and
+  `warnings` is empty.
+- **Negative stock.** Eight bar lines used to carry it. The live feed has none.
+- **`[bar] Whiskey Sour` filed under Edibles** is not a leak: the storefront
+  catches it on `BAR_NAME` even though its category says otherwise. Verified
+  against the live feed — 335 of 395 products reach the shelf and not one
+  bottle is among them.
 
 Bryan has explicitly declined two things — do not do them unless he asks again:
 fixing the Snow Brands Pineapple Express 60% THC figure, and hardening the
@@ -118,6 +162,26 @@ card:
 - `table-qr.html` — table ordering cards, T1–T6 and the two bars.
 - `labels.html` — product QR labels.
 - `follow-qr.html` — "scan to follow" posters and stickers, in three sizes.
+- `member-qr.html` — the new-member poster (free joint + 10%), A4 or two-up A5.
+  Its terms are written to match `CONFIG.crm`; change one and change the other,
+  or the sign on the wall and the cart disagree in front of the customer. Its
+  left code is `/?open=member`, not the home page — the storefront honours that
+  deep link and opens the sign-up form, where Bryan's own artwork had both
+  codes pointing at the home page and the "JOIN MEMBERS" label was a lie the
+  scanner could not see.
+- `review-qr.html` — one "please review us" poster per branch, three sizes.
+  Branch names and links are typed into the page and kept in `localStorage`,
+  not written into the file: the links Bryan supplied are `maps.app.goo.gl`
+  short links that cannot be resolved from a sandbox, so guessing which was
+  Sathorn and which was Pattanakarn would have put the wrong code on the wrong
+  wall. The page says so itself, and warns while any branch is still unnamed.
+  Its wording is a switch with three presets, defaulting to **both** (a
+  five-star ask and a review ask) because that is what Bryan chose after being
+  told the trade: Google forbids soliciting a specific rating and can remove
+  reviews collected that way, so the page says so and the "ขอรีวิว" preset
+  reverts to the safe wording in one tap. Keep the poster a separate sign from
+  the free-joint offer either way — an incentive attached to a review ask is
+  the part that gets a business profile suspended.
 
 The first two **draw** their codes with `qr.js` locally: a card that phones a QR
 web service prints blank the day that service is slow or gone, and it hands
@@ -128,6 +192,39 @@ scans show up in Bryan's Linktree stats. Redrawing it would reach the same page
 and lose the numbers.
 
 Anything printed must be scan-tested after a layout change, not just looked at.
+
+## What a member gets
+
+Two things, and the terms live in `CONFIG.crm` in `index.html`:
+
+- **a free joint on the first order of ฿500 or more** — `jointMin:500`, once
+  per member. The bar is a spend, not a weight, measured on `cartSubtotal()`:
+  member prices count toward it, the delivery fee does not.
+- **10% off every order, for as long as they stay logged in** —
+  `discountPct:10`, code `CRM10`
+
+The pop-up used to say 10% only, so the sign on the wall and the site
+disagreed in front of the customer. If the offer changes, change `CONFIG.crm`
+— the title, the sub and the badge all read from there.
+
+The joint is wired, not just written: `memberJointDue()` in `index.html` grants
+it when a member with an unspent claim has a cart subtotal of at least
+`CONFIG.crm.jointMin` (฿500). Below that the cart shows an "add ฿X more" nudge
+instead. It shows as a ฿0 totals row, the
+order posts `memberJoint:true`, and `api/order.js` puts
+`🚬 NEW MEMBER — ADD ONE FREE JOINT` in every staff channel and the owner's
+email. `clearCartAfterOrder()` spends the claim only when the order actually
+goes out.
+
+It is deliberately **not** `appliedPromo`. That holds one coupon at a time, so
+putting the joint there would silently cancel a discount code the customer
+typed — or be cancelled by one. It stacks with both, and with the wheel prize.
+
+A **free second gram on a first 1g+ order** used to run alongside this. Bryan
+retired it on 25 Aug 2026 — one first-order gift, not two — so `ensureBonus()`
+no longer grants it and `first_free_used` is no longer written. Do not put it
+back without him asking. The volume ladder is a different thing and is
+untouched: 3g→1g, 5g→2g, 7g→3g, 10g→4g free on **every** order, member or not.
 
 ## Content rules
 

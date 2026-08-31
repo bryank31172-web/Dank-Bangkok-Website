@@ -1226,7 +1226,7 @@ window.addEventListener("appinstalled", function () {
   </div>
 </header>
 <div class="promo-banner" id="promoBanner">
-  <span>🎁 <b id="pbTitle">First order? Buy 1G get 1G FREE</b> — register to unlock.</span>
+  <span>🚬 <b id="pbTitle">สมัครใหม่ รับ joint ฟรี</b> — สั่งครบ ฿500 ขึ้นไป</span>
   <button onclick="openRegister()">Register free</button>
   <button class="pb-x" onclick="dismissBanner()" title="Dismiss">×</button>
 </div>
@@ -1376,8 +1376,8 @@ window.addEventListener("appinstalled", function () {
     <div class="promo" onclick="openPromo('first')" style="background-color:#181208;background-image:url('promo-first.jpg')">
       <div class="promo-shade"></div><span class="tagchip">MEMBERS' FIRST ORDER</span>
       <div class="promo-txt"><div class="promo-kick">Sign up free &middot; 10% off every order</div>
-        <h3>First order? 1g + 1g free</h3>
-        <p>Join DANK Members, buy your first gram — a second gram rides along free.</p>
+        <h3>สมัครใหม่ รับ joint ฟรี 🚬</h3>
+        <p>สมาชิกใหม่ สั่งครบ ฿500 ขึ้นไป รับ joint ฟรี 1 อัน · ลด 10% ทุกออเดอร์</p>
         <span class="promo-btn">Join &amp; claim</span></div>
     </div>
   </div>
@@ -1400,8 +1400,8 @@ let SITE_SLIDES=[
  {key:"b3g1", tag:"EVERY STRAIN", kick:"Automatic in your cart", title:"Buy 3g, get 1g free",
   text:"Stack it: 5g \u2192 2 free \u00b7 9g \u2192 3 \u00b7 12g \u2192 4 \u00b7 15g \u2192 5. The cart adds them itself.",
   btn:"Shop flower", img:"https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-6890.png?v=1782732640&width=1600", bg:"#0f1c12", detail:""},
- {key:"first", tag:"MEMBERS' FIRST ORDER", kick:"Sign up free \u00b7 10% off every order", title:"First order? 1g + 1g free",
-  text:"Join DANK Members, buy your first gram \u2014 a second gram rides along free.",
+ {key:"first", tag:"MEMBERS' FIRST ORDER", kick:"สมัครฟรี · ลด 10% ทุกออเดอร์", title:"สมัครใหม่ รับ joint ฟรี 🚬",
+  text:"สมาชิกใหม่ สั่งครบ ฿500 ขึ้นไป รับ joint ฟรี 1 อัน · ลด 10% ทุกออเดอร์",
   btn:"Join & claim", img:"promo-first.jpg", bg:"#181208", detail:""},
  {key:"happyhour", tag:"HAPPY HOUR", kick:"Sathorn 5\u20137pm \u00b7 Pattanakarn 4\u20137pm", title:"Happy Hour \u2014 buy 3g, get 2g free",
   text:"Time to buy, time to save: every day during Happy Hour the volume deal is boosted \u2014 the cart adds the free grams itself.",
@@ -1784,15 +1784,15 @@ b3g1:{t:"Buy 3g — get 1g FREE 🔥",b:`
   <div style="background:var(--panel2);border:1px solid var(--line2);border-radius:12px;padding:6px 14px;margin-bottom:14px">${lrows}</div>
   <p style="color:var(--muted);font-size:12.5px;margin:0 0 14px">Free grams come from the strain you bought most of — switch them in the cart.</p>
   <button class="btn btn-primary btn-block" onclick="closeAll();document.getElementById('menu').scrollIntoView({behavior:'smooth'})">🌿 Shop flower</button>`},
-first:{t:"First order — 1g + 1g free 💚",b:`
-  <p style="color:var(--muted);font-size:14px;margin:0 0 12px">New here? Join DANK Members free — you get 10% off every order, and on your first order of 1g or more a second gram comes free.</p>
+first:{t:"สมัครใหม่ รับ joint ฟรี 🚬",b:`
+  <p style="color:var(--muted);font-size:14px;margin:0 0 12px">New here? Join DANK Members free — a free joint on your first order of ${money(memberJointMin())} or more, and 10% off every order for as long as you stay logged in.</p>
   <div style="background:var(--panel2);border:1px solid var(--line2);border-radius:12px;padding:12px 14px;margin-bottom:14px;font-size:14px;line-height:1.9">
-    1️⃣ Join free (10 seconds)<br>2️⃣ Add 1g+ of any strain<br>3️⃣ Your free gram appears in the cart 💚</div>
-  ${isMember()?(LS.get("first_free_used",0)?
-    `<p style="color:var(--muted);font-size:13px;margin:0 0 12px">✅ Your first-order gift has been claimed — the 3g→1g ladder still works every order.</p>
+    1️⃣ สมัครฟรี ใช้เวลา 10 วินาที<br>2️⃣ สั่งซื้อครบ ${money(memberJointMin())} ขึ้นไป<br>3️⃣ joint ขึ้นในตะกร้าให้เอง 🚬</div>
+  ${isMember()?(memberJointUsed()?
+    `<p style="color:var(--muted);font-size:13px;margin:0 0 12px">✅ รับ joint ฟรีไปแล้ว — ส่วนลด 10% กับของแถมตามน้ำหนัก (3g→1g) ยังได้ทุกออเดอร์</p>
      <button class="btn btn-primary btn-block" onclick="closeAll();document.getElementById('menu').scrollIntoView({behavior:'smooth'})">🌿 Shop flower</button>`:
-    `<p style="color:var(--green2);font-size:13.5px;font-weight:700;margin:0 0 12px">You're a member — your first-order gram is waiting. Add 1g+ to claim it.</p>
-     <button class="btn btn-primary btn-block" onclick="closeAll();document.getElementById('menu').scrollIntoView({behavior:'smooth'})">🌿 Claim my free gram</button>`):
+    `<p style="color:var(--green2);font-size:13.5px;font-weight:700;margin:0 0 12px">คุณเป็นสมาชิกแล้ว — สั่งครบ ${money(memberJointMin())} รับ joint ฟรีได้เลย</p>
+     <button class="btn btn-primary btn-block" onclick="closeAll();document.getElementById('menu').scrollIntoView({behavior:'smooth'})">🚬 รับ joint ฟรีของฉัน</button>`):
     `<button class="btn btn-primary btn-block" onclick="closeAll();openCRM('join')">💚 Join free &amp; claim</button>
      <button class="btn btn-ghost btn-block" style="margin-top:8px" onclick="closeAll();openCRM('login')">👤 Member log in</button>`}`},
 happyhour:{t:"Happy Hour \u2014 buy 3g, get 2g FREE \ud83d\udd25",b:`
@@ -2050,9 +2050,14 @@ const CONFIG = {
     ] },
   // ---- CRM membership: join free, get 10% off every order (a pop-up invites
   //      every non-member on each visit; signing up unlocks member prices) ----
-  crm:{ enabled:true, discountPct:10, code:"CRM10",
-        title:"Join DANK Members — 10% OFF 💚",
-        sub:"Sign up free and save 10% on every order, plus members-only drops. Takes 10 seconds.",
+  /* The shop's poster promises a first-time member a free joint; this pop-up
+     promised 10% off and nothing else, so the sign on the wall and the site
+     disagreed in front of the customer. Both are named here now. The free
+     SECOND GRAM on a first 1g+ order is a separate, older promo that is still
+     running and still wired into the cart — see the "first" panel. */
+  crm:{ enabled:true, discountPct:10, code:"CRM10", jointMin:500,
+        title:"Join DANK Members — free joint + 10% OFF 💚",
+        sub:"Sign up free: a free joint on your first order over ฿500, and 10% off every order for as long as you stay logged in.",
         firstDelayMs:1200, repeatMs:60000 },   // shows on entry, then re-invites every ~60s until they join
   // ---- Volume deal: buy more grams of flower, get grams free (cart-wide total) ----
   gramLadder:[ [3,1],[5,2],[7,3],[10,4] ],   // [buy grams, free grams]
@@ -2070,6 +2075,19 @@ const CONFIG = {
   firstOrder:{ enabled:false, code:"FIRST1G", title:"Buy 1G get 1G FREE 🎁",
     sub:"First order only — register and get a free gram on any 1g flower." },
   wallet:{ enabled:true, bonusPct:10, amounts:[500,1000,2000,5000] },
+  /* MaxMe Wallet (PTG's app, maxme.co.th). Bryan asked for it alongside Beam.
+     It is here as a merchant QR plus a slip, not as an API call, because MaxMe
+     publishes no developer documentation that could be found and its merchant
+     product is built around scanning in the shop. That is not a downgrade: it
+     is exactly how PromptPay above already works here, and it is honest —
+     guessing at the request shape of something that moves a customer's money
+     is not a thing to do quietly.
+
+     To switch it on: export the shop's merchant QR from the MaxMe app, save it
+     as assets/maxme-qr.png, and set enabled:true. If MaxMe ever hands over API
+     docs this becomes a gateway like Beam and the option stays where it is. */
+  maxme:{ enabled:false, name:"", accNo:"", image:"assets/maxme-qr.png",
+    note:"เปิดแอป MaxMe \u2192 สแกนจ่าย \u2192 ใส่ยอดตามบิล แล้วอัปสลิปให้เราด้วยครับ \u00b7 Open MaxMe, scan, pay the exact amount, then upload your slip." },
   promptpay:{ enabled:true, id:"", note:"Scan with any banking app — accepts all banks. Enter the amount, pay, then upload your slip.",
     accounts:[
       {label:"KBank ···1146", name:"อรรฆพร ก้องธรนินทร์", accNo:"xxx-x-x1146-x", image:"assets/promptpay.png"},
@@ -2413,6 +2431,34 @@ function rememberOrder(id){ const a=myOrders(); if(id&&!a.includes(id)){ a.unshi
 function isRegistered(){ return !!LS.get("reg",null); }
 function firstUsed(){ return !!LS.get("firstUsed",false); }
 function bonusEligible(){ return CONFIG.firstOrder&&CONFIG.firstOrder.enabled&&isRegistered()&&!firstUsed(); }
+
+/* ---- new member's free joint ------------------------------------------------
+   The shop's poster promises a first-time member a free joint with any order.
+   It is handed over at the counter rather than picked off the shelf, so it is a
+   totals row like the wheel's prize, not a cart line: a line needs a product to
+   point at, and the pre-roll shelf is deliberately hidden from the storefront.
+
+   Deliberately NOT appliedPromo. That holds one coupon at a time, so putting
+   the joint there would silently cancel a discount code the customer typed, or
+   be cancelled by one. This is a separate entitlement and stacks with both.
+
+   The bar is a spend, not a weight: CONFIG.crm.jointMin baht of goods, before
+   delivery. Measured on cartSubtotal(), which is what the customer is actually
+   paying for the products — so member prices count toward it, and the delivery
+   fee does not. Claimed once; clearCartAfterOrder marks it spent when the order
+   actually goes out, not when the drawer is opened. */
+function memberJointUsed(){ return !!LS.get("member_joint_used",0); }
+function memberJointMin(){ const v=Number(CONFIG.crm&&CONFIG.crm.jointMin); return Number.isFinite(v)&&v>0?v:0; }
+function memberJointDue(){
+  if(!isMember() || memberJointUsed()) return false;
+  return cartSubtotal() >= memberJointMin();
+}
+/* How much more to spend to earn it. Zero once it is earned, or when there is
+   nothing to earn — so the cart can show a nudge without a second condition. */
+function memberJointShort(){
+  if(!isMember() || memberJointUsed()) return 0;
+  return Math.max(0, memberJointMin() - cartSubtotal());
+}
 async function refreshFreeGifts(){
   if(location.protocol==="file:"){ freeGiftIds=DATA.filter(p=>p.freeGift).map(p=>p.id); return; }
   try{ const r=await fetch("/api/freegifts"); if(r.ok){ const j=await r.json(); freeGiftIds=Array.isArray(j.skus)?j.skus:[]; } }
@@ -2426,7 +2472,7 @@ function showBannerMaybe(){ const el=$("#promoBanner"); if(!el)return;
   const c=CONFIG.crm||{};
   const show=c.enabled&&!isMember()&&!LS.get("bannerX",false);
   el.style.display=show?"flex":"none";
-  const t=$("#pbTitle"); if(t) t.textContent="Join DANK Members — 10% off every order 💚"; }
+  const t=$("#pbTitle"); if(t) t.textContent="Join DANK Members — free joint + 10% off 💚"; }
 function dismissBanner(){ LS.set("bannerX",true); $("#promoBanner").style.display="none"; }
 /* "Is the customer in the middle of something?" — asked by the members pop-up before it
    interrupts. It only looked at the modal overlay, and the AI chat panel is not backed by
@@ -2453,11 +2499,13 @@ function openCRM(tab){
   if(isMember()){ openMemberCard(); return; }
   showModal("#infoModal");
   const t=tab==="login"?"login":"join";
-  $("#infoCard").innerHTML=`<div class="drawer-head" style="border:none;padding:18px 20px 4px"><h2>${esc(c.title||"Join DANK Members — 10% OFF 💚")}</h2><button class="close-x" onclick="dismissCRM()">×</button></div>
+  $("#infoCard").innerHTML=`<div class="drawer-head" style="border:none;padding:18px 20px 4px"><h2>${esc(c.title||"Join DANK Members — free joint + 10% OFF 💚")}</h2><button class="close-x" onclick="dismissCRM()">×</button></div>
     <div style="padding:6px 20px 22px">
       <div style="background:linear-gradient(135deg,#0e3a24,#0a2417);border:1px solid var(--line2);border-radius:14px;padding:15px 16px;margin:2px 0 14px;text-align:center">
-        <div style="font-size:34px;font-weight:900;color:var(--green2);line-height:1;letter-spacing:.5px">10% OFF</div>
-        <div style="font-size:12.5px;color:var(--gold);margin-top:3px;font-weight:700">every order · free to join · members-only drops</div>
+        <div style="font-size:30px;font-weight:900;color:var(--green2);line-height:1.15;letter-spacing:.3px">🚬 FREE JOINT<div style="font-size:15px;font-weight:800;color:var(--gold);margin-top:2px">first order over ${money((CONFIG.crm&&CONFIG.crm.jointMin)||500)}</div></div>
+        <div style="height:1px;background:var(--line2);margin:11px 14px"></div>
+        <div style="font-size:26px;font-weight:900;color:var(--green2);line-height:1;letter-spacing:.5px">10% OFF</div>
+        <div style="font-size:12.5px;color:var(--gold);margin-top:3px;font-weight:700">every order, while you are logged in · free to join</div>
       </div>
       <div class="seg" style="margin-bottom:14px">
         <button class="${t==='join'?'active':''}" onclick="openCRM('join')">💚 Join free</button>
@@ -2848,13 +2896,12 @@ function ensureBonus(){
   if(strain) for(let i=0;i<free;i++){
     cart.push({key:"BONUS|"+strain.id+"|"+i,id:strain.id,name:strain.name,tierLabel:hhActive()?"1g · HAPPY HOUR FREE 🔥":"1g · FREE 🌿",price:0,qty:1,image:strain.image,type:strain.type,category:strain.category,bonus:true});
   }
-  /* Members' first order: buy 1g+, a second gram rides along free. Only when
-     the ladder hasn't already granted (3g+ orders get the ladder gram instead),
-     and only once — clearCartAfterOrder marks it used when the order goes out. */
-  if(free===0&&G>=1&&isMember()&&!LS.get("first_free_used",0)){
-    const s1=freeGramStrain();
-    if(s1) cart.push({key:"BONUS1ST|"+s1.id,id:s1.id,name:s1.name,tierLabel:"1g · FIRST ORDER FREE 💚",price:0,qty:1,image:s1.image,type:s1.type,category:s1.category,bonus:true,bonus1st:true});
-  }
+  /* The members' first order used to add a second gram free. Bryan retired it
+     on 25 Aug 2026 in favour of the free joint (memberJointDue) — one first-
+     order gift, not two. Deliberately gone rather than disabled: a dormant
+     grant that still writes cart lines is the kind of thing that comes back on
+     by accident. The volume ladder above is untouched and still gives free
+     grams at 3g, 5g, 7g and 10g on every order. */
   /* This function rewrites the cart — it strips the old free lines and grants a
      fresh set — so it has to persist and re-badge like any other cart mutation.
      It used to do neither. The header badge went on counting lines the drawer had
@@ -4417,6 +4464,8 @@ function renderCart(){
           customer sees an empty code box and no sign of the thing they won.
           Shown as goods, not money — the price column says FREE. */''}
     ${appliedPromo&&appliedPromo.type==="gift"?`<div class="cart-total-row" style="color:var(--gold)"><span>🚬 ${esc(appliedPromo.gift||"Free gift")}</span><span>FREE</span></div>`:''}
+    ${memberJointDue()?`<div class="cart-total-row" style="color:var(--green2)"><span>🚬 New member — free joint</span><span>FREE</span></div>`:''}
+    ${memberJointShort()>0?`<div class="cart-total-row" style="color:var(--gold)"><span>🚬 Add ${money(memberJointShort())} more for your free joint</span><span>${money(memberJointMin())}+</span></div>`:''}
     <div class="cart-total-row"><span>Delivery</span><span>${coFulfill==="pickup"?'Pickup':fee===0?'Free':money(fee)}</span></div>
     <div class="cart-total-row grand"><span>Total</span><span>${money(tot)}</span></div>
     ${below?`<div class="minorder">Minimum order ${money(CONFIG.minOrder)} — add ${money(CONFIG.minOrder-sub)} more</div>`:''}
@@ -4514,15 +4563,19 @@ function setFulfill(f){
 }
 function setPay(p){ coPay=p; document.querySelectorAll("#coCard .pay").forEach(el=>el.classList.toggle("active",el.dataset.p===p));
   const cf=$("#cardForm"); if(cf) cf.style.display=p==="Card"?"block":"none";
-  const pn=$("#ppNote"); if(pn) pn.style.display=(p==="PromptPay"||p==="PromptPayQR")?"block":"none";
+  const pn=$("#ppNote"); if(pn) pn.style.display=(p==="PromptPay"||p==="PromptPayQR"||p==="BeamQR")?"block":"none";
   const pb=$("#placeBtn"); if(pb) pb.textContent=payBtnLabel(p); }
 function paymentMethods(){
   const m=[];
   if(walletBalance>0) m.push({p:"Wallet",label:"Wallet "+money(walletBalance),icon:"💚"});
-  if(payGW.omise){ m.push({p:"PromptPay",label:"PromptPay",icon:"📱"}); m.push({p:"Card",label:"Card",icon:"💳"}); }
+  /* Beam first when it is on. Its PromptPay is 0% to the shop, so it should
+     be the tap that costs nothing, not the third option down the list. */
+  if(payGW.beam){ m.push({p:"BeamQR",label:"PromptPay",icon:"📱"}); m.push({p:"BeamCard",label:"Card",icon:"💳"}); }
+  if(payGW.omise&&!payGW.beam){ m.push({p:"PromptPay",label:"PromptPay",icon:"📱"}); m.push({p:"Card",label:"Card",icon:"💳"}); }
   if(payGW.twoc2p) m.push({p:"2C2P",label:"Card / e-wallet",icon:"🏦"});
   if(payGW.gbp) m.push({p:"GBPrimePay",label:"PromptPay / Card",icon:"🏧"});
-  if(CONFIG.promptpay&&CONFIG.promptpay.enabled&&!payGW.omise) m.push({p:"PromptPayQR",label:"PromptPay",icon:"📱"});
+  if(CONFIG.promptpay&&CONFIG.promptpay.enabled&&!payGW.omise&&!payGW.beam) m.push({p:"PromptPayQR",label:"PromptPay",icon:"📱"});
+  if(CONFIG.maxme&&CONFIG.maxme.enabled) m.push({p:"MaxMe",label:"MaxMe Wallet",icon:"👛"});
   if(CONFIG.bank&&CONFIG.bank.enabled) m.push({p:"Transfer",label:"Bank transfer",icon:"🏦"});
   if(CONFIG.internationalTransfer&&CONFIG.internationalTransfer.enabled) m.push({p:"InternationalTransfer",label:"Revolut / Wise",icon:"🌍"});
   if(CONFIG.cod) m.push({p:"Cash",label:"Cash / COD",icon:"💵"});
@@ -4535,7 +4588,8 @@ function paymentMethods(){
    them, because a phone number in an unauthenticated request body is not proof of who is
    spending. The button has to say that, or the customer taps "Pay" and nothing is paid. */
 function payBtnLabel(p){ if(p==="Wallet") return "💚 Place order · "+money(cartTotal())+" from wallet";
-  if(["PromptPay","Card","2C2P","GBPrimePay","PromptPayQR"].includes(p)) return "💳 Pay "+money(cartTotal());
+  if(["PromptPay","Card","2C2P","GBPrimePay","PromptPayQR","BeamQR","BeamCard"].includes(p)) return "💳 Pay "+money(cartTotal());
+  if(p==="MaxMe") return "👛 Place order & show MaxMe QR";
   if(p==="Transfer") return "🏦 Place order & show transfer details";
   if(p==="InternationalTransfer") return "🌍 Place order & show Revolut / Wise details";
   if(p==="Crypto") return "₿ Place order & pay crypto";
@@ -4592,11 +4646,12 @@ function collectOrder(){
   const pickTime=coFulfill==="pickup"?F("coTime").trim():"";
   return {brand:CONFIG.brand,items:cart.map(c=>({name:c.name,shId:c.shId||"",option:c.tierLabel,qty:c.qty,price:c.price,lineTotal:c.price*c.qty,category:c.category||"",bonus:!!c.bonus})),
     subtotal:cartSubtotal(),discount:discountAmt(),promo:appliedPromo?appliedPromo.code:"",deliveryFee:deliveryFeeAmt(),total:cartTotal(),
-    fulfilment:coFulfill,payment:coPay,member:memberMode,
+    fulfilment:coFulfill,payment:coPay,member:memberMode,memberJoint:memberJointDue(),
     customer:{name,phone},delivery:{zone,address:addr},pickup:{branch:pickBranch,time:pickTime},notes,source:"dankbkk.com",firstOrder:bonusEligible(),registered:LS.get("reg",null)||undefined};
 }
 function orderText(o){
-  const lines=o.items.map(i=>`• ${i.name} (${i.option}) ×${i.qty} — ${money(i.lineTotal)}`).join("\n");
+  const lines=o.items.map(i=>`• ${i.name} (${i.option}) ×${i.qty} — ${money(i.lineTotal)}`).join("\n")
+    + (o.memberJoint?"\n🚬 NEW MEMBER — ADD ONE FREE JOINT":"");
   /* The LINE and WhatsApp handoffs go to a person, not to api/order.js, so the
      box has to be spelled out here too \u2014 otherwise a 28-gram order that arrives
      by LINE reads as flower with no gifts attached, and somebody packs it that way. */
@@ -4617,7 +4672,7 @@ function orderText(o){
   return t;
 }
 /* ---- Omise (Opn) online payment ---- */
-let payCfg=null, payGW={omise:false,twoc2p:false,gbp:false,omisePublicKey:""}, lastOrderId="";
+let payCfg=null, payGW={beam:false,omise:false,twoc2p:false,gbp:false,omisePublicKey:""}, lastOrderId="";
 async function fetchPayCfg(){
   if(payCfg!==null) return payCfg;
   if(location.protocol==="file:"){ payCfg={configured:false}; return payCfg; }
@@ -4639,7 +4694,8 @@ async function tokenizeCard(pk,{num,name,exp,cvc}){
 /* Everything that has to be forgotten once an order has genuinely left. Six screens each
    carried their own copy of the first three lines and not one of them cleared coFulfill,
    so the next order in the same session silently inherited Pickup from the last one. */
-function clearCartAfterOrder(){ if(cart.some(c=>c.bonus1st)) LS.set("first_free_used",1); cart=[]; appliedPromo=null; coFulfill="delivery"; boxMode=false; LS.set("boxmode",0); saveCart(); updateCartCount(); }
+function clearCartAfterOrder(){
+  if(memberJointDue()) LS.set("member_joint_used",1); cart=[]; appliedPromo=null; coFulfill="delivery"; boxMode=false; LS.set("boxmode",0); saveCart(); updateCartCount(); }
 function showQRScreen(orderId,chargeId,qr,amount){
   clearCartAfterOrder();
   $("#coCard").innerHTML=`<div class="success">
@@ -4723,6 +4779,20 @@ async function submitOrder(method){
     copyText(text); window.open(CONFIG.lineUrl,"_blank");
     return showSuccess("LINE","We've opened LINE and copied your order — just paste & send it to confirm.");
   }
+  if(coPay==="BeamQR"&&orderId){
+    try{ const r=await fetch("/api/paybeam",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({orderId,action:"qr"})});
+      const j=await r.json(); if(j.ok&&j.qr){ return showGatewayQR(orderId,j.qr,o.total,"Beam",
+        j.chargeId?("/api/paybeam?chargeId="+encodeURIComponent(j.chargeId)):null); } }catch(e){}
+    /* The order is already saved. Never leave the customer on a spinner with a
+       full cart and nothing to show for it - say what happened and let the shop
+       take it from there. */
+    return showSuccess("order",`Order ${orderId} placed \u2014 the QR couldn't start, so we'll send you a PromptPay QR, or you can pay on arrival.`);
+  }
+  if(coPay==="BeamCard"&&orderId){
+    try{ const r=await fetch("/api/paybeam",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({orderId,action:"card"})});
+      const j=await r.json(); if(j.ok&&j.redirect){ location.href=j.redirect; return; } }catch(e){}
+    return showSuccess("order",`Order ${orderId} placed \u2014 we couldn't open the card page. We'll send a payment link, or pay on arrival.`);
+  }
   if(coPay==="2C2P"&&orderId){
     try{ const r=await fetch("/api/pay2c2p",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({orderId})});
       const j=await r.json(); if(j.ok&&j.webPaymentUrl){ location.href=j.webPaymentUrl; return; } }catch(e){}
@@ -4734,6 +4804,7 @@ async function submitOrder(method){
     return showSuccess("order",`Order ${orderId} placed — we'll send a PromptPay QR, or pay on arrival.`);
   }
   if(coPay==="PromptPayQR"&&orderId){ return showPromptPayQR(orderId,o.total); }
+  if(coPay==="MaxMe"&&orderId){ return showMaxMe(orderId,o.total); }
   if(coPay==="Transfer"&&orderId){ return showBankTransfer(orderId,o.total); }
   if(coPay==="InternationalTransfer"&&orderId){ return showInternationalTransfer(orderId,o.total); }
   if(coPay==="Crypto"&&orderId){ return showCryptoPay(orderId,o.total); }
@@ -4836,15 +4907,57 @@ function renderPP(orderId,amount){
     </div>`;
   if(ppReveal&&!a.image){ const payload=ppPayload(a.id||pp.id,amount); loadQRlib().then(()=>{ const el=$("#ppQR"); if(!el)return; if(window.QRCode){ el.innerHTML=""; new QRCode(el,{text:payload,width:210,height:210,correctLevel:QRCode.CorrectLevel.M}); } else { el.innerHTML="<div style='color:#333;font-size:11px;word-break:break-all;padding:6px'>"+payload+"</div>"; } }); }
 }
-function showGatewayQR(orderId,qr,amount,who){
+/* MaxMe Wallet: the shop's own merchant QR, the exact amount, and a slip.
+   Same shape as renderPP() above, deliberately — a customer who has paid one
+   of them already knows how the other works, and staff confirm both the same
+   way on the Orders tab. The amount is printed large because a wallet QR is
+   usually a fixed-merchant code with no amount baked in, so the customer types
+   it, and a customer typing the wrong number is the whole failure mode here. */
+function showMaxMe(orderId,amount){
+  clearCartAfterOrder();
+  const mm=CONFIG.maxme||{};
+  const qrHTML = mm.image
+    ? `<img src="${esc(mm.image)}" alt="MaxMe QR" style="width:230px;height:230px;object-fit:contain;background:#fff;border-radius:14px;padding:8px" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'minorder',style:'color:var(--gold)',textContent:'QR ยังไม่ได้ตั้งค่า — แจ้งพนักงานได้เลยครับ'}))">`
+    : `<div class="minorder" style="color:var(--gold)">QR ยังไม่ได้ตั้งค่า — แจ้งพนักงานได้เลยครับ</div>`;
+  $("#coCard").innerHTML=`<div class="drawer-head" style="border:none;padding:18px 20px 4px"><h2>\u{1f45b} MaxMe Wallet \u00b7 ${money(amount)}</h2><button class="close-x" onclick="closeAll()">\u00d7</button></div>
+    <div style="padding:6px 20px 22px;text-align:center">
+      <div style="font-weight:800;color:var(--green2);font-size:13px;margin-bottom:8px">MaxMe Wallet \u00b7 สแกนจ่ายในแอป</div>
+      ${qrHTML}
+      <div style="font-size:13px;margin-top:8px">${mm.name?("\u{1f3ea} "+esc(mm.name)):""}${mm.accNo?("<br>"+esc(mm.accNo)):""}</div>
+      <p style="color:var(--muted);font-size:12.5px;margin:6px 0 2px">${esc(mm.note||"")}</p>
+      <div class="cart-total-row grand" style="justify-content:center;gap:10px;margin-top:6px"><span>ยอดที่ต้องโอน</span><span>${money(amount)}</span></div>
+      <p style="color:var(--muted2);font-size:11.5px;margin:2px 0 12px">ออเดอร์ <b>${orderId}</b> \u00b7 จ่าย ${money(amount)} ให้ตรงยอด แล้วอัปสลิป เราจะยืนยันและเตรียมของให้ครับ</p>
+      <div style="text-align:left">${slipBoxHTML(orderId)}</div>
+      <button class="btn btn-primary btn-block" style="margin-top:12px" onclick="closeAll()">เสร็จแล้ว \u00b7 Done</button>
+    </div>`;
+}
+function showGatewayQR(orderId,qr,amount,who,verifyUrl){
   clearCartAfterOrder();
   $("#coCard").innerHTML=`<div class="success"><h2>Scan to pay ${money(amount)}</h2>
-    <p>${esc(who)} · PromptPay</p><img src="${esc(qr)}" style="width:220px;height:220px;object-fit:contain;background:#fff;border-radius:14px;padding:10px;margin:12px auto;display:block">
-    <p id="gwWait" style="color:var(--gold)">⏳ Waiting for payment…</p>
+    <p>${esc(who)} \u00b7 PromptPay</p><img src="${esc(qr)}" style="width:220px;height:220px;object-fit:contain;background:#fff;border-radius:14px;padding:10px;margin:12px auto;display:block">
+    <p id="gwWait" style="color:var(--gold)">\u23f3 Waiting for payment\u2026</p>
     <button class="btn btn-ghost btn-block" onclick="closeAll()">Close</button></div>`;
   clearInterval(window._gwPoll);
-  window._gwPoll=setInterval(async()=>{ try{ const r=await fetch("/api/track?id="+encodeURIComponent(orderId)); const j=await r.json();
-    if(j.found&&j.payStatus==="paid"){ clearInterval(window._gwPoll); showSuccess("paid",`Payment received — order ${orderId} confirmed! 🌿`); } }catch(e){} },3000);
+  /* Two ways to learn the money arrived, because relying on one of them strands
+     a customer who has genuinely paid.
+
+     The order record is the normal path: the gateway's webhook stamps it and
+     this poll sees it. But if that webhook is misconfigured - wrong secret, URL
+     not saved in the dashboard - the bank still debits the customer and this
+     screen would spin forever, which reads as "your payment failed" to the one
+     person who definitely did pay. So every fourth tick we also ask the gateway
+     about the charge directly; that call marks the order paid server-side too,
+     so the shop's own records catch up as well. */
+  let n=0;
+  window._gwPoll=setInterval(async()=>{
+    n++;
+    try{ const r=await fetch("/api/track?id="+encodeURIComponent(orderId)); const j=await r.json();
+      if(j.found&&j.payStatus==="paid"){ clearInterval(window._gwPoll); return showSuccess("paid",`Payment received \u2014 order ${orderId} confirmed! \u2705`); } }catch(e){}
+    if(verifyUrl&&n%4===0){
+      try{ const r=await fetch(verifyUrl); const j=await r.json();
+        if(j.paid){ clearInterval(window._gwPoll); return showSuccess("paid",`Payment received \u2014 order ${orderId} confirmed! \u2705`); } }catch(e){}
+    }
+  },3000);
 }
 function showBankTransfer(orderId,amount){
   const bk=CONFIG.bank; clearCartAfterOrder();
