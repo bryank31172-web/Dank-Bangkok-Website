@@ -43,6 +43,11 @@ window.addEventListener("appinstalled", function () {
     var raw = q.get("table") || q.get("t") || q.get("tb");
     if (raw && String(raw).trim()){
       location.replace("food.html?table=" + encodeURIComponent(String(raw).trim()));
+      return;
+    }
+    var cannabisRaw = String(q.get("cannabis_table") || "").trim().toUpperCase();
+    if (/^C[1-7]$/.test(cannabisRaw)){
+      sessionStorage.setItem("dankCannabisTable", JSON.stringify({ table: cannabisRaw, at: Date.now() }));
     }
   }catch(e){}
 })();
@@ -2349,6 +2354,16 @@ let crmTimer=null;   // drives the always-on members pop-up (keeps re-inviting u
 /* ---- safe persistence (works deployed; degrades in sandboxed previews) ---- */
 const LS={ get(k,d){ try{ const v=localStorage.getItem("dank_"+k); return v?JSON.parse(v):d; }catch(e){ return d; } },
            set(k,v){ try{ localStorage.setItem("dank_"+k,JSON.stringify(v)); }catch(e){} } };
+function activeCannabisTable(){
+  try{
+    const raw=new URLSearchParams(location.search).get("cannabis_table");
+    const direct=String(raw||"").trim().toUpperCase();
+    if(/^C[1-7]$/.test(direct)) return direct;
+    const saved=JSON.parse(sessionStorage.getItem("dankCannabisTable")||"null");
+    if(saved&&/^C[1-7]$/.test(saved.table)&&Date.now()-Number(saved.at||0)<43200000) return saved.table;
+  }catch(e){}
+  return "";
+}
 function saveCart(){ LS.set("cart",cart); }
 
 /* ---- counting how busy the shop is -----------------------------------------
@@ -4480,7 +4495,8 @@ function openCheckout(skipCRM){
    */
   try{
     LS.set("cart", cart);
-    LS.set("checkoutFulfillment", coFulfill || "delivery");
+    const cannabisTable=activeCannabisTable();
+    LS.set("checkoutFulfillment", cannabisTable ? "table" : (coFulfill || "delivery"));
     LS.set("checkoutStartedAt", Date.now());
   }catch(e){
     console.warn("Could not persist checkout state", e);
@@ -4490,7 +4506,8 @@ function openCheckout(skipCRM){
   closeAI();
 
   // Use the clean Vercel route. No modal or popup is opened.
-  window.location.assign("/checkout");
+  const cannabisTable=activeCannabisTable();
+  window.location.assign(cannabisTable ? "/checkout?cannabis_table=" + encodeURIComponent(cannabisTable) : "/checkout");
 }
 /* Read whatever is on screen into coDraft. Called before anything that will destroy the
    form — a fulfilment switch, a bail-out that closes the modal — and never destructive

@@ -40,13 +40,13 @@
   <div class="noprint">
     <h1>🌿 Table QR cards</h1>
     <p class="lead">
-      Eight cards — T1 to T6, Bar 1 and Bar 2 — each pointing at the food &amp; drinks page with that table
-      already filled in. Set the address below to whatever the site is actually live on, press Print, and
+      Fifteen cards: food and bar tables T1-T6, Bar 1-Bar 2, plus cannabis tables C1-C7 (C7 is 2nd-floor VIP).
+      Each QR opens the correct menu with its table already filled in. Set the live address, press Print, and
       cut them out. Re-print any time; the codes never expire because the table is in the link, not in a database.
     </p>
     <label for="base">Site address</label>
     <input id="base" value="https://dankbangkok.com" oninput="build()">
-    <button class="btn" onclick="window.print()">🖨 Print the 8 cards</button>
+    <button class="btn" onclick="window.print()">🖨 Print all 15 cards</button>
   </div>
   <div class="cards" id="cards"></div>
 </div>
@@ -54,6 +54,7 @@
 <script src="qr.js"></script>
 <script>
 var TABLES = ["T1","T2","T3","T4","T5","T6","Bar 1","Bar 2"];
+var CANNABIS_TABLES = ["C1","C2","C3","C4","C5","C6","C7"];
 
 /* The codes are drawn here rather than fetched from a QR web service. A card
    that has to phone a third party is a card that prints blank the day that
@@ -66,14 +67,16 @@ function qr(data){
 }
 function build(){
   var base = (document.getElementById("base").value || "").trim().replace(/\/+$/, "");
-  document.getElementById("cards").innerHTML = TABLES.map(function(t){
-    var url = base + "/food.html?table=" + encodeURIComponent(t);
+  var cards = TABLES.map(function(t){ return { table:t, url:base + "/food.html?table=" + encodeURIComponent(t), cannabis:false }; })
+    .concat(CANNABIS_TABLES.map(function(t){ return { table:t, url:base + "/?cannabis_table=" + encodeURIComponent(t), cannabis:true }; }));
+  document.getElementById("cards").innerHTML = cards.map(function(x){
+    var vip = x.table === "C7";
     return '<div class="card">' +
-      '<div class="top">🌿 DANK</div>' +
-      '<div class="tn">' + t + "</div>" +
-      '<img src="' + qr(url) + '" alt="QR for ' + t + '">' +
-      '<div class="cap">สแกนเพื่อสั่งอาหาร + เครื่องดื่ม<br>Scan to order food &amp; drinks</div>' +
-      '<div class="url">' + url + "</div>" +
+      '<div class="top">🌿 DANK' + (vip ? " · VIP" : "") + '</div>' +
+      '<div class="tn">' + x.table + "</div>" +
+      '<img src="' + qr(x.url) + '" alt="QR for ' + x.table + '">' +
+      '<div class="cap">' + (x.cannabis ? (vip ? "2nd Floor VIP · Scan to order cannabis" : "Scan to order cannabis from your table") : "สแกนเพื่อสั่งอาหาร + เครื่องดื่ม<br>Scan to order food &amp; drinks") + '</div>' +
+      '<div class="url">' + x.url + "</div>" +
     "</div>";
   }).join("");
 }

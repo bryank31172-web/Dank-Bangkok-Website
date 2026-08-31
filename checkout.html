@@ -30,6 +30,7 @@
     <section class="panel main">
       <div id="screen1">
         <div class="title"><h1>Shopping details</h1><div class="small">Enter delivery and contact information.</div></div>
+        <div id="tableOrderBanner" class="notice hidden"></div>
         <div class="grid">
           <div class="field" id="nameField"><label>FULL NAME</label><input id="name" autocomplete="name" placeholder="Full name" required><div class="field-error" id="nameError">Please enter your full name.</div></div>
           <div class="field" id="phoneField"><label>WHATSAPP</label><input id="phone" autocomplete="tel" inputmode="tel" placeholder="+66…" required><div class="field-error" id="phoneError">Please enter a valid WhatsApp number.</div></div>
@@ -77,7 +78,15 @@
 </div>
 <script>
 const STORE='dank_cart';
-const state={step:1,payment:'RevolutTransfer',discount:0,promo:'',deliveryFee:100};
+const CANNABIS_TABLES=['C1','C2','C3','C4','C5','C6','C7'];
+function readCannabisTable(){
+ const direct=String(new URLSearchParams(location.search).get('cannabis_table')||'').trim().toUpperCase();
+ if(CANNABIS_TABLES.includes(direct)){try{sessionStorage.setItem('dankCannabisTable',JSON.stringify({table:direct,at:Date.now()}))}catch(e){} return direct;}
+ try{const saved=JSON.parse(sessionStorage.getItem('dankCannabisTable')||'null');if(saved&&CANNABIS_TABLES.includes(saved.table)&&Date.now()-Number(saved.at||0)<43200000)return saved.table;}catch(e){}
+ return '';
+}
+const CANNABIS_TABLE=readCannabisTable();
+const state={step:1,payment:CANNABIS_TABLE?'Cash':'RevolutTransfer',discount:0,promo:'',deliveryFee:CANNABIS_TABLE?0:100};
 const money=n=>'฿'+Math.max(0,Number(n)||0).toLocaleString('en-US');
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function loadCart(){try{return JSON.parse(localStorage.getItem(STORE)||'[]')||[]}catch(e){return[]}}
@@ -141,10 +150,10 @@ function validateShoppingDetails(){
  const time=document.getElementById('time').value;
  const accepted=document.getElementById('policyAccept').checked;
 
- if(!name){markInvalid('name');invalid.push(nameEl());}
- if(phone.replace(/\D/g,'').length<8){markInvalid('phone');invalid.push(phoneEl());}
- if(!zone){markInvalid('zone');invalid.push(zoneEl());}
- if(!time){markInvalid('time');invalid.push(document.getElementById('time'));}
+ if(!CANNABIS_TABLE&&!name){markInvalid('name');invalid.push(nameEl());}
+ if(!CANNABIS_TABLE&&phone.replace(/\D/g,'').length<8){markInvalid('phone');invalid.push(phoneEl());}
+ if(!CANNABIS_TABLE&&!zone){markInvalid('zone');invalid.push(zoneEl());}
+ if(!CANNABIS_TABLE&&!time){markInvalid('time');invalid.push(document.getElementById('time'));}
  if(!accepted){
    document.querySelector('.policy-box')?.classList.add('is-invalid');
    document.getElementById('policyError').textContent='You must confirm the age and purchase policy before continuing.';
@@ -192,7 +201,10 @@ function renderPayments(){document.getElementById('payments').innerHTML=methods.
 function selectPay(id){state.payment=id;document.querySelectorAll('.payment-card').forEach(card=>card.classList.toggle('on',card.dataset.id===id));renderSummary()}
 function applyPromo(){const code=document.getElementById('promo').value.trim().toUpperCase();state.promo=code;state.discount=code==='DANK10'?Math.round(subtotal()*.10):0;if(code&&!state.discount)alert('Promo code not recognised');renderSummary()}
 function nameEl(){return document.getElementById('name')}function phoneEl(){return document.getElementById('phone')}function zoneEl(){return document.getElementById('zone')}
-function orderPayload(){return {brand:'DANK BKK',items:cart.map(x=>({name:x.name,shId:x.shId||'',option:x.tierLabel||x.option||'',qty:Number(x.qty)||1,price:Number(x.price)||0,lineTotal:(Number(x.price)||0)*(Number(x.qty)||1),category:x.category||'',bonus:!!x.bonus})),subtotal:subtotal(),discount:state.discount,promo:state.promo,deliveryFee:state.deliveryFee,total:total(),fulfilment:'delivery',payment:state.payment,customer:{name:nameEl().value.trim(),phone:phoneEl().value.trim()},delivery:{zone:zoneEl().value.trim(),address:document.getElementById('notes').value.trim(),time:document.getElementById('time').value},pickup:{branch:'',time:''},notes:document.getElementById('notes').value.trim(),source:'dankbangkok.com/checkout.html'} }
+function orderPayload(){
+ const table=CANNABIS_TABLE;
+ return {brand:'DANK BKK',items:cart.map(x=>({name:x.name,shId:x.shId||'',option:x.tierLabel||x.option||'',qty:Number(x.qty)||1,price:Number(x.price)||0,lineTotal:(Number(x.price)||0)*(Number(x.qty)||1),category:x.category||'',bonus:!!x.bonus})),subtotal:subtotal(),discount:state.discount,promo:state.promo,deliveryFee:state.deliveryFee,total:total(),fulfilment:table?'table':'delivery',table:table||'',payment:state.payment,customer:{name:nameEl().value.trim()||(table?table:''),phone:phoneEl().value.trim()||(table?'TABLE-'+table:'')},delivery:table?{}:{zone:zoneEl().value.trim(),address:document.getElementById('notes').value.trim(),time:document.getElementById('time').value},pickup:{branch:table?'DANK Cannabis Club - '+table:'',time:''},notes:document.getElementById('notes').value.trim(),source:table?'dankbangkok.com/cannabis-table':'dankbangkok.com/checkout.html'};
+}
 async function placeOrder(){if(!cart.length){document.getElementById('payError').textContent='Your cart is empty.';return}const btn=document.getElementById('placeBtn');btn.disabled=true;btn.textContent='Placing order…';try{const r=await fetch('/api/order',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(orderPayload())});if(!r.ok)throw new Error('Could not place order');const j=await r.json().catch(()=>({}));const id=j.orderId||j.id||'Pending confirmation';localStorage.removeItem(STORE);cart=[];document.getElementById('orderRef').innerHTML='<strong>Order reference:</strong> '+esc(id)+'<br><strong>Payment:</strong> '+esc(state.payment);goStep(3);renderSummary()}catch(e){document.getElementById('payError').textContent='We could not reach the order system. Please try again or contact us on WhatsApp.';btn.disabled=false;renderSummary()}}
 async function initPlaces(){try{const r=await fetch('/api/maps-config');const {key}=await r.json();if(!key)return;const s=document.createElement('script');s.src='https://maps.googleapis.com/maps/api/js?key='+encodeURIComponent(key)+'&libraries=places&callback=initCheckoutPlaces';s.async=true;s.defer=true;document.head.appendChild(s)}catch(e){}}
 window.initCheckoutPlaces=function(){if(window.google?.maps?.places){const ac=new google.maps.places.Autocomplete(zoneEl(),{componentRestrictions:{country:'th'},fields:['formatted_address','geometry','name']});ac.addListener('place_changed',()=>{const p=ac.getPlace();zoneEl().value=p.formatted_address||p.name||zoneEl().value})}}
@@ -208,7 +220,18 @@ document.getElementById('policyAccept').addEventListener('change',function(){
   document.querySelector('.policy-box')?.classList.remove('is-invalid');
   document.getElementById('policyError').textContent='';
 });
-renderSummary();renderPayments();initPlaces();updateCartAction();
+function setupCannabisTable(){
+ if(!CANNABIS_TABLE)return;
+ const vip=CANNABIS_TABLE==='C7'?' - 2nd Floor VIP':'';
+ const banner=document.getElementById('tableOrderBanner');banner.textContent='Cannabis table '+CANNABIS_TABLE+vip+' - order here and staff will bring it to your table.';banner.classList.remove('hidden');
+ document.querySelector('#screen1 .title h1').textContent='Order from '+CANNABIS_TABLE;
+ document.querySelector('#screen1 .title .small').textContent=CANNABIS_TABLE==='C7'?'2nd Floor VIP table service':'Cannabis shop table service';
+ document.getElementById('zoneField').classList.add('hidden');document.getElementById('timeField').classList.add('hidden');
+ document.querySelector('#nameField label').textContent='NAME (OPTIONAL)';document.querySelector('#phoneField label').textContent='WHATSAPP (OPTIONAL)';
+ document.getElementById('deliveryFee').previousElementSibling.textContent='Table service';
+ document.getElementById('confirmText').textContent='Thank you. Staff will bring your order to '+CANNABIS_TABLE+'.';
+}
+setupCannabisTable();renderSummary();renderPayments();initPlaces();updateCartAction();
 </script>
 <script src="/pwa-client.js?v=20260830-3" defer></script>
 </body>

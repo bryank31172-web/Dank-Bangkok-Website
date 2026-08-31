@@ -41,12 +41,13 @@ export default async function handler(req, res) {
   if (!(await requireRate(req, res, "order", 12, 600))) return;
 
   const o = req.body || {};
-  const TABLE_NAMES = ["T1", "T2", "T3", "T4", "T5", "T6", "Bar 1", "Bar 2"];
+  const TABLE_NAMES = ["T1", "T2", "T3", "T4", "T5", "T6", "Bar 1", "Bar 2", "C1", "C2", "C3", "C4", "C5", "C6", "C7"];
   const norm = (v) => String(v || "").trim().toLowerCase().replace(/\s+/g, "");
   const matchedTable =
     o.fulfilment === "table" ? TABLE_NAMES.find((t) => norm(t) === norm(o.table)) : null;
   if (matchedTable) {
     o.table = matchedTable;
+    o.tableLabel = matchedTable === "C7" ? "C7 - 2nd Floor VIP" : matchedTable;
     o.customer = { ...(o.customer || {}) };
     if (!o.customer.phone) o.customer.phone = "TABLE-" + matchedTable.replace(/\s+/g, "");
     if (!o.customer.name) o.customer.name = matchedTable;
@@ -129,8 +130,9 @@ export default async function handler(req, res) {
   const itemLines = o.items
     .map((i) => `• ${i.name} (${i.option || ""}) ×${i.qty} — ฿${i.lineTotal}`)
     .join("\n");
+  const tableDisplay = o.tableLabel || matchedTable;
   const where = matchedTable
-    ? `🪑 TABLE ${matchedTable} — bring it over`
+    ? `🪑 TABLE ${tableDisplay} — bring it over`
     : o.fulfilment === "delivery"
     ? `🚚 Delivery — ${o.delivery?.zone || ""}\n${o.delivery?.address || ""}`
     : `🏬 Pickup — ${o.pickup?.branch || ""}${o.pickup?.time ? " at " + o.pickup.time : ""}`;
@@ -215,7 +217,7 @@ export default async function handler(req, res) {
         <b>Fulfilment:</b> ${o.fulfilment}<br>
         <b>Name:</b> ${esc(o.customer?.name)} · <b>Phone:</b> ${esc(o.customer?.phone)}<br>
         ${matchedTable
-          ? `<b>Table:</b> ${esc(matchedTable)}`
+          ? `<b>Table:</b> ${esc(o.tableLabel || matchedTable)}`
           : o.fulfilment === "delivery"
           ? `<b>Area:</b> ${esc(o.delivery?.zone)} · <b>Address:</b> ${esc(o.delivery?.address)}`
           : `<b>Branch:</b> ${esc(o.pickup?.branch)} · <b>Time:</b> ${esc(o.pickup?.time)}`}<br>
