@@ -581,15 +581,50 @@ async function applyOverrides(data) {
   } catch (e) { return data; }
 }
 
+/* Medicine is a staff-only inventory class. Keep the matcher here so every
+   storefront consumer gets the same fail-closed rule, including future POS
+   products that are accidentally assigned a public category. */
+const MEDICINE_RE = /\b(kamagra|medicine|medical|pharmacy|pharmaceutical|sex\s*jelly|jelly\s*for\s*sex)\b/i;
+
+export function isMedicineProduct(product) {
+  const haystack = [
+    product?.name, product?.category, product?.type, product?.description,
+    ...(Array.isArray(product?.tags) ? product.tags : []),
+  ].filter(Boolean).join(" ");
+  return MEDICINE_RE.test(haystack);
+}
+
+export function markSecretProducts(data) {
+  return (Array.isArray(data) ? data : []).map((product) => {
+    if (!isMedicineProduct(product)) return product;
+    const kamagra = /\bkamagra\b/i.test(String(product?.name || ""));
+    return {
+      ...product,
+      category: kamagra ? "Jelly for sex" : product.category,
+      _secret: true,
+      _secretReason: "medicine",
+    };
+  });
+}
+
+export function publicProducts(data) {
+  return markSecretProducts(data).filter((product) => !product._secret && !isMedicineProduct(product));
+}
+
+export function secretProducts(data) {
+  return markSecretProducts(data).filter((product) => product._secret || isMedicineProduct(product));
+}
+
 export async function getMenu(force = false) {
   const now = Date.now();
   const cached = await getJSON("menu:cache");
-  if (!force && cached && now - cached.at < TTL) return cached;
+  if (!force && cached && now - cached.at < TTL) return { ...cached, data: markSecretProducts(cached.data) };
 
   let { data, source } = await fetchUpstream();
   data = await fillImages(data);
   data = await fillStrainInfo(data);
   data = await applyOverrides(data);
+  data = markSecretProducts(data);
   const rev = revOf(data);
   const changedAt = cached && cached.rev === rev ? cached.changedAt : now;
   const rec = { data, rev, source, at: now, changedAt };
