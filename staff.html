@@ -40,6 +40,22 @@ main{flex:1;display:flex;min-height:0}
 .ocard .tot{font-weight:800;font-size:15px}
 .ocard .meta{font-size:12px;color:var(--gold);margin-top:3px;line-height:1.5}
 .ocard .orow{display:flex;align-items:center;gap:8px;margin-top:9px}
+.order-items-wrap{overflow-x:auto;margin:10px 0 8px;border:1px solid var(--line2);border-radius:10px}
+.order-items-table{width:100%;min-width:680px;border-collapse:collapse;font-size:12px}
+.order-items-table th,.order-items-table td{padding:8px 9px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top}
+.order-items-table th{color:var(--muted2);font-size:10.5px;text-transform:uppercase;letter-spacing:.45px;background:var(--bg2);white-space:nowrap}
+.order-items-table tr:last-child td{border-bottom:0}
+.order-items-table .num{text-align:right;white-space:nowrap}
+.order-product{font-weight:800;color:var(--txt);max-width:180px}
+.order-option{display:block;color:var(--muted2);font-size:10.5px;margin-top:2px}
+.effect-list{display:flex;gap:4px;flex-wrap:wrap;max-width:180px}
+.effect-chip{display:inline-block;padding:2px 6px;border:1px solid rgba(61,220,132,.28);border-radius:999px;color:var(--green2);font-size:10px;line-height:1.25}
+.order-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin:8px 0}
+.order-summary div{background:var(--bg2);border:1px solid var(--line);border-radius:9px;padding:7px 8px}
+.order-summary span{display:block;color:var(--muted2);font-size:9.5px;text-transform:uppercase;letter-spacing:.4px}
+.order-summary b{display:block;margin-top:2px;font-size:13px;color:var(--txt)}
+.map-link{display:inline-flex;align-items:center;gap:5px;margin-top:5px;padding:6px 9px;border:1px solid rgba(61,220,132,.38);border-radius:8px;color:var(--green2);font-weight:800;font-size:11px;text-decoration:none}
+@media(max-width:560px){.order-summary{grid-template-columns:repeat(2,minmax(0,1fr))}.ocard{padding:12px}.order-items-table{min-width:620px}}
 .done-btn{background:linear-gradient(135deg,var(--green),var(--deep));color:#04180d;font-weight:800;font-size:12px;padding:8px 13px;border-radius:9px}
 .grow{display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--line);cursor:pointer}
 .grow:hover{background:var(--panel)}
@@ -689,22 +705,44 @@ function renderOrders(){
      hole has to go through esc() — including the numbers, because
      (5).toLocaleString() formats a number while ("<img …>").toLocaleString()
      just returns the string it was given. */
+  const finite=(v,fallback=0)=>{ const n=Number(v); return Number.isFinite(n)?n:fallback; };
+  const money=v=>'฿'+finite(v).toLocaleString('en-US',{maximumFractionDigits:2});
+  const grams=i=>{
+    const saved=finite(i.totalGrams,NaN); if(Number.isFinite(saved)&&saved>0) return saved;
+    const per=finite(i.grams,NaN); if(Number.isFinite(per)&&per>0) return per*Math.max(1,finite(i.qty,1));
+    const m=String(i.option||'').match(/(\d+(?:\.\d+)?)\s*g\b/i);
+    return m?finite(m[1])*Math.max(1,finite(i.qty,1)):null;
+  };
   el.innerHTML=ORDERS.map(o=>{
-    const items=(o.items||[]).map(i=>`${esc(i.name)} (${esc(i.option)}) ×${esc(i.qty)}`).join('<br>');
+    const items=(Array.isArray(o.items)?o.items:[]).map(i=>{
+      const qty=Math.max(1,finite(i.qty,1));
+      const unit=finite(i.unitPrice??i.price,0);
+      const line=finite(i.lineTotal,unit*qty);
+      const effects=(Array.isArray(i.effects)?i.effects:[]).slice(0,4).map(x=>`<span class="effect-chip">${esc(x)}</span>`).join('');
+      const g=grams(i);
+      return `<tr>
+        <td><div class="order-product">${esc(i.name||'Unnamed item')}</div><span class="order-option">${esc(i.option||i.category||'')}</span></td>
+        <td><div class="effect-list">${effects||'<span style="color:var(--muted2)">—</span>'}</div></td>
+        <td class="num">${g==null?'—':esc(g.toLocaleString('en-US',{maximumFractionDigits:2})+' g')}</td>
+        <td class="num">${esc(qty)}</td><td class="num">${esc(money(unit))}</td><td class="num"><b>${esc(money(line))}</b></td>
+      </tr>`;
+    }).join('');
     /* A table order has no address and no pickup branch — the table IS the
        destination, and it is the one thing a runner has to read at a glance,
        so it gets the gold treatment instead of being squeezed into "🏬  ". */
+    const deliveryAddress=[o.delivery?.zone,o.delivery?.address].map(v=>String(v||'').trim()).filter((v,i,a)=>v&&a.indexOf(v)===i).join(', ');
+    const mapUrl=deliveryAddress?'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(deliveryAddress):'';
     const where=o.fulfilment==='table'
       ?`<b style="color:var(--gold);font-size:14px">🪑 ${esc(o.tableLabel||o.table||'')}</b> — in-house, bring it over`
       :o.fulfilment==='delivery'
-      ?`🚚 ${esc(o.delivery?.zone||'')} — ${esc(o.delivery?.address||'')}`
+      ?`🚚 ${esc(deliveryAddress||'Address not supplied')}${o.delivery?.time?`<br>🕐 Requested: ${esc(o.delivery.time)}`:''}${mapUrl?`<br><a class="map-link" href="${esc(mapUrl)}" target="_blank" rel="noopener noreferrer">📍 Open in Google Maps</a>`:''}`
       :`🏬 ${esc(o.pickup?.branch||'')} ${o.pickup?.time?('· '+esc(o.pickup.time)):''}`;
     const id=esc(o.orderId||'');
     return `<div class="ocard ${o.status==='done'?'done':''}">
       <div class="oh"><span class="oid">${id}</span><span class="badge ${o.status==='done'?'closed':'open'}">${esc(o.status||'')}</span><span class="ot">${o.at?ago(o.at):''}</span></div>
-      <div class="items">${items}</div>
-      <div class="tot">฿${esc(((o.total??o.subtotal)||0).toLocaleString())} · ${esc(o.payment||'')}${o.member?' ⭐':''}${o.payStatus==='paid'?' <span style="color:var(--green2)">· PAID ✅</span>':(['PromptPay','Card'].includes(o.payment)?' <span style="color:var(--gold)">· unpaid</span>':'')}</div>
-      ${o.discount>0||o.deliveryFee>0?`<div style="font-size:11px;color:var(--muted2);margin-top:2px">sub ฿${esc((o.subtotal||0).toLocaleString())}${o.discount>0?` · −฿${esc(o.discount)} ${esc(o.promo||'')}`:''}${o.deliveryFee>0?` · +฿${esc(o.deliveryFee)} delivery`:''}</div>`:''}
+      <div class="order-items-wrap"><table class="order-items-table"><thead><tr><th>Strain / item</th><th>Effects</th><th class="num">Grams</th><th class="num">Qty</th><th class="num">Unit</th><th class="num">Line total</th></tr></thead><tbody>${items||'<tr><td colspan="6" style="color:var(--muted2)">No item details</td></tr>'}</tbody></table></div>
+      <div class="order-summary"><div><span>Subtotal</span><b>${esc(money(o.subtotal))}</b></div><div><span>Delivery fee</span><b>${esc(money(o.deliveryFee))}</b></div><div><span>Discount</span><b>−${esc(money(o.discount))}</b></div><div><span>Order total</span><b style="color:var(--green2)">${esc(money(o.total??o.subtotal))}</b></div></div>
+      <div class="tot">${esc(o.payment||'Payment not set')}${o.member?' ⭐':''}${o.payStatus==='paid'?' <span style="color:var(--green2)">· PAID ✅</span>':(['PromptPay','Card'].includes(o.payment)?' <span style="color:var(--gold)">· unpaid</span>':'')}</div>
       <div class="meta">${where}<br>👤 ${esc(o.customer?.name||'-')} · <a style="color:var(--green2)" href="tel:${esc(o.customer?.phone||'')}">${esc(o.customer?.phone||'')}</a>${o.notes?'<br>📝 '+esc(o.notes):''}</div>
       <div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap">${o.slipUploaded?`<button class="undo-btn" data-act="slip" data-id="${id}">🧾 View slip</button>`:''}<button class="undo-btn" data-act="upload" data-id="${id}">📎 Upload proof</button></div>
       <div class="orow">${o.status==='done'
