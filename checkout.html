@@ -30,11 +30,11 @@ body{background:linear-gradient(180deg,#fbfcfb 0,#f6f9f7 52%,#fbfcfb 100%)}
 .steps-wrap{margin:0 0 28px}
 .steps{width:min(610px,100%);display:flex;align-items:center;justify-content:center;gap:0}
 .steps:before{display:none}
-.step{flex:1;flex-direction:row;gap:9px;justify-content:center;color:#657068;font-size:13px;font-weight:500;white-space:nowrap}
-.step:not(:last-child):after{content:"›";color:#a3aca6;font-size:22px;margin-left:auto}
-.dot{flex:0 0 24px;width:24px;height:24px;box-shadow:none;font-size:11px;border-color:#ccd4cf}
+.step{flex:1;flex-direction:row;gap:9px;justify-content:center;color:#657068;font-size:12px;font-weight:500;white-space:nowrap}
+.step:not(:last-child):after{content:"›";color:#a3aca6;font-size:21px;margin-left:auto}
+.dot{flex:0 0 24px;width:24px;height:24px;box-shadow:none;font-size:10px;border-color:#ccd4cf}
 .step.active{font-weight:800;color:#111814}.step.active .dot,.step.done .dot{background:var(--blue);border-color:var(--blue)}
-.step.done .dot{font-size:0}.step.done .dot:after{content:"✓";font-size:12px}
+.step.done .dot{font-size:0}.step.done .dot:after{content:"✓";font-size:11px}
 .layout{grid-template-columns:minmax(0,1.12fr) minmax(360px,.88fr);gap:26px;align-items:start}
 .panel{border-color:#e6ebe8;border-radius:15px;box-shadow:var(--shadow)}
 .main{padding:22px 20px}
@@ -94,7 +94,7 @@ body{background:linear-gradient(180deg,#fbfcfb 0,#f6f9f7 52%,#fbfcfb 100%)}
 .layout.confirmation .checkout-side{display:none}
 @media(max-width:900px){.layout{grid-template-columns:1fr}.checkout-side{order:2}.main{order:1}.trust-inner{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:620px){
- .header{height:auto;min-height:64px}.header-inner{padding:9px 12px;gap:10px}.brand img{height:34px}.header .steps{column-gap:15px}.header .step{gap:0}.header .step .label{display:none}.header .step:not(:last-child):after{margin-left:15px;font-size:17px}.dot{width:22px;height:22px;flex-basis:22px}
+ .header{height:auto;min-height:64px}.header-inner{padding:9px 12px;gap:10px}.brand img{height:34px}.header .steps{column-gap:15px}.header .step{gap:0}.header .step .label{display:none}.header .step:not(:last-child):after{margin-left:15px;font-size:16px}.dot{width:22px;height:22px;flex-basis:22px}
  .shell{padding:20px 12px 30px}
  .layout{gap:16px}.main,.side-card{padding:18px 15px}.cart-body{padding:15px}.grid{grid-template-columns:1fr}.field.full{grid-column:auto}
  .phone-control{grid-template-columns:116px minmax(0,1fr)}.country-picker{padding:0 9px;gap:6px}
