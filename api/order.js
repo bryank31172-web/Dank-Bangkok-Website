@@ -59,17 +59,36 @@ export default async function handler(req, res) {
 
   try {
     const items = o.items || [];
-    if (items.length && items.every((i) => i.shId)) {
+    if (items.length && items.some((i) => i.shId)) {
       const { data: menu } = await getMenu();
       const price = {};
+      const products = new Map();
       for (const p of menu || []) {
+        products.set(String(p.shId || ""), p);
         const tiers = p.priceTiers || (p.price != null ? [{ label: p.option || "", price: p.price }] : []);
         for (const t of tiers) price[`${p.shId}|${t.label}`] = Number(t.price);
       }
-      let resolved = true, recomputed = 0;
       for (const it of items) {
+        const product = products.get(String(it.shId || ""));
+        if (!product) continue;
+        it.effects = Array.isArray(product.effects)
+          ? product.effects.slice(0, 6).map((effect) => String(effect).trim()).filter(Boolean)
+          : [];
+        it.strainType = String(product.type || "").trim();
+        it.category = String(product.category || it.category || "").trim();
+        const grams = String(it.option || "").match(/(\d+(?:\.\d+)?)\s*g\b/i);
+        if (grams) {
+          it.grams = Number(grams[1]);
+          it.totalGrams = it.grams * Math.max(1, Number(it.qty) || 1);
+        }
+      }
+      let resolved = true, recomputed = 0;
+      if (!items.every((i) => i.shId)) resolved = false;
+      for (const it of items) {
+        if (!resolved) break;
         const unit = price[`${it.shId}|${it.option || ""}`];
         if (unit == null || !Number.isFinite(unit)) { resolved = false; break; }
+        it.unitPrice = unit;
         recomputed += unit * (Number(it.qty) || 1);
       }
       const clientSub = Number(o.subtotal);
