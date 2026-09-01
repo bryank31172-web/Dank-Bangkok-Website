@@ -23,9 +23,9 @@ body{background:linear-gradient(180deg,#fbfcfb 0,#f6f9f7 52%,#fbfcfb 100%)}
 .header-inner{width:100%;max-width:1440px;padding:10px 28px;gap:28px}
 .brand img{height:45px}
 .header .steps-wrap{flex:1;justify-content:flex-end;margin:0}
-.header .steps{width:min(680px,100%);display:grid;grid-template-columns:repeat(3,minmax(0,1fr));column-gap:48px}
-.header .step{width:100%;justify-content:center}
-.header .step:not(:last-child):after{position:absolute;left:calc(100% + 24px);top:50%;margin:0;transform:translate(-50%,-50%)}
+.header .steps{width:auto;display:flex;column-gap:15px}
+.header .step{flex:none;width:auto;justify-content:flex-start}
+.header .step:not(:last-child):after{position:static;margin-left:6px;transform:none}
 .shell{max-width:1210px;padding:30px 20px 40px}
 .steps-wrap{margin:0 0 28px}
 .steps{width:min(610px,100%);display:flex;align-items:center;justify-content:center;gap:0}
@@ -94,7 +94,7 @@ body{background:linear-gradient(180deg,#fbfcfb 0,#f6f9f7 52%,#fbfcfb 100%)}
 .layout.confirmation .checkout-side{display:none}
 @media(max-width:900px){.layout{grid-template-columns:1fr}.checkout-side{order:2}.main{order:1}.trust-inner{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:620px){
- .header{height:auto;min-height:64px}.header-inner{padding:9px 12px;gap:10px}.brand img{height:34px}.header .steps{column-gap:14px}.header .step{font-size:0;gap:3px}.header .step:not(:last-child):after{left:calc(100% + 7px);font-size:17px}.dot{width:22px;height:22px;flex-basis:22px}
+ .header{height:auto;min-height:64px}.header-inner{padding:9px 12px;gap:10px}.brand img{height:34px}.header .steps{column-gap:15px}.header .step{gap:0}.header .step .label{display:none}.header .step:not(:last-child):after{margin-left:15px;font-size:17px}.dot{width:22px;height:22px;flex-basis:22px}
  .shell{padding:20px 12px 30px}
  .layout{gap:16px}.main,.side-card{padding:18px 15px}.cart-body{padding:15px}.grid{grid-template-columns:1fr}.field.full{grid-column:auto}
  .phone-control{grid-template-columns:116px minmax(0,1fr)}.country-picker{padding:0 9px;gap:6px}
