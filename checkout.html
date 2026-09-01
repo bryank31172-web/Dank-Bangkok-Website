@@ -79,6 +79,8 @@ body{background:linear-gradient(180deg,#fbfcfb 0,#f6f9f7 52%,#fbfcfb 100%)}
 .trust-item{display:flex;align-items:center;gap:12px}.trust-icon{width:42px;height:42px;flex:0 0 42px;border-radius:50%;display:grid;place-items:center;background:var(--blue-soft);color:var(--blue)}
 .trust-item strong{display:block;font-size:13px}.trust-item span:last-child{color:var(--muted);font-size:11px}
 .checkout-footer{text-align:center;padding:18px;color:var(--muted);font-size:11px;background:#fff}
+.layout.confirmation{grid-template-columns:1fr}
+.layout.confirmation .checkout-side{display:none}
 @media(max-width:900px){.layout{grid-template-columns:1fr}.checkout-side{order:2}.main{order:1}.trust-inner{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:620px){
  .header{height:64px}.header-inner{padding:10px 14px}.brand img{height:38px}.header-trust:first-of-type{display:none}.back{font-size:0}.back:after{content:"Shop";font-size:12px}
@@ -103,7 +105,7 @@ body{background:linear-gradient(180deg,#fbfcfb 0,#f6f9f7 52%,#fbfcfb 100%)}
     <div class="step" data-step="2"><span class="dot">2</span><span class="label">Payment method</span></div>
     <div class="step" data-step="3"><span class="dot">3</span><span class="label">Confirmation</span></div>
   </div></div>
-  <div class="layout">
+  <div class="layout" id="checkoutLayout">
     <section class="panel main">
       <div id="screen1">
         <div class="title"><h1>Shopping details</h1><div class="small">Enter delivery and contact information.</div></div>
@@ -216,6 +218,7 @@ function changeQty(index,delta){const item=cart[index];if(!item)return;item.qty=
 function removeCartItem(index){cart.splice(index,1);persistCart()}
 function goStep(n){
  state.step=n;
+ document.getElementById('checkoutLayout').classList.toggle('confirmation',n===3);
  [1,2,3].forEach(i=>{
    document.getElementById('screen'+i).classList.toggle('hidden',i!==n);
    const s=document.querySelector(`.step[data-step="${i}"]`);
