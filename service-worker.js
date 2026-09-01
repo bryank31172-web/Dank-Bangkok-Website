@@ -1,11 +1,10 @@
-const VERSION = "dank-pwa-v1";
+const VERSION = "dank-pwa-v2";
 const STATIC_CACHE = `${VERSION}-static`;
 const RUNTIME_CACHE = `${VERSION}-runtime`;
 const IMAGE_CACHE = `${VERSION}-images`;
 
 const PRECACHE = [
   "/",
-  "/shop",
   "/checkout",
   "/offline.html",
   "/manifest.webmanifest",
