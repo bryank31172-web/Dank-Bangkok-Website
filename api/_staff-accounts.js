@@ -81,6 +81,14 @@ export async function resetAccount(actor,id) {
   const key=makeKey(); row.keyHash=hashKey(key); row.updatedAt=Date.now(); row.active=true;
   await saveAccounts(rows); return {account:publicAccount(row),key};
 }
+export async function setOwnAccountKey(actor,key) {
+  if(!validStaffKey(key)) throw new Error("key must be 12–128 characters with uppercase, lowercase, a number, and a special symbol");
+  if(!actor?.id||actor.id==="legacy-owner") throw new Error("use the named Bryan account to change its individual key");
+  const rows=await listAccounts(), row=rows.find(a=>a.id===actor.id);
+  if(!row) throw new Error("account not found");
+  row.keyHash=hashKey(key); row.updatedAt=Date.now(); row.active=true;
+  await saveAccounts(rows); return publicAccount(row);
+}
 export async function setAccountKey(actor,id,key) {
   if(!validStaffKey(key)) throw new Error("key must be 12–128 characters with uppercase, lowercase, a number, and a special symbol");
   const rows=await listAccounts(), row=rows.find(a=>a.id===id);
