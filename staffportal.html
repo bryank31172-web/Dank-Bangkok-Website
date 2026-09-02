@@ -379,7 +379,7 @@ function setTab(t){ closeMobileNav(); if(typeof stopCamScan==='function') stopCa
   Object.entries(ids).forEach(([name,id])=>$('#'+id)?.classList.toggle('active',t===name));
   const copy={dashboard:['Dashboard','A live overview of DANK orders and sales.'],orders:['Orders','Manage website and table orders in real time.'],products:['Products','Create, edit and remove storefront products.'],promotions:['Promotion Codes','Create, edit and remove customer promotion codes.'],sales:['Sales Report','Review revenue, payments and order performance.'],announcement:['Announcement','Important updates for every DANK staff member.'],staffinfo:['Staff Information','Manage individual staff access.'],settings:['Setting','Manage this device and staff-portal preferences.']};
   $('#pageTitle').textContent=copy[t][0]; $('#pageSub').textContent=copy[t][1];
-  if(history.replaceState) history.replaceState(null,'','#'+t);
+  if(history.replaceState) history.replaceState(null,'',location.pathname);
   if(t==='dashboard'){ renderDashboard(); loadDashboardSales(); }
   else if(t==='orders'){ renderOrders(); $('#ordCnt').style.display='none'; knownOrders=new Set(ORDERS.map(o=>o.orderId)); document.title=BASE_TITLE; $('#orderPop')?.classList.remove('on'); }
   else if(t==='sales'){ loadSales(); }
