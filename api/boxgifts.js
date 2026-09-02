@@ -44,7 +44,7 @@ export default async function handler(req, res) {
   try {
     if (req.method === "GET") {
       if (!(await requireRate(req, res, "boxgifts", 120, 600))) return;
-      const staff = isStaff(req);
+      const staff = isStaff(req, "owner_tools");
 
       /* The public read skips the per-gift counter lookups entirely — seven
          extra round trips on every page view, for numbers the page is not
