@@ -6,7 +6,7 @@ const STORE_KEY = "staff:accounts:v1";
 const TTL = 60 * 60 * 24 * 365 * 10;
 export const ROLE_PERMISSIONS = Object.freeze({
   owner: ["*"],
-  manager: ["orders", "dashboard", "announcement_read", "products", "announcements", "staff_manage", "promotions"],
+  manager: ["orders", "dashboard", "sales", "announcement_read", "products", "announcements", "staff_manage", "promotions"],
   professional: ["orders", "announcement_read"],
   parttime: ["orders", "announcement_read"],
 });
@@ -18,7 +18,11 @@ export const ROLE_LABELS = Object.freeze({
 });
 const secret = () => process.env.STAFF_SESSION_SECRET || process.env.ADMIN_SECRET || "";
 const hashKey = (key) => crypto.createHmac("sha256", secret()).update(String(key)).digest("hex");
-const makeKey = () => "dank_" + crypto.randomBytes(24).toString("base64url");
+export const validStaffKey = (key) => {
+  const s=String(key||"");
+  return s.length>=12&&s.length<=128&&/[A-Z]/.test(s)&&/[a-z]/.test(s)&&/[0-9]/.test(s)&&/[!@#$%^&*?_+\-]/.test(s)&&! /\s/.test(s);
+};
+const makeKey = () => "Dk!" + crypto.randomInt(0,10) + crypto.randomBytes(24).toString("base64url");
 
 export async function listAccounts() {
   const rows = await getJSON(STORE_KEY);
@@ -76,6 +80,14 @@ export async function resetAccount(actor,id) {
   if(!mayManage(actor,row)) throw new Error("forbidden");
   const key=makeKey(); row.keyHash=hashKey(key); row.updatedAt=Date.now(); row.active=true;
   await saveAccounts(rows); return {account:publicAccount(row),key};
+}
+export async function setAccountKey(actor,id,key) {
+  if(!validStaffKey(key)) throw new Error("key must be 12–128 characters with uppercase, lowercase, a number, and a special symbol");
+  const rows=await listAccounts(), row=rows.find(a=>a.id===id);
+  if(!row) throw new Error("account not found");
+  if(!mayManage(actor,row)) throw new Error("forbidden");
+  row.keyHash=hashKey(key); row.updatedAt=Date.now(); row.active=true;
+  await saveAccounts(rows); return publicAccount(row);
 }
 export async function setAccountActive(actor,id,active) {
   const rows=await listAccounts(), row=rows.find(a=>a.id===id);

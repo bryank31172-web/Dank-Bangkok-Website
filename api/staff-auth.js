@@ -1,6 +1,6 @@
 import crypto from "node:crypto";
 import { requireEnv, staffIdentity, hasPermission, safeEq } from "./_auth.js";
-import { authenticateAccountKey, seedInitialAccounts, listAccounts, publicAccount, createAccount, resetAccount, setAccountActive, setAccountRole, ROLE_PERMISSIONS, ROLE_LABELS } from "./_staff-accounts.js";
+import { authenticateAccountKey, seedInitialAccounts, listAccounts, publicAccount, createAccount, resetAccount, setAccountKey, setAccountActive, setAccountRole, ROLE_PERMISSIONS, ROLE_LABELS } from "./_staff-accounts.js";
 
 export default async function handler(req,res){
   res.setHeader("Access-Control-Allow-Origin","*");
@@ -46,6 +46,10 @@ export default async function handler(req,res){
     if(b.action==="reset"){
       const out=await resetAccount(actor,b.id);
       return res.status(200).json({ok:true,...out});
+    }
+    if(b.action==="setkey"){
+      const account=await setAccountKey(actor,b.id,String(b.key||""));
+      return res.status(200).json({ok:true,account});
     }
     if(b.action==="active"){
       const account=await setAccountActive(actor,b.id,b.active);

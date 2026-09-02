@@ -311,9 +311,9 @@ function portalTheme(){return document.documentElement.dataset.theme||'light'}
 function togglePortalTheme(){const next=portalTheme()==='dark'?'light':'dark';document.documentElement.dataset.theme=next;localStorage.setItem('dankPortalTheme',next);renderPortalPanel('settings')}
 function toggleLoginMode(){OWNER_LOGIN=!OWNER_LOGIN;document.querySelector('.key-login').style.display=OWNER_LOGIN?'none':'';document.querySelector('.owner-login').style.display=OWNER_LOGIN?'block':'none';document.querySelector('.login-switch').textContent=OWNER_LOGIN?'Use staff key':'Owner email login';$('#loginErr').textContent='';}
 function can(p){return PERMS.includes('*')||PERMS.includes(p)}
-function tabAllowed(t){if(t==='dashboard')return can('dashboard');if(t==='sales')return can('*');if(t==='products')return can('products');if(t==='promotions')return can('promotions');if(t==='announcement')return can('announcement_read');if(t==='staffinfo')return can('staff_manage');return can('orders')||t==='settings'}
+function tabAllowed(t){if(t==='dashboard')return can('dashboard');if(t==='sales')return can('sales');if(t==='products')return can('products');if(t==='promotions')return can('promotions');if(t==='announcement')return can('announcement_read');if(t==='staffinfo')return false;return can('orders')||t==='settings'}
 function applyPermissions(){
-  const map={tabDashboard:'dashboard',tabSales:'*',tabProducts:'products',tabPromotions:'promotions',tabAnnouncement:'announcement_read',tabStaffInfo:'staff_manage'};
+  const map={tabDashboard:'dashboard',tabSales:'sales',tabProducts:'products',tabPromotions:'promotions',tabAnnouncement:'announcement_read',tabStaffInfo:'__hidden'};
   Object.entries(map).forEach(([id,p])=>{$('#'+id).style.display=can(p)?'':'none'});
   document.querySelector('.profile-dot').textContent=(PROFILE?.name||'Staff').split(/\s+/).map(x=>x[0]).join('').slice(0,2).toUpperCase();
   $('#storeStat').textContent=(PROFILE?.name||'Staff')+' · '+String(PROFILE?.role||'').replace('professional','Professional Staff').replace('parttime','Part-time Staff');
@@ -344,7 +344,8 @@ function renderPortalPanel(t){
   } else if(t==='staffinfo'){
     loadStaffAccounts();
   } else {
-    el.innerHTML=`<section class="portal-panel"><div class="portal-card"><div class="setting-row"><div><b>Interface theme</b><span>Switch between light and dark mode on this device</span></div><button class="ghost" type="button" onclick="togglePortalTheme()">${portalTheme()==="dark"?"Use light mode":"Use dark mode"}</button></div><div class="setting-row"><div><b>New-order alerts</b><span>Sound, browser notification and vibration where supported</span></div><button class="switch ${alertEnabled?'on':''}" type="button" aria-label="Toggle new-order alerts" aria-pressed="${alertEnabled}" onclick="toggleAlerts(); renderPortalPanel('settings')"></button></div><div class="setting-row"><div><b>Portal address</b><span>www.dankbangkok.com/staffportal</span></div></div><div class="setting-row"><div><b>Secure session</b><span>Log out when this is a shared device</span></div><button class="ghost danger" type="button" onclick="logout()">Log Out</button></div></div></section>`;
+    el.innerHTML=`<section class="portal-panel"><div class="portal-card"><div class="setting-row"><div><b>Interface theme</b><span>Switch between light and dark mode on this device</span></div><button class="ghost" type="button" onclick="togglePortalTheme()">${portalTheme()==="dark"?"Use light mode":"Use dark mode"}</button></div><div class="setting-row"><div><b>New-order alerts</b><span>Sound, browser notification and vibration where supported</span></div><button class="switch ${alertEnabled?'on':''}" type="button" aria-label="Toggle new-order alerts" aria-pressed="${alertEnabled}" onclick="toggleAlerts(); renderPortalPanel('settings')"></button></div><div class="setting-row"><div><b>Portal address</b><span>www.dankbangkok.com/staffportal</span></div></div><div class="setting-row"><div><b>Secure session</b><span>Log out when this is a shared device</span></div><button class="ghost danger" type="button" onclick="logout()">Log Out</button></div></div>${can("staff_manage")?'<div id="settingsStaff" style="margin-top:16px"></div>':''}</section>`;
+    if(can("staff_manage")) loadStaffAccounts("#settingsStaff");
   }
 }
 
@@ -370,16 +371,22 @@ async function editProduct(d){const name=prompt('Product name',d.name);if(name==
 async function deleteProduct(id){if(confirm('Remove this product from the storefront?')){try{await toolPost('products',{action:'delete',id});loadStaffProducts()}catch(e){alert(e.message)}}}
 
 async function staffAction(body){const r=await authPost('/api/staff-auth',body),j=await r.json().catch(()=>({}));if(!r.ok)throw new Error(j.error||'Request failed');return j}
-async function loadStaffAccounts(){
-  const el=$('#list');el.innerHTML='<div class="ghdr">Loading staff accounts…</div>';
+async function loadStaffAccounts(target='#list'){
+  const el=$(target);el.innerHTML='<div class="ghdr">Loading staff accounts…</div>';
   try{const j=await staffAction({action:'list'});const options=Object.entries(j.roles||{}).map(([v,l])=>`<option value="${esc(v)}">${esc(l)}</option>`).join('');
-    el.innerHTML=`<section class="portal-panel"><div class="portal-card"><h3>Staff accounts</h3><p style="margin-bottom:14px">Each person signs in with their own key. Managers may add staff, but only the owner may assign roles.</p><div class="setting-row"><input id="newStaffName" placeholder="Staff name" style="padding:10px;border:1px solid var(--line2);border-radius:9px"><select id="newStaffRole" ${j.canAssignRoles?'':'disabled'} style="padding:10px;border:1px solid var(--line2);border-radius:9px">${options}</select><button class="ghost" data-act="staff-create">Add staff</button></div>${j.accounts.map(a=>`<div class="setting-row"><div><b>${esc(a.name)}</b><span>${a.active?'Active':'Disabled'}</span></div><div><select data-act="staff-role" data-id="${esc(a.id)}" ${j.canAssignRoles?'':'disabled'} style="padding:8px;border:1px solid var(--line2);border-radius:9px">${Object.entries(j.roles||{}).map(([v,l])=>`<option value="${esc(v)}" ${v===a.role?'selected':''}>${esc(l)}</option>`).join('')}</select> <button class="ghost" data-act="staff-reset" data-id="${esc(a.id)}">New key</button> <button class="ghost ${a.active?'danger':''}" data-act="staff-active" data-id="${esc(a.id)}" data-active="${a.active?'0':'1'}">${a.active?'Disable':'Enable'}</button></div></div>`).join('')}</div></section>`;
+    el.innerHTML=`<section class="portal-panel"><div class="portal-card"><h3>Staff accounts</h3><p style="margin-bottom:14px">Each person signs in with their own key. Keys require uppercase, lowercase, a number, and a special symbol such as !, @, # or $. Managers may add staff, but only the owner may assign roles.</p><div class="setting-row"><input id="newStaffName" placeholder="Staff name" style="padding:10px;border:1px solid var(--line2);border-radius:9px"><select id="newStaffRole" ${j.canAssignRoles?'':'disabled'} style="padding:10px;border:1px solid var(--line2);border-radius:9px">${options}</select><button class="ghost" data-act="staff-create">Add staff</button></div>${j.accounts.map(a=>`<div class="setting-row"><div><b>${esc(a.name)}</b><span>${a.active?'Active':'Disabled'}</span></div><div><select data-act="staff-role" data-id="${esc(a.id)}" ${j.canAssignRoles?'':'disabled'} style="padding:8px;border:1px solid var(--line2);border-radius:9px">${Object.entries(j.roles||{}).map(([v,l])=>`<option value="${esc(v)}" ${v===a.role?'selected':''}>${esc(l)}</option>`).join('')}</select> <button class="ghost" data-act="staff-edit" data-id="${esc(a.id)}" data-name="${esc(a.name)}">Edit key</button> <button class="ghost" data-act="staff-reset" data-id="${esc(a.id)}">Generate key</button> <button class="ghost ${a.active?'danger':''}" data-act="staff-active" data-id="${esc(a.id)}" data-active="${a.active?'0':'1'}">${a.active?'Disable':'Enable'}</button></div></div>`).join('')}</div></section>`;
   }catch(e){el.innerHTML='<div class="ghdr">'+esc(e.message)+'</div>'}
 }
-async function createStaff(){try{const j=await staffAction({action:'create',name:$('#newStaffName').value,role:$('#newStaffRole').value});alert('New key for '+j.account.name+':\n\n'+j.key+'\n\nSave it now; it will not be shown again.');loadStaffAccounts()}catch(e){alert(e.message)}}
-async function resetStaff(id){if(!confirm('Replace this person’s current key?'))return;try{const j=await staffAction({action:'reset',id});alert('New key for '+j.account.name+':\n\n'+j.key+'\n\nSave it now; the old key no longer works.');loadStaffAccounts()}catch(e){alert(e.message)}}
-async function activeStaff(id,active){try{await staffAction({action:'active',id,active});loadStaffAccounts()}catch(e){alert(e.message)}}
-async function roleStaff(id,role){try{await staffAction({action:'role',id,role});loadStaffAccounts()}catch(e){alert(e.message);loadStaffAccounts()}}
+async function createStaff(){try{const j=await staffAction({action:'create',name:$('#newStaffName').value,role:$('#newStaffRole').value});alert('New key for '+j.account.name+':\n\n'+j.key+'\n\nSave it now; it will not be shown again.');loadStaffAccounts('#settingsStaff')}catch(e){alert(e.message)}}
+async function editStaffKey(id,name){
+  const key=prompt('Enter a new key for '+name+'\n\nAt least 12 characters with uppercase, lowercase, a number, and a special symbol (! @ # $ % ^ & * ? _ + -).');
+  if(key===null)return;
+  if(key.length<12||!/[A-Z]/.test(key)||!/[a-z]/.test(key)||!/[0-9]/.test(key)||!/[!@#$%^&*?_+\-]/.test(key)||/\s/.test(key)){alert('Key does not meet the security requirements.');return;}
+  try{await staffAction({action:'setkey',id,key});alert('Key updated for '+name+'. The previous key can no longer start a new session.');loadStaffAccounts('#settingsStaff')}catch(e){alert(e.message)}
+}
+async function resetStaff(id){if(!confirm('Replace this person’s current key?'))return;try{const j=await staffAction({action:'reset',id});alert('New key for '+j.account.name+':\n\n'+j.key+'\n\nSave it now; the old key no longer works.');loadStaffAccounts('#settingsStaff')}catch(e){alert(e.message)}}
+async function activeStaff(id,active){try{await staffAction({action:'active',id,active});loadStaffAccounts('#settingsStaff')}catch(e){alert(e.message)}}
+async function roleStaff(id,role){try{await staffAction({action:'role',id,role});loadStaffAccounts('#settingsStaff')}catch(e){alert(e.message);loadStaffAccounts('#settingsStaff')}}
 
 const DASH_PERIODS={day:{label:'Day',days:1},week:{label:'Week',days:7},month:{label:'Month',days:30},year:{label:'Year',days:365}};
 let DASH_PERIOD='day', DASH_SALES={}, dashboardSalesT=null;
@@ -1970,6 +1977,7 @@ $('#list').addEventListener('click',e=>{
     case 'tab-del':     tabClose(d.phone,d.id,true); break;
     case 'owed-member': setTab('member'); lookupMember(d.phone); break;
     case 'staff-create': createStaff(); break;
+    case 'staff-edit': editStaffKey(d.id,d.name); break;
     case 'staff-reset': resetStaff(d.id); break;
     case 'staff-active': activeStaff(d.id,d.active==='1'); break;
     case 'ann-save': saveAnnouncement(); break;
