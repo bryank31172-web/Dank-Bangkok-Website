@@ -6794,7 +6794,7 @@ async function verifyAdminTok(){
     if(r.status===401){ adminTok=null; LS.set("admintok",null); return false; }
     if(!r.ok) return false;
     const j=await r.json();
-    if(j&&j.ok) adminScope=(j.scope==="promo")?"promo":"owner";
+    if(j&&j.ok) adminScope=(j.scope==="promo")?"promo":(j.scope==="manager"?"manager":"owner");
     return !!(j&&j.ok);
   }catch(e){ return false; }
 }
@@ -6812,7 +6812,7 @@ function adminInjectCSS(){ if(document.getElementById("admCss")) return;
    ".adm-tier-row{display:flex;gap:8px;align-items:center;margin-bottom:7px}.adm-tier-row .tl{flex:1;font-size:13px;color:var(--muted)}.adm-tier-row input{width:88px}";
   document.head.appendChild(s);
 }
-function enterAdmin(){ adminScope="owner"; adminMode=true; adminInjectCSS(); buildAdminBar(); buildChips(); render(); renderPromoTrack(); }
+function enterAdmin(){ if(adminScope!=="manager") adminScope="owner"; adminMode=true; adminInjectCSS(); buildAdminBar(); buildChips(); render(); renderPromoTrack(); }
 /* The PIN session deliberately does NOT set adminMode. adminMode is what puts
    ✎ Edit on every product card and shows hidden lines; a promotions PIN has no
    business with either, and leaving it off means the restriction is visible on
@@ -6825,9 +6825,9 @@ function buildAdminBar(){ let bar=document.getElementById("adminBar");
      '<button onclick="openPromoMgr()">🏷️ Edit promotions</button>'+
      '<button class="ab-save" id="abSave" onclick="pushOverrides()">💾 Save changes</button>'+
      '<button class="ab-out" onclick="ownerLogout()">Done</button>'
-   : '<span class="ab-t">🔧 Owner mode</span>'+
+   : '<span class="ab-t">'+(adminScope==="manager"?"🧑‍💼 Manager mode":"🔧 Owner mode")+'</span>'+
      '<button onclick="openAddProduct()">＋ Add product</button>'+
-     '<button onclick="openSiteEditor()">🎬 Homepage</button>'+
+     (adminScope==="owner"?'<button onclick="openSiteEditor()">🎬 Homepage</button>':'')+
      '<button onclick="openPromoMgr()">🏷️ Promotions</button>'+
      '<button class="ab-save" id="abSave" onclick="pushOverrides()">💾 Save changes</button>'+
      '<button class="ab-out" onclick="ownerLogout()">Log out</button>';
