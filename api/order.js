@@ -13,12 +13,13 @@
    console. See the wallet block below for why.                       */
 
 import crypto from "node:crypto";
-import { setJSON, indexAdd } from "./_store.js";
+import { getJSON, setJSON, indexAdd } from "./_store.js";
+import { listAccounts } from "./_staff-accounts.js";
 import { normPhone } from "./_phone.js";
 import { getBalance } from "./_wallet.js";
 import { boxesInOrder, issueGifts, giftAlertLines, getGiftConfig } from "./_boxgifts.js";
 import { getMenu } from "./_menu.js";
-import { notifyStaffLine } from "./_line.js";
+import { linePush } from "./_line.js";
 import { notifyStaffWhatsApp } from "./_whatsapp.js";
 import { pushShopifyOrder } from "./_shopify.js";
 import { requireRate } from "./_ratelimit.js";
@@ -168,6 +169,12 @@ export default async function handler(req, res) {
     `${o.notes ? "Notes: " + o.notes + "\n" : ""}\n` +
     `➡️ Open: https://${host}/staffportal#orders`;
 
+  const onlineStaffAlert =
+    `🛒 NEW ORDER ${orderId}\n` +
+    `Total: ฿${o.total ?? o.subtotal}\n` +
+    `Type: ${o.fulfilment || "order"}\n` +
+    `Open securely: https://${host}/staffportal#orders`;
+
   const results = [];
   let saved = false;
   const takenAt = Date.now();
@@ -180,25 +187,33 @@ export default async function handler(req, res) {
     saved = true;
   } catch (e) { console.error("order save failed:", e.message); }
 
-  if (process.env.TELEGRAM_BOT_TOKEN && process.env.TELEGRAM_CHAT_ID) {
-    try {
-      const r = await fetch(`https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/sendMessage`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ chat_id: process.env.TELEGRAM_CHAT_ID, text: staffAlert }),
-      });
-      if (!r.ok) {
-        const why = await r.json().catch(() => ({}));
-        console.error("telegram send failed:", r.status, why.description || "");
-      }
-      results.push(r.ok);
-    } catch (e) { console.error("telegram send threw:", e.message); results.push(false); }
-  }
-
+  /* Telegram and LINE order alerts are account-specific. A destination is
+     eligible only while that named staff account has a current Staff Portal
+     heartbeat, so signing out (or losing the heartbeat for two minutes)
+     removes that person from the delivery list. */
   try {
-    const r = await notifyStaffLine(staffAlert);
-    if (!r.skipped) results.push(r.ok);
-  } catch (e) {}
+    const accounts=await listAccounts(), online=[];
+    for(const account of accounts){
+      if(account.active===false) continue;
+      const presence=await getJSON("staff:presence:"+account.id);
+      if(Date.now()-(Number(presence?.lastSeen)||0)>=120000) continue;
+      online.push(account);
+    }
+    const telegramIds=[...new Set(online.map(a=>a.notifications?.telegramChatId).filter(Boolean))];
+    const lineIds=[...new Set(online.map(a=>a.notifications?.lineUserId).filter(Boolean))];
+    const sends=[];
+    if(process.env.TELEGRAM_BOT_TOKEN) for(const chatId of telegramIds) sends.push(
+      fetch(`https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/sendMessage`,{
+        method:"POST",headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({chat_id:chatId,text:onlineStaffAlert})
+      }).then(async r=>{if(!r.ok){const why=await r.json().catch(()=>({}));console.error("telegram staff send failed:",r.status,why.description||"")}return r.ok})
+        .catch(e=>{console.error("telegram staff send threw:",e.message);return false})
+    );
+    if(process.env.LINE_CHANNEL_ACCESS_TOKEN) for(const userId of lineIds) sends.push(
+      linePush(userId,onlineStaffAlert).then(r=>Boolean(r.ok)).catch(()=>false)
+    );
+    if(sends.length) results.push(...await Promise.all(sends));
+  } catch(e){console.error("online staff notification lookup failed:",e.message)}
 
   try {
     const r = await notifyStaffWhatsApp(staffAlert);
