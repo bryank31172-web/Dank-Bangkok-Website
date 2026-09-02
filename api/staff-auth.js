@@ -1,6 +1,6 @@
 import crypto from "node:crypto";
 import { requireEnv, staffIdentity, hasPermission, safeEq } from "./_auth.js";
-import { authenticateAccountKey, seedInitialAccounts, listAccounts, publicAccount, createAccount, resetAccount, setAccountKey, setAccountActive, setAccountRole, ROLE_PERMISSIONS, ROLE_LABELS } from "./_staff-accounts.js";
+import { authenticateAccountKey, seedInitialAccounts, listAccounts, publicAccount, createAccount, resetAccount, setOwnAccountKey, setAccountKey, setAccountActive, setAccountRole, ROLE_PERMISSIONS, ROLE_LABELS } from "./_staff-accounts.js";
 
 export default async function handler(req,res){
   res.setHeader("Access-Control-Allow-Origin","*");
@@ -34,6 +34,10 @@ export default async function handler(req,res){
     const actor=staffIdentity(req);
     if(!actor) return res.status(401).json({error:"session expired"});
     if(b.action==="verify") return res.status(200).json({ok:true,profile:publicAccount(actor),permissions:ROLE_PERMISSIONS[actor.role]||[]});
+    if(b.action==="setself"){
+      const account=await setOwnAccountKey(actor,String(b.key||""));
+      return res.status(200).json({ok:true,account});
+    }
     if(!hasPermission(actor,"staff_manage")) return res.status(403).json({error:"forbidden"});
     if(b.action==="list"){
       const rows=(await listAccounts()).map(publicAccount);
