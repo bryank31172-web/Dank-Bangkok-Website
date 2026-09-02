@@ -311,7 +311,35 @@ function setTab(t){ if(typeof stopCamScan==='function') stopCamScan(); TAB=t;
   else if(t==='sales'){ loadSales(); }
   else renderPortalPanel(t); }
 
+async function renderStaffManagement(){
+  const el=$('#list'),r=await authPost('/api/staff-auth',{action:'list'});
+  if(!r.ok){el.innerHTML='<div class="ghdr">Could not load staff accounts.</div>';return;}
+  const j=await r.json(),roles=j.canAssignRoles?'<select id="newStaffRole" style="'+SALEIN+'"><option value="parttime">Part-time Staff</option><option value="professional">Professional Staff</option><option value="manager">Manager</option><option value="owner">Owner</option></select>':'';
+  el.innerHTML='<section class="portal-card"><h3>Add staff account</h3><input id="newStaffName" placeholder="Staff name" style="'+SALEIN+'"> '+roles+' <button class="btn" data-staff-action="create">Create key</button></section><section class="portal-card"><h3>Staff accounts</h3><div id="staffRows"></div></section>';
+  $('#staffRows').innerHTML=(j.accounts||[]).map(a=>'<div style="display:flex;justify-content:space-between;gap:8px;padding:10px 0;border-bottom:1px solid var(--line2)"><div><b>'+esc(a.name)+'</b><small style="display:block">'+esc(a.role)+' · '+(a.active?'Active':'Disabled')+'</small></div><div><button class="undo-btn" data-staff-action="reset" data-id="'+esc(a.id)+'">Reset key</button> <button class="undo-btn" data-staff-action="active" data-id="'+esc(a.id)+'" data-active="'+(!a.active)+'">'+(a.active?'Disable':'Enable')+'</button></div></div>').join('');
+  showGeneratedKeys();
+}
+function showGeneratedKeys(){
+  if(!GENERATED_KEYS.length)return; const out=GENERATED_KEYS.map(x=>x.name+' — '+x.key).join('\n');
+  $('#list').insertAdjacentHTML('afterbegin','<section class="portal-card" style="border-color:var(--green)"><h3>Copy these keys now</h3><p>They are shown once only.</p><pre id="generatedKeys" style="white-space:pre-wrap;user-select:all"></pre><button class="undo-btn" data-staff-action="copy">Copy keys</button></section>');
+  $('#generatedKeys').textContent=out; GENERATED_KEYS=[];
+}
+async function renderAnnouncements(){
+  const el=$('#list'),r=await authGet('/api/staff-content'); if(!r.ok){el.innerHTML='<div class="ghdr">Could not load announcements.</div>';return;} const j=await r.json();
+  el.innerHTML='<section class="portal-card"><h3>New announcement</h3><input id="annTitle" placeholder="Title" style="'+SALEIN+';width:100%;box-sizing:border-box"><textarea id="annBody" placeholder="Message" style="'+SALEIN+';width:100%;box-sizing:border-box;min-height:90px;margin-top:8px"></textarea><button class="btn" data-staff-action="announce" style="margin-top:8px">Publish</button></section>'+(j.announcements||[]).map(a=>'<section class="portal-card"><h3>'+esc(a.title)+'</h3><p>'+esc(a.body)+'</p><small>'+esc(a.author||'Staff')+'</small><br><button class="undo-btn" data-staff-action="delete-ann" data-id="'+esc(a.id)+'">Delete</button></section>').join('');
+}
+document.addEventListener('click',async e=>{
+  const b=e.target.closest('[data-staff-action]');if(!b)return;e.preventDefault();const a=b.dataset.staffAction;
+  if(a==='copy'){await navigator.clipboard?.writeText($('#generatedKeys')?.textContent||'');return boxToast('Keys copied');}
+  if(a==='create'){const r=await authPost('/api/staff-auth',{action:'create',name:$('#newStaffName').value,role:$('#newStaffRole')?.value||'parttime'}),j=await r.json();if(!r.ok)return boxToast(j.error||'Could not create');GENERATED_KEYS=[{name:j.account.name,key:j.key}];return renderStaffManagement();}
+  if(a==='reset'){if(!confirm('Reset this key?'))return;const r=await authPost('/api/staff-auth',{action:'reset',id:b.dataset.id}),j=await r.json();if(!r.ok)return boxToast(j.error||'Could not reset');GENERATED_KEYS=[{name:j.account.name,key:j.key}];return renderStaffManagement();}
+  if(a==='active'){await authPost('/api/staff-auth',{action:'active',id:b.dataset.id,active:b.dataset.active==='true'});return renderStaffManagement();}
+  if(a==='announce'){await authPost('/api/staff-content',{action:'create',title:$('#annTitle').value,body:$('#annBody').value});return renderAnnouncements();}
+  if(a==='delete-ann'){if(confirm('Delete this announcement?'))await authPost('/api/staff-content',{action:'delete',id:b.dataset.id});return renderAnnouncements();}
+});
 function renderPortalPanel(t){
+  if(t==='staffinfo'&&can('staff_manage')){renderStaffManagement();return;}
+  if(t==='announcement'&&can('announcements')){renderAnnouncements();return;}
   const el=$('#list');
   if(t==='announcement'){
     el.innerHTML=`<section class="portal-panel"><div class="portal-grid"><article class="portal-card"><h3>Welcome to the new Staff Portal</h3><p>Website orders and sales reports now live in one dashboard. Check Orders regularly during your shift and mark completed orders as done.</p></article><article class="portal-card"><h3>Keep order alerts enabled</h3><p>Allow browser notifications and keep your device volume on so new website orders are not missed.</p></article></div></section>`;
