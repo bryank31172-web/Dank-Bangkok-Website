@@ -40,6 +40,7 @@ The implementation follows the source composition: four equal metric cards, a do
 - No application console errors occurred during browser verification.
 - Announcement tab verified in Owner state: role badge, add form, title/message fields, audience, priority, schedule, and prepared LINE/Telegram targets are visible; management delete controls render.
 - Food navigation replaced Staff Information and opens a clean, responsive placeholder surface with no legacy staff content.
+- Owner Staff Management state verified: individual-key creation form, Manager/Professional Staff/Part-time Staff roles, masked-key rows, active/inactive states, and access controls render cleanly in the dashboard shell.
 
 ## Comparison history
 
