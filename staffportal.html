@@ -371,6 +371,14 @@ async function createProduct(){try{await toolPost('products',{action:'create',na
 async function editProduct(d){const name=prompt('Product name',d.name);if(name===null)return;const category=prompt('Category',d.category);if(category===null)return;const price=prompt('Price',d.price);if(price===null)return;const stock=prompt('Stock',d.stock);if(stock===null)return;try{await toolPost('products',{action:'save',id:d.id,name,category,price,stock});loadStaffProducts()}catch(e){alert(e.message)}}
 async function deleteProduct(id){if(confirm('Remove this product from the storefront?')){try{await toolPost('products',{action:'delete',id});loadStaffProducts()}catch(e){alert(e.message)}}}
 
+function toggleOwnKeyFields(show){['myStaffKey','myStaffKeyConfirm'].forEach(id=>{const el=$('#'+id);if(el)el.type=show?'text':'password'})}
+async function changeOwnStaffKey(){
+  const key=$('#myStaffKey')?.value||'',confirmKey=$('#myStaffKeyConfirm')?.value||'';
+  if(key!==confirmKey){alert('The two keys do not match.');return;}
+  if(key.length<12||!/[A-Z]/.test(key)||!/[a-z]/.test(key)||!/[0-9]/.test(key)||!/[!@#$%^&*?_+\-]/.test(key)||/\s/.test(key)){alert('Use at least 12 characters with uppercase, lowercase, a number, a special symbol, and no spaces.');return;}
+  if(!confirm('Reset your staff key now? Your previous key will stop accepting new logins.'))return;
+  try{await staffAction({action:'setself',key});alert('Your staff key was changed. Sign in again with the new key.');logout()}catch(e){alert(e.message)}
+}
 async function staffAction(body){const r=await authPost('/api/staff-auth',body),j=await r.json().catch(()=>({}));if(!r.ok)throw new Error(j.error||'Request failed');return j}
 let STAFF_DIRECTORY=[],STAFF_ACCESS={};
 const roleName=r=>({owner:'Owner',manager:'Manager',professional:'Professional Staff',parttime:'Part-time Staff'}[r]||r);
@@ -384,15 +392,19 @@ async function loadStaffAccounts(){
 function renderStaffDirectory(){
   const el=$('#list'),q=String($('#staffSearch')?.value||'').toLowerCase(),role=$('#staffRoleFilter')?.value||'',status=$('#staffStatusFilter')?.value||'';
   const rows=STAFF_DIRECTORY.filter(a=>(!q||[a.name,a.phone,roleName(a.role)].join(' ').toLowerCase().includes(q))&&(!role||a.role===role)&&(!status||String(a.active)===status));
-  const cards=rows.map(a=>`<article class="staff-card"><div class="staff-card-top"><span>${a.active?'Active staff':'Disabled account'}</span><span>•••</span></div><div class="staff-card-main"><div><h3>${esc(a.name)}</h3><div class="staff-role"><i class="ri-shield-user-line"></i> ${esc(roleName(a.role))}</div></div><div class="staff-avatar">${esc(staffInitials(a.name))}</div></div><div class="staff-contact"><span><i class="ri-phone-line"></i> ${esc(a.phone||'No phone number')}</span><span><i class="ri-calendar-line"></i> วันเริ่มงาน: ${esc(a.startDate||'Not set')}</span><span><i class="ri-money-dollar-circle-line"></i> เงินเดือน: ${esc(staffMoney(a.salary))}</span></div><div class="staff-card-actions"><button data-act="staff-edit-profile" data-id="${esc(a.id)}">Edit</button><button data-act="staff-reset" data-id="${esc(a.id)}">New key</button>${a.id!==PROFILE?.id&&a.role!=='owner'?'<button class="danger" data-act="staff-delete" data-id="'+esc(a.id)+'">Delete</button>':''}</div></article>`).join('')||'<div class="portal-card">No staff match these filters.</div>';
-  el.innerHTML=`<section class="staff-manage"><div class="staff-manage-head"><div><h2>Staff Management</h2><p>Manage staff profiles, roles and employment details.</p></div><button class="staff-add" data-act="staff-add"><i class="ri-user-add-line"></i> Add staff</button></div><div class="staff-tabs"><span class="active">Staff <b class="staff-count">${STAFF_DIRECTORY.length}</b></span><span>Role Management ${new Set(STAFF_DIRECTORY.map(a=>a.role)).size}</span></div><div class="staff-toolbar"><input class="staff-search" id="staffSearch" placeholder="Search staff" oninput="renderStaffDirectory()"><select id="staffRoleFilter" onchange="renderStaffDirectory()"><option value="">All roles</option><option value="owner">Owner</option><option value="manager">Manager</option><option value="professional">Professional Staff</option><option value="parttime">Part-time Staff</option></select><select id="staffStatusFilter" onchange="renderStaffDirectory()"><option value="">All statuses</option><option value="true">Active</option><option value="false">Disabled</option></select></div><div class="staff-grid">${cards}</div></section>`;
+  const cards=rows.map(a=>`<article class="staff-card" data-search="${esc([a.name,a.phone,roleName(a.role)].join(' ').toLowerCase())}" data-role="${esc(a.role)}" data-active="${a.active}"><div class="staff-card-top"><span>${a.active?'Active staff':'Disabled account'}</span><span>•••</span></div><div class="staff-card-main"><div><h3>${esc(a.name)}</h3><div class="staff-role"><i class="ri-shield-user-line"></i> ${esc(roleName(a.role))}</div></div><div class="staff-avatar">${esc(staffInitials(a.name))}</div></div><div class="staff-contact"><span><i class="ri-phone-line"></i> ${esc(a.phone||'No phone number')}</span><span><i class="ri-calendar-line"></i> วันเริ่มงาน: ${esc(a.startDate||'Not set')}</span><span><i class="ri-money-dollar-circle-line"></i> เงินเดือน: ${esc(staffMoney(a.salary))}</span></div><div class="staff-card-actions"><button data-act="staff-edit-profile" data-id="${esc(a.id)}">Edit</button><button data-act="staff-reset" data-id="${esc(a.id)}">New key</button>${a.id!==PROFILE?.id&&a.role!=='owner'?'<button class="danger" data-act="staff-delete" data-id="'+esc(a.id)+'">Delete</button>':''}</div></article>`).join('')||'<div class="portal-card">No staff match these filters.</div>';
+  el.innerHTML=`<section class="staff-manage"><div class="staff-manage-head"><div><h2>Staff Management</h2><p>Manage staff profiles, roles and employment details.</p></div><button class="staff-add" data-act="staff-add"><i class="ri-user-add-line"></i> Add staff</button></div><div class="staff-tabs"><span class="active">Staff <b class="staff-count">${STAFF_DIRECTORY.length}</b></span><span>Role Management ${new Set(STAFF_DIRECTORY.map(a=>a.role)).size}</span></div><div class="staff-toolbar"><input class="staff-search" id="staffSearch" placeholder="Search staff" oninput="filterStaffCards()"><select id="staffRoleFilter" onchange="filterStaffCards()"><option value="">All roles</option><option value="owner">Owner</option><option value="manager">Manager</option><option value="professional">Professional Staff</option><option value="parttime">Part-time Staff</option></select><select id="staffStatusFilter" onchange="renderStaffDirectory()"><option value="">All statuses</option><option value="true">Active</option><option value="false">Disabled</option></select></div><div class="staff-grid">${cards}</div></section>`;
+}
+function filterStaffCards(){
+  const q=String($('#staffSearch')?.value||'').toLowerCase(),role=$('#staffRoleFilter')?.value||'',status=$('#staffStatusFilter')?.value||'';
+  document.querySelectorAll('.staff-card').forEach(card=>{card.style.display=(!q||card.dataset.search.includes(q))&&(!role||card.dataset.role===role)&&(!status||card.dataset.active===status)?'':'none'});
 }
 function openStaffForm(id=''){
   const a=STAFF_DIRECTORY.find(x=>x.id===id)||{name:'',phone:'',startDate:'',salary:'',role:'parttime',active:true};
   const editing=Boolean(id),canRole=Boolean(STAFF_ACCESS.canAssignRoles),roles=Object.entries(STAFF_ACCESS.roles||{}).filter(([v])=>PROFILE?.role==='owner'||v!=='owner');
   const modal=document.createElement('div');modal.className='staff-modal';modal.id='staffModal';
   modal.innerHTML=`<div class="staff-form"><div class="staff-form-head"><h3>${editing?'Edit staff':'Add staff'}</h3><button type="button" data-act="staff-form-close">✕</button></div><div class="staff-form-grid"><label class="full">Full name<input id="sfName" value="${esc(a.name)}" placeholder="Full legal name"></label><label>Phone Number<input id="sfPhone" value="${esc(a.phone||'')}" placeholder="08x xxx xxxx"></label><label>Role<select id="sfRole" ${canRole?'':'disabled'}>${roles.map(([v,l])=>`<option value="${esc(v)}" ${v===a.role?'selected':''}>${esc(l)}</option>`).join('')}</select></label><label>วันเริ่มงาน<input id="sfStart" type="date" value="${esc(a.startDate||'')}"></label><label>จำนวนเงินเดือน (THB)<input id="sfSalary" type="number" min="0" step="1" value="${esc(a.salary||'')}"></label><label class="full">Account status<select id="sfActive"><option value="true" ${a.active?'selected':''}>Active</option><option value="false" ${!a.active?'selected':''}>Disabled</option></select></label></div><div class="staff-form-actions"><button type="button" data-act="staff-form-close">Cancel</button><button class="save" type="button" data-act="staff-form-save" data-id="${esc(id)}">${editing?'Save changes':'Add staff'}</button></div></div>`;
-  document.body.appendChild(modal);
+  $('#list').appendChild(modal);
 }
 function closeStaffForm(){document.querySelector('#staffModal')?.remove()}
 async function saveStaffForm(id){
@@ -2016,9 +2028,7 @@ $('#list').addEventListener('click',e=>{
     case 'staff-form-save': saveStaffForm(d.id); break;
     case 'staff-delete': deleteStaff(d.id); break;
 
-    case 'staff-edit': editStaffKey(d.id,d.name); break;
     case 'staff-reset': resetStaff(d.id); break;
-    case 'staff-active': activeStaff(d.id,d.active==='1'); break;
     case 'ann-save': saveAnnouncement(); break;
     case 'ann-delete': deleteAnnouncement(d.id); break;
     case 'promo-save': savePromo(); break;
@@ -2051,7 +2061,6 @@ $('#list').addEventListener('input',e=>{
    on this page that saves the moment it is touched, so it needs its own
    listener on #list rather than an inline handler. */
 $('#list').addEventListener('change',e=>{
-  const sr=e.target.closest('[data-act="staff-role"]'); if(sr) return roleStaff(sr.dataset.id,sr.value);
   const el=e.target.closest('[data-act="box-sh"]'); if(el) return boxSetPos(el.dataset.id,el.value);
   /* Switching product reloads the form from that product's saved report, so it
      has to run on change rather than on a Load button nobody would press. */
