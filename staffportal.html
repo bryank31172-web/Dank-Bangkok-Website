@@ -7,28 +7,37 @@
 <link rel="apple-touch-icon" href="/apple-touch-icon.png"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
 <meta name="robots" content="noindex,nofollow"/>
-<title>🌿 DANK BKK — Staff Console</title>
+<title>DANK BKK — Staff Portal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/remixicon@4.6.0/fonts/remixicon.css" rel="stylesheet">
 <style>
-:root{--bg:#060a07;--bg2:#0b120d;--panel:#101a12;--panel2:#16241a;--line:#1f3325;--line2:#294634;
---txt:#e8f5ec;--muted:#8fae9a;--muted2:#6d8a78;--green:#3ddc84;--green2:#7be389;--deep:#1db960;
---gold:#d9b25b;--danger:#ff6b6b;--font:'Segoe UI',system-ui,sans-serif}
+:root{--bg:#f6f7f9;--bg2:#fff;--panel:#fff;--panel2:#f8fafc;--line:#edf0f3;--line2:#e4e8ee;
+--txt:#121722;--muted:#697180;--muted2:#9aa2af;--green:#21b66f;--green2:#158b55;--deep:#11975a;
+--gold:#d49a2a;--danger:#dc5c6a;--blue:#3978f6;--blue-soft:#edf4ff;--font:'Inter',system-ui,sans-serif}
 *{box-sizing:border-box}html,body{margin:0;height:100%}
-body{background:var(--bg);color:var(--txt);font-family:var(--font);display:flex;flex-direction:column}
+body{background:var(--bg);color:var(--txt);font-family:var(--font);display:flex;flex-direction:column;font-size:14px}
 button{font-family:inherit;cursor:pointer;border:none;color:inherit;background:none}
-header{display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--line);background:var(--bg2)}
-header h1{font-size:17px;margin:0;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+header{height:74px;display:flex;align-items:center;gap:18px;padding:0 28px 0 268px;border-bottom:1px solid var(--line);background:#fff;position:fixed;inset:0 0 auto 0;z-index:50}
+header h1{position:fixed;left:28px;top:0;width:196px;height:74px;display:flex;align-items:center;gap:9px;font-size:18px;margin:0;font-weight:800;letter-spacing:-.4px}
+header h1::before{content:'D';width:28px;height:28px;display:grid;place-items:center;border-radius:9px;background:var(--blue);color:#fff;font-size:15px}
 header .st{margin-left:auto;font-size:12px;color:var(--muted2)}
+.top-search{width:min(360px,36vw);height:40px;border:1px solid var(--line2);border-radius:12px;background:#fafbfc;display:flex;align-items:center;gap:9px;padding:0 13px;color:var(--muted2)}
+.top-search input{border:0;outline:0;background:transparent;width:100%;font:inherit;color:var(--txt)}
+.profile-dot{width:36px;height:36px;border-radius:50%;background:#eaf7ef;color:var(--green2);display:grid;place-items:center;font-weight:800;border:1px solid #dcefe4}
 .pill{font-size:11px;font-weight:800;padding:3px 9px;border-radius:999px;border:1px solid var(--line2);color:var(--green2)}
 .pill.warn{color:var(--gold);border-color:var(--gold)}
-main{flex:1;display:flex;min-height:0}
+main{flex:1;display:flex;min-height:0;padding-top:74px}
 /* login */
-#login{margin:auto;background:var(--panel);border:1px solid var(--line2);border-radius:18px;padding:30px;max-width:340px;width:92%;text-align:center}
-#login input{width:100%;background:var(--bg2);border:1px solid var(--line2);color:var(--txt);padding:12px;border-radius:10px;font-size:15px;outline:none;margin:14px 0;text-align:center}
-.btn{background:linear-gradient(135deg,var(--green),var(--deep));color:#04180d;font-weight:800;padding:12px 18px;border-radius:11px;width:100%;font-size:15px}
+#login{margin:auto;background:var(--panel);border:1px solid var(--line2);box-shadow:0 16px 42px rgba(30,42,60,.08);border-radius:18px;padding:30px;max-width:360px;width:92%;text-align:center}
+#login input{width:100%;background:#fafbfc;border:1px solid var(--line2);color:var(--txt);padding:12px;border-radius:10px;font-size:15px;outline:none;margin:14px 0;text-align:center}
+.btn{background:var(--blue);color:#fff;font-weight:800;padding:12px 18px;border-radius:11px;width:100%;font-size:15px;box-shadow:0 7px 16px rgba(57,120,246,.22)}
 /* tabs */
-#tabs{display:flex;flex-wrap:wrap;gap:6px;padding:10px 12px;border-bottom:1px solid var(--line);background:var(--bg2)}
-#tabs button{flex:1 1 92px;min-width:92px;padding:9px;border-radius:10px;border:1px solid var(--line2);color:var(--muted);font-weight:800;font-size:13px;position:relative}
-#tabs button.active{border-color:var(--green);color:var(--green2);background:rgba(61,220,132,.1)}
+#tabs{width:240px;min-width:240px;height:calc(100vh - 74px);position:sticky;top:74px;display:flex;flex-direction:column;gap:5px;padding:20px 14px;border-right:1px solid var(--line);background:#fff}
+#tabs button{width:100%;padding:11px 13px;border-radius:10px;border:0;color:#566070;font-weight:600;font-size:13px;position:relative;text-align:left;display:flex;align-items:center;gap:11px}
+#tabs button i{font-size:18px;color:#707988}#tabs button.active{color:var(--blue);background:var(--blue-soft)}#tabs button.active i{color:var(--blue)}
+#tabs .sidebar-logout{margin-top:auto;color:#7a5360}.sidebar-logout:hover{background:#fff1f3;color:var(--danger)}
 #tabs .cnt{position:absolute;top:-7px;right:-4px;background:var(--gold);color:#20100a;font-size:10px;font-weight:900;min-width:18px;height:18px;border-radius:9px;display:flex;align-items:center;justify-content:center;padding:0 4px}
 /* orders */
 .ocard{margin:10px 12px;background:var(--panel);border:1px solid var(--line2);border-radius:14px;padding:13px 14px}
@@ -65,8 +74,19 @@ main{flex:1;display:flex;min-height:0}
 .ghdr{padding:12px 14px;font-size:12.5px;color:var(--muted);border-bottom:1px solid var(--line)}
 .undo-btn{border:1px solid var(--line2);color:var(--muted);font-size:12px;padding:8px 13px;border-radius:9px}
 /* list */
-#listWrap{width:340px;border-right:1px solid var(--line);background:var(--bg2);flex-shrink:0;display:flex;flex-direction:column;min-height:0}
-#list{flex:1;overflow-y:auto}
+#listWrap{width:100%;background:var(--bg);flex-shrink:0;display:flex;min-height:0}
+.content-shell{flex:1;min-width:0;padding:28px;overflow:auto;height:calc(100vh - 74px)}
+#pageHead{display:flex;align-items:end;justify-content:space-between;margin:0 0 20px}#pageHead h2{margin:0;font-size:26px;letter-spacing:-.7px}#pageHead p{margin:6px 0 0;color:var(--muted);font-size:12.5px}
+#list{width:100%}
+.dashboard-grid{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(280px,.9fr);gap:16px}.dash-card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:18px;box-shadow:0 7px 22px rgba(36,48,68,.04)}.dash-card.full{grid-column:1/-1}.dash-card h3{margin:0;font-size:14px}.dash-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px}.period-tabs{display:flex;background:#f3f5f8;border-radius:9px;padding:3px;gap:2px}.period-tabs button{padding:7px 10px;border-radius:7px;color:var(--muted);font-size:11px;font-weight:700}.period-tabs button.active{background:#fff;color:var(--blue);box-shadow:0 2px 8px rgba(31,43,61,.08)}.sales-main{display:flex;align-items:end;gap:12px}.sales-value{font-size:34px;line-height:1;font-weight:800;letter-spacing:-1.2px}.delta{font-size:11px;font-weight:700;border-radius:99px;padding:5px 8px}.delta.up{color:#15915a;background:#e9f8f0}.delta.down{color:#c94b62;background:#fff0f3}.dash-muted{color:var(--muted2);font-size:11.5px;margin-top:8px}.stat-row{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.stat-mini{border:1px solid var(--line);border-radius:12px;padding:13px}.stat-mini b{display:block;font-size:21px}.stat-mini span{display:block;color:var(--muted2);font-size:10.5px;margin-top:4px}.rank-list{display:flex;flex-direction:column}.rank-row{display:grid;grid-template-columns:28px minmax(0,1fr) 72px 88px;align-items:center;gap:8px;padding:10px 0;border-top:1px solid var(--line);font-size:12px}.rank-row:first-child{border-top:0}.rank-row .rank{color:var(--muted2);font-weight:700}.rank-row .name{font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.rank-row .qty{color:var(--muted);text-align:right}.rank-row .revenue{font-weight:700;text-align:right}.new-order-line{display:flex;align-items:center;gap:10px;padding:11px 0;border-top:1px solid var(--line)}.new-order-line:first-child{border-top:0}.new-order-line .order-copy{min-width:0;flex:1}.new-order-line b{display:block;font-size:12.5px}.new-order-line span{display:block;color:var(--muted);font-size:11px;margin-top:3px}.new-order-line strong{font-size:12.5px}.empty-dash{padding:18px 0;color:var(--muted2);font-size:12px;text-align:center}
+.portal-panel{padding:20px;max-width:920px;width:100%;margin:0 auto}
+.portal-panel h2{font-size:22px;margin:0 0 5px}.portal-panel>p{color:var(--muted);margin:0 0 18px;line-height:1.55}
+.portal-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.portal-card{background:var(--panel);border:1px solid var(--line);box-shadow:0 7px 22px rgba(36,48,68,.04);border-radius:16px;padding:18px}
+.portal-card h3{margin:0 0 7px;font-size:14px}.portal-card p{margin:0;color:var(--muted);font-size:12.5px;line-height:1.55}
+.setting-row{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:13px 0;border-bottom:1px solid var(--line)}
+.setting-row:last-child{border-bottom:0}.setting-row b{display:block;font-size:13.5px}.setting-row span{display:block;color:var(--muted);font-size:11.5px;margin-top:3px}
+.switch{width:44px;height:25px;border-radius:99px;background:var(--line2);padding:3px;flex:none}.switch::after{content:"";display:block;width:19px;height:19px;border-radius:50%;background:var(--muted);transition:.2s}.switch.on{background:var(--deep)}.switch.on::after{transform:translateX(19px);background:white}
 .trow{display:block;width:100%;text-align:left;padding:13px 14px;border-bottom:1px solid var(--line);position:relative}
 .trow:hover,.trow.sel{background:var(--panel)}
 .trow .top{display:flex;gap:8px;align-items:center}
@@ -85,7 +105,7 @@ main{flex:1;display:flex;min-height:0}
 #chatHead .c-name{font-weight:800;font-size:15px}
 #chatHead .c-sub{font-size:12px;color:var(--muted)}
 #chatHead .actions{margin-left:auto;display:flex;gap:8px}
-.ghost{border:1px solid var(--line2);color:var(--muted);padding:8px 13px;border-radius:10px;font-size:12.5px;font-weight:700}
+.ghost{border:1px solid var(--line2);color:var(--muted);padding:8px 13px;border-radius:10px;font-size:12.5px;font-weight:700;background:#fff}
 .ghost:hover{border-color:var(--green);color:var(--green2)}
 .ghost.active{border-color:var(--green);color:var(--green2);background:rgba(61,220,132,.1)}
 .ghost.danger:hover{border-color:var(--danger);color:var(--danger)}
@@ -115,41 +135,37 @@ main{flex:1;display:flex;min-height:0}
    after logging in and its "Select a conversation" placeholder hung 90px past
    the right edge of every tab, leaving the whole console swipeable sideways
    into empty space. The media query has to win. */
-@media(max-width:760px){ header .st{display:none} #alertBtn,#logoutBtn{flex-shrink:0;padding:8px 9px}
-  #listWrap{width:100%} #chatWrap{display:none!important} body.chatting #listWrap{display:none!important} body.chatting #chatWrap{display:flex!important} }
+@media(max-width:760px){header{height:64px;padding:0 14px 0 118px}header h1{left:14px;width:100px;height:64px;font-size:0}header h1::after{content:'DANK';font-size:16px}.top-search{width:100%}header .st{display:none}.profile-dot{display:none}main{padding-top:64px}#listWrap{display:block!important}.content-shell{height:calc(100vh - 128px);padding:18px 14px 90px}#tabs{position:fixed;z-index:60;inset:auto 0 0 0;width:100%;min-width:0;height:64px;flex-direction:row;justify-content:flex-start;overflow-x:auto;padding:7px 5px;border:1px solid var(--line);box-shadow:0 -8px 30px rgba(30,42,60,.08)}#tabs button{width:74px;min-width:74px;padding:6px 3px;gap:2px;flex-direction:column;justify-content:center;font-size:8.5px;text-align:center}#tabs button i{font-size:18px}#tabs .sidebar-logout{margin:0}.portal-grid,.dashboard-grid{grid-template-columns:1fr}.dash-card.full{grid-column:auto}.stat-row{grid-template-columns:repeat(2,1fr)}.rank-row{grid-template-columns:22px minmax(0,1fr) 55px 72px}.portal-panel{padding:0}#pageHead h2{font-size:22px}.ocard{margin:10px 0}.order-summary{grid-template-columns:repeat(2,minmax(0,1fr))}#chatWrap{display:none!important}}
 </style>
 </head>
 <body>
 <header>
-  <span style="font-size:22px">🌿</span><h1>DANK BKK · Staff Console</h1>
+  <h1>DANK Staff</h1>
+  <label class="top-search"><i class="ri-search-line"></i><input type="search" placeholder="Search orders and reports…" aria-label="Search dashboard"></label>
   <span class="st" id="storeStat"></span>
-  <button class="ghost" id="alertBtn" style="display:none" type="button">🔕 Alerts off</button>
-  <!-- The staff key is already in this browser's storage, so analytics.html
-       opens straight into the numbers rather than asking for it again. -->
-  <a class="ghost" id="statsBtn" href="/analytics.html" style="display:none;text-decoration:none">📊 Numbers</a>
-  <button class="ghost" id="logoutBtn" style="display:none" onclick="logout()">Log out</button>
+  <button class="ghost" id="alertBtn" style="display:none" type="button" aria-hidden="true">Alerts</button>
+  <div class="profile-dot" aria-label="DANK staff profile">DS</div>
 </header>
 <main id="main">
   <div id="login">
-    <div style="font-size:40px">👨‍💼</div>
+    <div style="font-size:40px;color:var(--blue)"><i class="ri-user-smile-line" aria-hidden="true"></i></div>
     <h2 style="margin:8px 0 2px">Staff login</h2>
-    <p style="color:var(--muted);font-size:13px;margin:4px 0 0">Enter the staff key to see live customer chats.</p>
+    <p style="color:var(--muted);font-size:13px;margin:4px 0 0">Enter the staff key to access the staff dashboard.</p>
     <input id="keyInput" type="password" placeholder="Staff key" onkeydown="if(event.key==='Enter')login()">
     <button class="btn" onclick="login()">Enter console</button>
     <p id="loginErr" style="color:var(--danger);font-size:12.5px;height:14px;margin:10px 0 0"></p>
   </div>
   <div id="listWrap" style="display:none">
     <div id="tabs">
-      <button id="tabChats" class="active" onclick="setTab('chats')">💬 Chats</button>
-      <button id="tabOrders" onclick="setTab('orders')">🛒 Orders<span class="cnt" id="ordCnt" style="display:none">0</span></button>
-      <button id="tabSales" onclick="setTab('sales')">💰 Sales</button>
-      <button id="tabGifts" onclick="setTab('gifts')">🎁 Free gram</button>
-      <button id="tabCount" onclick="setTab('count')">📦 Count</button>
-      <button id="tabBox" onclick="setTab('box')">🧢 Box gifts</button>
-      <button id="tabLab" onclick="setTab('lab')">🧪 Lab</button>
-      <button id="tabMember" onclick="setTab('member')">👤 Member</button>
+      <button id="tabDashboard" class="active" onclick="setTab('dashboard')"><i class="ri-dashboard-line"></i><span>Dashboard</span></button>
+      <button id="tabOrders" onclick="setTab('orders')"><i class="ri-shopping-bag-3-line"></i><span>Orders</span><span class="cnt" id="ordCnt" style="display:none">0</span></button>
+      <button id="tabSales" onclick="setTab('sales')"><i class="ri-line-chart-line"></i><span>Sales Report</span></button>
+      <button id="tabAnnouncement" onclick="setTab('announcement')"><i class="ri-megaphone-line"></i><span>Announcement</span></button>
+      <button id="tabStaffInfo" onclick="setTab('staffinfo')"><i class="ri-team-line"></i><span>Staff Information</span></button>
+      <button id="tabSettings" onclick="setTab('settings')"><i class="ri-settings-3-line"></i><span>Setting</span></button>
+      <button class="sidebar-logout" id="logoutBtn" onclick="logout()"><i class="ri-logout-box-r-line"></i><span>Log Out</span></button>
     </div>
-    <div id="list"></div>
+    <div class="content-shell"><div id="pageHead"><div><h2 id="pageTitle">Dashboard</h2><p id="pageSub">A live overview of DANK orders and sales.</p></div></div><div id="list"></div></div>
   </div>
   <div id="chatWrap" style="display:none">
     <div class="emptyc" id="emptyc">Select a conversation ←</div>
@@ -159,9 +175,9 @@ main{flex:1;display:flex;min-height:0}
 const API='/api/thread';
 let KEY=localStorage.getItem('dankStaffKey')||'';
 let cur=null, curSeq=0, pollT=null, listT=null, ordersT=null, lastSeen={};   // threadId -> last seq seen
-let TAB='chats', ORDERS=[], knownOrders=new Set(), firstOrderLoad=true, LIVE=false;
+let TAB='dashboard', ORDERS=[], knownOrders=new Set(), firstOrderLoad=true, LIVE=false;
 let alertEnabled=localStorage.getItem('dankOrderAlerts')==='1', audioCtx=null, orderPopT=null;
-const BASE_TITLE='🌿 DANK BKK — Staff Console';
+const BASE_TITLE='DANK BKK — Staff Portal';
 const $=s=>document.querySelector(s);
 
 /* Everything this console displays on the Orders and Chats tabs arrives from
@@ -266,41 +282,73 @@ async function login(){
   KEY=k; localStorage.setItem('dankStaffKey',k); LIVE=true;
   const j=await r.json();
   $('#storeStat').innerHTML=j.redis?'<span class="pill">● storage: redis</span>':'<span class="pill warn">● storage: memory (set up Upstash for production)</span>';
-  $('#login').style.display='none'; $('#listWrap').style.display='flex'; $('#chatWrap').style.display='flex'; $('#logoutBtn').style.display='';
-  $('#alertBtn').style.display=''; updateAlertButton();
-  { const sb=$('#statsBtn'); if(sb) sb.style.display=''; }
-  renderList(j.threads); startListPoll(); pollOrders(); startOrderPoll();
-  /* The Telegram and LINE alerts link back here as staff.html#orders and
-     staff.html#count. These were two separate ifs, so #orders matched the tab
-     branch and then fell through to the thread branch as well: the console
-     opened a conversation called "orders" that does not exist, and on a phone
-     the `chatting` class it sets hid the order list behind an empty chat pane.
-     Exactly one branch runs now. */
+  $('#login').style.display='none'; $('#listWrap').style.display='flex'; $('#chatWrap').style.display='none'; $('#logoutBtn').style.display='';
+  updateAlertButton();
+  pollOrders(); startOrderPoll(); clearInterval(dashboardSalesT); dashboardSalesT=setInterval(()=>loadDashboardSales(true),10800000);
   const hash=decodeURIComponent(location.hash.slice(1));
-  if(hash==='orders'||hash==='count'||hash==='gifts'||hash==='box'||hash==='lab'||hash==='chats'||hash==='member'||hash==='sales') setTab(hash);
-  /* A member card scanned with the phone's own camera lands here:
-     staff.html#m=XXXXXXXXXXXX. The code rides in the fragment on purpose —
-     fragments never leave the browser, so a customer's card code does not
-     end up in an access log the way a query string would. */
-  else if(/^m=/i.test(hash)) { setTab('member'); lookupMember(hash.slice(2)); }
-  else if(hash.length>2) openThread(hash);
-  /* Scanning a second card while the console is already open only changes
-     the fragment, which does not reload the page. Without this, the second
-     customer would never appear. */
-  window.addEventListener('hashchange',()=>{ const h=decodeURIComponent(location.hash.slice(1));
-    if(/^m=/i.test(h)){ setTab('member'); lookupMember(h.slice(2)); } });
+  const portalTabs=['dashboard','orders','sales','announcement','staffinfo','settings'];
+  setTab(portalTabs.includes(hash)?hash:'dashboard');
+  window.addEventListener('hashchange',()=>{ const h=decodeURIComponent(location.hash.slice(1)); if(portalTabs.includes(h)) setTab(h); });
 }
 function logout(){ localStorage.removeItem('dankStaffKey'); LIVE=false; location.reload(); }
 
-function setTab(t){ if(typeof stopCamScan==='function') stopCamScan(); TAB=t; $('#tabChats').classList.toggle('active',t==='chats'); $('#tabOrders').classList.toggle('active',t==='orders'); $('#tabGifts').classList.toggle('active',t==='gifts'); $('#tabCount').classList.toggle('active',t==='count'); $('#tabBox').classList.toggle('active',t==='box'); $('#tabLab').classList.toggle('active',t==='lab'); $('#tabMember').classList.toggle('active',t==='member'); $('#tabSales').classList.toggle('active',t==='sales');
-  if(t==='orders'){ renderOrders(); $('#ordCnt').style.display='none'; knownOrders=new Set(ORDERS.map(o=>o.orderId)); document.title=BASE_TITLE; $('#orderPop')?.classList.remove('on'); }
-  else if(t==='gifts'){ loadGifts(); }
-  else if(t==='count'){ loadCount(); }
-  else if(t==='box'){ loadBoxGifts(); }
-  else if(t==='lab'){ loadLab(); }
-  else if(t==='member'){ renderMember(); }
+function setTab(t){ if(typeof stopCamScan==='function') stopCamScan(); TAB=t;
+  const ids={dashboard:'tabDashboard',orders:'tabOrders',sales:'tabSales',announcement:'tabAnnouncement',staffinfo:'tabStaffInfo',settings:'tabSettings'};
+  Object.entries(ids).forEach(([name,id])=>$('#'+id)?.classList.toggle('active',t===name));
+  const copy={dashboard:['Dashboard','A live overview of DANK orders and sales.'],orders:['Orders','Manage website and table orders in real time.'],sales:['Sales Report','Review revenue, payments and order performance.'],announcement:['Announcement','Important updates for every DANK staff member.'],staffinfo:['Staff Information','Operational contacts, duties and escalation guidance.'],settings:['Setting','Manage this device and staff-portal preferences.']};
+  $('#pageTitle').textContent=copy[t][0]; $('#pageSub').textContent=copy[t][1];
+  if(history.replaceState) history.replaceState(null,'','#'+t);
+  if(t==='dashboard'){ renderDashboard(); loadDashboardSales(); }
+  else if(t==='orders'){ renderOrders(); $('#ordCnt').style.display='none'; knownOrders=new Set(ORDERS.map(o=>o.orderId)); document.title=BASE_TITLE; $('#orderPop')?.classList.remove('on'); }
   else if(t==='sales'){ loadSales(); }
-  else refreshChats(); }
+  else renderPortalPanel(t); }
+
+function renderPortalPanel(t){
+  const el=$('#list');
+  if(t==='announcement'){
+    el.innerHTML=`<section class="portal-panel"><div class="portal-grid"><article class="portal-card"><h3>Welcome to the new Staff Portal</h3><p>Website orders and sales reports now live in one dashboard. Check Orders regularly during your shift and mark completed orders as done.</p></article><article class="portal-card"><h3>Keep order alerts enabled</h3><p>Allow browser notifications and keep your device volume on so new website orders are not missed.</p></article></div></section>`;
+  } else if(t==='staffinfo'){
+    el.innerHTML=`<section class="portal-panel"><div class="portal-grid"><article class="portal-card"><h3>Store operations</h3><p>Manager: Bank<br>CEO: Bryan<br>Backend support: YIN</p></article><article class="portal-card"><h3>Order handling</h3><p>Confirm the customer, items, payment, delivery fee and address before fulfilment. Use the Google Maps button for deliveries and mark the order done only after handoff.</p></article><article class="portal-card"><h3>Shift escalation</h3><p>For absence or urgent shift cover, escalate in this order: Steve → Honey → Bank → Ken or Bryan.</p></article><article class="portal-card"><h3>Customer privacy</h3><p>Customer names, phone numbers, addresses and receipts are confidential. Access them only for order fulfilment.</p></article></div></section>`;
+  } else {
+    el.innerHTML=`<section class="portal-panel"><div class="portal-card"><div class="setting-row"><div><b>New-order alerts</b><span>Sound, browser notification and vibration where supported</span></div><button class="switch ${alertEnabled?'on':''}" type="button" aria-label="Toggle new-order alerts" aria-pressed="${alertEnabled}" onclick="toggleAlerts(); renderPortalPanel('settings')"></button></div><div class="setting-row"><div><b>Portal address</b><span>www.dankbangkok.com/staffportal</span></div></div><div class="setting-row"><div><b>Secure session</b><span>Log out when this is a shared device</span></div><button class="ghost danger" type="button" onclick="logout()">Log Out</button></div></div></section>`;
+  }
+}
+
+const DASH_PERIODS={day:{label:'Day',days:1},week:{label:'Week',days:7},month:{label:'Month',days:30},year:{label:'Year',days:365}};
+let DASH_PERIOD='day', DASH_SALES={}, dashboardSalesT=null;
+const dashMoney=v=>'฿'+(Number(v)||0).toLocaleString('en-US',{maximumFractionDigits:0});
+async function loadDashboardSales(force=false){
+  if(!force&&DASH_SALES[DASH_PERIOD]){ if(TAB==='dashboard') renderDashboard(); return; }
+  const p=DASH_PERIODS[DASH_PERIOD], el=$('#list');
+  if(TAB==='dashboard'&&!DASH_SALES[DASH_PERIOD]) el.innerHTML='<div class="dash-card"><div class="empty-dash">Loading dashboard analytics…</div></div>';
+  try{
+    const [currentRes,doubleRes]=await Promise.all([authGet('/api/sales?days='+p.days),authGet('/api/sales?days='+(p.days*2))]);
+    if(!currentRes.ok||!doubleRes.ok) throw new Error('sales unavailable');
+    const current=await currentRes.json(), doubled=await doubleRes.json();
+    const now=Number(current.summary?.gross)||0, combined=Number(doubled.summary?.gross)||0, previous=Math.max(0,combined-now);
+    DASH_SALES[DASH_PERIOD]={current,now,previous,change:previous?((now-previous)/previous*100):(now?100:0),loadedAt:Date.now()};
+    if(TAB==='dashboard') renderDashboard();
+  }catch(e){ if(TAB==='dashboard') renderDashboard('Sales analytics are temporarily unavailable.'); }
+}
+function dashRank(items,lowest=false){
+  const rows=(Array.isArray(items)?items:[]).filter(x=>Number(x.qty)>0);
+  const picked=(lowest?[...rows].sort((a,b)=>Number(a.qty)-Number(b.qty)):rows).slice(0,5);
+  return picked.length?picked.map((x,i)=>`<div class="rank-row"><span class="rank">${i+1}</span><span class="name">${esc(x.name||'Unnamed product')}</span><span class="qty">${esc((x.qty||0)+' sold')}</span><span class="revenue">${esc(dashMoney(x.gross))}</span></div>`).join(''):'<div class="empty-dash">No product sales in this period.</div>';
+}
+function renderDashboard(error=''){
+  const el=$('#list'), data=DASH_SALES[DASH_PERIOD], current=data?.current||{}, summary=current.summary||{}, pending=ORDERS.filter(o=>o.status!=='done'), done=ORDERS.filter(o=>o.status==='done');
+  const periodTabs=Object.entries(DASH_PERIODS).map(([key,p])=>`<button class="${DASH_PERIOD===key?'active':''}" data-act="dash-period" data-v="${key}">${p.label}</button>`).join('');
+  const delta=data?.change||0, deltaClass=delta>=0?'up':'down';
+  const newOrders=pending.slice(0,5).map(o=>`<div class="new-order-line"><div class="order-copy"><b>${esc(o.orderId||'New order')}</b><span>${esc(o.customer?.name||'Customer')} · ${esc(o.fulfilment||'order')}</span></div><strong>${esc(dashMoney(o.total??o.subtotal))}</strong></div>`).join('');
+  el.innerHTML=`<div class="dashboard-grid">
+    <section class="dash-card"><div class="dash-head"><h3>Sales</h3><div class="period-tabs">${periodTabs}</div></div>${error?`<div class="empty-dash">${esc(error)}</div>`:`<div class="sales-main"><div class="sales-value">${data?esc(dashMoney(data.now)):'—'}</div>${data?`<span class="delta ${deltaClass}">${delta>=0?'↑':'↓'} ${esc(Math.abs(delta).toFixed(1))}%</span>`:''}</div><div class="dash-muted">Compared with the previous ${esc(DASH_PERIODS[DASH_PERIOD].label.toLowerCase())} · refreshes every 3 hours</div>`}</section>
+    <section class="dash-card"><div class="dash-head"><h3>New Orders</h3><button class="ghost" data-act="dash-orders">View all</button></div>${newOrders||'<div class="empty-dash">No new orders right now.</div>'}<div class="dash-muted">Refreshes automatically every 3 minutes</div></section>
+    <section class="dash-card full"><div class="dash-head"><h3>Order Summary</h3></div><div class="stat-row"><div class="stat-mini"><b>${esc(summary.orders||0)}</b><span>Orders in period</span></div><div class="stat-mini"><b>${esc(dashMoney(summary.average))}</b><span>Average order</span></div><div class="stat-mini"><b>${esc(pending.length)}</b><span>Pending now</span></div><div class="stat-mini"><b>${esc(done.length)}</b><span>Completed loaded</span></div></div></section>
+    <section class="dash-card"><div class="dash-head"><h3>Best Sellers</h3></div><div class="rank-list">${dashRank(current.topItems,false)}</div></section>
+    <section class="dash-card"><div class="dash-head"><h3>Lowest Sellers</h3></div><div class="rank-list">${dashRank(current.topItems,true)}</div></section>
+    <section class="dash-card full"><div class="dash-head"><h3>Announcement</h3><button class="ghost" data-act="dash-announcement">View all</button></div><div class="portal-grid"><article class="portal-card"><h3>Welcome to the new Staff Portal</h3><p>Website orders and sales reports now live in one dashboard.</p></article><article class="portal-card"><h3>Keep order alerts enabled</h3><p>Allow browser notifications and keep your device volume on so new website orders are not missed.</p></article></div></section>
+  </div>`;
+}
 let GIFT_MENU=[], GIFT_SEL=new Set();
 async function loadGifts(){
   const el=$('#list'); el.innerHTML='<div class="ghdr">Loading…</div>';
@@ -692,7 +740,7 @@ async function pollOrders(){
       const c=$('#ordCnt'); if(TAB!=='orders'){ c.textContent=fresh.length; c.style.display='flex'; } }
     if(firstOrderLoad){ knownOrders=new Set(ORDERS.map(o=>o.orderId)); firstOrderLoad=false;
       const n=ORDERS.filter(o=>o.status!=='done').length; if(n&&TAB!=='orders'){ $('#ordCnt').textContent=n; $('#ordCnt').style.display='flex'; } }
-    if(TAB==='orders') renderOrders();
+    if(TAB==='orders') renderOrders(); else if(TAB==='dashboard') renderDashboard();
   }catch(e){}
 }
 function renderOrders(){
@@ -802,13 +850,13 @@ function startListPoll(){ clearInterval(listT); listT=setInterval(async()=>{ if(
    staff explicitly enable alerts, only the order poll continues at a slower
    30-second interval; external LINE/Telegram/WhatsApp pushes remain the
    reliable path when a mobile browser suspends the page completely. */
-function startOrderPoll(ms=5000){ clearInterval(ordersT); ordersT=setInterval(pollOrders,ms); }
+function startOrderPoll(ms=180000){ clearInterval(ordersT); ordersT=setInterval(pollOrders,ms); }
 function startThreadPoll(){ clearInterval(pollT); pollT=setInterval(()=>pull(false),3000); }
-function stopPolls(){ clearInterval(ordersT); clearInterval(listT); clearInterval(pollT); ordersT=listT=pollT=null; }
+function stopPolls(){ clearInterval(ordersT); clearInterval(listT); clearInterval(pollT); clearInterval(dashboardSalesT); ordersT=listT=pollT=dashboardSalesT=null; }
 document.addEventListener('visibilitychange',()=>{
-  if(document.hidden){ stopPolls(); if(LIVE&&alertEnabled) startOrderPoll(30000); return; }
+  if(document.hidden){ stopPolls(); if(LIVE&&alertEnabled) startOrderPoll(180000); return; }
   if(!LIVE) return;
-  pollOrders(); startOrderPoll(); startListPoll();
+  pollOrders(); startOrderPoll(); startListPoll(); dashboardSalesT=setInterval(()=>loadDashboardSales(true),10800000);
   if(TAB==='chats') refreshChats();
   if(cur){ pull(false); startThreadPoll(); }
 });
@@ -1826,6 +1874,9 @@ $('#list').addEventListener('click',e=>{
   const el=e.target.closest('[data-act]'); if(!el) return;
   const d=el.dataset;
   switch(d.act){
+    case 'dash-period': DASH_PERIOD=d.v in DASH_PERIODS?d.v:'day'; renderDashboard(); loadDashboardSales(); break;
+    case 'dash-orders': setTab('orders'); break;
+    case 'dash-announcement': setTab('announcement'); break;
     case 'thread':     openThread(d.id); break;
     case 'gift':       toggleGift(d.id); break;
     case 'slip':       viewSlip(d.id); break;
@@ -1882,7 +1933,15 @@ $('#list').addEventListener('change',e=>{
   const lp=e.target.closest('[data-act="lab-prod"]'); if(lp){ LABSEL=lp.value; renderLab(); }
 });
 
-if(KEY){ $('#keyInput').value=KEY; login(); }
+/* Visual-QA mode is deliberately limited to the local Work Mode preview host.
+   It never runs on dankbangkok.com and never bypasses production staff auth. */
+if(location.hostname==='terminal.local'&&new URLSearchParams(location.search).has('visual-qa')){
+  $('#login').style.display='none'; $('#listWrap').style.display='flex'; $('#logoutBtn').style.display='';
+  ORDERS=[{orderId:'DANK-260901-1042',status:'new',at:Date.now()-180000,payment:'PromptPay',payStatus:'paid',subtotal:2450,deliveryFee:80,discount:0,total:2530,fulfilment:'delivery',delivery:{address:'Sathorn, Bangkok',time:'20:30'},customer:{name:'Sample customer',phone:'+66 63-206-4884'},items:[{name:'Blue Zangria',effects:['Relaxed','Happy','Creative'],grams:3.5,qty:1,unitPrice:2450,lineTotal:2450,option:'3.5 g'}]}];
+  DASH_SALES.day={now:48750,previous:42300,change:15.25,current:{summary:{gross:48750,orders:32,average:1523},topItems:[{name:'Blue Zangria',qty:28,gross:19600},{name:'Permanent Marker',qty:21,gross:14700},{name:'MellowZ',qty:15,gross:10500},{name:'Zooties',qty:8,gross:5600},{name:'Bangkok Lemon',qty:3,gross:2100}]}};
+  ['week','month','year'].forEach((key,i)=>{const scale=[6,24,260][i];DASH_SALES[key]={...DASH_SALES.day,now:DASH_SALES.day.now*scale,previous:DASH_SALES.day.previous*scale};});
+  setTab('dashboard');
+} else if(KEY){ $('#keyInput').value=KEY; login(); }
 </script>
 <script src="i18n.js"></script>
 </body>
