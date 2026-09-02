@@ -11,7 +11,7 @@
 
 import { getJSON, setJSON } from "./_store.js";
 import { getMenu } from "./_menu.js";
-import { requireStaff } from "./_auth.js";
+import { requirePermission } from "./_auth.js";
 
 export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
@@ -29,7 +29,7 @@ export default async function handler(req, res) {
       return res.status(200).json({ skus: list });
     }
     if (req.method === "POST") {
-      if (!requireStaff(req, res)) return;
+      if (!requirePermission(req, res, "owner_tools")) return;
       const b = req.body || {};
       const skus = Array.isArray(b.skus) ? b.skus.slice(0, 100) : [];
       await setJSON("freegifts", skus, 60 * 60 * 24 * 365);
