@@ -3,7 +3,7 @@
      GET  ?key=...&limit=200&offset=200&archive=1   → page further back
      POST {orderId, status:"done"|"new", key}       → update order status  */
 import { getJSON, setJSON, indexList } from "./_store.js";
-import { requirePermission } from "./_auth.js";
+import { requirePermission, staffIdentity } from "./_auth.js";
 
 export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
@@ -39,7 +39,19 @@ export default async function handler(req, res) {
       const b = req.body || {};
       const o = await getJSON("order:" + b.orderId);
       if (!o) return res.status(404).json({ error: "not found" });
-      o.status = b.status === "done" ? "done" : "new";
+      const nextStatus=b.status==="done"?"done":"new";
+      if(nextStatus==="done"){
+        const items=Array.isArray(o.items)?o.items:[];
+        const isFlower=item=>{const n=Number(item?.totalGrams??item?.grams);return (Number.isFinite(n)&&n>0)||/(\d+(?:\.\d+)?)\s*g\b/i.test(String(item?.option||""));};
+        const required=items.map((item,index)=>({item,index})).filter(x=>isFlower(x.item));
+        const supplied=Array.isArray(b.weights)?b.weights:[], byIndex=new Map(supplied.map(x=>[Number(x?.index),Number(x?.grams)]));
+        const invalid=required.filter(x=>!Number.isFinite(byIndex.get(x.index))||byIndex.get(x.index)<=0||byIndex.get(x.index)>1000);
+        if(invalid.length)return res.status(400).json({error:"Enter the actual flower weight in grams before completing this order",flowerItems:invalid.map(x=>({index:x.index,name:String(x.item?.name||"Flower")}))});
+        for(const {item,index} of required)item.actualGrams=Math.round(byIndex.get(index)*100)/100;
+        const actor=staffIdentity(req);
+        o.flowerWeights={recordedAt:Date.now(),recordedBy:actor?.name||"Staff",items:required.map(x=>({index:x.index,name:String(x.item?.name||"Flower"),grams:x.item.actualGrams}))};
+      }
+      o.status=nextStatus;
       await setJSON("order:" + b.orderId, o);
       return res.status(200).json({ ok: true });
     }
