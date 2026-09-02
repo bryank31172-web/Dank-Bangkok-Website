@@ -18,7 +18,7 @@
 --gold:#d49a2a;--danger:#dc5c6a;--blue:#3978f6;--blue-soft:#edf4ff;--font:'Inter',system-ui,sans-serif}
 :root[data-theme="dark"]{color-scheme:dark;--bg:#0d1117;--bg2:#151b23;--panel:#151b23;--panel2:#1b2430;--line:#252f3d;--line2:#344052;--txt:#eef3f8;--muted:#a8b1bf;--muted2:#7f8a99;--green:#33c985;--green2:#63daa0;--deep:#2abb78;--gold:#e2ad47;--danger:#ef7884;--blue:#6c9cff;--blue-soft:#1b2d4a}
 :root[data-theme="dark"] header{background:var(--panel)}:root[data-theme="dark"] .top-search,:root[data-theme="dark"] input,:root[data-theme="dark"] textarea,:root[data-theme="dark"] select{background:var(--panel2)!important;color:var(--txt)!important}:root[data-theme="dark"] .profile-dot{background:#183a2b;border-color:#28543f;color:var(--green2)}
-*{box-sizing:border-box}html,body{margin:0;height:100%}
+*{box-sizing:border-box}html,body{margin:0;height:100%;max-width:100%;overflow-x:hidden}
 body{background:var(--bg);color:var(--txt);font-family:var(--font);display:flex;flex-direction:column;font-size:14px}
 button{font-family:inherit;cursor:pointer;border:none;color:inherit;background:none}
 header{height:74px;display:flex;align-items:center;gap:18px;padding:0 28px 0 268px;border-bottom:1px solid var(--line);background:#fff;position:fixed;inset:0 0 auto 0;z-index:50}
@@ -27,7 +27,7 @@ header h1::before{content:'D';width:28px;height:28px;display:grid;place-items:ce
 header .st{margin-left:auto;font-size:12px;color:var(--muted2)}
 .top-search{width:min(360px,36vw);height:40px;border:1px solid var(--line2);border-radius:12px;background:#fafbfc;display:flex;align-items:center;gap:9px;padding:0 13px;color:var(--muted2)}
 .top-search input{border:0;outline:0;background:transparent;width:100%;font:inherit;color:var(--txt)}
-.profile-dot{width:36px;height:36px;border-radius:50%;background:#eaf7ef;color:var(--green2);display:grid;place-items:center;font-weight:800;border:1px solid #dcefe4}
+.profile-dot{width:36px;height:36px;border-radius:50%;background:#eaf7ef;color:var(--green2);display:grid;place-items:center;font-weight:800;border:1px solid #dcefe4;flex:none}.mobile-menu{display:none}.mobile-backdrop{display:none}
 .pill{font-size:11px;font-weight:800;padding:3px 9px;border-radius:999px;border:1px solid var(--line2);color:var(--green2)}
 .pill.warn{color:var(--gold);border-color:var(--gold)}
 main{flex:1;display:flex;min-height:0;padding-top:74px}
@@ -141,18 +141,49 @@ main{flex:1;display:flex;min-height:0;padding-top:74px}
    after logging in and its "Select a conversation" placeholder hung 90px past
    the right edge of every tab, leaving the whole console swipeable sideways
    into empty space. The media query has to win. */
-@media(max-width:760px){header{height:64px;padding:0 14px 0 118px}header h1{left:14px;width:100px;height:64px;font-size:0}header h1::after{content:'DANK';font-size:16px}.top-search{width:100%}header .st{display:none}.profile-dot{display:none}main{padding-top:64px}#listWrap{display:block!important}.content-shell{height:calc(100vh - 128px);padding:18px 14px 90px}#tabs{position:fixed;z-index:60;inset:auto 0 0 0;width:100%;min-width:0;height:64px;flex-direction:row;justify-content:flex-start;overflow-x:auto;padding:7px 5px;border:1px solid var(--line);box-shadow:0 -8px 30px rgba(30,42,60,.08)}#tabs button{width:74px;min-width:74px;padding:6px 3px;gap:2px;flex-direction:column;justify-content:center;font-size:8.5px;text-align:center}#tabs button i{font-size:18px}#tabs .sidebar-logout{margin:0}.portal-grid,.dashboard-grid{grid-template-columns:1fr}.dash-card.full{grid-column:auto}.stat-row{grid-template-columns:repeat(2,1fr)}.rank-row{grid-template-columns:22px minmax(0,1fr) 55px 72px}.portal-panel{padding:0}#pageHead h2{font-size:22px}.ocard{margin:10px 0}.order-summary{grid-template-columns:repeat(2,minmax(0,1fr))}#chatWrap{display:none!important}}
+@media(max-width:760px){
+body{width:100%;min-width:0;overflow-x:hidden}
+header{height:64px;padding:0 14px;display:grid;grid-template-columns:42px minmax(0,1fr) 42px;gap:8px}
+header h1{position:static;width:auto;height:64px;justify-self:center;font-size:16px;white-space:nowrap}
+header h1::before{width:26px;height:26px;border-radius:8px;font-size:14px}
+.mobile-menu{width:42px;height:42px;border-radius:11px;display:none;place-items:center;font-size:24px;color:var(--txt);justify-self:start}
+.mobile-menu:active{background:var(--blue-soft)}
+.top-search,header .st,header #alertBtn{display:none!important}
+.profile-dot{display:grid;width:40px;height:40px;justify-self:end;font-size:13px;box-shadow:0 3px 12px rgba(30,42,60,.08)}
+main{padding-top:64px;width:100%;min-width:0}
+#listWrap{width:100%;min-width:0;overflow:hidden}
+.content-shell{width:100%;max-width:100vw;height:calc(100dvh - 64px);padding:18px 14px 32px;overflow-x:hidden;overflow-y:auto}
+#list,#pageHead,.portal-grid,.dashboard-grid,.dash-card,.portal-card,.staff-manage{width:100%;max-width:100%;min-width:0}
+#tabs{position:fixed;z-index:80;inset:64px auto 0 0;width:min(82vw,310px);min-width:0;height:calc(100dvh - 64px);padding:18px 12px;display:flex;flex-direction:column;gap:6px;overflow-y:auto;overflow-x:hidden;border:0;border-right:1px solid var(--line);background:var(--panel);box-shadow:16px 0 38px rgba(20,30,45,.16);transform:translateX(-105%);transition:transform .28s cubic-bezier(.22,.8,.28,1)}
+body.drawer-open #tabs{transform:translateX(0)}
+#tabs button{width:100%;min-width:0;padding:12px 13px;gap:12px;flex-direction:row;justify-content:flex-start;font-size:13px;text-align:left}
+#tabs button i{font-size:20px}#tabs .sidebar-logout{margin-top:auto}
+.mobile-backdrop{position:fixed;z-index:70;inset:64px 0 0;background:rgba(12,19,29,.42);opacity:0;pointer-events:none;display:block;transition:opacity .25s ease}
+body.drawer-open .mobile-backdrop{opacity:1;pointer-events:auto}
+.portal-grid,.dashboard-grid{grid-template-columns:minmax(0,1fr)}.dash-card.full{grid-column:auto}
+.dash-card{padding:16px;border-radius:15px}.dash-head{align-items:flex-start;flex-wrap:wrap}.period-tabs{max-width:100%;overflow-x:auto}
+.stat-row{grid-template-columns:repeat(2,minmax(0,1fr))}.rank-row{grid-template-columns:22px minmax(0,1fr) 50px 66px}
+.portal-panel{padding:0}#pageHead{margin-bottom:16px}#pageHead h2{font-size:22px}.ocard{margin:10px 0}
+.order-summary{grid-template-columns:repeat(2,minmax(0,1fr))}
+.order-items-wrap{max-width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}
+.staff-manage-head{align-items:flex-start;gap:12px}.staff-add{flex:none;padding:0 12px}.staff-toolbar{display:grid;grid-template-columns:1fr}
+.staff-toolbar>*{width:100%;min-width:0}.staff-grid{grid-template-columns:minmax(0,1fr)}
+#chatWrap{display:none!important}
+}
+@media(max-width:390px){header h1{font-size:14px}.content-shell{padding-left:10px;padding-right:10px}.sales-value{font-size:29px}.period-tabs button{padding:7px 8px}.staff-manage-head{display:grid}.staff-add{width:100%}}
 </style>
 <script>try{document.documentElement.dataset.theme=localStorage.getItem('dankPortalTheme')||'light'}catch(e){document.documentElement.dataset.theme='light'}</script>
 </head>
 <body>
 <header>
+  <button class="mobile-menu" id="mobileMenu" type="button" onclick="toggleMobileNav()" aria-label="Open navigation" aria-controls="tabs" aria-expanded="false"><i class="ri-menu-2-line"></i></button>
   <h1>DANK Staff</h1>
   <label class="top-search"><i class="ri-search-line"></i><input type="search" placeholder="Search orders and reports…" aria-label="Search dashboard"></label>
   <span class="st" id="storeStat"></span>
   <button class="ghost" id="alertBtn" style="display:none" type="button" aria-hidden="true">Alerts</button>
   <div class="profile-dot" aria-label="DANK staff profile">DS</div>
 </header>
+<div class="mobile-backdrop" id="mobileBackdrop" onclick="closeMobileNav()" aria-hidden="true"></div>
 <main id="main">
   <div id="login">
     <div style="font-size:40px;color:var(--blue)"><i class="ri-user-smile-line" aria-hidden="true"></i></div>
@@ -313,15 +344,25 @@ async function login(){
   const first=can('dashboard')?'dashboard':'orders'; setTab(portalTabs.includes(hash)&&tabAllowed(hash)?hash:first);
   window.addEventListener('hashchange',()=>{ const h=decodeURIComponent(location.hash.slice(1)); if(portalTabs.includes(h)&&tabAllowed(h)) setTab(h); });
 }
-function logout(){ sendPresence('offline');clearInterval(presenceT);localStorage.removeItem('dankStaffToken');localStorage.removeItem('dankStaffKey');LIVE=false;setTimeout(()=>location.reload(),120); }
+function logout(){ closeMobileNav();sendPresence('offline');clearInterval(presenceT);localStorage.removeItem('dankStaffToken');localStorage.removeItem('dankStaffKey');LIVE=false;setTimeout(()=>location.reload(),120); }
 window.addEventListener('pagehide',()=>sendPresence('offline'));
 function toggleKey(){const i=$('#keyInput'),icon=document.querySelector('.key-field i');i.type=i.type==='password'?'text':'password';icon.className=i.type==='text'?'ri-eye-off-line':'ri-eye-line';}
 function portalTheme(){return document.documentElement.dataset.theme||'light'}
 function togglePortalTheme(){const next=portalTheme()==='dark'?'light':'dark';document.documentElement.dataset.theme=next;localStorage.setItem('dankPortalTheme',next);renderPortalPanel('settings')}
 function toggleLoginMode(){OWNER_LOGIN=!OWNER_LOGIN;document.querySelector('.key-login').style.display=OWNER_LOGIN?'none':'';document.querySelector('.owner-login').style.display=OWNER_LOGIN?'block':'none';document.querySelector('.login-switch').textContent=OWNER_LOGIN?'Use staff key':'Owner email login';$('#loginErr').textContent='';}
+function toggleMobileNav(force){
+  if(innerWidth>760)return;
+  const open=force===undefined?!document.body.classList.contains('drawer-open'):Boolean(force);
+  document.body.classList.toggle('drawer-open',open);
+  const b=$('#mobileMenu');if(b){b.setAttribute('aria-expanded',String(open));b.setAttribute('aria-label',open?'Close navigation':'Open navigation');b.innerHTML=open?'<i class="ri-close-line"></i>':'<i class="ri-menu-2-line"></i>'}
+}
+function closeMobileNav(){toggleMobileNav(false)}
+window.addEventListener('resize',()=>{if(innerWidth>760)closeMobileNav()});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeMobileNav()});
 function can(p){return PERMS.includes('*')||PERMS.includes(p)}
 function tabAllowed(t){if(t==='dashboard')return can('dashboard');if(t==='sales')return can('sales');if(t==='products')return can('products');if(t==='promotions')return can('promotions');if(t==='announcement')return can('announcement_read');if(t==='staffinfo')return can('staff_manage');return can('orders')||t==='settings'}
 function applyPermissions(){
+  const mobile=$('#mobileMenu');if(mobile)mobile.style.display=LIVE?'grid':'none';
   const map={tabDashboard:'dashboard',tabSales:'sales',tabProducts:'products',tabPromotions:'promotions',tabAnnouncement:'announcement_read',tabStaffInfo:'staff_manage'};
   Object.entries(map).forEach(([id,p])=>{$('#'+id).style.display=can(p)?'':'none'});
   document.querySelector('.profile-dot').textContent=(PROFILE?.name||'Staff').split(/\s+/).map(x=>x[0]).join('').slice(0,2).toUpperCase();
@@ -332,7 +373,7 @@ function showGeneratedKeys(rows){
   setTimeout(()=>alert('Initial staff keys were created. Save these now; they will not be shown again.\n\n'+text),100);
 }
 
-function setTab(t){ if(typeof stopCamScan==='function') stopCamScan(); TAB=t;
+function setTab(t){ closeMobileNav(); if(typeof stopCamScan==='function') stopCamScan(); TAB=t;
   if(!tabAllowed(t)) t=can('dashboard')?'dashboard':'orders'; TAB=t;
   const ids={dashboard:'tabDashboard',orders:'tabOrders',products:'tabProducts',promotions:'tabPromotions',sales:'tabSales',announcement:'tabAnnouncement',staffinfo:'tabStaffInfo',settings:'tabSettings'};
   Object.entries(ids).forEach(([name,id])=>$('#'+id)?.classList.toggle('active',t===name));
