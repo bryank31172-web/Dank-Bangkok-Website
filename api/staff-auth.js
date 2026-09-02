@@ -1,6 +1,11 @@
 import crypto from "node:crypto";
 import { requireEnv, staffIdentity, hasPermission, safeEq } from "./_auth.js";
 import { authenticateAccountKey, seedInitialAccounts, listAccounts, publicAccount, createAccount, updateAccount, deleteAccount, resetAccount, setOwnAccountKey, setAccountKey, setAccountActive, setAccountRole, ROLE_PERMISSIONS, ROLE_LABELS } from "./_staff-accounts.js";
+import { getJSON, setJSON } from "./_store.js";
+
+const PRESENCE_TTL=180, ONLINE_WINDOW=120000;
+const presenceKey=id=>"staff:presence:"+id;
+async function markPresence(account,online=true){if(!account?.id||account.id==="legacy-owner")return;await setJSON(presenceKey(account.id),{lastSeen:online?Date.now():0},PRESENCE_TTL);}
 
 export default async function handler(req,res){
   res.setHeader("Access-Control-Allow-Origin","*");
@@ -29,18 +34,21 @@ export default async function handler(req,res){
       if(!account) account=await authenticateAccountKey(b.key);
       if(!account) return res.status(401).json({error:"bad key"});
       const token=staffIdentity.makeToken(account);
+      await markPresence(account);
       return res.status(200).json({ok:true,token,profile:publicAccount(account),permissions:ROLE_PERMISSIONS[account.role]||[],generated});
     }
     const actor=staffIdentity(req);
     if(!actor) return res.status(401).json({error:"session expired"});
-    if(b.action==="verify") return res.status(200).json({ok:true,profile:publicAccount(actor),permissions:ROLE_PERMISSIONS[actor.role]||[]});
+    if(b.action==="verify"||b.action==="heartbeat"){await markPresence(actor);return res.status(200).json({ok:true,profile:publicAccount(actor),permissions:ROLE_PERMISSIONS[actor.role]||[]});}
+    if(b.action==="offline"){await markPresence(actor,false);return res.status(200).json({ok:true});}
     if(b.action==="setself"){
       const account=await setOwnAccountKey(actor,String(b.key||""));
       return res.status(200).json({ok:true,account});
     }
     if(!hasPermission(actor,"staff_manage")) return res.status(403).json({error:"forbidden"});
     if(b.action==="list"){
-      const rows=(await listAccounts()).map(publicAccount);
+      const accounts=(await listAccounts()).map(publicAccount);
+      const rows=await Promise.all(accounts.map(async account=>{const presence=await getJSON(presenceKey(account.id));const lastSeen=Number(presence?.lastSeen)||0;return {...account,lastSeen,online:account.active!==false&&Date.now()-lastSeen<ONLINE_WINDOW};}));
       return res.status(200).json({ok:true,accounts:rows,roles:ROLE_LABELS,canAssignRoles:actor.role==="owner"});
     }
     if(b.action==="create"){
