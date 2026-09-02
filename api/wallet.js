@@ -16,7 +16,7 @@
 
 import { getJSON, setJSON } from "./_store.js";
 import { getBalance, credit, debit } from "./_wallet.js";
-import { requireStaff } from "./_auth.js";
+import { requirePermission } from "./_auth.js";
 import { requireRate } from "./_ratelimit.js";
 
 const SK = process.env.OMISE_SECRET_KEY || "";
@@ -87,7 +87,7 @@ export default async function handler(req, res) {
        have no primitive for here, and a human pressing one button twice in the
        same 200ms is not the case worth building it for. */
     if (b.action === "settle") {
-      if (!requireStaff(req, res)) return;
+      if (!requirePermission(req, res, "owner_tools")) return;
       const id = String(b.orderId || "");
       if (!id) return res.status(400).json({ error: "orderId required" });
       const o = await getJSON("order:" + id);
