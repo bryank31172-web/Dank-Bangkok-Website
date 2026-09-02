@@ -24,7 +24,7 @@
    tells staff to substitute. The order still goes through.                  */
 
 import { getGiftConfig, giftStatus, saveGiftConfig, restock, DEFAULT_THRESHOLD } from "./_boxgifts.js";
-import { requireStaff, isStaff } from "./_auth.js";
+import { requirePermission, isStaff } from "./_auth.js";
 import { requireRate } from "./_ratelimit.js";
 
 /* What a shopper's browser is allowed to see. */
@@ -65,7 +65,7 @@ export default async function handler(req, res) {
     }
 
     if (req.method === "POST") {
-      if (!requireStaff(req, res)) return;
+      if (!requirePermission(req, res, "owner_tools")) return;
       const b = req.body || {};
       const action = String(b.action || (Array.isArray(b.gifts) ? "save" : "")).toLowerCase();
 
