@@ -32,7 +32,7 @@ async function saveAccounts(rows) {
   await setJSON(STORE_KEY, rows, TTL);
 }
 export function publicAccount(a) {
-  return { id:a.id, name:a.name, phone:a.phone||"", startDate:a.startDate||"", salary:Number(a.salary)||0, role:a.role, active:a.active !== false, createdAt:a.createdAt, updatedAt:a.updatedAt };
+  return { id:a.id, name:a.name, phone:a.phone||"", startDate:a.startDate||"", salary:Number(a.salary)||0, role:a.role, active:a.active !== false, notifications:{telegram:Boolean(a.notifications?.telegramChatId),line:Boolean(a.notifications?.lineUserId)}, createdAt:a.createdAt, updatedAt:a.updatedAt };
 }
 export async function authenticateAccountKey(given) {
   const legacy = process.env.STAFF_KEY || "";
@@ -92,6 +92,20 @@ export async function setOwnAccountKey(actor,key) {
   row.keyHash=hashKey(key); row.updatedAt=Date.now(); row.active=true;
   await saveAccounts(rows); return publicAccount(row);
 }
+export async function setOwnNotifications(actor,details={}) {
+  if(!actor?.id||actor.id==="legacy-owner") throw new Error("use a named staff account to link notifications");
+  const telegramChatId=String(details.telegramChatId||"").trim();
+  const lineUserId=String(details.lineUserId||"").trim();
+  if(telegramChatId&&!/^-?\d{5,20}$/.test(telegramChatId)) throw new Error("Telegram Chat ID must contain only numbers");
+  if(lineUserId&&!/^U[0-9a-f]{32}$/i.test(lineUserId)) throw new Error("LINE User ID must start with U followed by 32 letters or numbers");
+  const rows=await listAccounts(),row=rows.find(a=>a.id===actor.id);
+  if(!row) throw new Error("account not found");
+  const current=row.notifications||{};
+  row.notifications={telegramChatId:details.telegramRemove?"":(telegramChatId||current.telegramChatId||""),lineUserId:details.lineRemove?"":(lineUserId||current.lineUserId||"")};
+  row.updatedAt=Date.now();await saveAccounts(rows);
+  return publicAccount(row);
+}
+
 export async function setAccountKey(actor,id,key) {
   if(!validStaffKey(key)) throw new Error("key must be 12–128 characters with uppercase, lowercase, a number, and a special symbol");
   const rows=await listAccounts(), row=rows.find(a=>a.id===id);

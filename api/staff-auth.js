@@ -1,6 +1,6 @@
 import crypto from "node:crypto";
 import { requireEnv, staffIdentity, hasPermission, safeEq } from "./_auth.js";
-import { authenticateAccountKey, seedInitialAccounts, listAccounts, publicAccount, createAccount, updateAccount, deleteAccount, resetAccount, setOwnAccountKey, setAccountKey, setAccountActive, setAccountRole, ROLE_PERMISSIONS, ROLE_LABELS } from "./_staff-accounts.js";
+import { authenticateAccountKey, seedInitialAccounts, listAccounts, publicAccount, createAccount, updateAccount, deleteAccount, resetAccount, setOwnAccountKey, setOwnNotifications, setAccountKey, setAccountActive, setAccountRole, ROLE_PERMISSIONS, ROLE_LABELS } from "./_staff-accounts.js";
 import { getJSON, setJSON } from "./_store.js";
 
 const PRESENCE_TTL=180, ONLINE_WINDOW=120000;
@@ -43,6 +43,10 @@ export default async function handler(req,res){
     if(b.action==="offline"){await markPresence(actor,false);return res.status(200).json({ok:true});}
     if(b.action==="setself"){
       const account=await setOwnAccountKey(actor,String(b.key||""));
+      return res.status(200).json({ok:true,account});
+    }
+    if(b.action==="notifications"){
+      const account=await setOwnNotifications(actor,{telegramChatId:b.telegramChatId,lineUserId:b.lineUserId,telegramRemove:b.telegramRemove,lineRemove:b.lineRemove});
       return res.status(200).json({ok:true,account});
     }
     if(!hasPermission(actor,"staff_manage")) return res.status(403).json({error:"forbidden"});
