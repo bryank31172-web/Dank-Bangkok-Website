@@ -96,8 +96,9 @@ export function keyFrom(req) {
   return bearer ?? req?.headers?.["x-staff-key"] ?? req?.query?.key ?? req?.body?.key ?? "";
 }
 
-export function isStaff(req) {
-  return Boolean(staffIdentity(req));
+export function isStaff(req, permission) {
+  const identity=staffIdentity(req);
+  return permission ? hasPermission(identity,permission) : Boolean(identity);
 }
 
 export function requirePermission(req,res,permission){
