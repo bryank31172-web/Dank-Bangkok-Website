@@ -2326,7 +2326,7 @@ let DATA = sanitizeMenu(PRODUCTS.slice());
    for a customer reads shopData(), never DATA. */
 /* Plurals matter: \b after "cocktail" refuses "Cocktails", because there is no
    word boundary between the l and the s. Every alternative takes an optional s. */
-const SHOP_HIDE_CAT=/^(bars?|cocktails?|liquors?|spirits?|whisk(e)?ys?|vodkas?|gins?|rums?|tequilas?|wines?|sake|soju)\b/i;
+const SHOP_HIDE_CAT=/^(bars?|cocktails?|liquors?|spirits?|whisk(e)?ys?|vodkas?|gins?|rums?|tequilas?|wines?|sake|soju|edibles?|vapes?)\b/i;
 /* Six bottles reached the cannabis shelf anyway, because the category test
    above has nothing to read: "Fireball shot", "gin shot", "vodka", "Gin
    tonic", "Regency on therock" and "santory ontherock" are filed in the POS
