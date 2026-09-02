@@ -56,7 +56,8 @@ them private; rotate the token if it leaks.
 | `TELEGRAM_CHAT_ID` | The staff group's chat id | Add the bot to your staff group, send a message, open `api.telegram.org/bot<TOKEN>/getUpdates`, copy `chat.id` (negative number) |
 | `HANDOFF_EMAIL_TO` | Optional: handoff emails go here (default = ORDER_EMAIL_TO) | — |
 | `HANDOFF_FORWARD_URL` | Optional: also POST handoffs into BRYAN POS (Alerts) | From your POS developer |
-| `STAFF_KEY` | Password for the staff console (`/staff.html`). Default is `dankstaff` — **change it before going live** | Pick any secret |
+| `STAFF_KEY` | Recovery/bootstrap key for the staff portal. The portal creates individual named keys for Bryan, Bank and Mon on the first owner login. | Pick a long random secret |
+| `STAFF_SESSION_SECRET` | Optional separate secret for signing 12-hour individual staff sessions. Falls back to `ADMIN_SECRET`. | Generate a long random secret |
 | `UPSTASH_REDIS_REST_URL` + `UPSTASH_REDIS_REST_TOKEN` | Chat + order storage. Without it, things work but may reset between serverless instances — set this before going live | upstash.com → create free Redis DB → REST API tab (2 min) |
 | `OMISE_PUBLIC_KEY` | Omise (Opn Payments) public key `pkey_...` — enables **online payment** (PromptPay QR + cards) at checkout | Omise dashboard → Keys |
 | `OMISE_SECRET_KEY` | Omise secret key `skey_...` — used server-side only to create charges | Omise dashboard → Keys |
