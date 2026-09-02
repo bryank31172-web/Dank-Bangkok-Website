@@ -44,7 +44,7 @@
    customer really does leave owing cash, staff open a tab — which is the whole
    reason the tab exists.                                                     */
 import { getJSON, setJSON, indexList } from "./_store.js";
-import { requireStaff } from "./_auth.js";
+import { requirePermission } from "./_auth.js";
 import { normPhone } from "./_phone.js";
 
 const DAY = 86400000;
@@ -185,7 +185,7 @@ export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Headers", "Content-Type, X-Staff-Key, Authorization");
   res.setHeader("Cache-Control", "no-store");
   if (req.method === "OPTIONS") return res.status(204).end();
-  if (!requireStaff(req, res)) return;
+  if (!requirePermission(req, res, "owner_tools")) return;
 
   try {
     if (req.method === "GET") return await onGet(req, res);
