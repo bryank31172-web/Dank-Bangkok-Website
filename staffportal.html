@@ -315,7 +315,7 @@ async function renderStaffManagement(){
   const el=$('#list'),r=await authPost('/api/staff-auth',{action:'list'});
   if(!r.ok){el.innerHTML='<div class="ghdr">Could not load staff accounts.</div>';return;}
   const j=await r.json(),roles=j.canAssignRoles?'<select id="newStaffRole" style="'+SALEIN+'"><option value="parttime">Part-time Staff</option><option value="professional">Professional Staff</option><option value="manager">Manager</option><option value="owner">Owner</option></select>':'';
-  el.innerHTML='<section class="portal-card"><h3>Add staff account</h3><input id="newStaffName" placeholder="Staff name" style="'+SALEIN+'"> '+roles+' <button class="btn" data-staff-action="create">Create key</button></section><section class="portal-card"><h3>Staff accounts</h3><div id="staffRows"></div></section>';
+  el.innerHTML='<section class="portal-card"><h3>Store tools</h3><p>Managers can create, edit and delete products and promotion codes.</p><button class="btn" data-staff-action="store-editor">Open Products & Promotions</button></section><section class="portal-card"><h3>Add staff account</h3><input id="newStaffName" placeholder="Staff name" style="'+SALEIN+'"> '+roles+' <button class="btn" data-staff-action="create">Create key</button></section><section class="portal-card"><h3>Staff accounts</h3><div id="staffRows"></div></section>';
   $('#staffRows').innerHTML=(j.accounts||[]).map(a=>'<div style="display:flex;justify-content:space-between;gap:8px;padding:10px 0;border-bottom:1px solid var(--line2)"><div><b>'+esc(a.name)+'</b><small style="display:block">'+esc(a.role)+' · '+(a.active?'Active':'Disabled')+'</small></div><div><button class="undo-btn" data-staff-action="reset" data-id="'+esc(a.id)+'">Reset key</button> <button class="undo-btn" data-staff-action="active" data-id="'+esc(a.id)+'" data-active="'+(!a.active)+'">'+(a.active?'Disable':'Enable')+'</button></div></div>').join('');
   showGeneratedKeys();
 }
@@ -330,6 +330,7 @@ async function renderAnnouncements(){
 }
 document.addEventListener('click',async e=>{
   const b=e.target.closest('[data-staff-action]');if(!b)return;e.preventDefault();const a=b.dataset.staffAction;
+  if(a==='store-editor'){const r=await authPost('/api/admin',{action:'staff'}),j=await r.json();if(!r.ok)return boxToast(j.error||'Could not open editor');localStorage.setItem('dank_admintok',j.token);window.open('/?owner=1','_blank','noopener');return;}
   if(a==='copy'){await navigator.clipboard?.writeText($('#generatedKeys')?.textContent||'');return boxToast('Keys copied');}
   if(a==='create'){const r=await authPost('/api/staff-auth',{action:'create',name:$('#newStaffName').value,role:$('#newStaffRole')?.value||'parttime'}),j=await r.json();if(!r.ok)return boxToast(j.error||'Could not create');GENERATED_KEYS=[{name:j.account.name,key:j.key}];return renderStaffManagement();}
   if(a==='reset'){if(!confirm('Reset this key?'))return;const r=await authPost('/api/staff-auth',{action:'reset',id:b.dataset.id}),j=await r.json();if(!r.ok)return boxToast(j.error||'Could not reset');GENERATED_KEYS=[{name:j.account.name,key:j.key}];return renderStaffManagement();}
