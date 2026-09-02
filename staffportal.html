@@ -151,7 +151,7 @@ main{flex:1;display:flex;min-height:0;padding-top:74px}
     <div style="font-size:40px;color:var(--blue)"><i class="ri-user-smile-line" aria-hidden="true"></i></div>
     <h2 style="margin:8px 0 2px">Staff login</h2>
     <p style="color:var(--muted);font-size:13px;margin:4px 0 0">Enter the staff key to access the staff dashboard.</p>
-    <input id="keyInput" type="password" placeholder="Staff key" onkeydown="if(event.key==='Enter')login()">
+    <div style="display:flex;gap:8px;width:min(360px,90vw)"><input id="keyInput" type="password" placeholder="Staff key" style="flex:1" onkeydown="if(event.key==='Enter')login()"><button type="button" class="undo-btn" id="showKeyBtn" aria-label="Show staff key" onclick="toggleKeyVisibility()" style="min-width:48px">Show</button></div>
     <button class="btn" onclick="login()">Enter console</button>
     <p id="loginErr" style="color:var(--danger);font-size:12.5px;height:14px;margin:10px 0 0"></p>
   </div>
@@ -173,7 +173,8 @@ main{flex:1;display:flex;min-height:0;padding-top:74px}
 </main>
 <script>
 const API='/api/thread';
-let KEY=localStorage.getItem('dankStaffKey')||'';
+let KEY=localStorage.getItem('dankStaffSession')||localStorage.getItem('dankStaffKey')||'';
+let PROFILE=null, PERMS=[], GENERATED_KEYS=[];
 let cur=null, curSeq=0, pollT=null, listT=null, ordersT=null, lastSeen={};   // threadId -> last seq seen
 let TAB='dashboard', ORDERS=[], knownOrders=new Set(), firstOrderLoad=true, LIVE=false;
 let alertEnabled=localStorage.getItem('dankOrderAlerts')==='1', audioCtx=null, orderPopT=null;
@@ -273,24 +274,31 @@ function showOrderAlert(fresh){
   }
 }
 
-async function login(){
-  const k=$('#keyInput').value.trim()||KEY; if(!k){$('#loginErr').textContent='Enter the key';return;}
-  let r;
-  try{ r=await authGet(`${API}?list=1`,k); }
-  catch(e){ $('#loginErr').textContent='Network error — check your connection'; return; }
-  if(!r.ok){ $('#loginErr').textContent='Wrong key'; return; }
-  KEY=k; localStorage.setItem('dankStaffKey',k); LIVE=true;
-  const j=await r.json();
-  $('#storeStat').innerHTML=j.redis?'<span class="pill">● storage: redis</span>':'<span class="pill warn">● storage: memory (set up Upstash for production)</span>';
-  $('#login').style.display='none'; $('#listWrap').style.display='flex'; $('#chatWrap').style.display='none'; $('#logoutBtn').style.display='';
-  updateAlertButton();
-  pollOrders(); startOrderPoll(); clearInterval(dashboardSalesT); dashboardSalesT=setInterval(()=>loadDashboardSales(true),10800000);
-  const hash=decodeURIComponent(location.hash.slice(1));
-  const portalTabs=['dashboard','orders','sales','announcement','staffinfo','settings'];
-  setTab(portalTabs.includes(hash)?hash:'dashboard');
-  window.addEventListener('hashchange',()=>{ const h=decodeURIComponent(location.hash.slice(1)); if(portalTabs.includes(h)) setTab(h); });
+function toggleKeyVisibility(){
+  const input=$('#keyInput'),show=input.type==='password';
+  input.type=show?'text':'password'; $('#showKeyBtn').textContent=show?'Hide':'Show';
 }
-function logout(){ localStorage.removeItem('dankStaffKey'); LIVE=false; location.reload(); }
+const can=p=>PERMS.includes('*')||PERMS.includes(p);
+async function beginStaffSession(j){
+  KEY=j.token||KEY; PROFILE=j.profile||PROFILE; PERMS=j.permissions||PERMS; GENERATED_KEYS=j.generated||[];
+  localStorage.setItem('dankStaffSession',KEY); localStorage.removeItem('dankStaffKey'); LIVE=true;
+  const access={tabDashboard:can('owner_tools'),tabOrders:can('orders'),tabSales:can('owner_tools'),tabAnnouncement:can('announcements'),tabStaffInfo:can('staff_manage')};
+  Object.entries(access).forEach(([id,ok])=>{const el=$('#'+id);if(el)el.style.display=ok?'':'none';});
+  $('#login').style.display='none'; $('#listWrap').style.display='flex'; $('#chatWrap').style.display='none'; $('#logoutBtn').style.display='';
+  updateAlertButton(); if(can('orders')){pollOrders();startOrderPoll();}
+  const allowed=[]; if(can('owner_tools'))allowed.push('dashboard','sales'); if(can('orders'))allowed.push('orders'); if(can('announcements'))allowed.push('announcement'); if(can('staff_manage'))allowed.push('staffinfo'); allowed.push('settings');
+  const hash=decodeURIComponent(location.hash.slice(1)); setTab(allowed.includes(hash)?hash:(can('orders')?'orders':allowed[0]));
+}
+async function login(){
+  const k=$('#keyInput').value.trim()||KEY;if(!k){$('#loginErr').textContent='Enter the key';return;}
+  try{
+    const saved=k.includes('.')&&localStorage.getItem('dankStaffSession');
+    const r=await fetch('/api/staff-auth',{method:'POST',headers:{'Content-Type':'application/json',...(saved?{'Authorization':'Bearer '+k}:{})},body:JSON.stringify(saved?{action:'verify'}:{action:'login',key:k})});
+    if(!r.ok){localStorage.removeItem('dankStaffSession');$('#loginErr').textContent='Wrong or expired key';return;}
+    await beginStaffSession(await r.json());
+  }catch(e){$('#loginErr').textContent='Network error — check your connection';}
+}
+function logout(){localStorage.removeItem('dankStaffSession');localStorage.removeItem('dankStaffKey');LIVE=false;location.reload();}
 
 function setTab(t){ if(typeof stopCamScan==='function') stopCamScan(); TAB=t;
   const ids={dashboard:'tabDashboard',orders:'tabOrders',sales:'tabSales',announcement:'tabAnnouncement',staffinfo:'tabStaffInfo',settings:'tabSettings'};
