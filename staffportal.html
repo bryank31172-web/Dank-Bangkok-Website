@@ -324,9 +324,10 @@ function showGeneratedKeys(){
   $('#list').insertAdjacentHTML('afterbegin','<section class="portal-card" style="border-color:var(--green)"><h3>Copy these keys now</h3><p>They are shown once only.</p><pre id="generatedKeys" style="white-space:pre-wrap;user-select:all"></pre><button class="undo-btn" data-staff-action="copy">Copy keys</button></section>');
   $('#generatedKeys').textContent=out; GENERATED_KEYS=[];
 }
+let ANNOUNCEMENTS=[];
 async function renderAnnouncements(){
-  const el=$('#list'),r=await authGet('/api/staff-content'); if(!r.ok){el.innerHTML='<div class="ghdr">Could not load announcements.</div>';return;} const j=await r.json();
-  el.innerHTML='<section class="portal-card"><h3>New announcement</h3><input id="annTitle" placeholder="Title" style="'+SALEIN+';width:100%;box-sizing:border-box"><textarea id="annBody" placeholder="Message" style="'+SALEIN+';width:100%;box-sizing:border-box;min-height:90px;margin-top:8px"></textarea><button class="btn" data-staff-action="announce" style="margin-top:8px">Publish</button></section>'+(j.announcements||[]).map(a=>'<section class="portal-card"><h3>'+esc(a.title)+'</h3><p>'+esc(a.body)+'</p><small>'+esc(a.author||'Staff')+'</small><br><button class="undo-btn" data-staff-action="delete-ann" data-id="'+esc(a.id)+'">Delete</button></section>').join('');
+  const el=$('#list'),r=await authGet('/api/staff-content'); if(!r.ok){el.innerHTML='<div class="ghdr">Could not load announcements.</div>';return;} const j=await r.json(); ANNOUNCEMENTS=j.announcements||[];
+  el.innerHTML='<section class="portal-card"><h3>New announcement</h3><input id="annTitle" placeholder="Title" style="'+SALEIN+';width:100%;box-sizing:border-box"><textarea id="annBody" placeholder="Message" style="'+SALEIN+';width:100%;box-sizing:border-box;min-height:90px;margin-top:8px"></textarea><button class="btn" data-staff-action="announce" style="margin-top:8px">Publish</button></section>'+ANNOUNCEMENTS.map(a=>'<section class="portal-card"><h3>'+esc(a.title)+'</h3><p>'+esc(a.body)+'</p><small>'+esc(a.author||'Staff')+'</small><br><button class="undo-btn" data-staff-action="edit-ann" data-id="'+esc(a.id)+'">Edit</button> <button class="undo-btn" data-staff-action="delete-ann" data-id="'+esc(a.id)+'">Delete</button></section>').join('');
 }
 document.addEventListener('click',async e=>{
   const b=e.target.closest('[data-staff-action]');if(!b)return;e.preventDefault();const a=b.dataset.staffAction;
@@ -336,6 +337,7 @@ document.addEventListener('click',async e=>{
   if(a==='reset'){if(!confirm('Reset this key?'))return;const r=await authPost('/api/staff-auth',{action:'reset',id:b.dataset.id}),j=await r.json();if(!r.ok)return boxToast(j.error||'Could not reset');GENERATED_KEYS=[{name:j.account.name,key:j.key}];return renderStaffManagement();}
   if(a==='active'){await authPost('/api/staff-auth',{action:'active',id:b.dataset.id,active:b.dataset.active==='true'});return renderStaffManagement();}
   if(a==='announce'){await authPost('/api/staff-content',{action:'create',title:$('#annTitle').value,body:$('#annBody').value});return renderAnnouncements();}
+  if(a==='edit-ann'){const row=ANNOUNCEMENTS.find(x=>x.id===b.dataset.id);if(!row)return;const title=prompt('Announcement title',row.title),body=title===null?null:prompt('Announcement message',row.body);if(body!==null)await authPost('/api/staff-content',{action:'update',id:row.id,title,body});return renderAnnouncements();}
   if(a==='delete-ann'){if(confirm('Delete this announcement?'))await authPost('/api/staff-content',{action:'delete',id:b.dataset.id});return renderAnnouncements();}
 });
 function renderPortalPanel(t){
