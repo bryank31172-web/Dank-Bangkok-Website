@@ -12,6 +12,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link href="https://cdn.jsdelivr.net/npm/remixicon@4.6.0/fonts/remixicon.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
 <style>
 :root{--bg:#f6f7f9;--bg2:#fff;--panel:#fff;--panel2:#f8fafc;--line:#edf0f3;--line2:#e4e8ee;
 --txt:#121722;--muted:#697180;--muted2:#9aa2af;--green:#21b66f;--green2:#158b55;--deep:#11975a;
@@ -137,6 +138,13 @@ main{flex:1;display:flex;min-height:0;padding-top:74px}
    into empty space. The media query has to win. */
 @media(max-width:760px){header{height:64px;padding:0 14px 0 118px}header h1{left:14px;width:100px;height:64px;font-size:0}header h1::after{content:'DANK';font-size:16px}.top-search{width:100%}header .st{display:none}.profile-dot{display:none}main{padding-top:64px}#listWrap{display:block!important}.content-shell{height:calc(100vh - 128px);padding:18px 14px 90px}#tabs{position:fixed;z-index:60;inset:auto 0 0 0;width:100%;min-width:0;height:64px;flex-direction:row;justify-content:flex-start;overflow-x:auto;padding:7px 5px;border:1px solid var(--line);box-shadow:0 -8px 30px rgba(30,42,60,.08)}#tabs button{width:74px;min-width:74px;padding:6px 3px;gap:2px;flex-direction:column;justify-content:center;font-size:8.5px;text-align:center}#tabs button i{font-size:18px}#tabs .sidebar-logout{margin:0}.portal-grid,.dashboard-grid{grid-template-columns:1fr}.dash-card.full{grid-column:auto}.stat-row{grid-template-columns:repeat(2,1fr)}.rank-row{grid-template-columns:22px minmax(0,1fr) 55px 72px}.portal-panel{padding:0}#pageHead h2{font-size:22px}.ocard{margin:10px 0}.order-summary{grid-template-columns:repeat(2,minmax(0,1fr))}#chatWrap{display:none!important}}
 </style>
+<style>
+.overview-cards{grid-column:1/-1;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px}.overview-card{min-height:148px;background:#fff;border:1px solid var(--line2);border-radius:20px;padding:21px 22px;display:flex;flex-direction:column;justify-content:space-between;box-shadow:0 5px 18px rgba(36,48,68,.025)}.metric-top{display:flex;align-items:center;justify-content:space-between;font-weight:600}.metric-top i{font-size:20px;color:var(--blue)}.metric-main{display:flex;align-items:center;gap:9px}.metric-main b{font-size:28px;letter-spacing:-.8px}.metric-sub{font-size:11.5px;color:var(--muted2)}.analytics-main{min-height:420px;display:flex;flex-direction:column}.sales-hero{display:grid;grid-template-columns:220px minmax(0,1fr);gap:22px;align-items:center;flex:1}.chart-wrap{height:245px;min-width:0}.chart-wrap canvas{width:100%!important;height:100%!important}.weekday-wrap{height:285px}.dash-table{width:100%;border-collapse:collapse;font-size:12px}.dash-table th{text-align:left;padding:0 10px 13px;color:var(--muted2);font-size:10px;text-transform:uppercase;letter-spacing:.7px;border-bottom:1px solid var(--line)}.dash-table td{padding:13px 10px;border-bottom:1px dashed var(--line2);vertical-align:middle}.dash-table tr:last-child td{border-bottom:0}.dash-table .money{text-align:right;color:var(--green2);font-weight:700}.dash-table .sold{text-align:right;color:var(--muted);font-weight:600}.rank-badge{width:28px;height:28px;border-radius:8px;display:grid;place-items:center;background:#f5f7fa;color:var(--blue);font-weight:800}.announcement-strip{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}.announcement-item{border:1px solid var(--line);border-radius:13px;padding:14px}.announcement-item b{display:block;font-size:12.5px}.announcement-item span{display:block;color:var(--muted);font-size:11px;line-height:1.5;margin-top:5px}
+.announcement-toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px}.role-chip,.ann-chip{display:inline-flex;align-items:center;border-radius:999px;padding:5px 9px;font-size:10.5px;font-weight:700;background:#eef4ff;color:var(--blue)}.ann-chip.urgent{background:#fff0f0;color:#d9485f}.ann-chip.important{background:#fff7e8;color:#c87912}.ann-list{display:grid;gap:13px}.ann-card{background:#fff;border:1px solid var(--line2);border-radius:17px;padding:18px 19px;box-shadow:0 4px 14px rgba(30,42,60,.025)}.ann-card-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px}.ann-card h3{font-size:15px;margin:0 0 7px}.ann-card p{margin:0;color:var(--muted);font-size:12.5px;line-height:1.65;white-space:pre-wrap}.ann-meta{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-top:13px;color:var(--muted2);font-size:10.5px}.ann-form{background:#fff;border:1px solid var(--line2);border-radius:18px;padding:20px;margin-bottom:16px}.ann-form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px}.ann-form label{display:grid;gap:6px;color:var(--muted);font-size:11px;font-weight:600}.ann-form .wide{grid-column:1/-1}.ann-form input,.ann-form textarea,.ann-form select{width:100%;box-sizing:border-box;border:1px solid var(--line);border-radius:10px;background:#fff;padding:10px 11px;color:var(--ink);font:inherit;font-size:12px}.ann-form textarea{min-height:110px;resize:vertical}.channel-row{display:flex;gap:16px;flex-wrap:wrap;padding:8px 0}.channel-row label{display:flex;align-items:center;gap:6px}.ann-actions{display:flex;justify-content:flex-end;gap:9px;margin-top:15px}.food-empty{min-height:440px;display:grid;place-items:center;text-align:center;background:#fff;border:1px solid var(--line2);border-radius:20px}.food-empty i{display:block;font-size:42px;color:#c5cad2;margin-bottom:12px}.food-empty h3{margin:0;font-size:18px}.food-empty p{margin:7px 0 0;color:var(--muted);font-size:12px}
+@media(max-width:980px){.overview-cards{grid-template-columns:repeat(2,1fr)}.sales-hero{grid-template-columns:1fr}.analytics-main{min-height:520px}}
+@media(max-width:760px){.overview-cards{grid-template-columns:1fr 1fr;gap:10px}.overview-card{min-height:125px;padding:16px}.metric-main b{font-size:22px}.dash-table th:nth-child(4),.dash-table td:nth-child(4){display:none}}
+@media(max-width:700px){.ann-form-grid{grid-template-columns:1fr}.ann-form .wide{grid-column:auto}.announcement-strip{grid-template-columns:1fr}}
+</style>
 </head>
 <body>
 <header>
@@ -161,7 +169,7 @@ main{flex:1;display:flex;min-height:0;padding-top:74px}
       <button id="tabOrders" onclick="setTab('orders')"><i class="ri-shopping-bag-3-line"></i><span>Orders</span><span class="cnt" id="ordCnt" style="display:none">0</span></button>
       <button id="tabSales" onclick="setTab('sales')"><i class="ri-line-chart-line"></i><span>Sales Report</span></button>
       <button id="tabAnnouncement" onclick="setTab('announcement')"><i class="ri-megaphone-line"></i><span>Announcement</span></button>
-      <button id="tabStaffInfo" onclick="setTab('staffinfo')"><i class="ri-team-line"></i><span>Staff Information</span></button>
+      <button id="tabFood" onclick="setTab('food')"><i class="ri-restaurant-line"></i><span>Food</span></button>
       <button id="tabSettings" onclick="setTab('settings')"><i class="ri-settings-3-line"></i><span>Setting</span></button>
       <button class="sidebar-logout" id="logoutBtn" onclick="logout()"><i class="ri-logout-box-r-line"></i><span>Log Out</span></button>
     </div>
@@ -177,6 +185,7 @@ let KEY=localStorage.getItem('dankStaffKey')||'';
 let cur=null, curSeq=0, pollT=null, listT=null, ordersT=null, lastSeen={};   // threadId -> last seq seen
 let TAB='dashboard', ORDERS=[], knownOrders=new Set(), firstOrderLoad=true, LIVE=false;
 let alertEnabled=localStorage.getItem('dankOrderAlerts')==='1', audioCtx=null, orderPopT=null;
+let STAFF_ROLE='professional-staff', CAN_MANAGE_ANNOUNCEMENTS=false, ANNOUNCEMENTS=[];
 const BASE_TITLE='DANK BKK — Staff Portal';
 const $=s=>document.querySelector(s);
 
@@ -284,34 +293,69 @@ async function login(){
   $('#storeStat').innerHTML=j.redis?'<span class="pill">● storage: redis</span>':'<span class="pill warn">● storage: memory (set up Upstash for production)</span>';
   $('#login').style.display='none'; $('#listWrap').style.display='flex'; $('#chatWrap').style.display='none'; $('#logoutBtn').style.display='';
   updateAlertButton();
-  pollOrders(); startOrderPoll(); clearInterval(dashboardSalesT); dashboardSalesT=setInterval(()=>loadDashboardSales(true),10800000);
+  await loadAnnouncements(false); pollOrders(); startOrderPoll(); clearInterval(dashboardSalesT); dashboardSalesT=setInterval(()=>loadDashboardSales(true),10800000);
   const hash=decodeURIComponent(location.hash.slice(1));
-  const portalTabs=['dashboard','orders','sales','announcement','staffinfo','settings'];
+  const portalTabs=['dashboard','orders','sales','announcement','food','settings'];
   setTab(portalTabs.includes(hash)?hash:'dashboard');
   window.addEventListener('hashchange',()=>{ const h=decodeURIComponent(location.hash.slice(1)); if(portalTabs.includes(h)) setTab(h); });
 }
 function logout(){ localStorage.removeItem('dankStaffKey'); LIVE=false; location.reload(); }
 
 function setTab(t){ if(typeof stopCamScan==='function') stopCamScan(); TAB=t;
-  const ids={dashboard:'tabDashboard',orders:'tabOrders',sales:'tabSales',announcement:'tabAnnouncement',staffinfo:'tabStaffInfo',settings:'tabSettings'};
+  const ids={dashboard:'tabDashboard',orders:'tabOrders',sales:'tabSales',announcement:'tabAnnouncement',food:'tabFood',settings:'tabSettings'};
   Object.entries(ids).forEach(([name,id])=>$('#'+id)?.classList.toggle('active',t===name));
-  const copy={dashboard:['Dashboard','A live overview of DANK orders and sales.'],orders:['Orders','Manage website and table orders in real time.'],sales:['Sales Report','Review revenue, payments and order performance.'],announcement:['Announcement','Important updates for every DANK staff member.'],staffinfo:['Staff Information','Operational contacts, duties and escalation guidance.'],settings:['Setting','Manage this device and staff-portal preferences.']};
+  const copy={dashboard:['Dashboard','A live overview of DANK orders and sales.'],orders:['Orders','Manage website and table orders in real time.'],sales:['Sales Report','Review revenue, payments and order performance.'],announcement:['Announcement','Create and share important updates with DANK staff.'],food:['Food','A clean space prepared for the next food idea.'],settings:['Setting','Manage this device and staff-portal preferences.']};
   $('#pageTitle').textContent=copy[t][0]; $('#pageSub').textContent=copy[t][1];
   if(history.replaceState) history.replaceState(null,'','#'+t);
   if(t==='dashboard'){ renderDashboard(); loadDashboardSales(); }
   else if(t==='orders'){ renderOrders(); $('#ordCnt').style.display='none'; knownOrders=new Set(ORDERS.map(o=>o.orderId)); document.title=BASE_TITLE; $('#orderPop')?.classList.remove('on'); }
   else if(t==='sales'){ loadSales(); }
+  else if(t==='announcement'){ renderAnnouncements(); loadAnnouncements(); }
   else renderPortalPanel(t); }
 
 function renderPortalPanel(t){
   const el=$('#list');
-  if(t==='announcement'){
-    el.innerHTML=`<section class="portal-panel"><div class="portal-grid"><article class="portal-card"><h3>Welcome to the new Staff Portal</h3><p>Website orders and sales reports now live in one dashboard. Check Orders regularly during your shift and mark completed orders as done.</p></article><article class="portal-card"><h3>Keep order alerts enabled</h3><p>Allow browser notifications and keep your device volume on so new website orders are not missed.</p></article></div></section>`;
-  } else if(t==='staffinfo'){
-    el.innerHTML=`<section class="portal-panel"><div class="portal-grid"><article class="portal-card"><h3>Store operations</h3><p>Manager: Bank<br>CEO: Bryan<br>Backend support: YIN</p></article><article class="portal-card"><h3>Order handling</h3><p>Confirm the customer, items, payment, delivery fee and address before fulfilment. Use the Google Maps button for deliveries and mark the order done only after handoff.</p></article><article class="portal-card"><h3>Shift escalation</h3><p>For absence or urgent shift cover, escalate in this order: Steve → Honey → Bank → Ken or Bryan.</p></article><article class="portal-card"><h3>Customer privacy</h3><p>Customer names, phone numbers, addresses and receipts are confidential. Access them only for order fulfilment.</p></article></div></section>`;
+  if(t==='food'){
+    el.innerHTML=`<section class="food-empty"><div><i class="ri-restaurant-2-line" aria-hidden="true"></i><h3>Food</h3><p>This space is ready for your next idea.</p></div></section>`;
   } else {
     el.innerHTML=`<section class="portal-panel"><div class="portal-card"><div class="setting-row"><div><b>New-order alerts</b><span>Sound, browser notification and vibration where supported</span></div><button class="switch ${alertEnabled?'on':''}" type="button" aria-label="Toggle new-order alerts" aria-pressed="${alertEnabled}" onclick="toggleAlerts(); renderPortalPanel('settings')"></button></div><div class="setting-row"><div><b>Portal address</b><span>www.dankbangkok.com/staffportal</span></div></div><div class="setting-row"><div><b>Secure session</b><span>Log out when this is a shared device</span></div><button class="ghost danger" type="button" onclick="logout()">Log Out</button></div></div></section>`;
   }
+}
+
+const roleLabel=r=>({'owner':'Owner','manager':'Manager','professional-staff':'Professional Staff','part-time-staff':'Part-time Staff'}[r]||'Professional Staff');
+const annDate=a=>{const raw=a.publishAt||a.createdAt;if(!raw)return '';const d=new Date(raw);return Number.isNaN(d.getTime())?'':d.toLocaleString([], {dateStyle:'medium',timeStyle:'short'});};
+async function loadAnnouncements(render=true){
+  if(location.hostname==='terminal.local'&&new URLSearchParams(location.search).has('visual-qa')){if(render&&TAB==='announcement')renderAnnouncements();return;}
+  try{
+    const r=await authGet('/api/announcements'); if(!r.ok) throw new Error('unavailable');
+    const j=await r.json(); STAFF_ROLE=j.role||'professional-staff'; CAN_MANAGE_ANNOUNCEMENTS=Boolean(j.canManage); ANNOUNCEMENTS=Array.isArray(j.announcements)?j.announcements:[];
+    $('.profile-dot').textContent=roleLabel(STAFF_ROLE).split(' ').map(x=>x[0]).join('').slice(0,2);
+  }catch(e){ ANNOUNCEMENTS=[]; }
+  if(render&&TAB==='announcement') renderAnnouncements();
+  if(render&&TAB==='dashboard') renderDashboard();
+}
+function announcementForm(){
+  return `<form class="ann-form" id="announcementForm"><div class="ann-form-grid"><label class="wide">Title<input id="annTitle" maxlength="120" required placeholder="Announcement title"></label><label class="wide">Message<textarea id="annBody" maxlength="2000" required placeholder="Write the announcement…"></textarea></label><label>Audience<select id="annAudience"><option value="all">All staff</option><option value="professional-staff">Professional Staff</option><option value="part-time-staff">Part-time Staff</option></select></label><label>Priority<select id="annPriority"><option value="normal">Normal</option><option value="important">Important</option><option value="urgent">Urgent</option></select></label><label>Publish<select id="annStatus"><option value="published">Publish now</option><option value="draft">Save draft</option><option value="scheduled">Schedule</option></select></label><label>Schedule date<input id="annPublishAt" type="datetime-local"></label><div class="wide"><span style="display:block;color:var(--muted);font-size:11px;font-weight:600;margin-bottom:7px">Publishing channels</span><div class="channel-row"><label><input type="checkbox" checked disabled> Staff Portal</label><label><input id="annLine" type="checkbox"> LINE (prepared)</label><label><input id="annTelegram" type="checkbox"> Telegram (prepared)</label></div></div></div><div class="ann-actions"><button class="ghost" type="button" data-act="ann-cancel">Cancel</button><button class="btn" type="submit">Save announcement</button></div></form>`;
+}
+function announcementCards(){
+  if(!ANNOUNCEMENTS.length)return '<div class="empty-dash">No announcements yet.</div>';
+  return `<div class="ann-list">${ANNOUNCEMENTS.map(a=>`<article class="ann-card"><div class="ann-card-head"><div><h3>${esc(a.title)}</h3><p>${esc(a.body)}</p></div>${CAN_MANAGE_ANNOUNCEMENTS?`<button class="ghost danger" type="button" data-act="ann-delete" data-id="${esc(a.id)}"><i class="ri-delete-bin-line"></i> Delete</button>`:''}</div><div class="ann-meta"><span class="ann-chip ${esc(a.priority)}">${esc(a.priority||'normal')}</span><span>${esc(a.audience==='all'?'All staff':roleLabel(a.audience))}</span><span>•</span><span>${esc(a.status||'published')}</span>${annDate(a)?`<span>• ${esc(annDate(a))}</span>`:''}${a.targets?.line?'<span>• LINE pending</span>':''}${a.targets?.telegram?'<span>• Telegram pending</span>':''}</div></article>`).join('')}</div>`;
+}
+function renderAnnouncements(showForm=false){
+  $('#list').innerHTML=`<section class="portal-panel"><div class="announcement-toolbar"><span class="role-chip"><i class="ri-shield-user-line"></i>&nbsp; ${esc(roleLabel(STAFF_ROLE))}</span>${CAN_MANAGE_ANNOUNCEMENTS&&!showForm?'<button class="btn" type="button" data-act="ann-new"><i class="ri-add-line"></i> Add announcement</button>':''}</div>${showForm?announcementForm():''}${announcementCards()}</section>`;
+  const form=$('#announcementForm'); if(form)form.addEventListener('submit',saveAnnouncement);
+}
+async function saveAnnouncement(e){
+  e.preventDefault(); const status=$('#annStatus').value, publishAt=$('#annPublishAt').value;
+  if(status==='scheduled'&&!publishAt){boxToast('Choose a schedule date');return;}
+  const r=await authPost('/api/announcements',{action:'create',title:$('#annTitle').value,body:$('#annBody').value,audience:$('#annAudience').value,priority:$('#annPriority').value,status,publishAt,targets:{line:$('#annLine').checked,telegram:$('#annTelegram').checked}});
+  const j=await r.json().catch(()=>({})); if(!r.ok){boxToast(j.error||'Could not save announcement');return;}
+  boxToast('Announcement saved'); await loadAnnouncements();
+}
+async function deleteAnnouncement(id){
+  if(!confirm('Delete this announcement?'))return;
+  const r=await authPost('/api/announcements',{action:'delete',id}); const j=await r.json().catch(()=>({}));
+  if(!r.ok){boxToast(j.error||'Could not delete announcement');return;} boxToast('Announcement deleted'); await loadAnnouncements();
 }
 
 const DASH_PERIODS={day:{label:'Day',days:1},week:{label:'Week',days:7},month:{label:'Month',days:30},year:{label:'Year',days:365}};
@@ -330,24 +374,42 @@ async function loadDashboardSales(force=false){
     if(TAB==='dashboard') renderDashboard();
   }catch(e){ if(TAB==='dashboard') renderDashboard('Sales analytics are temporarily unavailable.'); }
 }
-function dashRank(items,lowest=false){
-  const rows=(Array.isArray(items)?items:[]).filter(x=>Number(x.qty)>0);
-  const picked=(lowest?[...rows].sort((a,b)=>Number(a.qty)-Number(b.qty)):rows).slice(0,5);
-  return picked.length?picked.map((x,i)=>`<div class="rank-row"><span class="rank">${i+1}</span><span class="name">${esc(x.name||'Unnamed product')}</span><span class="qty">${esc((x.qty||0)+' sold')}</span><span class="revenue">${esc(dashMoney(x.gross))}</span></div>`).join(''):'<div class="empty-dash">No product sales in this period.</div>';
+function dashTable(items){
+  const rows=(Array.isArray(items)?items:[]).filter(x=>Number(x.qty)>0).slice(0,7);
+  return rows.length?`<table class="dash-table"><thead><tr><th>Rank</th><th>Name</th><th style="text-align:right">Sold</th><th style="text-align:right">Revenue</th></tr></thead><tbody>${rows.map((x,i)=>`<tr><td><span class="rank-badge">${i+1}</span></td><td><b>${esc(x.name||'Unnamed product')}</b></td><td class="sold">${esc((x.qty||0)+' sold')}</td><td class="money">${esc(dashMoney(x.gross))}</td></tr>`).join('')}</tbody></table>`:'<div class="empty-dash">No product sales in this period.</div>';
+}
+let salesChart=null, customerDayChart=null;
+function dashboardSeries(current){
+  const rows=Array.isArray(current?.byDay)?current.byDay:[];
+  return {labels:rows.map(x=>String(x.day||'')),sales:rows.map(x=>Number(x.gross)||0),orders:rows.map(x=>Number(x.orders)||0)};
+}
+function customerWeekdays(current){
+  const totals=[0,0,0,0,0,0,0], labels=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  (current?.byDay||[]).forEach(x=>{const d=new Date(String(x.day||'')+'T12:00:00');if(!Number.isNaN(d.getTime())) totals[d.getDay()]+=Number(x.orders)||0;});
+  return {labels,totals};
+}
+function mountDashboardCharts(current){
+  if(!window.Chart)return;
+  const s=dashboardSeries(current), w=customerWeekdays(current), grid='#edf0f3';
+  salesChart?.destroy();customerDayChart?.destroy();
+  const salesCanvas=$('#totalSalesChart'), dayCanvas=$('#customerDayChart');if(!salesCanvas||!dayCanvas)return;
+  salesChart=new Chart(salesCanvas,{type:'line',data:{labels:s.labels,datasets:[{data:s.sales,borderColor:'#3978f6',backgroundColor:'rgba(57,120,246,.10)',fill:true,tension:.32,borderWidth:2.5,pointRadius:0,pointHoverRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{displayColors:false,callbacks:{label:c=>dashMoney(c.raw)}}},scales:{x:{grid:{display:false},ticks:{color:'#9aa2af',maxTicksLimit:7}},y:{beginAtZero:true,grid:{color:grid,borderDash:[4,5]},ticks:{color:'#9aa2af',callback:v=>v>=1000?(v/1000)+'K':v}}}}});
+  const max=Math.max(...w.totals,0);
+  customerDayChart=new Chart(dayCanvas,{type:'bar',data:{labels:w.labels,datasets:[{data:w.totals,backgroundColor:w.totals.map(v=>v===max&&v>0?'#3978f6':'#edf0f3'),borderRadius:12,borderSkipped:false,barPercentage:.62}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{displayColors:false,callbacks:{label:c=>c.raw+' customer orders'}}},scales:{x:{grid:{display:false},ticks:{color:c=>w.totals[c.index]===max&&max>0?'#3978f6':'#697180',font:{weight:600}}},y:{display:false,beginAtZero:true}}}});
 }
 function renderDashboard(error=''){
-  const el=$('#list'), data=DASH_SALES[DASH_PERIOD], current=data?.current||{}, summary=current.summary||{}, pending=ORDERS.filter(o=>o.status!=='done'), done=ORDERS.filter(o=>o.status==='done');
+  const el=$('#list'), data=DASH_SALES[DASH_PERIOD], current=data?.current||{}, summary=current.summary||{}, pending=ORDERS.filter(o=>o.status!=='done');
+  const annPreview=ANNOUNCEMENTS.slice(0,2).map(a=>`<article class="announcement-item"><b>${esc(a.title)}</b><span>${esc(a.body)}</span></article>`).join('')||'<div class="empty-dash">No current announcements.</div>';
   const periodTabs=Object.entries(DASH_PERIODS).map(([key,p])=>`<button class="${DASH_PERIOD===key?'active':''}" data-act="dash-period" data-v="${key}">${p.label}</button>`).join('');
   const delta=data?.change||0, deltaClass=delta>=0?'up':'down';
-  const newOrders=pending.slice(0,5).map(o=>`<div class="new-order-line"><div class="order-copy"><b>${esc(o.orderId||'New order')}</b><span>${esc(o.customer?.name||'Customer')} · ${esc(o.fulfilment||'order')}</span></div><strong>${esc(dashMoney(o.total??o.subtotal))}</strong></div>`).join('');
   el.innerHTML=`<div class="dashboard-grid">
-    <section class="dash-card"><div class="dash-head"><h3>Sales</h3><div class="period-tabs">${periodTabs}</div></div>${error?`<div class="empty-dash">${esc(error)}</div>`:`<div class="sales-main"><div class="sales-value">${data?esc(dashMoney(data.now)):'—'}</div>${data?`<span class="delta ${deltaClass}">${delta>=0?'↑':'↓'} ${esc(Math.abs(delta).toFixed(1))}%</span>`:''}</div><div class="dash-muted">Compared with the previous ${esc(DASH_PERIODS[DASH_PERIOD].label.toLowerCase())} · refreshes every 3 hours</div>`}</section>
-    <section class="dash-card"><div class="dash-head"><h3>New Orders</h3><button class="ghost" data-act="dash-orders">View all</button></div>${newOrders||'<div class="empty-dash">No new orders right now.</div>'}<div class="dash-muted">Refreshes automatically every 3 minutes</div></section>
-    <section class="dash-card full"><div class="dash-head"><h3>Order Summary</h3></div><div class="stat-row"><div class="stat-mini"><b>${esc(summary.orders||0)}</b><span>Orders in period</span></div><div class="stat-mini"><b>${esc(dashMoney(summary.average))}</b><span>Average order</span></div><div class="stat-mini"><b>${esc(pending.length)}</b><span>Pending now</span></div><div class="stat-mini"><b>${esc(done.length)}</b><span>Completed loaded</span></div></div></section>
-    <section class="dash-card"><div class="dash-head"><h3>Best Sellers</h3></div><div class="rank-list">${dashRank(current.topItems,false)}</div></section>
-    <section class="dash-card"><div class="dash-head"><h3>Lowest Sellers</h3></div><div class="rank-list">${dashRank(current.topItems,true)}</div></section>
-    <section class="dash-card full"><div class="dash-head"><h3>Announcement</h3><button class="ghost" data-act="dash-announcement">View all</button></div><div class="portal-grid"><article class="portal-card"><h3>Welcome to the new Staff Portal</h3><p>Website orders and sales reports now live in one dashboard.</p></article><article class="portal-card"><h3>Keep order alerts enabled</h3><p>Allow browser notifications and keep your device volume on so new website orders are not missed.</p></article></div></section>
+    <div class="overview-cards"><article class="overview-card"><div class="metric-top"><span>New Order Alert</span><i class="ri-notification-3-line"></i></div><div><div class="metric-main"><b>${esc(pending.length)}</b></div><div class="metric-sub">Refreshes every 3 minutes</div></div></article><article class="overview-card"><div class="metric-top"><span>Announcement</span><i class="ri-megaphone-line"></i></div><div><div class="metric-main"><b>${esc(ANNOUNCEMENTS.length)}</b></div><div class="metric-sub">Current staff announcements</div></div></article><article class="overview-card"><div class="metric-top"><span>Total Sales</span><i class="ri-line-chart-line"></i></div><div><div class="metric-main"><b>${data?esc(dashMoney(data.now)):'—'}</b>${data?`<span class="delta ${deltaClass}">${delta>=0?'↑':'↓'} ${esc(Math.abs(delta).toFixed(1))}%</span>`:''}</div><div class="metric-sub">${esc(DASH_PERIODS[DASH_PERIOD].label)} total</div></div></article><article class="overview-card"><div class="metric-top"><span>Orders</span><i class="ri-shopping-bag-3-line"></i></div><div><div class="metric-main"><b>${esc(summary.orders||0)}</b></div><div class="metric-sub">${esc(DASH_PERIODS[DASH_PERIOD].label)} orders</div></div></article></div>
+    <section class="dash-card analytics-main"><div class="dash-head"><h3>Total Sales</h3><div class="period-tabs">${periodTabs}</div></div>${error?`<div class="empty-dash">${esc(error)}</div>`:`<div class="sales-hero"><div><div class="sales-value">${data?esc(dashMoney(data.now)):'—'}</div>${data?`<div style="margin-top:12px"><span class="delta ${deltaClass}">${delta>=0?'↑':'↓'} ${esc(Math.abs(delta).toFixed(1))}%</span></div>`:''}<div class="dash-muted">vs. ${data?esc(dashMoney(data.previous)):'—'} previous ${esc(DASH_PERIODS[DASH_PERIOD].label.toLowerCase())}</div></div><div class="chart-wrap"><canvas id="totalSalesChart" aria-label="Total sales graph"></canvas></div></div>`}</section>
+    <section class="dash-card"><div class="dash-head"><h3>Most Customer Day</h3><i class="ri-more-fill" style="color:var(--muted2)"></i></div><div class="weekday-wrap"><canvas id="customerDayChart" aria-label="Customer orders by day"></canvas></div><div class="dash-muted">Calculated from customer orders in the selected period</div></section>
+    <section class="dash-card"><div class="dash-head"><h3>Best Selling Products</h3><i class="ri-more-fill" style="color:var(--muted2)"></i></div>${dashTable(current.topItems)}</section>
+    <section class="dash-card"><div class="dash-head"><h3>Announcement</h3><button class="ghost" data-act="dash-announcement">View all</button></div><div class="announcement-strip">${annPreview}</div></section>
   </div>`;
+  requestAnimationFrame(()=>mountDashboardCharts(current));
 }
 let GIFT_MENU=[], GIFT_SEL=new Set();
 async function loadGifts(){
@@ -1877,6 +1939,9 @@ $('#list').addEventListener('click',e=>{
     case 'dash-period': DASH_PERIOD=d.v in DASH_PERIODS?d.v:'day'; renderDashboard(); loadDashboardSales(); break;
     case 'dash-orders': setTab('orders'); break;
     case 'dash-announcement': setTab('announcement'); break;
+    case 'ann-new': renderAnnouncements(true); break;
+    case 'ann-cancel': renderAnnouncements(false); break;
+    case 'ann-delete': deleteAnnouncement(d.id); break;
     case 'thread':     openThread(d.id); break;
     case 'gift':       toggleGift(d.id); break;
     case 'slip':       viewSlip(d.id); break;
@@ -1938,7 +2003,8 @@ $('#list').addEventListener('change',e=>{
 if(location.hostname==='terminal.local'&&new URLSearchParams(location.search).has('visual-qa')){
   $('#login').style.display='none'; $('#listWrap').style.display='flex'; $('#logoutBtn').style.display='';
   ORDERS=[{orderId:'DANK-260901-1042',status:'new',at:Date.now()-180000,payment:'PromptPay',payStatus:'paid',subtotal:2450,deliveryFee:80,discount:0,total:2530,fulfilment:'delivery',delivery:{address:'Sathorn, Bangkok',time:'20:30'},customer:{name:'Sample customer',phone:'+66 63-206-4884'},items:[{name:'Blue Zangria',effects:['Relaxed','Happy','Creative'],grams:3.5,qty:1,unitPrice:2450,lineTotal:2450,option:'3.5 g'}]}];
-  DASH_SALES.day={now:48750,previous:42300,change:15.25,current:{summary:{gross:48750,orders:32,average:1523},topItems:[{name:'Blue Zangria',qty:28,gross:19600},{name:'Permanent Marker',qty:21,gross:14700},{name:'MellowZ',qty:15,gross:10500},{name:'Zooties',qty:8,gross:5600},{name:'Bangkok Lemon',qty:3,gross:2100}]}};
+  STAFF_ROLE='owner';CAN_MANAGE_ANNOUNCEMENTS=true;ANNOUNCEMENTS=[{id:'AN1',title:'Welcome to the new Staff Portal',body:'Website orders and sales reports now live in one dashboard.',priority:'important',audience:'all',status:'published',createdAt:new Date().toISOString(),targets:{portal:true,line:false,telegram:false}},{id:'AN2',title:'Keep order alerts enabled',body:'Keep device volume on so new orders are not missed.',priority:'normal',audience:'professional-staff',status:'published',createdAt:new Date(Date.now()-86400000).toISOString(),targets:{portal:true,line:true,telegram:true}}];
+  DASH_SALES.day={now:48750,previous:42300,change:15.25,current:{summary:{gross:48750,orders:32,average:1523},byDay:[{day:'2026-08-27',gross:5100,orders:3},{day:'2026-08-28',gross:6900,orders:5},{day:'2026-08-29',gross:5500,orders:4},{day:'2026-08-30',gross:8200,orders:7},{day:'2026-08-31',gross:7300,orders:5},{day:'2026-09-01',gross:9100,orders:6},{day:'2026-09-02',gross:6650,orders:2}],topItems:[{name:'Blue Zangria',qty:28,gross:19600},{name:'Permanent Marker',qty:21,gross:14700},{name:'MellowZ',qty:15,gross:10500},{name:'Zooties',qty:8,gross:5600},{name:'Bangkok Lemon',qty:3,gross:2100}]}};
   ['week','month','year'].forEach((key,i)=>{const scale=[6,24,260][i];DASH_SALES[key]={...DASH_SALES.day,now:DASH_SALES.day.now*scale,previous:DASH_SALES.day.previous*scale};});
   setTab('dashboard');
 } else if(KEY){ $('#keyInput').value=KEY; login(); }
