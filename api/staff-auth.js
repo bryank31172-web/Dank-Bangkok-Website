@@ -1,6 +1,6 @@
 import crypto from "node:crypto";
 import { requireEnv, staffIdentity, hasPermission, safeEq } from "./_auth.js";
-import { authenticateAccountKey, seedInitialAccounts, listAccounts, publicAccount, createAccount, resetAccount, setOwnAccountKey, setAccountKey, setAccountActive, setAccountRole, ROLE_PERMISSIONS, ROLE_LABELS } from "./_staff-accounts.js";
+import { authenticateAccountKey, seedInitialAccounts, listAccounts, publicAccount, createAccount, updateAccount, deleteAccount, resetAccount, setOwnAccountKey, setAccountKey, setAccountActive, setAccountRole, ROLE_PERMISSIONS, ROLE_LABELS } from "./_staff-accounts.js";
 
 export default async function handler(req,res){
   res.setHeader("Access-Control-Allow-Origin","*");
@@ -44,8 +44,16 @@ export default async function handler(req,res){
       return res.status(200).json({ok:true,accounts:rows,roles:ROLE_LABELS,canAssignRoles:actor.role==="owner"});
     }
     if(b.action==="create"){
-      const out=await createAccount(actor,b.name,b.role);
+      const out=await createAccount(actor,b.name,b.role,{phone:b.phone,startDate:b.startDate,salary:b.salary});
       return res.status(200).json({ok:true,...out});
+    }
+    if(b.action==="update"){
+      const account=await updateAccount(actor,b.id,{name:b.name,phone:b.phone,startDate:b.startDate,salary:b.salary,role:b.role,active:b.active});
+      return res.status(200).json({ok:true,account});
+    }
+    if(b.action==="delete"){
+      const account=await deleteAccount(actor,b.id);
+      return res.status(200).json({ok:true,account});
     }
     if(b.action==="reset"){
       const out=await resetAccount(actor,b.id);
