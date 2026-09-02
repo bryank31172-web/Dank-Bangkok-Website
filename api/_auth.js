@@ -7,6 +7,7 @@ const ROLE_KEYS = [
   ["part-time-staff", "PART_TIME_STAFF_KEY"],
   ["professional-staff", "STAFF_KEY"],
 ];
+const SESSION_PREFIX = "dsp1";
 
 export function staffKey() { return process.env.STAFF_KEY || ""; }
 export function staffConfigured() { return ROLE_KEYS.some(([, name]) => Boolean(process.env[name])); }
@@ -15,20 +16,38 @@ export function safeEq(a, b) {
   const A = Buffer.from(String(a ?? "")), B = Buffer.from(String(b ?? ""));
   return A.length > 0 && A.length === B.length && crypto.timingSafeEqual(A, B);
 }
-export function staffRole(given) {
+function sessionSecret() { return process.env.STAFF_SESSION_SECRET || process.env.ADMIN_SECRET || ""; }
+function sessionPayload(given) {
+  const [prefix, body, sig] = String(given || "").split(".");
+  const secret = sessionSecret(); if (prefix !== SESSION_PREFIX || !body || !sig || !secret) return null;
+  const expected = crypto.createHmac("sha256", secret).update(prefix + "." + body).digest("base64url");
+  if (!safeEq(sig, expected)) return null;
+  try { const payload = JSON.parse(Buffer.from(body, "base64url").toString("utf8")); return Number(payload.exp) > Date.now() ? payload : null; } catch { return null; }
+}
+export function createStaffSession(staff, hours = 12) {
+  const secret = sessionSecret(); if (!secret) return "";
+  const payload = Buffer.from(JSON.stringify({ id: staff.id || "environment", name: staff.name || "Staff", role: staff.role, exp: Date.now() + hours * 3600000 })).toString("base64url");
+  const unsigned = SESSION_PREFIX + "." + payload;
+  return unsigned + "." + crypto.createHmac("sha256", secret).update(unsigned).digest("base64url");
+}
+export function staffIdentity(given) {
+  const session = sessionPayload(given); if (session) return { id: session.id, name: session.name, role: session.role };
   for (const [role, name] of ROLE_KEYS) {
     const configured = process.env[name] || "";
-    if (configured && safeEq(given, configured)) return role;
+    if (configured && safeEq(given, configured)) return { id: "environment:" + name.toLowerCase(), name: role === "owner" ? "Owner" : role === "manager" ? "Manager" : "Staff", role };
   }
-  return "";
+  return null;
 }
+export function staffRole(given) { return staffIdentity(given)?.role || ""; }
 export function isManagementRole(role) { return role === "owner" || role === "manager"; }
 export function isStaffKey(given) { return Boolean(staffRole(given)); }
 export function keyFrom(req) { return req?.query?.key ?? req?.body?.key ?? req?.headers?.["x-staff-key"] ?? ""; }
 export function isStaff(req) { return isStaffKey(keyFrom(req)); }
 export function requireStaff(req, res, given) {
-  if (!staffConfigured()) return notConfigured(res, ["STAFF_KEY or a role-specific staff key"]);
-  if (!isStaffKey(given === undefined ? keyFrom(req) : given)) { res.status(401).json({ error: "bad key" }); return false; }
+  const supplied = given === undefined ? keyFrom(req) : given;
+  if (isStaffKey(supplied)) return true;
+  if (!staffConfigured() && !sessionSecret()) return notConfigured(res, ["STAFF_KEY or a role-specific staff key"]);
+  if (!isStaffKey(supplied)) { res.status(401).json({ error: "bad key" }); return false; }
   return true;
 }
 export function requireManagement(req, res) {
