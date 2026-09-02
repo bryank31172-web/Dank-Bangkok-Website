@@ -166,7 +166,7 @@ export default async function handler(req, res) {
     `Pay: ${o.payment}\n${where}\n` +
     `Customer: ${o.customer?.name || "-"} · ${o.customer?.phone}\n` +
     `${o.notes ? "Notes: " + o.notes + "\n" : ""}\n` +
-    `➡️ Open: https://${host}/staff.html#orders`;
+    `➡️ Open: https://${host}/staffportal#orders`;
 
   const results = [];
   let saved = false;
