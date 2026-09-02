@@ -16,6 +16,8 @@
 :root{--bg:#f6f7f9;--bg2:#fff;--panel:#fff;--panel2:#f8fafc;--line:#edf0f3;--line2:#e4e8ee;
 --txt:#121722;--muted:#697180;--muted2:#9aa2af;--green:#21b66f;--green2:#158b55;--deep:#11975a;
 --gold:#d49a2a;--danger:#dc5c6a;--blue:#3978f6;--blue-soft:#edf4ff;--font:'Inter',system-ui,sans-serif}
+:root[data-theme="dark"]{color-scheme:dark;--bg:#0d1117;--bg2:#151b23;--panel:#151b23;--panel2:#1b2430;--line:#252f3d;--line2:#344052;--txt:#eef3f8;--muted:#a8b1bf;--muted2:#7f8a99;--green:#33c985;--green2:#63daa0;--deep:#2abb78;--gold:#e2ad47;--danger:#ef7884;--blue:#6c9cff;--blue-soft:#1b2d4a}
+:root[data-theme="dark"] header{background:var(--panel)}:root[data-theme="dark"] .top-search,:root[data-theme="dark"] input,:root[data-theme="dark"] textarea,:root[data-theme="dark"] select{background:var(--panel2)!important;color:var(--txt)!important}:root[data-theme="dark"] .profile-dot{background:#183a2b;border-color:#28543f;color:var(--green2)}
 *{box-sizing:border-box}html,body{margin:0;height:100%}
 body{background:var(--bg);color:var(--txt);font-family:var(--font);display:flex;flex-direction:column;font-size:14px}
 button{font-family:inherit;cursor:pointer;border:none;color:inherit;background:none}
@@ -139,6 +141,7 @@ main{flex:1;display:flex;min-height:0;padding-top:74px}
    into empty space. The media query has to win. */
 @media(max-width:760px){header{height:64px;padding:0 14px 0 118px}header h1{left:14px;width:100px;height:64px;font-size:0}header h1::after{content:'DANK';font-size:16px}.top-search{width:100%}header .st{display:none}.profile-dot{display:none}main{padding-top:64px}#listWrap{display:block!important}.content-shell{height:calc(100vh - 128px);padding:18px 14px 90px}#tabs{position:fixed;z-index:60;inset:auto 0 0 0;width:100%;min-width:0;height:64px;flex-direction:row;justify-content:flex-start;overflow-x:auto;padding:7px 5px;border:1px solid var(--line);box-shadow:0 -8px 30px rgba(30,42,60,.08)}#tabs button{width:74px;min-width:74px;padding:6px 3px;gap:2px;flex-direction:column;justify-content:center;font-size:8.5px;text-align:center}#tabs button i{font-size:18px}#tabs .sidebar-logout{margin:0}.portal-grid,.dashboard-grid{grid-template-columns:1fr}.dash-card.full{grid-column:auto}.stat-row{grid-template-columns:repeat(2,1fr)}.rank-row{grid-template-columns:22px minmax(0,1fr) 55px 72px}.portal-panel{padding:0}#pageHead h2{font-size:22px}.ocard{margin:10px 0}.order-summary{grid-template-columns:repeat(2,minmax(0,1fr))}#chatWrap{display:none!important}}
 </style>
+<script>try{document.documentElement.dataset.theme=localStorage.getItem('dankPortalTheme')||'light'}catch(e){document.documentElement.dataset.theme='light'}</script>
 </head>
 <body>
 <header>
@@ -299,16 +302,18 @@ async function login(){
   pollOrders(); startOrderPoll(); clearInterval(dashboardSalesT); dashboardSalesT=setInterval(()=>loadDashboardSales(true),10800000);
   const hash=decodeURIComponent(location.hash.slice(1));
   const portalTabs=['dashboard','orders','products','promotions','sales','announcement','staffinfo','settings'];
-  const first=can('*')?'dashboard':'orders'; setTab(portalTabs.includes(hash)&&tabAllowed(hash)?hash:first);
+  const first=can('dashboard')?'dashboard':'orders'; setTab(portalTabs.includes(hash)&&tabAllowed(hash)?hash:first);
   window.addEventListener('hashchange',()=>{ const h=decodeURIComponent(location.hash.slice(1)); if(portalTabs.includes(h)&&tabAllowed(h)) setTab(h); });
 }
 function logout(){ localStorage.removeItem('dankStaffToken');localStorage.removeItem('dankStaffKey'); LIVE=false; location.reload(); }
 function toggleKey(){const i=$('#keyInput'),icon=document.querySelector('.key-field i');i.type=i.type==='password'?'text':'password';icon.className=i.type==='text'?'ri-eye-off-line':'ri-eye-line';}
+function portalTheme(){return document.documentElement.dataset.theme||'light'}
+function togglePortalTheme(){const next=portalTheme()==='dark'?'light':'dark';document.documentElement.dataset.theme=next;localStorage.setItem('dankPortalTheme',next);renderPortalPanel('settings')}
 function toggleLoginMode(){OWNER_LOGIN=!OWNER_LOGIN;document.querySelector('.key-login').style.display=OWNER_LOGIN?'none':'';document.querySelector('.owner-login').style.display=OWNER_LOGIN?'block':'none';document.querySelector('.login-switch').textContent=OWNER_LOGIN?'Use staff key':'Owner email login';$('#loginErr').textContent='';}
 function can(p){return PERMS.includes('*')||PERMS.includes(p)}
-function tabAllowed(t){if(['dashboard','sales'].includes(t))return can('*');if(t==='products')return can('products');if(t==='promotions')return can('promotions');if(t==='announcement')return can('announcements');if(t==='staffinfo')return can('staff_manage');return can('orders')||t==='settings'}
+function tabAllowed(t){if(t==='dashboard')return can('dashboard');if(t==='sales')return can('*');if(t==='products')return can('products');if(t==='promotions')return can('promotions');if(t==='announcement')return can('announcement_read');if(t==='staffinfo')return can('staff_manage');return can('orders')||t==='settings'}
 function applyPermissions(){
-  const map={tabDashboard:'*',tabSales:'*',tabProducts:'products',tabPromotions:'promotions',tabAnnouncement:'announcements',tabStaffInfo:'staff_manage'};
+  const map={tabDashboard:'dashboard',tabSales:'*',tabProducts:'products',tabPromotions:'promotions',tabAnnouncement:'announcement_read',tabStaffInfo:'staff_manage'};
   Object.entries(map).forEach(([id,p])=>{$('#'+id).style.display=can(p)?'':'none'});
   document.querySelector('.profile-dot').textContent=(PROFILE?.name||'Staff').split(/\s+/).map(x=>x[0]).join('').slice(0,2).toUpperCase();
   $('#storeStat').textContent=(PROFILE?.name||'Staff')+' · '+String(PROFILE?.role||'').replace('professional','Professional Staff').replace('parttime','Part-time Staff');
@@ -319,7 +324,7 @@ function showGeneratedKeys(rows){
 }
 
 function setTab(t){ if(typeof stopCamScan==='function') stopCamScan(); TAB=t;
-  if(!tabAllowed(t)) t=can('*')?'dashboard':'orders'; TAB=t;
+  if(!tabAllowed(t)) t=can('dashboard')?'dashboard':'orders'; TAB=t;
   const ids={dashboard:'tabDashboard',orders:'tabOrders',products:'tabProducts',promotions:'tabPromotions',sales:'tabSales',announcement:'tabAnnouncement',staffinfo:'tabStaffInfo',settings:'tabSettings'};
   Object.entries(ids).forEach(([name,id])=>$('#'+id)?.classList.toggle('active',t===name));
   const copy={dashboard:['Dashboard','A live overview of DANK orders and sales.'],orders:['Orders','Manage website and table orders in real time.'],products:['Products','Create, edit and remove storefront products.'],promotions:['Promotion Codes','Create, edit and remove customer promotion codes.'],sales:['Sales Report','Review revenue, payments and order performance.'],announcement:['Announcement','Important updates for every DANK staff member.'],staffinfo:['Staff Information','Manage individual staff access.'],settings:['Setting','Manage this device and staff-portal preferences.']};
@@ -339,13 +344,21 @@ function renderPortalPanel(t){
   } else if(t==='staffinfo'){
     loadStaffAccounts();
   } else {
-    el.innerHTML=`<section class="portal-panel"><div class="portal-card"><div class="setting-row"><div><b>New-order alerts</b><span>Sound, browser notification and vibration where supported</span></div><button class="switch ${alertEnabled?'on':''}" type="button" aria-label="Toggle new-order alerts" aria-pressed="${alertEnabled}" onclick="toggleAlerts(); renderPortalPanel('settings')"></button></div><div class="setting-row"><div><b>Portal address</b><span>www.dankbangkok.com/staffportal</span></div></div><div class="setting-row"><div><b>Secure session</b><span>Log out when this is a shared device</span></div><button class="ghost danger" type="button" onclick="logout()">Log Out</button></div></div></section>`;
+    el.innerHTML=`<section class="portal-panel"><div class="portal-card"><div class="setting-row"><div><b>Interface theme</b><span>Switch between light and dark mode on this device</span></div><button class="ghost" type="button" onclick="togglePortalTheme()">${portalTheme()==="dark"?"Use light mode":"Use dark mode"}</button></div><div class="setting-row"><div><b>New-order alerts</b><span>Sound, browser notification and vibration where supported</span></div><button class="switch ${alertEnabled?'on':''}" type="button" aria-label="Toggle new-order alerts" aria-pressed="${alertEnabled}" onclick="toggleAlerts(); renderPortalPanel('settings')"></button></div><div class="setting-row"><div><b>Portal address</b><span>www.dankbangkok.com/staffportal</span></div></div><div class="setting-row"><div><b>Secure session</b><span>Log out when this is a shared device</span></div><button class="ghost danger" type="button" onclick="logout()">Log Out</button></div></div></section>`;
   }
 }
 
 async function toolGet(section){const r=await authGet('/api/staff-tools?section='+section),j=await r.json().catch(()=>({}));if(!r.ok)throw new Error(j.error||'Request failed');return j}
 async function toolPost(section,body){const r=await authPost('/api/staff-tools',{section,...body}),j=await r.json().catch(()=>({}));if(!r.ok)throw new Error(j.error||'Request failed');return j}
-async function loadAnnouncements(){const el=$('#list');el.innerHTML='<div class="ghdr">Loading announcements…</div>';try{const j=await toolGet('announcements');el.innerHTML=`<section class="portal-panel"><div class="portal-card"><h3>Post announcement</h3><div class="setting-row"><input id="annTitle" placeholder="Title" style="padding:10px;border:1px solid var(--line2);border-radius:9px"><input id="annMessage" placeholder="Message" style="padding:10px;border:1px solid var(--line2);border-radius:9px;flex:1"><button class="ghost" data-act="ann-save">Post</button></div>${j.announcements.map(a=>`<div class="setting-row"><div><b>${esc(a.title)}</b><span>${esc(a.message)}</span></div><button class="ghost danger" data-act="ann-delete" data-id="${esc(a.id)}">Delete</button></div>`).join('')||'<p>No announcements yet.</p>'}</div></section>`}catch(e){el.innerHTML='<div class="ghdr">'+esc(e.message)+'</div>'}}
+async function loadAnnouncements(){
+  const el=$('#list');el.innerHTML='<div class="ghdr">Loading announcements…</div>';
+  try{
+    const j=await toolGet('announcements'),editor=can('announcements');
+    const composer=editor?`<div class="portal-card"><h3>Post announcement</h3><div class="setting-row"><input id="annTitle" placeholder="Title" style="padding:10px;border:1px solid var(--line2);border-radius:9px"><input id="annMessage" placeholder="Message" style="padding:10px;border:1px solid var(--line2);border-radius:9px;flex:1"><button class="ghost" data-act="ann-save">Post</button></div></div>`:'';
+    const rows=(j.announcements||[]).map(a=>`<div class="portal-card"><div class="setting-row"><div><b>${esc(a.title)}</b><span>${esc(a.message)}</span></div>${editor?`<button class="ghost danger" data-act="ann-delete" data-id="${esc(a.id)}">Delete</button>`:''}</div></div>`).join('')||'<div class="portal-card"><p>No announcements yet.</p></div>';
+    el.innerHTML='<section class="portal-panel">'+composer+rows+'</section>';
+  }catch(e){el.innerHTML='<div class="ghdr">'+esc(e.message)+'</div>'}
+}
 async function saveAnnouncement(){try{await toolPost('announcements',{action:'save',title:$('#annTitle').value,message:$('#annMessage').value});loadAnnouncements()}catch(e){alert(e.message)}}
 async function deleteAnnouncement(id){if(confirm('Delete this announcement?')){try{await toolPost('announcements',{action:'delete',id});loadAnnouncements()}catch(e){alert(e.message)}}}
 async function loadPromotions(){const el=$('#list');el.innerHTML='<div class="ghdr">Loading promotion codes…</div>';try{const j=await toolGet('promotions'),rows=Object.entries(j.promotions||{});el.innerHTML=`<section class="portal-panel"><div class="portal-card"><h3>Add or update code</h3><div class="setting-row"><input id="promoCode" placeholder="CODE" style="padding:10px;width:110px"><select id="promoType"><option value="pct">Percent</option><option value="fixed">Fixed amount</option><option value="freedelivery">Free delivery</option></select><input id="promoValue" type="number" placeholder="Value" style="padding:10px;width:90px"><input id="promoMin" type="number" placeholder="Minimum" style="padding:10px;width:100px"><input id="promoDesc" placeholder="Description" style="padding:10px;flex:1"><button class="ghost" data-act="promo-save">Save</button></div>${rows.map(([code,p])=>`<div class="setting-row"><div><b>${esc(code)}</b><span>${esc(p.desc||p.type)} · value ${esc(p.value||0)} · minimum ฿${esc(p.min||0)}</span></div><button class="ghost danger" data-act="promo-delete" data-id="${esc(code)}">Delete</button></div>`).join('')||'<p>No promotion codes yet.</p>'}</div></section>`}catch(e){el.innerHTML='<div class="ghdr">'+esc(e.message)+'</div>'}}
@@ -376,7 +389,7 @@ async function loadDashboardSales(force=false){
   const p=DASH_PERIODS[DASH_PERIOD], el=$('#list');
   if(TAB==='dashboard'&&!DASH_SALES[DASH_PERIOD]) el.innerHTML='<div class="dash-card"><div class="empty-dash">Loading dashboard analytics…</div></div>';
   try{
-    const [currentRes,doubleRes]=await Promise.all([authGet('/api/sales?days='+p.days),authGet('/api/sales?days='+(p.days*2))]);
+    const [currentRes,doubleRes]=await Promise.all([authGet('/api/sales?days='+p.days+'&dashboard=1'),authGet('/api/sales?days='+(p.days*2)+'&dashboard=1')]);
     if(!currentRes.ok||!doubleRes.ok) throw new Error('sales unavailable');
     const current=await currentRes.json(), doubled=await doubleRes.json();
     const now=Number(current.summary?.gross)||0, combined=Number(doubled.summary?.gross)||0, previous=Math.max(0,combined-now);
