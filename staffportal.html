@@ -141,9 +141,10 @@ main{flex:1;display:flex;min-height:0;padding-top:74px}
 <style>
 .overview-cards{grid-column:1/-1;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px}.overview-card{min-height:148px;background:#fff;border:1px solid var(--line2);border-radius:20px;padding:21px 22px;display:flex;flex-direction:column;justify-content:space-between;box-shadow:0 5px 18px rgba(36,48,68,.025)}.metric-top{display:flex;align-items:center;justify-content:space-between;font-weight:600}.metric-top i{font-size:20px;color:var(--blue)}.metric-main{display:flex;align-items:center;gap:9px}.metric-main b{font-size:28px;letter-spacing:-.8px}.metric-sub{font-size:11.5px;color:var(--muted2)}.analytics-main{min-height:420px;display:flex;flex-direction:column}.sales-hero{display:grid;grid-template-columns:220px minmax(0,1fr);gap:22px;align-items:center;flex:1}.chart-wrap{height:245px;min-width:0}.chart-wrap canvas{width:100%!important;height:100%!important}.weekday-wrap{height:285px}.dash-table{width:100%;border-collapse:collapse;font-size:12px}.dash-table th{text-align:left;padding:0 10px 13px;color:var(--muted2);font-size:10px;text-transform:uppercase;letter-spacing:.7px;border-bottom:1px solid var(--line)}.dash-table td{padding:13px 10px;border-bottom:1px dashed var(--line2);vertical-align:middle}.dash-table tr:last-child td{border-bottom:0}.dash-table .money{text-align:right;color:var(--green2);font-weight:700}.dash-table .sold{text-align:right;color:var(--muted);font-weight:600}.rank-badge{width:28px;height:28px;border-radius:8px;display:grid;place-items:center;background:#f5f7fa;color:var(--blue);font-weight:800}.announcement-strip{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}.announcement-item{border:1px solid var(--line);border-radius:13px;padding:14px}.announcement-item b{display:block;font-size:12.5px}.announcement-item span{display:block;color:var(--muted);font-size:11px;line-height:1.5;margin-top:5px}
 .announcement-toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px}.role-chip,.ann-chip{display:inline-flex;align-items:center;border-radius:999px;padding:5px 9px;font-size:10.5px;font-weight:700;background:#eef4ff;color:var(--blue)}.ann-chip.urgent{background:#fff0f0;color:#d9485f}.ann-chip.important{background:#fff7e8;color:#c87912}.ann-list{display:grid;gap:13px}.ann-card{background:#fff;border:1px solid var(--line2);border-radius:17px;padding:18px 19px;box-shadow:0 4px 14px rgba(30,42,60,.025)}.ann-card-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px}.ann-card h3{font-size:15px;margin:0 0 7px}.ann-card p{margin:0;color:var(--muted);font-size:12.5px;line-height:1.65;white-space:pre-wrap}.ann-meta{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-top:13px;color:var(--muted2);font-size:10.5px}.ann-form{background:#fff;border:1px solid var(--line2);border-radius:18px;padding:20px;margin-bottom:16px}.ann-form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px}.ann-form label{display:grid;gap:6px;color:var(--muted);font-size:11px;font-weight:600}.ann-form .wide{grid-column:1/-1}.ann-form input,.ann-form textarea,.ann-form select{width:100%;box-sizing:border-box;border:1px solid var(--line);border-radius:10px;background:#fff;padding:10px 11px;color:var(--ink);font:inherit;font-size:12px}.ann-form textarea{min-height:110px;resize:vertical}.channel-row{display:flex;gap:16px;flex-wrap:wrap;padding:8px 0}.channel-row label{display:flex;align-items:center;gap:6px}.ann-actions{display:flex;justify-content:flex-end;gap:9px;margin-top:15px}.food-empty{min-height:440px;display:grid;place-items:center;text-align:center;background:#fff;border:1px solid var(--line2);border-radius:20px}.food-empty i{display:block;font-size:42px;color:#c5cad2;margin-bottom:12px}.food-empty h3{margin:0;font-size:18px}.food-empty p{margin:7px 0 0;color:var(--muted);font-size:12px}
+.staff-create{display:grid;grid-template-columns:minmax(0,1fr) 210px auto;gap:10px;margin-bottom:16px}.staff-create input,.staff-create select{border:1px solid var(--line);border-radius:10px;padding:10px 11px;background:#fff;font:inherit;font-size:12px}.staff-table{width:100%;border-collapse:collapse}.staff-table th,.staff-table td{text-align:left;padding:13px 10px;border-bottom:1px solid var(--line2);font-size:12px}.staff-table th{font-size:10px;text-transform:uppercase;letter-spacing:.6px;color:var(--muted2)}.staff-key-result{background:#eef4ff;border:1px solid #cfe0ff;border-radius:14px;padding:16px;margin-bottom:16px}.staff-key-result code{display:block;word-break:break-all;background:#fff;border-radius:8px;padding:11px;margin:9px 0;font-size:12px}.staff-actions{display:flex;gap:7px;flex-wrap:wrap}
 @media(max-width:980px){.overview-cards{grid-template-columns:repeat(2,1fr)}.sales-hero{grid-template-columns:1fr}.analytics-main{min-height:520px}}
 @media(max-width:760px){.overview-cards{grid-template-columns:1fr 1fr;gap:10px}.overview-card{min-height:125px;padding:16px}.metric-main b{font-size:22px}.dash-table th:nth-child(4),.dash-table td:nth-child(4){display:none}}
-@media(max-width:700px){.ann-form-grid{grid-template-columns:1fr}.ann-form .wide{grid-column:auto}.announcement-strip{grid-template-columns:1fr}}
+@media(max-width:700px){.ann-form-grid{grid-template-columns:1fr}.ann-form .wide{grid-column:auto}.announcement-strip{grid-template-columns:1fr}.staff-create{grid-template-columns:1fr}.staff-table{display:block;overflow-x:auto}}
 </style>
 </head>
 <body>
@@ -170,6 +171,7 @@ main{flex:1;display:flex;min-height:0;padding-top:74px}
       <button id="tabSales" onclick="setTab('sales')"><i class="ri-line-chart-line"></i><span>Sales Report</span></button>
       <button id="tabAnnouncement" onclick="setTab('announcement')"><i class="ri-megaphone-line"></i><span>Announcement</span></button>
       <button id="tabFood" onclick="setTab('food')"><i class="ri-restaurant-line"></i><span>Food</span></button>
+      <button id="tabStaffManagement" style="display:none" onclick="setTab('staffmanagement')"><i class="ri-shield-user-line"></i><span>Staff Management</span></button>
       <button id="tabSettings" onclick="setTab('settings')"><i class="ri-settings-3-line"></i><span>Setting</span></button>
       <button class="sidebar-logout" id="logoutBtn" onclick="logout()"><i class="ri-logout-box-r-line"></i><span>Log Out</span></button>
     </div>
@@ -185,7 +187,7 @@ let KEY=localStorage.getItem('dankStaffKey')||'';
 let cur=null, curSeq=0, pollT=null, listT=null, ordersT=null, lastSeen={};   // threadId -> last seq seen
 let TAB='dashboard', ORDERS=[], knownOrders=new Set(), firstOrderLoad=true, LIVE=false;
 let alertEnabled=localStorage.getItem('dankOrderAlerts')==='1', audioCtx=null, orderPopT=null;
-let STAFF_ROLE='professional-staff', CAN_MANAGE_ANNOUNCEMENTS=false, ANNOUNCEMENTS=[];
+let STAFF_ROLE='professional-staff', STAFF_NAME='Staff', CAN_MANAGE_ANNOUNCEMENTS=false, ANNOUNCEMENTS=[], STAFF_LIST=[];
 const BASE_TITLE='DANK BKK — Staff Portal';
 const $=s=>document.querySelector(s);
 
@@ -284,33 +286,40 @@ function showOrderAlert(fresh){
 
 async function login(){
   const k=$('#keyInput').value.trim()||KEY; if(!k){$('#loginErr').textContent='Enter the key';return;}
-  let r;
-  try{ r=await authGet(`${API}?list=1`,k); }
+  let r, session;
+  try{
+    const sr=await fetch('/api/staff-session',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({key:k})});
+    if(!sr.ok){$('#loginErr').textContent='Wrong key';return;}
+    session=await sr.json(); KEY=session.token||k; STAFF_ROLE=session.staff?.role||'professional-staff'; STAFF_NAME=session.staff?.name||'Staff';
+    r=await authGet(`${API}?list=1`,KEY);
+  }
   catch(e){ $('#loginErr').textContent='Network error — check your connection'; return; }
   if(!r.ok){ $('#loginErr').textContent='Wrong key'; return; }
-  KEY=k; localStorage.setItem('dankStaffKey',k); LIVE=true;
+  localStorage.setItem('dankStaffKey',KEY); LIVE=true;
   const j=await r.json();
   $('#storeStat').innerHTML=j.redis?'<span class="pill">● storage: redis</span>':'<span class="pill warn">● storage: memory (set up Upstash for production)</span>';
   $('#login').style.display='none'; $('#listWrap').style.display='flex'; $('#chatWrap').style.display='none'; $('#logoutBtn').style.display='';
   updateAlertButton();
   await loadAnnouncements(false); pollOrders(); startOrderPoll(); clearInterval(dashboardSalesT); dashboardSalesT=setInterval(()=>loadDashboardSales(true),10800000);
   const hash=decodeURIComponent(location.hash.slice(1));
-  const portalTabs=['dashboard','orders','sales','announcement','food','settings'];
+  const portalTabs=['dashboard','orders','sales','announcement','food','staffmanagement','settings'];
   setTab(portalTabs.includes(hash)?hash:'dashboard');
   window.addEventListener('hashchange',()=>{ const h=decodeURIComponent(location.hash.slice(1)); if(portalTabs.includes(h)) setTab(h); });
 }
 function logout(){ localStorage.removeItem('dankStaffKey'); LIVE=false; location.reload(); }
 
 function setTab(t){ if(typeof stopCamScan==='function') stopCamScan(); TAB=t;
-  const ids={dashboard:'tabDashboard',orders:'tabOrders',sales:'tabSales',announcement:'tabAnnouncement',food:'tabFood',settings:'tabSettings'};
+  if(t==='staffmanagement'&&!CAN_MANAGE_ANNOUNCEMENTS)t='dashboard'; TAB=t;
+  const ids={dashboard:'tabDashboard',orders:'tabOrders',sales:'tabSales',announcement:'tabAnnouncement',food:'tabFood',staffmanagement:'tabStaffManagement',settings:'tabSettings'};
   Object.entries(ids).forEach(([name,id])=>$('#'+id)?.classList.toggle('active',t===name));
-  const copy={dashboard:['Dashboard','A live overview of DANK orders and sales.'],orders:['Orders','Manage website and table orders in real time.'],sales:['Sales Report','Review revenue, payments and order performance.'],announcement:['Announcement','Create and share important updates with DANK staff.'],food:['Food','A clean space prepared for the next food idea.'],settings:['Setting','Manage this device and staff-portal preferences.']};
+  const copy={dashboard:['Dashboard','A live overview of DANK orders and sales.'],orders:['Orders','Manage website and table orders in real time.'],sales:['Sales Report','Review revenue, payments and order performance.'],announcement:['Announcement','Create and share important updates with DANK staff.'],food:['Food','A clean space prepared for the next food idea.'],staffmanagement:['Staff Management','Create individual staff access and manage roles.'],settings:['Setting','Manage this device and staff-portal preferences.']};
   $('#pageTitle').textContent=copy[t][0]; $('#pageSub').textContent=copy[t][1];
   if(history.replaceState) history.replaceState(null,'','#'+t);
   if(t==='dashboard'){ renderDashboard(); loadDashboardSales(); }
   else if(t==='orders'){ renderOrders(); $('#ordCnt').style.display='none'; knownOrders=new Set(ORDERS.map(o=>o.orderId)); document.title=BASE_TITLE; $('#orderPop')?.classList.remove('on'); }
   else if(t==='sales'){ loadSales(); }
   else if(t==='announcement'){ renderAnnouncements(); loadAnnouncements(); }
+  else if(t==='staffmanagement'){ renderStaffManagement(); loadStaffManagement(); }
   else renderPortalPanel(t); }
 
 function renderPortalPanel(t){
@@ -331,6 +340,7 @@ async function loadAnnouncements(render=true){
     const j=await r.json(); STAFF_ROLE=j.role||'professional-staff'; CAN_MANAGE_ANNOUNCEMENTS=Boolean(j.canManage); ANNOUNCEMENTS=Array.isArray(j.announcements)?j.announcements:[];
     $('.profile-dot').textContent=roleLabel(STAFF_ROLE).split(' ').map(x=>x[0]).join('').slice(0,2);
   }catch(e){ ANNOUNCEMENTS=[]; }
+  $('#tabStaffManagement').style.display=CAN_MANAGE_ANNOUNCEMENTS?'':'none';
   if(render&&TAB==='announcement') renderAnnouncements();
   if(render&&TAB==='dashboard') renderDashboard();
 }
@@ -356,6 +366,22 @@ async function deleteAnnouncement(id){
   if(!confirm('Delete this announcement?'))return;
   const r=await authPost('/api/announcements',{action:'delete',id}); const j=await r.json().catch(()=>({}));
   if(!r.ok){boxToast(j.error||'Could not delete announcement');return;} boxToast('Announcement deleted'); await loadAnnouncements();
+}
+function renderStaffManagement(oneTimeKey=''){
+  const rows=STAFF_LIST.map(s=>`<tr><td><b>${esc(s.name)}</b></td><td>${esc(roleLabel(s.role))}</td><td>${esc(s.keyHint||'Hidden')}</td><td><span class="ann-chip ${s.active?'':'urgent'}">${s.active?'Active':'Inactive'}</span></td><td><div class="staff-actions">${s.active?`<button class="ghost" data-act="staff-deactivate" data-id="${esc(s.id)}">Deactivate</button>`:`<button class="ghost" data-act="staff-activate" data-id="${esc(s.id)}">Activate</button>`}${STAFF_ROLE==='owner'||s.role!=='manager'?`<button class="ghost danger" data-act="staff-delete" data-id="${esc(s.id)}">Delete</button>`:''}</div></td></tr>`).join('');
+  $('#list').innerHTML=`<section class="portal-panel">${oneTimeKey?`<div class="staff-key-result"><b>Copy this staff key now</b><p style="font-size:11px;color:var(--muted);margin:5px 0">For security, it will not be shown again.</p><code id="newStaffKey">${esc(oneTimeKey)}</code><button class="ghost" data-act="staff-copy">Copy key</button></div>`:''}<form class="staff-create" id="staffCreateForm"><input id="staffName" required maxlength="100" placeholder="Staff name"><select id="staffRole"><option value="professional-staff">Professional Staff</option><option value="part-time-staff">Part-time Staff</option>${STAFF_ROLE==='owner'?'<option value="manager">Manager</option>':''}</select><button class="btn" type="submit"><i class="ri-key-2-line"></i> Create staff key</button></form><div class="portal-card"><table class="staff-table"><thead><tr><th>Name</th><th>Role</th><th>Key</th><th>Status</th><th>Access</th></tr></thead><tbody>${rows||'<tr><td colspan="5">No individual staff keys yet.</td></tr>'}</tbody></table></div></section>`;
+  $('#staffCreateForm').addEventListener('submit',createStaffMember);
+}
+async function loadStaffManagement(){
+  if(location.hostname==='terminal.local'&&new URLSearchParams(location.search).has('visual-qa')){if(TAB==='staffmanagement')renderStaffManagement();return;}
+  try{const r=await authGet('/api/staff');const j=await r.json();if(!r.ok)throw new Error(j.error||'Could not load staff');STAFF_LIST=j.staff||[];if(TAB==='staffmanagement')renderStaffManagement();}catch(e){if(TAB==='staffmanagement')$('#list').innerHTML=`<div class="dash-card"><div class="empty-dash">${esc(e.message)}</div></div>`;}
+}
+async function createStaffMember(e){
+  e.preventDefault();const r=await authPost('/api/staff',{action:'create',name:$('#staffName').value,role:$('#staffRole').value});const j=await r.json().catch(()=>({}));if(!r.ok){boxToast(j.error||'Could not create staff key');return;}STAFF_LIST.push(j.staff);renderStaffManagement(j.key);boxToast('Staff key created');
+}
+async function changeStaffMember(id,action){
+  if((action==='delete'||action==='deactivate')&&!confirm(`${action==='delete'?'Delete':'Deactivate'} this staff access?`))return;
+  const r=await authPost('/api/staff',{action,id});const j=await r.json().catch(()=>({}));if(!r.ok){boxToast(j.error||'Could not update staff');return;}boxToast('Staff access updated');await loadStaffManagement();
 }
 
 const DASH_PERIODS={day:{label:'Day',days:1},week:{label:'Week',days:7},month:{label:'Month',days:30},year:{label:'Year',days:365}};
@@ -1942,6 +1968,10 @@ $('#list').addEventListener('click',e=>{
     case 'ann-new': renderAnnouncements(true); break;
     case 'ann-cancel': renderAnnouncements(false); break;
     case 'ann-delete': deleteAnnouncement(d.id); break;
+    case 'staff-copy': navigator.clipboard?.writeText($('#newStaffKey')?.textContent||'').then(()=>boxToast('Staff key copied')); break;
+    case 'staff-activate': changeStaffMember(d.id,'activate'); break;
+    case 'staff-deactivate': changeStaffMember(d.id,'deactivate'); break;
+    case 'staff-delete': changeStaffMember(d.id,'delete'); break;
     case 'thread':     openThread(d.id); break;
     case 'gift':       toggleGift(d.id); break;
     case 'slip':       viewSlip(d.id); break;
@@ -2003,7 +2033,8 @@ $('#list').addEventListener('change',e=>{
 if(location.hostname==='terminal.local'&&new URLSearchParams(location.search).has('visual-qa')){
   $('#login').style.display='none'; $('#listWrap').style.display='flex'; $('#logoutBtn').style.display='';
   ORDERS=[{orderId:'DANK-260901-1042',status:'new',at:Date.now()-180000,payment:'PromptPay',payStatus:'paid',subtotal:2450,deliveryFee:80,discount:0,total:2530,fulfilment:'delivery',delivery:{address:'Sathorn, Bangkok',time:'20:30'},customer:{name:'Sample customer',phone:'+66 63-206-4884'},items:[{name:'Blue Zangria',effects:['Relaxed','Happy','Creative'],grams:3.5,qty:1,unitPrice:2450,lineTotal:2450,option:'3.5 g'}]}];
-  STAFF_ROLE='owner';CAN_MANAGE_ANNOUNCEMENTS=true;ANNOUNCEMENTS=[{id:'AN1',title:'Welcome to the new Staff Portal',body:'Website orders and sales reports now live in one dashboard.',priority:'important',audience:'all',status:'published',createdAt:new Date().toISOString(),targets:{portal:true,line:false,telegram:false}},{id:'AN2',title:'Keep order alerts enabled',body:'Keep device volume on so new orders are not missed.',priority:'normal',audience:'professional-staff',status:'published',createdAt:new Date(Date.now()-86400000).toISOString(),targets:{portal:true,line:true,telegram:true}}];
+  STAFF_ROLE='owner';STAFF_NAME='Bryan';CAN_MANAGE_ANNOUNCEMENTS=true;$('#tabStaffManagement').style.display='';ANNOUNCEMENTS=[{id:'AN1',title:'Welcome to the new Staff Portal',body:'Website orders and sales reports now live in one dashboard.',priority:'important',audience:'all',status:'published',createdAt:new Date().toISOString(),targets:{portal:true,line:false,telegram:false}},{id:'AN2',title:'Keep order alerts enabled',body:'Keep device volume on so new orders are not missed.',priority:'normal',audience:'professional-staff',status:'published',createdAt:new Date(Date.now()-86400000).toISOString(),targets:{portal:true,line:true,telegram:true}}];
+  STAFF_LIST=[{id:'ST1',name:'Bank',role:'manager',active:true,keyHint:'••••K7P2'},{id:'ST2',name:'Honey',role:'professional-staff',active:true,keyHint:'••••Q9NX'},{id:'ST3',name:'Steve',role:'part-time-staff',active:false,keyHint:'••••4MZT'}];
   DASH_SALES.day={now:48750,previous:42300,change:15.25,current:{summary:{gross:48750,orders:32,average:1523},byDay:[{day:'2026-08-27',gross:5100,orders:3},{day:'2026-08-28',gross:6900,orders:5},{day:'2026-08-29',gross:5500,orders:4},{day:'2026-08-30',gross:8200,orders:7},{day:'2026-08-31',gross:7300,orders:5},{day:'2026-09-01',gross:9100,orders:6},{day:'2026-09-02',gross:6650,orders:2}],topItems:[{name:'Blue Zangria',qty:28,gross:19600},{name:'Permanent Marker',qty:21,gross:14700},{name:'MellowZ',qty:15,gross:10500},{name:'Zooties',qty:8,gross:5600},{name:'Bangkok Lemon',qty:3,gross:2100}]}};
   ['week','month','year'].forEach((key,i)=>{const scale=[6,24,260][i];DASH_SALES[key]={...DASH_SALES.day,now:DASH_SALES.day.now*scale,previous:DASH_SALES.day.previous*scale};});
   setTab('dashboard');
