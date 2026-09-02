@@ -344,7 +344,7 @@ function renderPortalPanel(t){
   } else if(t==='staffinfo'){
     loadStaffAccounts();
   } else {
-    el.innerHTML=`<section class="portal-panel"><div class="portal-card"><div class="setting-row"><div><b>Interface theme</b><span>Switch between light and dark mode on this device</span></div><button class="ghost" type="button" onclick="togglePortalTheme()">${portalTheme()==="dark"?"Use light mode":"Use dark mode"}</button></div><div class="setting-row"><div><b>New-order alerts</b><span>Sound, browser notification and vibration where supported</span></div><button class="switch ${alertEnabled?'on':''}" type="button" aria-label="Toggle new-order alerts" aria-pressed="${alertEnabled}" onclick="toggleAlerts(); renderPortalPanel('settings')"></button></div><div class="setting-row"><div><b>Portal address</b><span>www.dankbangkok.com/staffportal</span></div></div><div class="setting-row"><div><b>Secure session</b><span>Log out when this is a shared device</span></div><button class="ghost danger" type="button" onclick="logout()">Log Out</button></div></div>${can("staff_manage")?'<div id="settingsStaff" style="margin-top:16px"></div>':''}</section>`;
+    el.innerHTML=`<section class="portal-panel"><div class="portal-card"><div class="setting-row"><div><b>Interface theme</b><span>Switch between light and dark mode on this device</span></div><button class="ghost" type="button" onclick="togglePortalTheme()">${portalTheme()==="dark"?"Use light mode":"Use dark mode"}</button></div><div class="setting-row"><div><b>New-order alerts</b><span>Sound, browser notification and vibration where supported</span></div><button class="switch ${alertEnabled?'on':''}" type="button" aria-label="Toggle new-order alerts" aria-pressed="${alertEnabled}" onclick="toggleAlerts(); renderPortalPanel('settings')"></button></div><div class="setting-row"><div><b>Portal address</b><span>www.dankbangkok.com/staffportal</span></div></div><div class="setting-row"><div><b>Secure session</b><span>Log out when this is a shared device</span></div><button class="ghost danger" type="button" onclick="logout()">Log Out</button></div></div><div class="portal-card" style="margin-top:16px"><h3>Reset staff key</h3><p>Choose your own key. Use at least 12 characters with uppercase, lowercase, a number, and a special symbol.</p><div class="setting-row" style="align-items:flex-end"><div style="flex:1"><label for="myStaffKey"><b>New staff key</b></label><input id="myStaffKey" type="password" autocomplete="new-password" placeholder="New key" style="display:block;width:100%;margin-top:6px;padding:10px;border:1px solid var(--line2);border-radius:9px"></div><div style="flex:1"><label for="myStaffKeyConfirm"><b>Confirm new key</b></label><input id="myStaffKeyConfirm" type="password" autocomplete="new-password" placeholder="Confirm key" style="display:block;width:100%;margin-top:6px;padding:10px;border:1px solid var(--line2);border-radius:9px"></div><button class="ghost" data-act="staff-self-key">Reset staff key</button></div><label style="display:inline-flex;gap:7px;align-items:center;margin-top:8px;color:var(--muted)"><input type="checkbox" onchange="toggleOwnKeyFields(this.checked)"> Show keys</label></div>${can("staff_manage")?'<div id="settingsStaff" style="margin-top:16px"></div>':''}</section>`;
     if(can("staff_manage")) loadStaffAccounts("#settingsStaff");
   }
 }
@@ -378,6 +378,14 @@ async function loadStaffAccounts(target='#list'){
   }catch(e){el.innerHTML='<div class="ghdr">'+esc(e.message)+'</div>'}
 }
 async function createStaff(){try{const j=await staffAction({action:'create',name:$('#newStaffName').value,role:$('#newStaffRole').value});alert('New key for '+j.account.name+':\n\n'+j.key+'\n\nSave it now; it will not be shown again.');loadStaffAccounts('#settingsStaff')}catch(e){alert(e.message)}}
+function toggleOwnKeyFields(show){['myStaffKey','myStaffKeyConfirm'].forEach(id=>{const el=$('#'+id);if(el)el.type=show?'text':'password'})}
+async function changeOwnStaffKey(){
+  const key=$('#myStaffKey')?.value||'',confirmKey=$('#myStaffKeyConfirm')?.value||'';
+  if(key!==confirmKey){alert('The two keys do not match.');return;}
+  if(key.length<12||!/[A-Z]/.test(key)||!/[a-z]/.test(key)||!/[0-9]/.test(key)||!/[!@#$%^&*?_+\-]/.test(key)||/\s/.test(key)){alert('Use at least 12 characters with uppercase, lowercase, a number, a special symbol, and no spaces.');return;}
+  if(!confirm('Reset your staff key now? Your previous key will stop accepting new logins.'))return;
+  try{await staffAction({action:'setself',key});alert('Your staff key was changed. Sign in again with the new key.');logout()}catch(e){alert(e.message)}
+}
 async function editStaffKey(id,name){
   const key=prompt('Enter a new key for '+name+'\n\nAt least 12 characters with uppercase, lowercase, a number, and a special symbol (! @ # $ % ^ & * ? _ + -).');
   if(key===null)return;
@@ -1977,6 +1985,7 @@ $('#list').addEventListener('click',e=>{
     case 'tab-del':     tabClose(d.phone,d.id,true); break;
     case 'owed-member': setTab('member'); lookupMember(d.phone); break;
     case 'staff-create': createStaff(); break;
+    case 'staff-self-key': changeOwnStaffKey(); break;
     case 'staff-edit': editStaffKey(d.id,d.name); break;
     case 'staff-reset': resetStaff(d.id); break;
     case 'staff-active': activeStaff(d.id,d.active==='1'); break;
