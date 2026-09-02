@@ -7,8 +7,8 @@ const TTL = 60 * 60 * 24 * 365 * 10;
 export const ROLE_PERMISSIONS = Object.freeze({
   owner: ["*"],
   manager: ["orders", "dashboard", "sales", "announcement_read", "products", "announcements", "staff_manage", "promotions"],
-  professional: ["orders", "announcement_read"],
-  parttime: ["orders", "announcement_read"],
+  professional: ["orders", "dashboard", "announcement_read"],
+  parttime: ["orders", "dashboard", "announcement_read"],
 });
 export const ROLE_LABELS = Object.freeze({
   owner: "Owner",
