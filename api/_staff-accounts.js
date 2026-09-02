@@ -62,7 +62,7 @@ export async function seedInitialAccounts() {
 export async function createAccount(actor, name, requestedRole, details={}) {
   let role=String(requestedRole||"parttime").toLowerCase();
   if (!ROLE_PERMISSIONS[role]) role="parttime";
-  if(actor.role==="manager"&&role==="owner") role="parttime";
+  if(actor.role==="manager") role="parttime";
   const clean=String(name||"").trim().slice(0,80);
   if(!clean) throw new Error("full name required");
   const phone=String(details.phone||"").trim().slice(0,30);
@@ -115,7 +115,7 @@ export async function updateAccount(actor,id,details={}) {
   if(!name) throw new Error("full name required");
   let role=String(details.role||row.role);
   if(!ROLE_PERMISSIONS[role]) throw new Error("invalid role");
-  if(actor.role==="manager"&&(row.role==="owner"||role==="owner")) throw new Error("forbidden");
+  if(actor.role==="manager"&&(row.role==="owner"||role!==row.role)) throw new Error("forbidden");
   if(row.id===actor.id&&role!==row.role) throw new Error("you cannot change your own role");
   row.name=name;
   row.phone=String(details.phone||"").trim().slice(0,30);
@@ -136,6 +136,7 @@ export async function deleteAccount(actor,id) {
   return publicAccount(row);
 }
 export async function setAccountRole(actor,id,role) {
+  if(actor.role!=="owner") throw new Error("forbidden");
   if(!ROLE_PERMISSIONS[role]) throw new Error("invalid role");
   const rows=await listAccounts(), row=rows.find(a=>a.id===id);
   if(!row) throw new Error("account not found");
