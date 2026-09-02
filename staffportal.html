@@ -32,6 +32,8 @@ main{flex:1;display:flex;min-height:0;padding-top:74px}
 /* login */
 #login{margin:auto;background:var(--panel);border:1px solid var(--line2);box-shadow:0 16px 42px rgba(30,42,60,.08);border-radius:18px;padding:30px;max-width:360px;width:92%;text-align:center}
 #login input{width:100%;background:#fafbfc;border:1px solid var(--line2);color:var(--txt);padding:12px;border-radius:10px;font-size:15px;outline:none;margin:14px 0;text-align:center}
+.key-field{position:relative}.key-field input{padding-right:48px!important}.key-field button{position:absolute;right:8px;top:21px;width:34px;height:34px;border-radius:8px;color:var(--muted)}
+.login-switch{font-size:12px;color:var(--blue);margin-top:14px;text-decoration:underline}.owner-login{display:none}.owner-login input{margin:8px 0!important}
 .btn{background:var(--blue);color:#fff;font-weight:800;padding:12px 18px;border-radius:11px;width:100%;font-size:15px;box-shadow:0 7px 16px rgba(57,120,246,.22)}
 /* tabs */
 #tabs{width:240px;min-width:240px;height:calc(100vh - 74px);position:sticky;top:74px;display:flex;flex-direction:column;gap:5px;padding:20px 14px;border-right:1px solid var(--line);background:#fff}
@@ -151,14 +153,18 @@ main{flex:1;display:flex;min-height:0;padding-top:74px}
     <div style="font-size:40px;color:var(--blue)"><i class="ri-user-smile-line" aria-hidden="true"></i></div>
     <h2 style="margin:8px 0 2px">Staff login</h2>
     <p style="color:var(--muted);font-size:13px;margin:4px 0 0">Enter the staff key to access the staff dashboard.</p>
-    <input id="keyInput" type="password" placeholder="Staff key" onkeydown="if(event.key==='Enter')login()">
+    <div class="key-login"><div class="key-field"><input id="keyInput" type="password" placeholder="Staff key" onkeydown="if(event.key==='Enter')login()"><button type="button" onclick="toggleKey()" aria-label="Show staff key"><i class="ri-eye-line"></i></button></div></div>
+    <div class="owner-login"><input id="emailInput" type="email" autocomplete="username" placeholder="Owner email"><input id="passwordInput" type="password" autocomplete="current-password" placeholder="Owner password" onkeydown="if(event.key==='Enter')login()"></div>
     <button class="btn" onclick="login()">Enter console</button>
+    <button class="login-switch" type="button" onclick="toggleLoginMode()">Owner email login</button>
     <p id="loginErr" style="color:var(--danger);font-size:12.5px;height:14px;margin:10px 0 0"></p>
   </div>
   <div id="listWrap" style="display:none">
     <div id="tabs">
       <button id="tabDashboard" class="active" onclick="setTab('dashboard')"><i class="ri-dashboard-line"></i><span>Dashboard</span></button>
       <button id="tabOrders" onclick="setTab('orders')"><i class="ri-shopping-bag-3-line"></i><span>Orders</span><span class="cnt" id="ordCnt" style="display:none">0</span></button>
+      <button id="tabProducts" onclick="setTab('products')"><i class="ri-store-2-line"></i><span>Products</span></button>
+      <button id="tabPromotions" onclick="setTab('promotions')"><i class="ri-coupon-3-line"></i><span>Promotion Codes</span></button>
       <button id="tabSales" onclick="setTab('sales')"><i class="ri-line-chart-line"></i><span>Sales Report</span></button>
       <button id="tabAnnouncement" onclick="setTab('announcement')"><i class="ri-megaphone-line"></i><span>Announcement</span></button>
       <button id="tabStaffInfo" onclick="setTab('staffinfo')"><i class="ri-team-line"></i><span>Staff Information</span></button>
@@ -173,7 +179,8 @@ main{flex:1;display:flex;min-height:0;padding-top:74px}
 </main>
 <script>
 const API='/api/thread';
-let KEY=localStorage.getItem('dankStaffKey')||'';
+let KEY=localStorage.getItem('dankStaffToken')||localStorage.getItem('dankStaffKey')||'';
+let PROFILE=null, PERMS=[], OWNER_LOGIN=false;
 let cur=null, curSeq=0, pollT=null, listT=null, ordersT=null, lastSeen={};   // threadId -> last seq seen
 let TAB='dashboard', ORDERS=[], knownOrders=new Set(), firstOrderLoad=true, LIVE=false;
 let alertEnabled=localStorage.getItem('dankOrderAlerts')==='1', audioCtx=null, orderPopT=null;
@@ -274,45 +281,92 @@ function showOrderAlert(fresh){
 }
 
 async function login(){
-  const k=$('#keyInput').value.trim()||KEY; if(!k){$('#loginErr').textContent='Enter the key';return;}
+  const k=$('#keyInput').value.trim()||KEY;
+  if(!OWNER_LOGIN&&!k){$('#loginErr').textContent='Enter the key';return;}
   let r;
-  try{ r=await authGet(`${API}?list=1`,k); }
+  try{ r=await fetch('/api/staff-auth',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(OWNER_LOGIN?{action:'login',email:$('#emailInput').value,password:$('#passwordInput').value}:{action:'login',key:k})}); }
   catch(e){ $('#loginErr').textContent='Network error — check your connection'; return; }
-  if(!r.ok){ $('#loginErr').textContent='Wrong key'; return; }
-  KEY=k; localStorage.setItem('dankStaffKey',k); LIVE=true;
-  const j=await r.json();
-  $('#storeStat').innerHTML=j.redis?'<span class="pill">● storage: redis</span>':'<span class="pill warn">● storage: memory (set up Upstash for production)</span>';
+  const auth=await r.json().catch(()=>({}));
+  if(!r.ok){ $('#loginErr').textContent=auth.error||'Wrong login'; return; }
+  KEY=auth.token; PROFILE=auth.profile; PERMS=auth.permissions||[];
+  localStorage.setItem('dankStaffToken',KEY); localStorage.removeItem('dankStaffKey'); LIVE=true;
+  if(auth.generated?.length) showGeneratedKeys(auth.generated);
+  applyPermissions();
+  try{ r=await authGet(`${API}?list=1`); }catch(e){r=null;}
+  const j=r&&r.ok?await r.json():{};
   $('#login').style.display='none'; $('#listWrap').style.display='flex'; $('#chatWrap').style.display='none'; $('#logoutBtn').style.display='';
   updateAlertButton();
   pollOrders(); startOrderPoll(); clearInterval(dashboardSalesT); dashboardSalesT=setInterval(()=>loadDashboardSales(true),10800000);
   const hash=decodeURIComponent(location.hash.slice(1));
-  const portalTabs=['dashboard','orders','sales','announcement','staffinfo','settings'];
-  setTab(portalTabs.includes(hash)?hash:'dashboard');
-  window.addEventListener('hashchange',()=>{ const h=decodeURIComponent(location.hash.slice(1)); if(portalTabs.includes(h)) setTab(h); });
+  const portalTabs=['dashboard','orders','products','promotions','sales','announcement','staffinfo','settings'];
+  const first=can('*')?'dashboard':'orders'; setTab(portalTabs.includes(hash)&&tabAllowed(hash)?hash:first);
+  window.addEventListener('hashchange',()=>{ const h=decodeURIComponent(location.hash.slice(1)); if(portalTabs.includes(h)&&tabAllowed(h)) setTab(h); });
 }
-function logout(){ localStorage.removeItem('dankStaffKey'); LIVE=false; location.reload(); }
+function logout(){ localStorage.removeItem('dankStaffToken');localStorage.removeItem('dankStaffKey'); LIVE=false; location.reload(); }
+function toggleKey(){const i=$('#keyInput'),icon=document.querySelector('.key-field i');i.type=i.type==='password'?'text':'password';icon.className=i.type==='text'?'ri-eye-off-line':'ri-eye-line';}
+function toggleLoginMode(){OWNER_LOGIN=!OWNER_LOGIN;document.querySelector('.key-login').style.display=OWNER_LOGIN?'none':'';document.querySelector('.owner-login').style.display=OWNER_LOGIN?'block':'none';document.querySelector('.login-switch').textContent=OWNER_LOGIN?'Use staff key':'Owner email login';$('#loginErr').textContent='';}
+function can(p){return PERMS.includes('*')||PERMS.includes(p)}
+function tabAllowed(t){if(['dashboard','sales'].includes(t))return can('*');if(t==='products')return can('products');if(t==='promotions')return can('promotions');if(t==='announcement')return can('announcements');if(t==='staffinfo')return can('staff_manage');return can('orders')||t==='settings'}
+function applyPermissions(){
+  const map={tabDashboard:'*',tabSales:'*',tabProducts:'products',tabPromotions:'promotions',tabAnnouncement:'announcements',tabStaffInfo:'staff_manage'};
+  Object.entries(map).forEach(([id,p])=>{$('#'+id).style.display=can(p)?'':'none'});
+  document.querySelector('.profile-dot').textContent=(PROFILE?.name||'Staff').split(/\s+/).map(x=>x[0]).join('').slice(0,2).toUpperCase();
+  $('#storeStat').textContent=(PROFILE?.name||'Staff')+' · '+String(PROFILE?.role||'').replace('professional','Professional Staff').replace('parttime','Part-time Staff');
+}
+function showGeneratedKeys(rows){
+  const text=rows.map(x=>`${x.name} (${x.role}): ${x.key}`).join('\n');
+  setTimeout(()=>alert('Initial staff keys were created. Save these now; they will not be shown again.\n\n'+text),100);
+}
 
 function setTab(t){ if(typeof stopCamScan==='function') stopCamScan(); TAB=t;
-  const ids={dashboard:'tabDashboard',orders:'tabOrders',sales:'tabSales',announcement:'tabAnnouncement',staffinfo:'tabStaffInfo',settings:'tabSettings'};
+  if(!tabAllowed(t)) t=can('*')?'dashboard':'orders'; TAB=t;
+  const ids={dashboard:'tabDashboard',orders:'tabOrders',products:'tabProducts',promotions:'tabPromotions',sales:'tabSales',announcement:'tabAnnouncement',staffinfo:'tabStaffInfo',settings:'tabSettings'};
   Object.entries(ids).forEach(([name,id])=>$('#'+id)?.classList.toggle('active',t===name));
-  const copy={dashboard:['Dashboard','A live overview of DANK orders and sales.'],orders:['Orders','Manage website and table orders in real time.'],sales:['Sales Report','Review revenue, payments and order performance.'],announcement:['Announcement','Important updates for every DANK staff member.'],staffinfo:['Staff Information','Operational contacts, duties and escalation guidance.'],settings:['Setting','Manage this device and staff-portal preferences.']};
+  const copy={dashboard:['Dashboard','A live overview of DANK orders and sales.'],orders:['Orders','Manage website and table orders in real time.'],products:['Products','Create, edit and remove storefront products.'],promotions:['Promotion Codes','Create, edit and remove customer promotion codes.'],sales:['Sales Report','Review revenue, payments and order performance.'],announcement:['Announcement','Important updates for every DANK staff member.'],staffinfo:['Staff Information','Manage individual staff access.'],settings:['Setting','Manage this device and staff-portal preferences.']};
   $('#pageTitle').textContent=copy[t][0]; $('#pageSub').textContent=copy[t][1];
   if(history.replaceState) history.replaceState(null,'','#'+t);
   if(t==='dashboard'){ renderDashboard(); loadDashboardSales(); }
   else if(t==='orders'){ renderOrders(); $('#ordCnt').style.display='none'; knownOrders=new Set(ORDERS.map(o=>o.orderId)); document.title=BASE_TITLE; $('#orderPop')?.classList.remove('on'); }
   else if(t==='sales'){ loadSales(); }
+  else if(t==='products'){ loadStaffProducts(); }
+  else if(t==='promotions'){ loadPromotions(); }
   else renderPortalPanel(t); }
 
 function renderPortalPanel(t){
   const el=$('#list');
   if(t==='announcement'){
-    el.innerHTML=`<section class="portal-panel"><div class="portal-grid"><article class="portal-card"><h3>Welcome to the new Staff Portal</h3><p>Website orders and sales reports now live in one dashboard. Check Orders regularly during your shift and mark completed orders as done.</p></article><article class="portal-card"><h3>Keep order alerts enabled</h3><p>Allow browser notifications and keep your device volume on so new website orders are not missed.</p></article></div></section>`;
+    loadAnnouncements();
   } else if(t==='staffinfo'){
-    el.innerHTML=`<section class="portal-panel"><div class="portal-grid"><article class="portal-card"><h3>Store operations</h3><p>Manager: Bank<br>CEO: Bryan<br>Backend support: YIN</p></article><article class="portal-card"><h3>Order handling</h3><p>Confirm the customer, items, payment, delivery fee and address before fulfilment. Use the Google Maps button for deliveries and mark the order done only after handoff.</p></article><article class="portal-card"><h3>Shift escalation</h3><p>For absence or urgent shift cover, escalate in this order: Steve → Honey → Bank → Ken or Bryan.</p></article><article class="portal-card"><h3>Customer privacy</h3><p>Customer names, phone numbers, addresses and receipts are confidential. Access them only for order fulfilment.</p></article></div></section>`;
+    loadStaffAccounts();
   } else {
     el.innerHTML=`<section class="portal-panel"><div class="portal-card"><div class="setting-row"><div><b>New-order alerts</b><span>Sound, browser notification and vibration where supported</span></div><button class="switch ${alertEnabled?'on':''}" type="button" aria-label="Toggle new-order alerts" aria-pressed="${alertEnabled}" onclick="toggleAlerts(); renderPortalPanel('settings')"></button></div><div class="setting-row"><div><b>Portal address</b><span>www.dankbangkok.com/staffportal</span></div></div><div class="setting-row"><div><b>Secure session</b><span>Log out when this is a shared device</span></div><button class="ghost danger" type="button" onclick="logout()">Log Out</button></div></div></section>`;
   }
 }
+
+async function toolGet(section){const r=await authGet('/api/staff-tools?section='+section),j=await r.json().catch(()=>({}));if(!r.ok)throw new Error(j.error||'Request failed');return j}
+async function toolPost(section,body){const r=await authPost('/api/staff-tools',{section,...body}),j=await r.json().catch(()=>({}));if(!r.ok)throw new Error(j.error||'Request failed');return j}
+async function loadAnnouncements(){const el=$('#list');el.innerHTML='<div class="ghdr">Loading announcements…</div>';try{const j=await toolGet('announcements');el.innerHTML=`<section class="portal-panel"><div class="portal-card"><h3>Post announcement</h3><div class="setting-row"><input id="annTitle" placeholder="Title" style="padding:10px;border:1px solid var(--line2);border-radius:9px"><input id="annMessage" placeholder="Message" style="padding:10px;border:1px solid var(--line2);border-radius:9px;flex:1"><button class="ghost" data-act="ann-save">Post</button></div>${j.announcements.map(a=>`<div class="setting-row"><div><b>${esc(a.title)}</b><span>${esc(a.message)}</span></div><button class="ghost danger" data-act="ann-delete" data-id="${esc(a.id)}">Delete</button></div>`).join('')||'<p>No announcements yet.</p>'}</div></section>`}catch(e){el.innerHTML='<div class="ghdr">'+esc(e.message)+'</div>'}}
+async function saveAnnouncement(){try{await toolPost('announcements',{action:'save',title:$('#annTitle').value,message:$('#annMessage').value});loadAnnouncements()}catch(e){alert(e.message)}}
+async function deleteAnnouncement(id){if(confirm('Delete this announcement?')){try{await toolPost('announcements',{action:'delete',id});loadAnnouncements()}catch(e){alert(e.message)}}}
+async function loadPromotions(){const el=$('#list');el.innerHTML='<div class="ghdr">Loading promotion codes…</div>';try{const j=await toolGet('promotions'),rows=Object.entries(j.promotions||{});el.innerHTML=`<section class="portal-panel"><div class="portal-card"><h3>Add or update code</h3><div class="setting-row"><input id="promoCode" placeholder="CODE" style="padding:10px;width:110px"><select id="promoType"><option value="pct">Percent</option><option value="fixed">Fixed amount</option><option value="freedelivery">Free delivery</option></select><input id="promoValue" type="number" placeholder="Value" style="padding:10px;width:90px"><input id="promoMin" type="number" placeholder="Minimum" style="padding:10px;width:100px"><input id="promoDesc" placeholder="Description" style="padding:10px;flex:1"><button class="ghost" data-act="promo-save">Save</button></div>${rows.map(([code,p])=>`<div class="setting-row"><div><b>${esc(code)}</b><span>${esc(p.desc||p.type)} · value ${esc(p.value||0)} · minimum ฿${esc(p.min||0)}</span></div><button class="ghost danger" data-act="promo-delete" data-id="${esc(code)}">Delete</button></div>`).join('')||'<p>No promotion codes yet.</p>'}</div></section>`}catch(e){el.innerHTML='<div class="ghdr">'+esc(e.message)+'</div>'}}
+async function savePromo(){try{await toolPost('promotions',{action:'save',code:$('#promoCode').value,type:$('#promoType').value,value:$('#promoValue').value,min:$('#promoMin').value,desc:$('#promoDesc').value});loadPromotions()}catch(e){alert(e.message)}}
+async function deletePromo(code){if(confirm('Delete promotion '+code+'?')){try{await toolPost('promotions',{action:'delete',code});loadPromotions()}catch(e){alert(e.message)}}}
+async function loadStaffProducts(){const el=$('#list');el.innerHTML='<div class="ghdr">Loading products…</div>';try{const j=await toolGet('products'),rows=(j.products||[]).slice(0,500);el.innerHTML=`<section class="portal-panel"><div class="portal-card"><h3>Create product</h3><div class="setting-row"><input id="productName" placeholder="Name" style="padding:10px;flex:1"><input id="productCategory" placeholder="Category" style="padding:10px"><input id="productPrice" type="number" placeholder="Price" style="padding:10px;width:90px"><input id="productStock" type="number" placeholder="Stock" style="padding:10px;width:90px"><button class="ghost" data-act="product-create">Create</button></div>${rows.map(p=>`<div class="setting-row"><div><b>${esc(p.name)}</b><span>${esc(p.category||'')} · ฿${esc(p.price||p.priceTiers?.[0]?.price||0)} · stock ${esc(p.stock??'')}</span></div><div><button class="ghost" data-act="product-edit" data-id="${esc(p.id)}" data-name="${esc(p.name)}" data-category="${esc(p.category||'')}" data-price="${esc(p.price||p.priceTiers?.[0]?.price||0)}" data-stock="${esc(p.stock??0)}">Edit</button> <button class="ghost danger" data-act="product-delete" data-id="${esc(p.id)}">Delete</button></div></div>`).join('')}</div></section>`}catch(e){el.innerHTML='<div class="ghdr">'+esc(e.message)+'</div>'}}
+async function createProduct(){try{await toolPost('products',{action:'create',name:$('#productName').value,category:$('#productCategory').value,price:$('#productPrice').value,stock:$('#productStock').value});loadStaffProducts()}catch(e){alert(e.message)}}
+async function editProduct(d){const name=prompt('Product name',d.name);if(name===null)return;const category=prompt('Category',d.category);if(category===null)return;const price=prompt('Price',d.price);if(price===null)return;const stock=prompt('Stock',d.stock);if(stock===null)return;try{await toolPost('products',{action:'save',id:d.id,name,category,price,stock});loadStaffProducts()}catch(e){alert(e.message)}}
+async function deleteProduct(id){if(confirm('Remove this product from the storefront?')){try{await toolPost('products',{action:'delete',id});loadStaffProducts()}catch(e){alert(e.message)}}}
+
+async function staffAction(body){const r=await authPost('/api/staff-auth',body),j=await r.json().catch(()=>({}));if(!r.ok)throw new Error(j.error||'Request failed');return j}
+async function loadStaffAccounts(){
+  const el=$('#list');el.innerHTML='<div class="ghdr">Loading staff accounts…</div>';
+  try{const j=await staffAction({action:'list'});const options=Object.entries(j.roles||{}).map(([v,l])=>`<option value="${esc(v)}">${esc(l)}</option>`).join('');
+    el.innerHTML=`<section class="portal-panel"><div class="portal-card"><h3>Staff accounts</h3><p style="margin-bottom:14px">Each person signs in with their own key. Managers may add staff, but only the owner may assign roles.</p><div class="setting-row"><input id="newStaffName" placeholder="Staff name" style="padding:10px;border:1px solid var(--line2);border-radius:9px"><select id="newStaffRole" ${j.canAssignRoles?'':'disabled'} style="padding:10px;border:1px solid var(--line2);border-radius:9px">${options}</select><button class="ghost" data-act="staff-create">Add staff</button></div>${j.accounts.map(a=>`<div class="setting-row"><div><b>${esc(a.name)}</b><span>${a.active?'Active':'Disabled'}</span></div><div><select data-act="staff-role" data-id="${esc(a.id)}" ${j.canAssignRoles?'':'disabled'} style="padding:8px;border:1px solid var(--line2);border-radius:9px">${Object.entries(j.roles||{}).map(([v,l])=>`<option value="${esc(v)}" ${v===a.role?'selected':''}>${esc(l)}</option>`).join('')}</select> <button class="ghost" data-act="staff-reset" data-id="${esc(a.id)}">New key</button> <button class="ghost ${a.active?'danger':''}" data-act="staff-active" data-id="${esc(a.id)}" data-active="${a.active?'0':'1'}">${a.active?'Disable':'Enable'}</button></div></div>`).join('')}</div></section>`;
+  }catch(e){el.innerHTML='<div class="ghdr">'+esc(e.message)+'</div>'}
+}
+async function createStaff(){try{const j=await staffAction({action:'create',name:$('#newStaffName').value,role:$('#newStaffRole').value});alert('New key for '+j.account.name+':\n\n'+j.key+'\n\nSave it now; it will not be shown again.');loadStaffAccounts()}catch(e){alert(e.message)}}
+async function resetStaff(id){if(!confirm('Replace this person’s current key?'))return;try{const j=await staffAction({action:'reset',id});alert('New key for '+j.account.name+':\n\n'+j.key+'\n\nSave it now; the old key no longer works.');loadStaffAccounts()}catch(e){alert(e.message)}}
+async function activeStaff(id,active){try{await staffAction({action:'active',id,active});loadStaffAccounts()}catch(e){alert(e.message)}}
+async function roleStaff(id,role){try{await staffAction({action:'role',id,role});loadStaffAccounts()}catch(e){alert(e.message);loadStaffAccounts()}}
 
 const DASH_PERIODS={day:{label:'Day',days:1},week:{label:'Week',days:7},month:{label:'Month',days:30},year:{label:'Year',days:365}};
 let DASH_PERIOD='day', DASH_SALES={}, dashboardSalesT=null;
@@ -1902,6 +1956,16 @@ $('#list').addEventListener('click',e=>{
     case 'tab-settle':  tabClose(d.phone,d.id,false); break;
     case 'tab-del':     tabClose(d.phone,d.id,true); break;
     case 'owed-member': setTab('member'); lookupMember(d.phone); break;
+    case 'staff-create': createStaff(); break;
+    case 'staff-reset': resetStaff(d.id); break;
+    case 'staff-active': activeStaff(d.id,d.active==='1'); break;
+    case 'ann-save': saveAnnouncement(); break;
+    case 'ann-delete': deleteAnnouncement(d.id); break;
+    case 'promo-save': savePromo(); break;
+    case 'promo-delete': deletePromo(d.id); break;
+    case 'product-create': createProduct(); break;
+    case 'product-edit': editProduct(d); break;
+    case 'product-delete': deleteProduct(d.id); break;
   }
 });
 /* The bill drill-down paints itself into #billOv, which sits outside #list, so
@@ -1927,6 +1991,7 @@ $('#list').addEventListener('input',e=>{
    on this page that saves the moment it is touched, so it needs its own
    listener on #list rather than an inline handler. */
 $('#list').addEventListener('change',e=>{
+  const sr=e.target.closest('[data-act="staff-role"]'); if(sr) return roleStaff(sr.dataset.id,sr.value);
   const el=e.target.closest('[data-act="box-sh"]'); if(el) return boxSetPos(el.dataset.id,el.value);
   /* Switching product reloads the form from that product's saved report, so it
      has to run on change rather than on a Load button nobody would press. */

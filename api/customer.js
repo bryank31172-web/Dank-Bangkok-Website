@@ -15,7 +15,7 @@
    a sensible profile, and one who ordered before any of this shipped still
    shows their history.                                                       */
 import { getJSON, indexList } from "./_store.js";
-import { requireStaff } from "./_auth.js";
+import { requirePermission } from "./_auth.js";
 import { normPhone } from "./_phone.js";
 import { getWallet } from "./_wallet.js";
 import { memberIdConfigured, memberCode, prettyCode, phoneForCode, cleanCode } from "./_memberid.js";
@@ -59,7 +59,7 @@ export default async function handler(req, res) {
   res.setHeader("Cache-Control", "no-store");
   if (req.method === "OPTIONS") return res.status(204).end();
   if (req.method !== "GET") return res.status(405).json({ error: "method" });
-  if (!requireStaff(req, res)) return;
+  if (!requirePermission(req, res, "owner_tools")) return;
 
   try {
     const q = req.query || {};

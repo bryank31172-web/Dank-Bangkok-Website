@@ -18,7 +18,7 @@
    the rest of the site keys on — index.html looks up both, in that order.    */
 
 import { getReports, saveReport, deleteReport, labKeyOf } from "./_lab.js";
-import { requireStaff } from "./_auth.js";
+import { requirePermission } from "./_auth.js";
 import { requireRate } from "./_ratelimit.js";
 
 export default async function handler(req, res) {
@@ -35,7 +35,7 @@ export default async function handler(req, res) {
     }
 
     if (req.method === "POST") {
-      if (!requireStaff(req, res)) return;
+      if (!requirePermission(req, res, "owner_tools")) return;
       if (!(await requireRate(req, res, "lab-write", 120, 600))) return;
       const b = req.body || {};
       const action = String(b.action || "save").toLowerCase();

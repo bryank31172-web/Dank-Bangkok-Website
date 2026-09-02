@@ -13,7 +13,7 @@
         (optional override of where summaries go; defaults to LINE_TO).        */
 import { listSources, getMessagesSince, summarize } from "./_linelog.js";
 import { linePush } from "./_line.js";
-import { requireStaff } from "./_auth.js";
+import { requirePermission } from "./_auth.js";
 
 function cronAuthed(req) {
   const cs = process.env.CRON_SECRET;
@@ -43,7 +43,7 @@ export default async function handler(req, res) {
   // ---- GET: cron / quick manual ----
   if (req.method === "GET") {
     // Vercel Cron authorises itself with CRON_SECRET; a human uses the staff key.
-    if (!cronAuthed(req) && !requireStaff(req, res)) return;
+    if (!cronAuthed(req) && !requirePermission(req, res, "owner_tools")) return;
     const hours = Number(req.query?.hours) || 24;
     try {
       const done = await runAll(hours);
@@ -55,7 +55,7 @@ export default async function handler(req, res) {
 
   // ---- POST: on-demand (staff) ----
   if (req.method !== "POST") return res.status(405).json({ error: "method" });
-  if (!requireStaff(req, res)) return;
+  if (!requirePermission(req, res, "owner_tools")) return;
   const b = req.body || {};
   const hours = Number(b.hours) || 24;
   const to = process.env.SUMMARY_TO || process.env.LINE_TO;

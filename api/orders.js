@@ -3,7 +3,7 @@
      GET  ?key=...&limit=200&offset=200&archive=1   → page further back
      POST {orderId, status:"done"|"new", key}       → update order status  */
 import { getJSON, setJSON, indexList } from "./_store.js";
-import { requireStaff } from "./_auth.js";
+import { requirePermission } from "./_auth.js";
 
 export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
@@ -12,7 +12,7 @@ export default async function handler(req, res) {
 
   try {
     if (req.method === "GET") {
-      if (!requireStaff(req, res)) return;
+      if (!requirePermission(req, res, "orders")) return;
       /* The console asks for the default 60 and nothing else, which is why this
          reply keeps its {orders:[…]} shape. ?archive=1 also walks the overflow
          index that _store.js now keeps, and ?offset= steps through it — an
@@ -35,7 +35,7 @@ export default async function handler(req, res) {
       });
     }
     if (req.method === "POST") {
-      if (!requireStaff(req, res)) return;
+      if (!requirePermission(req, res, "orders")) return;
       const b = req.body || {};
       const o = await getJSON("order:" + b.orderId);
       if (!o) return res.status(404).json({ error: "not found" });

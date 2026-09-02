@@ -13,7 +13,7 @@
      POST {action:"close", threadId, key}                                   */
 
 import { getJSON, setJSON, indexAdd, indexList, usingRedis } from "./_store.js";
-import { requireStaff, isStaffKey } from "./_auth.js";
+import { requirePermission, isStaffKey } from "./_auth.js";
 
 const rid = () =>
   "CH" + Date.now().toString(36).toUpperCase() + Math.random().toString(36).slice(2, 6).toUpperCase();
@@ -27,7 +27,7 @@ export default async function handler(req, res) {
     if (req.method === "GET") {
       const { threadId, since, list, key } = req.query || {};
       if (list) {
-        if (!requireStaff(req, res)) return;
+        if (!requirePermission(req, res, "owner_tools")) return;
         const ids = await indexList();
         const threads = [];
         for (const id of ids.slice(0, 60)) {
@@ -99,7 +99,7 @@ export default async function handler(req, res) {
     }
 
     if (b.action === "close") {
-      if (!requireStaff(req, res)) return;
+      if (!requirePermission(req, res, "owner_tools")) return;
       const t = await getJSON("thread:" + b.threadId);
       if (!t) return res.status(404).json({ error: "not found" });
       t.status = "closed";

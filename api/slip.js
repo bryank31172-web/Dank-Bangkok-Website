@@ -15,7 +15,7 @@
    here.                                                                     */
 import { getJSON, setJSON } from "./_store.js";
 import { notifyStaffLine } from "./_line.js";
-import { requireStaff, isStaff, sameOrigin } from "./_auth.js";
+import { requirePermission, isStaff, sameOrigin } from "./_auth.js";
 import { requireRate } from "./_ratelimit.js";
 
 const MAX_IMAGE = 600000; // ~450KB of base64; the storefront resizes before sending
@@ -27,14 +27,14 @@ export default async function handler(req, res) {
   if (req.method === "OPTIONS") return res.status(204).end();
 
   if (req.method === "GET") {
-    if (!requireStaff(req, res)) return;
+    if (!requirePermission(req, res, "orders")) return;
     const img = await getJSON("slip:" + req.query.id);
     return res.status(200).json({ image: img || null });
   }
   if (req.method !== "POST") return res.status(405).json({ error: "method" });
 
   const b = req.body || {};
-  const staff = isStaff(req);
+  const staff = isStaff(req, "orders");
   if (!staff) {
     if (!sameOrigin(req)) return res.status(403).json({ error: "forbidden" });
     if (!(await requireRate(req, res, "slip", 10, 600))) return;

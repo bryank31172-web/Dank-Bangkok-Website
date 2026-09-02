@@ -15,7 +15,7 @@
    storefront shows; the storefront already keeps the customer's own name in
    localStorage (dank_reg) from when they joined on that device.            */
 import { getJSON, setJSON } from "./_store.js";
-import { requireStaff } from "./_auth.js";
+import { requirePermission } from "./_auth.js";
 import { requireRate } from "./_ratelimit.js";
 import { normPhone as digits } from "./_phone.js";
 import { memberIdConfigured, memberCode, prettyCode, cardUrl, rememberCode } from "./_memberid.js";
@@ -29,7 +29,7 @@ export default async function handler(req, res) {
 
   if (req.method === "GET") {
     // member list is staff-only — same key as the staff console
-    if (!requireStaff(req, res)) return;
+    if (!requirePermission(req, res, "owner_tools")) return;
     const list = (await getJSON(KEY)) || [];
     return res.status(200).json({ ok: true, count: list.length, members: list.slice(0, 1000) });
   }

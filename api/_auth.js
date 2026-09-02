@@ -46,32 +46,76 @@ export function safeEq(a, b) {
   return A.length > 0 && A.length === B.length && crypto.timingSafeEqual(A, B);
 }
 
-/** True only when `given` matches a configured staff key. Unset key ⇒ always false. */
+const STAFF_ROLE_PERMISSIONS = Object.freeze({
+  owner:["*"],
+  manager:["orders","products","announcements","staff_manage","promotions"],
+  professional:["orders"],
+  parttime:["orders"],
+});
+const staffSecret=()=>process.env.STAFF_SESSION_SECRET||process.env.ADMIN_SECRET||"";
+const b64u=(v)=>Buffer.from(v).toString("base64url");
+const staffSign=(payload)=>b64u(crypto.createHmac("sha256",staffSecret()).update(payload).digest());
+function readStaffToken(token){
+  if(!staffSecret()||!token||typeof token!=="string"||!token.includes(".")) return null;
+  const [payload,sig]=token.split(".",2);
+  if(!safeEq(sig,staffSign(payload))) return null;
+  try{
+    const p=JSON.parse(Buffer.from(payload,"base64url").toString("utf8"));
+    if(!p.id||!p.role||!p.exp||Date.now()>=p.exp||!STAFF_ROLE_PERMISSIONS[p.role]) return null;
+    return {id:p.id,name:p.name||"Staff",role:p.role,active:true};
+  }catch{return null;}
+}
+function identityFromCredential(given){
+  const k=staffKey();
+  if(k&&safeEq(given,k)) return {id:"legacy-owner",name:"Bryan",role:"owner",active:true,legacy:true};
+  return readStaffToken(given);
+}
+export function hasPermission(identity,permission){
+  if(!identity) return false;
+  const list=STAFF_ROLE_PERMISSIONS[identity.role]||[];
+  return list.includes("*")||list.includes(permission);
+}
+export function staffIdentity(req){
+  return identityFromCredential(keyFrom(req));
+}
+staffIdentity.makeToken=function(account){
+  if(!staffSecret()) throw new Error("ADMIN_SECRET is not configured");
+  const payload=b64u(JSON.stringify({id:account.id,name:account.name,role:account.role,exp:Date.now()+1000*60*60*12}));
+  return payload+"."+staffSign(payload);
+};
+
+/** True for the recovery key or a valid signed individual staff session. */
 export function isStaffKey(given) {
-  const k = staffKey();
-  return Boolean(k) && safeEq(given, k);
+  return Boolean(identityFromCredential(given));
 }
 
-/** Where the callers put the key: ?key= on GETs, body.key on POSTs, or a header. */
+/** Where the callers put the key: bearer/header first, then legacy query/body. */
 export function keyFrom(req) {
-  return req?.query?.key ?? req?.body?.key ?? req?.headers?.["x-staff-key"] ?? "";
+  const auth=String(req?.headers?.authorization||"");
+  const bearer=/^Bearer\s+(.+)$/i.exec(auth)?.[1];
+  return bearer ?? req?.headers?.["x-staff-key"] ?? req?.query?.key ?? req?.body?.key ?? "";
 }
 
-/** Soft check for the endpoints that merely show staff extras (e.g. /api/thread). */
-export function isStaff(req) {
-  return isStaffKey(keyFrom(req));
+export function isStaff(req, permission) {
+  const identity=staffIdentity(req);
+  return permission ? hasPermission(identity,permission) : Boolean(identity);
 }
 
-/* Guard for a staff-only branch. Returns true when the caller may proceed;
-   otherwise it has ALREADY written the response, so use it as:
-       if (!requireStaff(req, res)) return;                                   */
-export function requireStaff(req, res, given) {
-  if (!staffConfigured()) return notConfigured(res, ["STAFF_KEY"]);
-  if (!isStaffKey(given === undefined ? keyFrom(req) : given)) {
-    res.status(401).json({ error: "bad key" });
-    return false;
-  }
+export function requirePermission(req,res,permission){
+  if(!staffConfigured()&&!staffSecret()) return notConfigured(res,["STAFF_KEY or ADMIN_SECRET"]);
+  const identity=staffIdentity(req);
+  if(!identity){res.status(401).json({error:"bad key"});return false;}
+  if(permission&&!hasPermission(identity,permission)){res.status(403).json({error:"forbidden"});return false;}
   return true;
+}
+
+/* Backward-compatible guard. New role-sensitive endpoints should name a permission. */
+export function requireStaff(req,res,given) {
+  if(given!==undefined){
+    if(!identityFromCredential(given)){res.status(401).json({error:"bad key"});return false;}
+    return true;
+  }
+  return requirePermission(req,res,null);
 }
 
 /* Same fail-closed shape for the other single-purpose secrets (POS_SYNC_KEY,
