@@ -32,7 +32,7 @@ async function saveAccounts(rows) {
   await setJSON(STORE_KEY, rows, TTL);
 }
 export function publicAccount(a) {
-  return { id:a.id, name:a.name, role:a.role, active:a.active !== false, createdAt:a.createdAt, updatedAt:a.updatedAt };
+  return { id:a.id, name:a.name, phone:a.phone||"", startDate:a.startDate||"", salary:Number(a.salary)||0, role:a.role, active:a.active !== false, createdAt:a.createdAt, updatedAt:a.updatedAt };
 }
 export async function authenticateAccountKey(given) {
   const legacy = process.env.STAFF_KEY || "";
@@ -52,21 +52,24 @@ export async function seedInitialAccounts() {
     ["Mon","professional"],
   ];
   const generated=[], accounts=specs.map(([name,role])=>{
-    const key=makeKey(), row={id:crypto.randomUUID(),name,role,keyHash:hashKey(key),active:true,createdAt:now,updatedAt:now};
+    const key=makeKey(), row={id:crypto.randomUUID(),name,phone:"",startDate:"",salary:0,role,keyHash:hashKey(key),active:true,createdAt:now,updatedAt:now};
     generated.push({id:row.id,name,role,key});
     return row;
   });
   await saveAccounts(accounts);
   return { accounts, generated };
 }
-export async function createAccount(actor, name, requestedRole) {
+export async function createAccount(actor, name, requestedRole, details={}) {
   let role=String(requestedRole||"parttime").toLowerCase();
   if (!ROLE_PERMISSIONS[role]) role="parttime";
-  if(actor.role!=="owner") role="parttime";
+  if(actor.role==="manager"&&role==="owner") role="parttime";
   const clean=String(name||"").trim().slice(0,80);
-  if(!clean) throw new Error("name required");
+  if(!clean) throw new Error("full name required");
+  const phone=String(details.phone||"").trim().slice(0,30);
+  const startDate=/^\d{4}-\d{2}-\d{2}$/.test(String(details.startDate||""))?String(details.startDate):"";
+  const salary=Math.max(0,Math.round(Number(details.salary)||0));
   const rows=await listAccounts(), now=Date.now(), key=makeKey();
-  const row={id:crypto.randomUUID(),name:clean,role,keyHash:hashKey(key),active:true,createdAt:now,updatedAt:now};
+  const row={id:crypto.randomUUID(),name:clean,phone,startDate,salary,role,keyHash:hashKey(key),active:true,createdAt:now,updatedAt:now};
   rows.push(row); await saveAccounts(rows);
   return {account:publicAccount(row),key};
 }
@@ -104,11 +107,40 @@ export async function setAccountActive(actor,id,active) {
   row.active=Boolean(active); row.updatedAt=Date.now(); await saveAccounts(rows);
   return publicAccount(row);
 }
+export async function updateAccount(actor,id,details={}) {
+  const rows=await listAccounts(), row=rows.find(a=>a.id===id);
+  if(!row) throw new Error("account not found");
+  if(!mayManage(actor,row)) throw new Error("forbidden");
+  const name=String(details.name||"").trim().slice(0,80);
+  if(!name) throw new Error("full name required");
+  let role=String(details.role||row.role);
+  if(!ROLE_PERMISSIONS[role]) throw new Error("invalid role");
+  if(actor.role==="manager"&&(row.role==="owner"||role==="owner")) throw new Error("forbidden");
+  if(row.id===actor.id&&role!==row.role) throw new Error("you cannot change your own role");
+  row.name=name;
+  row.phone=String(details.phone||"").trim().slice(0,30);
+  row.startDate=/^\d{4}-\d{2}-\d{2}$/.test(String(details.startDate||""))?String(details.startDate):"";
+  row.salary=Math.max(0,Math.round(Number(details.salary)||0));
+  row.role=role;
+  if(details.active!==undefined) row.active=Boolean(details.active);
+  row.updatedAt=Date.now(); await saveAccounts(rows);
+  return publicAccount(row);
+}
+export async function deleteAccount(actor,id) {
+  const rows=await listAccounts(), i=rows.findIndex(a=>a.id===id);
+  if(i<0) throw new Error("account not found");
+  const row=rows[i];
+  if(row.id===actor.id||!mayManage(actor,row)) throw new Error("forbidden");
+  if(row.role==="owner") throw new Error("owner accounts cannot be deleted");
+  rows.splice(i,1); await saveAccounts(rows);
+  return publicAccount(row);
+}
 export async function setAccountRole(actor,id,role) {
-  if(actor.role!=="owner") throw new Error("forbidden");
   if(!ROLE_PERMISSIONS[role]) throw new Error("invalid role");
   const rows=await listAccounts(), row=rows.find(a=>a.id===id);
   if(!row) throw new Error("account not found");
+  if(!mayManage(actor,row)||row.id===actor.id) throw new Error("forbidden");
+  if(actor.role==="manager"&&(row.role==="owner"||role==="owner")) throw new Error("forbidden");
   row.role=role; row.updatedAt=Date.now(); await saveAccounts(rows);
   return publicAccount(row);
 }
