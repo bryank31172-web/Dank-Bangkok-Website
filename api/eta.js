@@ -6,7 +6,7 @@
    Used by the LINE webhook (location pin) and can be called by staff tools.   */
 import { computeEta, etaText, routeConfigured } from "./_route.js";
 import { lineReply, linePush } from "./_line.js";
-import { requireStaff } from "./_auth.js";
+import { requirePermission } from "./_auth.js";
 
 export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
@@ -23,7 +23,7 @@ export default async function handler(req, res) {
   // billable message. The check used to sit further down, after the routing
   // call had already been made and paid for, so an unauthorised caller still
   // burned a Google Routes request every time. Authorise first, work second.
-  if (b.to && !b.replyToken && !requireStaff(req, res)) return;
+  if (b.to && !b.replyToken && !requirePermission(req, res, "owner_tools")) return;
 
   const eta = await computeEta({ destLat: b.destLat, destLng: b.destLng, address: b.address });
   const text = etaText(eta);
