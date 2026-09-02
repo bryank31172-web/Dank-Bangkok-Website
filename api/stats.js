@@ -24,7 +24,7 @@
    empty chart look like a broken one. */
 
 import { getJSON, setJSON, indexList } from "./_store.js";
-import { requireStaff } from "./_auth.js";
+import { requirePermission } from "./_auth.js";
 import { requireRate } from "./_ratelimit.js";
 import { record, readRange, bkkDay, lastDays } from "./_analytics.js";
 
@@ -66,7 +66,7 @@ export default async function handler(req, res) {
   }
 
   if (req.method !== "GET") return res.status(405).json({ error: "GET or POST" });
-  if (!requireStaff(req, res)) return;
+  if (!requirePermission(req, res, "owner_tools")) return;
 
   const days = Math.min(MAX_DAYS, Math.max(1, Math.round(Number(req.query?.days) || 7)));
 
