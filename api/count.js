@@ -6,7 +6,7 @@
    Requires STAFF_KEY. Photos are resized client-side before upload.          */
 import { getJSON, setJSON, indexAdd, indexList } from "./_store.js";
 import { notifyStaffLine } from "./_line.js";
-import { requireStaff } from "./_auth.js";
+import { requirePermission } from "./_auth.js";
 
 const IDX = "counts:index";
 const MAX_PHOTOS = 12;
@@ -19,7 +19,7 @@ export default async function handler(req, res) {
 
   // -------- GET (staff only) --------
   if (req.method === "GET") {
-    if (!requireStaff(req, res)) return;
+    if (!requirePermission(req, res, "owner_tools")) return;
     if (req.query.id) {
       const s = await getJSON("count:" + req.query.id);
       if (!s) return res.status(404).json({ error: "not found" });
@@ -47,7 +47,7 @@ export default async function handler(req, res) {
   // could post a shift count: the headcount, the variances and the "proof"
   // photos the staff console shows are all attacker-supplied without this.
   // The console already sends the key here (staff.html posts {…, key}).
-  if (!requireStaff(req, res)) return;
+  if (!requirePermission(req, res, "owner_tools")) return;
   const b = req.body || {};
   const lines = Array.isArray(b.lines) ? b.lines : [];
   const photos = Array.isArray(b.photos) ? b.photos : [];
