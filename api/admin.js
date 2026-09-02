@@ -47,7 +47,7 @@
 import crypto from "node:crypto";
 import { getJSON, setJSON } from "./_store.js";
 import { bustMenu } from "./_menu.js";
-import { requireEnv } from "./_auth.js";
+import { requireEnv, staffIdentity } from "./_auth.js";
 import { requireRate } from "./_ratelimit.js";
 
 const sha256 = (s) => crypto.createHash("sha256").update(String(s)).digest("hex");
@@ -77,7 +77,7 @@ const sign = (payload) => b64u(crypto.createHmac("sha256", SECRET()).update(payl
 const PIN_TTL_MS = 1000 * 60 * 60 * 12; // 12 hours
 
 function makeToken(scope) {
-  const s = scope === "promo" ? "promo" : "owner";
+  const s = scope === "promo" ? "promo" : scope === "manager" ? "manager" : "owner";
   const ttl = s === "promo" ? PIN_TTL_MS : TTL_MS;
   const payload = b64u(JSON.stringify({ e: s === "promo" ? "pin" : EMAIL(), x: Date.now() + ttl, s }));
   return payload + "." + sign(payload);
@@ -95,7 +95,7 @@ function readToken(tok) {
   try {
     const p = JSON.parse(b64uDecode(payload));
     if (!p.x || Date.now() >= p.x) return null;
-    return { e: p.e, x: p.x, s: p.s === "promo" ? "promo" : "owner" };
+    return { e: p.e, x: p.x, s: p.s === "promo" ? "promo" : p.s === "manager" ? "manager" : "owner" };
   } catch (e) { return null; }
 }
 
@@ -123,6 +123,15 @@ export default async function handler(req, res) {
     const given = String(b.pin || "").replace(/[^0-9]/g, "");
     if (!given || !safeEq(given, PIN())) return res.status(401).json({ error: "wrong PIN" });
     return res.status(200).json({ ok: true, token: makeToken("promo"), scope: "promo" });
+  }
+
+  /* Exchange a signed owner/manager staff session for the storefront editor.
+     The raw individual key never enters this endpoint or localStorage twice. */
+  if (b.action === "staff") {
+    if (!requireEnv(res, ["ADMIN_SECRET"])) return;
+    const staff = staffIdentity(req);
+    if (!staff || !["owner", "manager"].includes(staff.role)) return res.status(403).json({ error: "forbidden" });
+    return res.status(200).json({ ok:true, token:makeToken(staff.role), scope:staff.role });
   }
 
   // Everything past the public GET needs a real, deployment-supplied login.
@@ -170,10 +179,13 @@ export default async function handler(req, res) {
        matter what its browser posted — the catalogue half of the payload is
        thrown away and the stored one kept, so a tampered request cannot move
        a price. This is the whole reason the token carries a scope. */
-    if (sess.s !== "owner") {
+    if (sess.s === "promo") {
       const prev = (await getJSON("admin:overrides")) || {};
       clean.products = typeof prev.products === "object" && prev.products ? prev.products : {};
       clean.added = Array.isArray(prev.added) ? prev.added : [];
+      clean.site = typeof prev.site === "object" && prev.site ? prev.site : null;
+    } else if (sess.s === "manager") {
+      const prev = (await getJSON("admin:overrides")) || {};
       clean.site = typeof prev.site === "object" && prev.site ? prev.site : null;
     }
     await setJSON("admin:overrides", clean, 60 * 60 * 24 * 365);
