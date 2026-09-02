@@ -185,7 +185,8 @@ export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Headers", "Content-Type, X-Staff-Key, Authorization");
   res.setHeader("Cache-Control", "no-store");
   if (req.method === "OPTIONS") return res.status(204).end();
-  if (!requirePermission(req, res, "owner_tools")) return;
+  const permission=req.method==="GET"&&String(req.query?.dashboard||"")==="1"?"dashboard":"owner_tools";
+  if (!requirePermission(req, res, permission)) return;
 
   try {
     if (req.method === "GET") return await onGet(req, res);

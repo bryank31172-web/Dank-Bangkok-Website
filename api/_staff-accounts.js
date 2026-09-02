@@ -6,9 +6,9 @@ const STORE_KEY = "staff:accounts:v1";
 const TTL = 60 * 60 * 24 * 365 * 10;
 export const ROLE_PERMISSIONS = Object.freeze({
   owner: ["*"],
-  manager: ["orders", "products", "announcements", "staff_manage", "promotions"],
-  professional: ["orders"],
-  parttime: ["orders"],
+  manager: ["orders", "dashboard", "announcement_read", "products", "announcements", "staff_manage", "promotions"],
+  professional: ["orders", "announcement_read"],
+  parttime: ["orders", "announcement_read"],
 });
 export const ROLE_LABELS = Object.freeze({
   owner: "Owner",
