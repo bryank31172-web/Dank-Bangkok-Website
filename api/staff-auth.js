@@ -1,4 +1,5 @@
-import { requireEnv, staffIdentity, hasPermission } from "./_auth.js";
+import crypto from "node:crypto";
+import { requireEnv, staffIdentity, hasPermission, safeEq } from "./_auth.js";
 import { authenticateAccountKey, seedInitialAccounts, listAccounts, publicAccount, createAccount, resetAccount, setAccountActive, setAccountRole, ROLE_PERMISSIONS, ROLE_LABELS } from "./_staff-accounts.js";
 
 export default async function handler(req,res){
@@ -12,10 +13,20 @@ export default async function handler(req,res){
     if(b.action==="login"){
       let generated=[];
       const legacy=process.env.STAFF_KEY||"";
-      if(legacy && b.key===legacy){
+      let account=null;
+      if(b.email||b.password){
+        if(!requireEnv(res,["ADMIN_EMAIL","ADMIN_PASSWORD","ADMIN_SECRET"])) return;
+        const email=String(b.email||"").trim().toLowerCase();
+        const expectedEmail=String(process.env.ADMIN_EMAIL||"").trim().toLowerCase();
+        const givenHash=crypto.createHash("sha256").update(String(b.password||"")).digest("hex");
+        const expectedHash=crypto.createHash("sha256").update(String(process.env.ADMIN_PASSWORD||"")).digest("hex");
+        if(!safeEq(email,expectedEmail)||!safeEq(givenHash,expectedHash)) return res.status(401).json({error:"wrong email or password"});
+        const seeded=await seedInitialAccounts(); generated=seeded.generated;
+        account=seeded.accounts.find(a=>a.role==="owner"&&a.active!==false)||null;
+      } else if(legacy && safeEq(b.key,legacy)){
         const seeded=await seedInitialAccounts(); generated=seeded.generated;
       }
-      const account=await authenticateAccountKey(b.key);
+      if(!account) account=await authenticateAccountKey(b.key);
       if(!account) return res.status(401).json({error:"bad key"});
       const token=staffIdentity.makeToken(account);
       return res.status(200).json({ok:true,token,profile:publicAccount(account),permissions:ROLE_PERMISSIONS[account.role]||[],generated});
