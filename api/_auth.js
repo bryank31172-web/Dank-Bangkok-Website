@@ -48,9 +48,9 @@ export function safeEq(a, b) {
 
 const STAFF_ROLE_PERMISSIONS = Object.freeze({
   owner:["*"],
-  manager:["orders","products","announcements","staff_manage","promotions"],
-  professional:["orders"],
-  parttime:["orders"],
+  manager:["orders","dashboard","announcement_read","products","announcements","staff_manage","promotions"],
+  professional:["orders","announcement_read"],
+  parttime:["orders","announcement_read"],
 });
 const staffSecret=()=>process.env.STAFF_SESSION_SECRET||process.env.ADMIN_SECRET||"";
 const b64u=(v)=>Buffer.from(v).toString("base64url");
