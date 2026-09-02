@@ -14,7 +14,8 @@ export default async function handler(req,res){
   if(req.method==="OPTIONS") return res.status(204).end();
   const section=String(req.query?.section||req.body?.section||"");
   if(!["products","promotions","announcements"].includes(section)) return res.status(400).json({error:"invalid section"});
-  if(!requirePermission(req,res,permissionFor(section))) return;
+  const permission=section==="announcements"&&req.method==="GET"?"announcement_read":permissionFor(section);
+  if(!requirePermission(req,res,permission)) return;
   try{
     if(req.method==="GET"){
       if(section==="products") return res.status(200).json({ok:true,products:(await getMenu()).data});
