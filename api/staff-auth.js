@@ -1,6 +1,6 @@
 import crypto from "node:crypto";
 import { requireEnv, staffIdentity, hasPermission, safeEq } from "./_auth.js";
-import { authenticateAccountKey, seedInitialAccounts, listAccounts, publicAccount, createAccount, updateAccount, deleteAccount, resetAccount, setOwnAccountKey, setOwnNotifications, setAccountKey, setAccountActive, setAccountRole, ROLE_PERMISSIONS, ROLE_LABELS } from "./_staff-accounts.js";
+import { authenticateAccountKey, seedInitialAccounts, listAccounts, publicAccount, createAccount, updateAccount, deleteAccount, resetAccount, setOwnAccountKey, setAccountKey, setAccountActive, setAccountRole, ROLE_PERMISSIONS, ROLE_LABELS } from "./_staff-accounts.js";
 import { getJSON, setJSON } from "./_store.js";
 
 const PRESENCE_TTL=180, ONLINE_WINDOW=120000;
@@ -45,10 +45,6 @@ export default async function handler(req,res){
       const account=await setOwnAccountKey(actor,String(b.key||""));
       return res.status(200).json({ok:true,account});
     }
-    if(b.action==="notifications"){
-      const account=await setOwnNotifications(actor,{telegramChatId:b.telegramChatId,lineUserId:b.lineUserId,telegramRemove:b.telegramRemove,lineRemove:b.lineRemove});
-      return res.status(200).json({ok:true,account});
-    }
     if(b.action==="contactlist"){
       if(!["professional","parttime"].includes(actor.role)) return res.status(403).json({error:"forbidden"});
       const accounts=await listAccounts();
@@ -62,11 +58,11 @@ export default async function handler(req,res){
       return res.status(200).json({ok:true,accounts:rows,roles:ROLE_LABELS,canAssignRoles:actor.role==="owner"});
     }
     if(b.action==="create"){
-      const out=await createAccount(actor,b.name,b.role,{phone:b.phone,startDate:b.startDate,salary:b.salary});
+      const out=await createAccount(actor,b.name,b.role,{phone:b.phone,startDate:b.startDate,salary:b.salary,telegramChatId:b.telegramChatId,lineUserId:b.lineUserId});
       return res.status(200).json({ok:true,...out});
     }
     if(b.action==="update"){
-      const account=await updateAccount(actor,b.id,{name:b.name,phone:b.phone,startDate:b.startDate,salary:b.salary,role:b.role,active:b.active});
+      const account=await updateAccount(actor,b.id,{name:b.name,phone:b.phone,startDate:b.startDate,salary:b.salary,role:b.role,active:b.active,telegramChatId:b.telegramChatId,lineUserId:b.lineUserId,telegramRemove:b.telegramRemove,lineRemove:b.lineRemove});
       return res.status(200).json({ok:true,account});
     }
     if(b.action==="delete"){
