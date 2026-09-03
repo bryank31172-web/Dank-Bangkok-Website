@@ -359,7 +359,7 @@ function toggleMobileNav(force){
 }
 function closeMobileNav(){toggleMobileNav(false)}
 window.addEventListener('resize',()=>{if(innerWidth>760)closeMobileNav()});
-document.addEventListener('keydown',e=>{if(e.key==='Escape')closeMobileNav()});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeStaffContact();closeMobileNav()}});
 function can(p){return PERMS.includes('*')||PERMS.includes(p)}
 function tabAllowed(t){if(t==='dashboard')return can('dashboard');if(t==='sales')return can('sales');if(t==='products')return can('products');if(t==='promotions')return can('promotions');if(t==='announcement')return can('announcement_read');if(t==='staffinfo')return can('staff_manage');if(t==='staffcontacts')return ['professional','parttime'].includes(PROFILE?.role);return can('orders')||t==='settings'}
 function applyPermissions(){
@@ -479,9 +479,11 @@ function renderStaffContacts(){
 }
 function openStaffContact(id){
   const a=STAFF_CONTACTS.find(x=>String(x.id)===String(id));if(!a)return;closeStaffContact();
-  const phone=String(a.phone||''),href=staffPhoneHref(phone),modal=document.createElement('div');modal.className='staff-modal';modal.id='staffContactModal';modal.dataset.act='staff-contact-close';
-  modal.innerHTML='<div class="staff-form contact-modal-card" role="dialog" aria-modal="true" aria-labelledby="contactModalName" onclick="event.stopPropagation()"><div class="staff-form-head"><h3 id="contactModalName">'+esc(a.name)+'</h3><button type="button" data-act="staff-contact-close" aria-label="Close contact"><i class="ri-close-line"></i></button></div><div class="contact-modal-profile"><div class="staff-avatar">'+esc(staffInitials(a.name))+'</div><div><b>'+esc(roleName(a.role))+'</b><span class="staff-presence">'+(a.online?'Online · On shift':'Offline')+'</span></div></div>'+(href?'<a class="contact-call-button" href="'+esc(href)+'"><i class="ri-phone-fill"></i><span>Call '+esc(phone)+'</span></a>':'<div class="contact-no-phone">No phone number available</div>')+'</div>';
-  document.body.appendChild(modal);modal.querySelector('[data-act="staff-contact-close"]')?.focus();
+  const phone=String(a.phone||''),href=staffPhoneHref(phone),modal=document.createElement('div');modal.className='staff-modal';modal.id='staffContactModal';
+  modal.innerHTML='<div class="staff-form contact-modal-card" role="dialog" aria-modal="true" aria-labelledby="contactModalName"><div class="staff-form-head"><h3 id="contactModalName">'+esc(a.name)+'</h3><button type="button" data-act="staff-contact-close" aria-label="Close contact"><i class="ri-close-line"></i></button></div><div class="contact-modal-profile"><div class="staff-avatar">'+esc(staffInitials(a.name))+'</div><div><b>'+esc(roleName(a.role))+'</b><span class="staff-presence">'+(a.online?'Online · On shift':'Offline')+'</span></div></div>'+(href?'<a class="contact-call-button" href="'+esc(href)+'"><i class="ri-phone-fill"></i><span>Call '+esc(phone)+'</span></a>':'<div class="contact-no-phone">No phone number available</div>')+'</div>';
+  document.body.appendChild(modal);
+  modal.addEventListener('click',e=>{if(e.target===modal||e.target.closest('[data-act="staff-contact-close"]'))closeStaffContact()});
+  modal.querySelector('[data-act="staff-contact-close"]')?.focus();
 }
 function closeStaffContact(){document.getElementById('staffContactModal')?.remove()}
 async function loadStaffAccounts(){
