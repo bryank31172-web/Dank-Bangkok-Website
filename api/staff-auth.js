@@ -49,6 +49,12 @@ export default async function handler(req,res){
       const account=await setOwnNotifications(actor,{telegramChatId:b.telegramChatId,lineUserId:b.lineUserId,telegramRemove:b.telegramRemove,lineRemove:b.lineRemove});
       return res.status(200).json({ok:true,account});
     }
+    if(b.action==="contactlist"){
+      if(!["professional","parttime"].includes(actor.role)) return res.status(403).json({error:"forbidden"});
+      const accounts=await listAccounts();
+      const rows=await Promise.all(accounts.filter(a=>a.active!==false).map(async account=>{const presence=await getJSON(presenceKey(account.id)),lastSeen=Number(presence?.lastSeen)||0;return {id:account.id,name:account.name,phone:account.phone||"",role:account.role,online:Date.now()-lastSeen<ONLINE_WINDOW};}));
+      return res.status(200).json({ok:true,accounts:rows});
+    }
     if(!hasPermission(actor,"staff_manage")) return res.status(403).json({error:"forbidden"});
     if(b.action==="list"){
       const accounts=(await listAccounts()).map(publicAccount);
