@@ -187,33 +187,34 @@ export default async function handler(req, res) {
     saved = true;
   } catch (e) { console.error("order save failed:", e.message); }
 
-  /* Telegram and LINE order alerts are account-specific. A destination is
-     eligible only while that named staff account has a current Staff Portal
-     heartbeat, so signing out (or losing the heartbeat for two minutes)
-     removes that person from the delivery list. */
+  /* Destinations are developer-managed server secrets, never staff-account
+     fields. Set STAFF_NOTIFICATION_DESTINATIONS_JSON in the deployment
+     environment as {"account-id":{"telegramChatId":"123","lineUserId":"U..."}}
+     (a staff name may be used as a fallback key). The online heartbeat still
+     decides whether that destination receives this minimal alert. */
   try {
-    const accounts=await listAccounts(), online=[];
+    let configured={};
+    try{configured=JSON.parse(process.env.STAFF_NOTIFICATION_DESTINATIONS_JSON||"{}")}catch(e){console.error("invalid staff notification destinations JSON")}
+    if(!configured||typeof configured!=="object"||Array.isArray(configured))configured={};
+    const accounts=await listAccounts(),destinations=[];
     for(const account of accounts){
-      if(account.active===false) continue;
+      if(account.active===false)continue;
       const presence=await getJSON("staff:presence:"+account.id);
-      if(Date.now()-(Number(presence?.lastSeen)||0)>=120000) continue;
-      online.push(account);
+      if(Date.now()-(Number(presence?.lastSeen)||0)>=120000)continue;
+      const target=configured[account.id]||configured[account.name]||{};
+      destinations.push(target&&typeof target==="object"?target:{});
     }
-    const telegramIds=[...new Set(online.map(a=>a.notifications?.telegramChatId).filter(Boolean))];
-    const lineIds=[...new Set(online.map(a=>a.notifications?.lineUserId).filter(Boolean))];
+    const telegramIds=[...new Set(destinations.map(x=>String(x.telegramChatId||"").trim()).filter(x=>/^-?\d{5,20}$/.test(x)))];
+    const lineIds=[...new Set(destinations.map(x=>String(x.lineUserId||"").trim()).filter(x=>/^U[0-9a-f]{32}$/i.test(x)))];
     const sends=[];
-    if(process.env.TELEGRAM_BOT_TOKEN) for(const chatId of telegramIds) sends.push(
-      fetch(`https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/sendMessage`,{
-        method:"POST",headers:{"Content-Type":"application/json"},
-        body:JSON.stringify({chat_id:chatId,text:onlineStaffAlert})
-      }).then(async r=>{if(!r.ok){const why=await r.json().catch(()=>({}));console.error("telegram staff send failed:",r.status,why.description||"")}return r.ok})
+    if(process.env.TELEGRAM_BOT_TOKEN)for(const chatId of telegramIds)sends.push(
+      fetch(`https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/sendMessage`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({chat_id:chatId,text:onlineStaffAlert})})
+        .then(async r=>{if(!r.ok){const why=await r.json().catch(()=>({}));console.error("telegram staff send failed:",r.status,why.description||"")}return r.ok})
         .catch(e=>{console.error("telegram staff send threw:",e.message);return false})
     );
-    if(process.env.LINE_CHANNEL_ACCESS_TOKEN) for(const userId of lineIds) sends.push(
-      linePush(userId,onlineStaffAlert).then(r=>Boolean(r.ok)).catch(()=>false)
-    );
-    if(sends.length) results.push(...await Promise.all(sends));
-  } catch(e){console.error("online staff notification lookup failed:",e.message)}
+    if(process.env.LINE_CHANNEL_ACCESS_TOKEN)for(const userId of lineIds)sends.push(linePush(userId,onlineStaffAlert).then(r=>Boolean(r.ok)).catch(()=>false));
+    if(sends.length)results.push(...await Promise.all(sends));
+  }catch(e){console.error("online staff notification lookup failed:",e.message)}
 
   try {
     const r = await notifyStaffWhatsApp(staffAlert);
