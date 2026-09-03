@@ -23,14 +23,6 @@ export const validStaffKey = (key) => {
   return s.length>=12&&s.length<=128&&/[A-Z]/.test(s)&&/[a-z]/.test(s)&&/[0-9]/.test(s)&&/[!@#$%^&*?_+\-]/.test(s)&&! /\s/.test(s);
 };
 const makeKey = () => "Dk!" + crypto.randomInt(0,10) + crypto.randomBytes(24).toString("base64url");
-function notificationDetails(details={},current={}){
-  const telegramChatId=String(details.telegramChatId||"").trim();
-  const lineUserId=String(details.lineUserId||"").trim();
-  if(telegramChatId&&!/^-?\d{5,20}$/.test(telegramChatId)) throw new Error("Telegram Chat ID must contain only numbers");
-  if(lineUserId&&!/^U[0-9a-f]{32}$/i.test(lineUserId)) throw new Error("LINE User ID must start with U followed by 32 letters or numbers");
-  return {telegramChatId:details.telegramRemove?"":(telegramChatId||current.telegramChatId||""),lineUserId:details.lineRemove?"":(lineUserId||current.lineUserId||"")};
-}
-
 export async function listAccounts() {
   const rows = await getJSON(STORE_KEY);
   return Array.isArray(rows) ? rows : [];
@@ -39,7 +31,7 @@ async function saveAccounts(rows) {
   await setJSON(STORE_KEY, rows, TTL);
 }
 export function publicAccount(a) {
-  return { id:a.id, name:a.name, phone:a.phone||"", startDate:a.startDate||"", salary:Number(a.salary)||0, role:a.role, active:a.active !== false, notifications:{telegram:Boolean(a.notifications?.telegramChatId),line:Boolean(a.notifications?.lineUserId)}, createdAt:a.createdAt, updatedAt:a.updatedAt };
+  return { id:a.id, name:a.name, phone:a.phone||"", startDate:a.startDate||"", salary:Number(a.salary)||0, role:a.role, active:a.active !== false, createdAt:a.createdAt, updatedAt:a.updatedAt };
 }
 export async function authenticateAccountKey(given) {
   const legacy = process.env.STAFF_KEY || "";
@@ -76,7 +68,7 @@ export async function createAccount(actor, name, requestedRole, details={}) {
   const startDate=/^\d{4}-\d{2}-\d{2}$/.test(String(details.startDate||""))?String(details.startDate):"";
   const salary=Math.max(0,Math.round(Number(details.salary)||0));
   const rows=await listAccounts(), now=Date.now(), key=makeKey();
-  const row={id:crypto.randomUUID(),name:clean,phone,startDate,salary,role,notifications:notificationDetails(details),keyHash:hashKey(key),active:true,createdAt:now,updatedAt:now};
+  const row={id:crypto.randomUUID(),name:clean,phone,startDate,salary,role,keyHash:hashKey(key),active:true,createdAt:now,updatedAt:now};
   rows.push(row); await saveAccounts(rows);
   return {account:publicAccount(row),key};
 }
@@ -129,7 +121,6 @@ export async function updateAccount(actor,id,details={}) {
   row.startDate=/^\d{4}-\d{2}-\d{2}$/.test(String(details.startDate||""))?String(details.startDate):"";
   row.salary=Math.max(0,Math.round(Number(details.salary)||0));
   row.role=role;
-  row.notifications=notificationDetails(details,row.notifications||{});
   if(details.active!==undefined) row.active=Boolean(details.active);
   row.updatedAt=Date.now(); await saveAccounts(rows);
   return publicAccount(row);
