@@ -29,7 +29,7 @@
 .product-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:22px}.product-card{min-width:0}.product-media{position:relative;display:grid;place-items:center;aspect-ratio:1;background:#f1f3f5;border-radius:8px;overflow:hidden}.product-media img{width:88%;height:88%;object-fit:contain;mix-blend-mode:multiply}.product-placeholder{font-size:56px;color:#93a0ad}.heart{position:absolute;right:12px;top:12px;display:grid;place-items:center;width:31px;height:31px;border:1px solid #dde2e7;border-radius:50%;background:rgba(255,255,255,.72);color:#8c98a4;cursor:pointer}.product-name{height:43px;margin:13px 0 5px;overflow:hidden;font-size:13px;line-height:1.55;font-weight:500}.rating{color:#005da9;font-size:13px;letter-spacing:1px}.rating small{color:#8a949e;letter-spacing:0}.price-row{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:8px}.price{font-size:14px;font-weight:800}.add{display:grid;place-items:center;width:34px;height:34px;border:0;border-radius:50%;background:#071d45;color:#fff;cursor:pointer}.empty{grid-column:1/-1;padding:50px 20px;text-align:center;color:var(--muted)}
 .page-footer{border-top:1px solid var(--line);padding:34px 0;margin-top:20px;color:var(--muted);font-size:12px}.footer-inner{display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap}.footer-inner a{color:var(--muted)}
 .overlay{position:fixed;inset:0;z-index:80;display:none;background:rgba(12,20,29,.46);backdrop-filter:blur(3px)}.overlay.open{display:block}.drawer{position:fixed;right:0;top:0;bottom:0;z-index:90;width:min(430px,100%);display:flex;flex-direction:column;background:#fff;box-shadow:-20px 0 60px rgba(0,0,0,.16);transform:translateX(105%);transition:transform .28s ease}.drawer.open{transform:none}.drawer-head{display:flex;align-items:center;justify-content:space-between;padding:22px;border-bottom:1px solid var(--line)}.drawer-head h2{margin:0;font-size:21px}.icon-close{display:grid;place-items:center;width:38px;height:38px;border:0;border-radius:50%;background:var(--soft);cursor:pointer}.drawer-body{flex:1;overflow:auto;padding:16px 22px}.cart-line{display:grid;grid-template-columns:64px 1fr auto;gap:12px;align-items:center;padding:14px 0;border-bottom:1px solid var(--line)}.cart-line img{width:64px;height:64px;object-fit:contain;background:var(--soft);border-radius:8px}.cart-line strong{display:block;font-size:13px}.cart-line small{color:var(--muted)}.qty{display:flex;align-items:center;gap:8px;margin-top:7px}.qty button{width:25px;height:25px;border:1px solid var(--line);border-radius:50%;background:#fff;cursor:pointer}.drawer-foot{padding:18px 22px;border-top:1px solid var(--line)}.total-row{display:flex;justify-content:space-between;margin-bottom:14px;font-weight:800}.checkout{display:grid;place-items:center;height:48px;border-radius:24px;background:var(--blue);color:#fff;text-decoration:none;font-weight:800}
-.popover{position:fixed;z-index:95;display:none;width:min(380px,calc(100% - 32px));padding:24px;border:1px solid var(--line);border-radius:18px;background:#fff;box-shadow:var(--shadow)}.popover.open{display:block}.location-popover{right:210px;top:72px}.signin-popover{right:24px;top:72px}.popover h2{margin:0 0 8px;font-size:19px}.popover p{color:var(--muted);font-size:13px}.location-list{display:grid;gap:8px}.location-list button{padding:12px;border:1px solid var(--line);border-radius:10px;background:#fff;text-align:left;cursor:pointer}.location-list button:hover{border-color:var(--blue);color:var(--blue)}.signin-button{display:grid;place-items:center;height:44px;border-radius:22px;background:var(--blue);color:#fff;text-decoration:none;font-weight:800}
+.popover{position:fixed;z-index:95;display:none;width:min(380px,calc(100% - 32px));padding:24px;border:1px solid var(--line);border-radius:18px;background:#fff;box-shadow:var(--shadow)}.popover.open{display:block}.location-popover{right:210px;top:72px}.signin-popover{right:24px;top:72px}.popover h2{margin:0 0 8px;font-size:19px}.popover p{color:var(--muted);font-size:13px}.geo-button{display:flex;align-items:center;justify-content:center;gap:9px;width:100%;min-height:44px;margin:14px 0;border:0;border-radius:22px;background:var(--blue);color:#fff;font-weight:800;cursor:pointer}.geo-button:disabled{opacity:.62;cursor:wait}.location-divider{display:flex;align-items:center;gap:10px;margin:15px 0;color:#8a949e;font-size:11px}.location-divider:before,.location-divider:after{content:"";height:1px;flex:1;background:var(--line)}.location-list{display:grid;gap:8px}.location-list button{padding:12px;border:1px solid var(--line);border-radius:10px;background:#fff;text-align:left;cursor:pointer}.location-list button:hover{border-color:var(--blue);color:var(--blue)}.signin-button{display:grid;place-items:center;height:44px;border-radius:22px;background:var(--blue);color:#fff;text-decoration:none;font-weight:800}
 @media(max-width:1180px){.header-main{grid-template-columns:170px minmax(220px,1fr) auto auto auto}.signin-label,.location small{display:none}.location strong{max-width:90px}.product-grid{grid-template-columns:repeat(4,1fr)}.category-rail{gap:16px}.nav-scroll{gap:18px}}
 @media(max-width:900px){:root{--wrap:min(100% - 32px,820px)}.header-main{grid-template-columns:auto 1fr auto auto;gap:12px;min-height:68px;padding:10px 0}.mobile-menu{display:block}.logo{font-size:20px}.logo-mark{width:35px;height:35px}.search{grid-column:1/-1;grid-row:2;height:44px;margin-bottom:2px}.header-main>.location{display:flex;grid-column:1/3;grid-row:3}.header-main>.lang-wrap{display:block;grid-column:3/5;grid-row:3;justify-self:end}.nav-row{min-height:50px}.nav-promos{display:none}.hero-grid{grid-template-columns:1.6fr 1fr;gap:14px}.banner{min-height:330px}.banner-copy{padding:48px 32px}.banner-side .banner-copy{padding:25px}.category-rail{display:flex;overflow-x:auto;padding:3px 3px 12px;scroll-snap-type:x mandatory}.category{flex:0 0 125px;scroll-snap-align:start}.product-grid{grid-template-columns:repeat(3,1fr)}}
 @media(max-width:650px){:root{--wrap:calc(100% - 24px)}.header-main{grid-template-columns:auto 1fr auto auto}.logo span:last-child{display:none}.header-action{font-size:0}.header-action .material-symbols-rounded{font-size:25px}.hero{padding-top:12px}.hero-grid{grid-template-columns:1fr}.banner{min-height:330px}.banner-side{min-height:260px}.banner-copy,.banner-side .banner-copy{width:75%;padding:34px 26px}.banner h1,.banner h2{font-size:34px}.dots{padding:20px 0 10px}.section{padding:26px 0 38px}.section-head{margin-bottom:20px}.category{flex-basis:105px}.product-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:18px 12px}.location-popover,.signin-popover{left:16px;right:16px;top:158px;width:auto}.nav-scroll{gap:12px}.nav-link{padding:0 4px}.cart-line{grid-template-columns:54px 1fr auto}.cart-line img{width:54px;height:54px}}
@@ -43,7 +43,7 @@
   <button class="mobile-menu" type="button" aria-label="Open categories" onclick="toggleMobileNav()"><span class="material-symbols-rounded">menu</span></button>
   <a class="logo" href="/homepage-v2"><span class="logo-mark">D</span><span>DANK BKK</span></a>
   <form class="search" onsubmit="submitSearch(event)"><input id="searchInput" type="search" placeholder="Search for any product or strain" aria-label="Search products"><button aria-label="Search"><span class="material-symbols-rounded">search</span></button></form>
-  <button class="location" type="button" onclick="toggleLocation()"><span class="material-symbols-rounded">location_on</span><span><small>Delivering to Bangkok</small><strong id="locationLabel">Update Location</strong></span></button>
+  <button class="location" type="button" onclick="requestLocation()" aria-describedby="locationStatus"><span class="material-symbols-rounded">location_on</span><span><small>Delivering to Bangkok</small><strong id="locationLabel">Update Location</strong></span></button>
   <div class="lang-wrap"><button class="lang-button" type="button" aria-haspopup="menu" aria-expanded="false" onclick="toggleLanguage(event)"><span class="flag" id="flag">🇬🇧</span><span id="langCode">EN</span><span class="material-symbols-rounded">arrow_drop_down</span></button><div class="lang-menu" id="langMenu" role="menu"><button onclick="setLanguage('en','🇬🇧','EN')"><span class="flag">🇬🇧</span>English</button><button onclick="setLanguage('th','🇹🇭','TH')"><span class="flag">🇹🇭</span>ภาษาไทย</button><button onclick="setLanguage('zh','🇨🇳','ZH')"><span class="flag">🇨🇳</span>中文</button><button onclick="setLanguage('ru','🇷🇺','RU')"><span class="flag">🇷🇺</span>Русский</button></div></div>
   <button class="header-action cart-action" type="button" onclick="openCart()"><span class="material-symbols-rounded">shopping_cart</span><span>Cart</span><b class="cart-count" id="cartCount">0</b></button>
   <button class="header-action" type="button" onclick="toggleSignin()"><span class="material-symbols-rounded">account_circle</span><span class="signin-label">Sign In</span></button>
@@ -83,7 +83,7 @@
 
 <div class="overlay" id="overlay" onclick="closePanels()"></div>
 <aside class="drawer" id="cartDrawer" aria-label="Shopping cart"><div class="drawer-head"><h2>Your Cart</h2><button class="icon-close" onclick="closePanels()" aria-label="Close cart"><span class="material-symbols-rounded">close</span></button></div><div class="drawer-body" id="cartBody"></div><div class="drawer-foot"><div class="total-row"><span>Subtotal</span><span id="cartTotal">฿0</span></div><a class="checkout" href="/checkout" onclick="handoffCart()">Checkout</a></div></aside>
-<section class="popover location-popover" id="locationPopover"><h2>Delivery location</h2><p>Select your area so DANK staff can confirm delivery.</p><div class="location-list"><button onclick="setLocation('Sukhumvit')">Sukhumvit</button><button onclick="setLocation('Thonglor / Ekkamai')">Thonglor / Ekkamai</button><button onclick="setLocation('Silom / Sathorn')">Silom / Sathorn</button><button onclick="setLocation('Ari / Phaya Thai')">Ari / Phaya Thai</button><button onclick="setLocation('Other Bangkok area')">Other Bangkok area</button></div></section>
+<section class="popover location-popover" id="locationPopover" aria-live="polite"><h2>Delivery location</h2><p id="locationStatus">Allow location access to automatically find your delivery area with Google Maps.</p><button class="geo-button" id="geoButton" type="button" onclick="requestLocation()"><span class="material-symbols-rounded">my_location</span><span>Use my current location</span></button><div class="location-divider"><span>or select manually</span></div><div class="location-list"><button onclick="setLocation('Sukhumvit')">Sukhumvit</button><button onclick="setLocation('Thonglor / Ekkamai')">Thonglor / Ekkamai</button><button onclick="setLocation('Silom / Sathorn')">Silom / Sathorn</button><button onclick="setLocation('Ari / Phaya Thai')">Ari / Phaya Thai</button><button onclick="setLocation('Other Bangkok area')">Other Bangkok area</button></div></section>
 <section class="popover signin-popover" id="signinPopover"><h2>DANK Member</h2><p>Member sign-in and wallet tools are currently available in the main DANK store.</p><a class="signin-button" href="/shop">Continue to Sign In</a></section>
 
 <script src="/cart-service.js?v=5"></script>
@@ -164,8 +164,77 @@ window.openCart=function(){closePopovers();document.getElementById("overlay").cl
 window.closePanels=function(){document.getElementById("overlay").classList.remove("open");document.getElementById("cartDrawer").classList.remove("open");closePopovers()};
 window.handoffCart=function(){if(window.Cart)Cart.handoff()};
 function closePopovers(){document.getElementById("locationPopover").classList.remove("open");document.getElementById("signinPopover").classList.remove("open");document.getElementById("langMenu").classList.remove("open")}
+var googleMapsPromise=null;
+function showLocationPanel(message){
+ closePopovers();
+ var box=document.getElementById("locationPopover");
+ box.classList.add("open");
+ if(message)document.getElementById("locationStatus").textContent=message;
+}
+function loadGoogleMaps(){
+ if(window.google&&google.maps&&google.maps.Geocoder)return Promise.resolve(google.maps);
+ if(googleMapsPromise)return googleMapsPromise;
+ googleMapsPromise=fetch("/api/maps-config").then(function(response){
+  if(!response.ok)throw new Error("Google Maps is unavailable");
+  return response.json();
+ }).then(function(config){
+  if(!config.key)throw new Error("Google Maps is not configured");
+  return new Promise(function(resolve,reject){
+   var callback="dankV2GoogleMapsReady";
+   window[callback]=function(){delete window[callback];resolve(window.google.maps)};
+   var script=document.createElement("script");
+   script.src="https://maps.googleapis.com/maps/api/js?key="+encodeURIComponent(config.key)+"&callback="+callback;
+   script.async=true;script.defer=true;script.onerror=function(){delete window[callback];reject(new Error("Google Maps could not load"))};
+   document.head.appendChild(script);
+  });
+ });
+ return googleMapsPromise;
+}
+function reverseGeocode(latitude,longitude){
+ return loadGoogleMaps().then(function(){
+  return new Promise(function(resolve,reject){
+   var geocoder=new google.maps.Geocoder();
+   geocoder.geocode({location:{lat:latitude,lng:longitude}},function(results,status){
+    if(status!=="OK"||!results||!results.length){reject(new Error("Address could not be found"));return}
+    var result=results[0],parts=result.address_components||[];
+    function part(types){var match=parts.find(function(item){return types.some(function(type){return item.types.indexOf(type)>=0})});return match?match.long_name:""}
+    var area=part(["sublocality_level_1","sublocality","neighborhood"])||part(["administrative_area_level_2","locality"])||"Current location";
+    resolve({label:area,address:result.formatted_address||area});
+   });
+  });
+ });
+}
+window.requestLocation=function(){
+ showLocationPanel("Your browser will ask permission to use your location.");
+ var button=document.getElementById("geoButton"),label=document.getElementById("locationLabel");
+ if(!navigator.geolocation){
+  document.getElementById("locationStatus").textContent="Location is not supported on this device. Select an area manually.";
+  return;
+ }
+ button.disabled=true;label.textContent="Locating…";
+ navigator.geolocation.getCurrentPosition(function(position){
+  var lat=position.coords.latitude,lng=position.coords.longitude;
+  document.getElementById("locationStatus").textContent="Finding your address with Google Maps…";
+  reverseGeocode(lat,lng).then(function(place){
+   localStorage.setItem("dankV2Location",JSON.stringify({label:place.label,address:place.address,lat:lat,lng:lng,updatedAt:Date.now()}));
+   label.textContent=place.label;label.title=place.address;
+   document.getElementById("locationStatus").textContent="Delivering to "+place.address;
+   button.disabled=false;
+   setTimeout(closePopovers,900);
+  }).catch(function(error){
+   label.textContent="Current location";
+   localStorage.setItem("dankV2Location",JSON.stringify({label:"Current location",lat:lat,lng:lng,updatedAt:Date.now()}));
+   document.getElementById("locationStatus").textContent=error.message+". Your coordinates were saved; you can also select an area manually.";
+   button.disabled=false;
+  });
+ },function(error){
+  label.textContent="Update Location";
+  var message=error.code===1?"Location permission was not allowed. Select an area manually or try again.":error.code===2?"Your location is unavailable. Select an area manually.":"Location request timed out. Please try again.";
+  document.getElementById("locationStatus").textContent=message;button.disabled=false;
+ },{enableHighAccuracy:true,timeout:12000,maximumAge:300000});
+};
 window.toggleLocation=function(){var box=document.getElementById("locationPopover"),open=!box.classList.contains("open");closePopovers();box.classList.toggle("open",open)};
-window.setLocation=function(value){localStorage.setItem("dankV2Location",value);document.getElementById("locationLabel").textContent=value;closePopovers()};
+window.setLocation=function(value){localStorage.setItem("dankV2Location",JSON.stringify({label:value,address:value,updatedAt:Date.now()}));var label=document.getElementById("locationLabel");label.textContent=value;label.title=value;closePopovers()};
 window.toggleSignin=function(){var box=document.getElementById("signinPopover"),open=!box.classList.contains("open");closePopovers();box.classList.toggle("open",open)};
 window.toggleLanguage=function(event){event.stopPropagation();var menu=document.getElementById("langMenu"),open=!menu.classList.contains("open");closePopovers();menu.classList.toggle("open",open)};
 window.setLanguage=function(lang,flag,code){localStorage.setItem("dankV2Lang",JSON.stringify({lang:lang,flag:flag,code:code}));applyLanguage(lang,flag,code);closePopovers()};
@@ -174,7 +243,14 @@ window.toggleMobileNav=function(){var nav=document.getElementById("mainNav");nav
 document.addEventListener("click",function(event){if(!event.target.closest(".lang-wrap")&&!event.target.closest(".popover")&&!event.target.closest(".location")&&!event.target.closest(".header-action"))closePopovers()});
 document.addEventListener("keydown",function(event){if(event.key==="Escape")closePanels()});
 document.getElementById("year").textContent=new Date().getFullYear();
-document.getElementById("locationLabel").textContent=localStorage.getItem("dankV2Location")||"Update Location";
+try{
+ var savedLocation=JSON.parse(localStorage.getItem("dankV2Location")||"null");
+ if(savedLocation&&savedLocation.label){document.getElementById("locationLabel").textContent=savedLocation.label;document.getElementById("locationLabel").title=savedLocation.address||savedLocation.label}
+ else document.getElementById("locationLabel").textContent="Update Location";
+}catch(error){
+ var legacyLocation=localStorage.getItem("dankV2Location");
+ document.getElementById("locationLabel").textContent=legacyLocation||"Update Location";
+}
 try{var saved=JSON.parse(localStorage.getItem("dankV2Lang")||"null");if(saved)applyLanguage(saved.lang,saved.flag,saved.code)}catch(error){}
 if(window.Cart){Cart.subscribe(updateCart)}updateCart();
 fetch("/api/products").then(function(response){if(!response.ok)throw new Error("products");return response.json()}).then(function(data){products=Array.isArray(data)?data:(data.products||[]);renderCategories();renderProducts()}).catch(function(){document.getElementById("productGrid").innerHTML='<div class="empty">Products are temporarily unavailable.</div>';renderCategories()});
