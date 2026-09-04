@@ -35,7 +35,6 @@ main{flex:1;display:flex;min-height:0;padding-top:74px}
 #login{margin:auto;background:var(--panel);border:1px solid var(--line2);box-shadow:0 16px 42px rgba(30,42,60,.08);border-radius:18px;padding:30px;max-width:360px;width:92%;text-align:center}
 #login input{width:100%;background:#fafbfc;border:1px solid var(--line2);color:var(--txt);padding:12px;border-radius:10px;font-size:15px;outline:none;margin:14px 0;text-align:center}
 .key-field{position:relative}.key-field input{padding-right:48px!important}.key-field button{position:absolute;right:8px;top:21px;width:34px;height:34px;border-radius:8px;color:var(--muted)}
-.login-switch{font-size:12px;color:var(--blue);margin-top:14px;text-decoration:underline}.owner-login{display:none}.owner-login input{margin:8px 0!important}
 .btn{background:var(--blue);color:#fff;font-weight:800;padding:12px 18px;border-radius:11px;width:100%;font-size:15px;box-shadow:0 7px 16px rgba(57,120,246,.22)}
 /* tabs */
 #tabs{width:240px;min-width:240px;height:calc(100vh - 74px);position:sticky;top:74px;display:flex;flex-direction:column;gap:5px;padding:20px 14px;border-right:1px solid var(--line);background:#fff}
@@ -186,13 +185,9 @@ body.drawer-open .mobile-backdrop{opacity:1;pointer-events:auto}
 <div class="mobile-backdrop" id="mobileBackdrop" onclick="closeMobileNav()" aria-hidden="true"></div>
 <main id="main">
   <div id="login">
-    <div style="font-size:40px;color:var(--blue)"><i class="ri-user-smile-line" aria-hidden="true"></i></div>
-    <h2 style="margin:8px 0 2px">Staff login</h2>
-    <p style="color:var(--muted);font-size:13px;margin:4px 0 0">Enter the staff key to access the staff dashboard.</p>
-    <div class="key-login"><div class="key-field"><input id="keyInput" type="password" placeholder="Staff key" onkeydown="if(event.key==='Enter')login()"><button type="button" onclick="toggleKey()" aria-label="Show staff key"><i class="ri-eye-line"></i></button></div></div>
-    <div class="owner-login"><input id="emailInput" type="email" autocomplete="username" placeholder="Owner email"><input id="passwordInput" type="password" autocomplete="current-password" placeholder="Owner password" onkeydown="if(event.key==='Enter')login()"></div>
+    <h2 style="margin:0 0 8px">Staff login</h2>
+    <div class="key-login"><div class="key-field"><input id="keyInput" name="staff-access-key" type="password" value="" autocomplete="new-password" placeholder="Enter your password" onkeydown="if(event.key==='Enter')login()"><button type="button" onclick="toggleKey()" aria-label="Show staff key"><i class="ri-eye-line"></i></button></div></div>
     <button class="btn" onclick="login()">Enter console</button>
-    <button class="login-switch" type="button" onclick="toggleLoginMode()">Owner email login</button>
     <p id="loginErr" style="color:var(--danger);font-size:12.5px;height:14px;margin:10px 0 0"></p>
   </div>
   <div id="listWrap" style="display:none">
@@ -217,7 +212,7 @@ body.drawer-open .mobile-backdrop{opacity:1;pointer-events:auto}
 <script>
 const API='/api/thread';
 let KEY=localStorage.getItem('dankStaffToken')||localStorage.getItem('dankStaffKey')||'';
-let PROFILE=null, PERMS=[], OWNER_LOGIN=false;
+let PROFILE=null, PERMS=[];
 let cur=null, curSeq=0, pollT=null, listT=null, ordersT=null, presenceT=null, contactsT=null, lastSeen={};   // threadId -> last seq seen
 let TAB='dashboard', ORDERS=[], knownOrders=new Set(), firstOrderLoad=true, LIVE=false;
 let alertEnabled=localStorage.getItem('dankOrderAlerts')==='1', audioCtx=null, orderPopT=null;
@@ -328,13 +323,18 @@ function startPresence(){
 }
 
 async function login(){
-  const k=$('#keyInput').value.trim()||KEY;
-  if(!OWNER_LOGIN&&!k){$('#loginErr').textContent='Enter the key';return;}
+  const input=$('#keyInput'),k=input.value.trim()||KEY;
+  input.value='';
+  if(!k){$('#loginErr').textContent="doesn't have key or incorrect password.";return;}
   let r;
-  try{ r=await fetch('/api/staff-auth',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(OWNER_LOGIN?{action:'login',email:$('#emailInput').value,password:$('#passwordInput').value}:{action:'login',key:k})}); }
+  try{ r=await fetch('/api/staff-auth',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'login',key:k})}); }
   catch(e){ $('#loginErr').textContent='Network error — check your connection'; return; }
   const auth=await r.json().catch(()=>({}));
-  if(!r.ok){ $('#loginErr').textContent=auth.error||'Wrong login'; return; }
+  if(!r.ok){
+    $('#loginErr').textContent="doesn't have key or incorrect password.";
+    if(k===KEY){KEY='';localStorage.removeItem('dankStaffToken');localStorage.removeItem('dankStaffKey')}
+    return;
+  }
   KEY=auth.token; PROFILE=auth.profile; PERMS=auth.permissions||[];
   localStorage.setItem('dankStaffToken',KEY); localStorage.removeItem('dankStaffKey'); LIVE=true;
   if(auth.generated?.length) showGeneratedKeys(auth.generated);
@@ -354,7 +354,6 @@ window.addEventListener('pagehide',()=>sendPresence('offline'));
 function toggleKey(){const i=$('#keyInput'),icon=document.querySelector('.key-field i');i.type=i.type==='password'?'text':'password';icon.className=i.type==='text'?'ri-eye-off-line':'ri-eye-line';}
 function portalTheme(){return document.documentElement.dataset.theme||'light'}
 function togglePortalTheme(){const next=portalTheme()==='dark'?'light':'dark';document.documentElement.dataset.theme=next;localStorage.setItem('dankPortalTheme',next);renderPortalPanel('settings')}
-function toggleLoginMode(){OWNER_LOGIN=!OWNER_LOGIN;document.querySelector('.key-login').style.display=OWNER_LOGIN?'none':'';document.querySelector('.owner-login').style.display=OWNER_LOGIN?'block':'none';document.querySelector('.login-switch').textContent=OWNER_LOGIN?'Use staff key':'Owner email login';$('#loginErr').textContent='';}
 function toggleMobileNav(force){
   if(innerWidth>760)return;
   const open=force===undefined?!document.body.classList.contains('drawer-open'):Boolean(force);
@@ -2286,7 +2285,7 @@ if(location.hostname==='terminal.local'&&new URLSearchParams(location.search).ha
   DASH_SALES.day={now:48750,previous:42300,change:15.25,current:{summary:{gross:48750,orders:32,average:1523},topItems:[{name:'Blue Zangria',qty:28,gross:19600},{name:'Permanent Marker',qty:21,gross:14700},{name:'MellowZ',qty:15,gross:10500},{name:'Zooties',qty:8,gross:5600},{name:'Bangkok Lemon',qty:3,gross:2100}]}};
   ['week','month','year'].forEach((key,i)=>{const scale=[6,24,260][i];DASH_SALES[key]={...DASH_SALES.day,now:DASH_SALES.day.now*scale,previous:DASH_SALES.day.previous*scale};});
   setTab('dashboard');
-} else if(KEY){ $('#keyInput').value=KEY; login(); }
+} else { $('#keyInput').value=''; if(KEY)login(); }
 </script>
 <script src="i18n.js"></script>
 </body>
