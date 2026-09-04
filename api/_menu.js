@@ -452,7 +452,9 @@ export async function fillImages(data) {
        exact byName/keyword mapping below can restore the SKU's real photo.
        Real POS/StoreHub/CDN images still win and are never overwritten. */
     const suppliedImage = String(p.image || "").trim();
-    const isGeneratedFallback = /(?:^|\\/)assets\\/products\\/generated-fallbacks\\/(?:flower|retail|food-drink|pre-roll)\\.webp(?:[?#].*)?$/i.test(suppliedImage);
+    const isGeneratedFallback =
+      suppliedImage.includes("/assets/products/generated-fallbacks/") ||
+      suppliedImage.startsWith("assets/products/generated-fallbacks/");
     if (suppliedImage && !isGeneratedFallback) return p;
     /* 1. an exact photo of this very product */
     const flat = flatName(p.name);
