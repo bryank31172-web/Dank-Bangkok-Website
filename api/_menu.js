@@ -238,6 +238,7 @@ function revOf(data) {
       category: p.category,
       type: p.type,
       description: p.description,
+      freeDelivery: p.freeDelivery === true,
       sku: p.sku,
       stock: p.stock,
       price: p.price,

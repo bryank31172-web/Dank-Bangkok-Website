@@ -38,9 +38,10 @@ export default async function handler(req,res){
       if(action==="delete") delete ov.promos[code]; else ov.promos[code]={type:["pct","fixed","freedelivery"].includes(b.type)?b.type:"pct",value:number(b.value),min:number(b.min),desc:text(b.desc,160)};
     } else {
       const id=text(b.id,120), name=text(b.name,120);if(!id&&!name)return res.status(400).json({error:"product required"});
-      const picture=text(b.picture,350000),strain=text(b.strain,120),cannabisType=text(b.cannabisType||b.type,60),description=text(b.description,1000),grams=(Array.isArray(b.grams)?b.grams:[]).map(x=>number(x)).filter(x=>x>0&&x<=100).slice(0,20);if(picture&&!/^(https?:\/\/|\/|data:image\/)/i.test(picture))return res.status(400).json({error:"picture must be a URL"});
-      if(action==="create") ov.added.push({id:"web-"+crypto.randomUUID(),name,category:text(b.category,80)||"Other",price:number(b.price),stock:number(b.stock),image:picture,picture,strain,strainType:cannabisType,type:cannabisType,description,gramOptions:grams,_source:"staff"});
+      const picture=text(b.picture,350000),strain=text(b.strain,120),cannabisType=text(b.cannabisType||b.type,60),description=text(b.description,1000),grams=(Array.isArray(b.grams)?b.grams:[]).map(x=>number(x)).filter(x=>x>0&&x<=100).slice(0,20),freeDelivery=b.freeDelivery===true||b.freeDelivery==="true";if(picture&&!/^(https?:\/\/|\/|data:image\/)/i.test(picture))return res.status(400).json({error:"picture must be a URL"});
+      if(action==="create") ov.added.push({id:"web-"+crypto.randomUUID(),name,category:text(b.category,80)||"Other",price:number(b.price),stock:number(b.stock),image:picture,picture,strain,strainType:cannabisType,type:cannabisType,description,gramOptions:grams,freeDelivery,_source:"staff"});
       else if(action==="delete") {const ai=ov.added.findIndex(x=>x.id===id);if(ai>=0)ov.added.splice(ai,1);else ov.products[id]={...(ov.products[id]||{}),_hidden:true};}
+      else if(action==="delivery") {const ai=ov.added.findIndex(x=>x.id===id);if(ai>=0)ov.added[ai]={...ov.added[ai],freeDelivery};else ov.products[id]={...(ov.products[id]||{}),freeDelivery};}
       else ov.products[id]={...(ov.products[id]||{}),name,category:text(b.category,80),price:number(b.price),stock:number(b.stock),image:picture,picture,strain,strainType:cannabisType,type:cannabisType,_hidden:false};
     }
     await setJSON("admin:overrides",ov,YEAR);try{await bustMenu()}catch{}
