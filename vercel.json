@@ -78,7 +78,7 @@
     },
     {
       "source": "/homepage-v2",
-      "destination": "/api/index-page?version=v2"
+      "destination": "/homepage-v2.html"
     },
     {
       "source": "/shop",
