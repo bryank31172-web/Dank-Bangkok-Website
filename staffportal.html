@@ -218,7 +218,7 @@ body.drawer-open .mobile-backdrop{opacity:1;pointer-events:auto}
 const API='/api/thread';
 let KEY=localStorage.getItem('dankStaffToken')||localStorage.getItem('dankStaffKey')||'';
 let PROFILE=null, PERMS=[], OWNER_LOGIN=false;
-let cur=null, curSeq=0, pollT=null, listT=null, ordersT=null, presenceT=null, lastSeen={};   // threadId -> last seq seen
+let cur=null, curSeq=0, pollT=null, listT=null, ordersT=null, presenceT=null, contactsT=null, lastSeen={};   // threadId -> last seq seen
 let TAB='dashboard', ORDERS=[], knownOrders=new Set(), firstOrderLoad=true, LIVE=false;
 let alertEnabled=localStorage.getItem('dankOrderAlerts')==='1', audioCtx=null, orderPopT=null;
 const BASE_TITLE='DANK BKK — Staff Portal';
@@ -321,7 +321,11 @@ async function sendPresence(action='heartbeat'){
   if(!KEY||!LIVE)return;
   try{await fetch('/api/staff-auth',{method:'POST',keepalive:true,headers:{'Content-Type':'application/json','X-Staff-Key':KEY,'Authorization':'Bearer '+KEY},body:JSON.stringify({action})});}catch(e){}
 }
-function startPresence(){clearInterval(presenceT);sendPresence();presenceT=setInterval(async()=>{await sendPresence();if(TAB==='staffinfo')loadStaffAccounts();else if(TAB==='staffcontacts')loadStaffContacts()},45000);}
+function startPresence(){
+  clearInterval(presenceT);clearInterval(contactsT);sendPresence();
+  presenceT=setInterval(async()=>{await sendPresence();if(TAB==='staffinfo')loadStaffAccounts()},45000);
+  contactsT=setInterval(()=>{if(TAB==='staffcontacts')loadStaffContacts()},300000);
+}
 
 async function login(){
   const k=$('#keyInput').value.trim()||KEY;
@@ -345,7 +349,7 @@ async function login(){
   const first=can('dashboard')?'dashboard':'orders'; setTab(portalTabs.includes(hash)&&tabAllowed(hash)?hash:first);
   window.addEventListener('hashchange',()=>{ const h=decodeURIComponent(location.hash.slice(1)); if(portalTabs.includes(h)&&tabAllowed(h)) setTab(h); });
 }
-function logout(){ closeMobileNav();sendPresence('offline');clearInterval(presenceT);localStorage.removeItem('dankStaffToken');localStorage.removeItem('dankStaffKey');LIVE=false;setTimeout(()=>location.reload(),120); }
+function logout(){ closeMobileNav();sendPresence('offline');clearInterval(presenceT);clearInterval(contactsT);localStorage.removeItem('dankStaffToken');localStorage.removeItem('dankStaffKey');LIVE=false;setTimeout(()=>location.reload(),120); }
 window.addEventListener('pagehide',()=>sendPresence('offline'));
 function toggleKey(){const i=$('#keyInput'),icon=document.querySelector('.key-field i');i.type=i.type==='password'?'text':'password';icon.className=i.type==='text'?'ri-eye-off-line':'ri-eye-line';}
 function portalTheme(){return document.documentElement.dataset.theme||'light'}
