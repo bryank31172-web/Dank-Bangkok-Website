@@ -44,7 +44,7 @@ export default async function handler(req,res){
       if(action==="create") ov.added.push({id:"web-"+crypto.randomUUID(),name,category:text(b.category,80)||"Other",price:Math.max(0,number(b.price)),image:picture,picture,strain,strainType:cannabisType,type:cannabisType,description,freeDelivery,discountEnabled,discountType,discountValue,available,_hidden:!available,_source:"staff"});
       else if(action==="delete") {const ai=ov.added.findIndex(x=>x.id===id);if(ai>=0)ov.added.splice(ai,1);else ov.products[id]={...(ov.products[id]||{}),_hidden:true};}
       else if(action==="delivery") {const ai=ov.added.findIndex(x=>x.id===id);if(ai>=0)ov.added[ai]={...ov.added[ai],freeDelivery};else ov.products[id]={...(ov.products[id]||{}),freeDelivery};}
-      else ov.products[id]={...(ov.products[id]||{}),name,category:text(b.category,80),price:number(b.price),image:picture,picture,strain,strainType:cannabisType,type:cannabisType,_hidden:false};
+      else {const changes={name,category:text(b.category,80)||"Other",price:Math.max(0,number(b.price)),image:picture,picture,strain,strainType:cannabisType,type:cannabisType,description,freeDelivery,discountEnabled,discountType,discountValue,available,_hidden:!available};const ai=ov.added.findIndex(x=>x.id===id);if(ai>=0)ov.added[ai]={...ov.added[ai],...changes};else ov.products[id]={...(ov.products[id]||{}),...changes};}
     }
     await setJSON("admin:overrides",ov,YEAR);try{await bustMenu()}catch{}
     return res.status(200).json({ok:true});
