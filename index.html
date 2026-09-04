@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<!-- Active Homepage V2. Homepage V1 is archived at archive/homepage-v1.disabled. -->
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
@@ -1166,6 +1167,69 @@ window.addEventListener("appinstalled", function () {
   html:not(.welcome-seen) body{overflow:hidden}
   @media(max-width:640px){#welcomePage{align-items:flex-end;padding:28px 18px;background-position:58% center}.welcome-content h1{font-size:clamp(40px,14vw,62px)}.welcome-lead{font-size:15px}.welcome-info{grid-template-columns:1fr;gap:9px;margin:20px 0}.welcome-info article{padding:13px 14px}.welcome-enter{width:100%}}
 </style>
+<style id="homepage-v2-footer-styles">
+.home-v2-end{margin-top:64px;background:#fff;color:#171717;font-family:Inter,Arial,sans-serif}
+.home-v2-services{padding:0 0 74px;background:#fff}
+.home-v2-service-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:24px}
+.home-v2-service-card{display:flex;min-width:0;min-height:410px;overflow:hidden;flex-direction:column;border-radius:9px;background:#f3f3f3;color:#171717;text-decoration:none;transition:transform .2s ease,box-shadow .2s ease}
+.home-v2-service-card:hover{color:#171717;transform:translateY(-3px);box-shadow:0 18px 40px rgba(22,22,22,.11)}
+.home-v2-service-card:focus-visible{outline:3px solid #1f8f58;outline-offset:4px}
+.home-v2-service-copy{min-height:205px;padding:38px 40px 28px}
+.home-v2-service-copy h2{margin:0;font-size:clamp(25px,2vw,34px);line-height:1.04;letter-spacing:-.04em}
+.home-v2-service-copy p{max-width:290px;margin:30px 0 0;color:#303030;font-size:16px;line-height:1.45}
+.home-v2-service-art{height:205px;overflow:hidden}
+.home-v2-service-art img{display:block;width:100%;height:100%;object-fit:cover}
+.art-faq{background:#e8b9bf}.art-payment{background:#80d5ad}.art-delivery{background:#f3d481}
+.home-v2-footer{margin:0!important;padding:0 0 30px!important;border:0!important;background:#fff!important;color:#171717}
+.home-v2-footer .wrap{border-top:1px solid #d7d7d7;padding-top:54px}
+.home-v2-footer-main{display:grid;grid-template-columns:2.05fr repeat(4,minmax(120px,1fr));gap:clamp(26px,4vw,68px);align-items:start}
+.home-v2-brand{display:inline-flex;align-items:center;gap:10px;color:#123f2d!important;font-size:25px!important;font-weight:900;text-decoration:none}
+.home-v2-brand-mark{display:grid;place-items:center;width:38px;height:38px;border-radius:10px;background:#1ca866;color:#fff;font-size:20px}
+.home-v2-brand-column>p{max-width:340px!important;margin:24px 0 0!important;color:#333!important;font-size:14px!important;line-height:1.55}
+.home-v2-brand-column h3,.home-v2-footer-column h3{margin:0 0 22px;font-size:16px;line-height:1.2}
+.home-v2-brand-column h3{margin-top:38px}
+.home-v2-footer-column a,.home-v2-footer-column p{display:block;margin:0 0 14px!important;color:#333!important;font-size:14px!important;line-height:1.35;text-decoration:none}
+.home-v2-footer-column a:hover{color:#148250!important;text-decoration:underline}
+.home-v2-payments{display:flex;max-width:360px;flex-wrap:wrap;gap:8px}
+.home-v2-payments span{display:grid;place-items:center;min-width:72px;height:38px;padding:0 10px;border:1px solid #dedede;border-radius:5px;background:#fff;color:#1c1c1c;font-size:11px;font-weight:850}
+.home-v2-social-row{display:flex;align-items:center;gap:24px;margin-top:52px;padding:22px 0;border-top:1px solid #dedede;color:#242424;font-size:13px}
+.home-v2-social-row>span{font-weight:800}
+.home-v2-social-row a{color:#333!important;font-size:13px!important;text-decoration:none}
+.home-v2-social-row a:hover{text-decoration:underline}
+.home-v2-hidden-link{display:none!important}
+.home-v2-footer-bottom{display:grid;grid-template-columns:1.2fr 1fr auto;align-items:center;gap:30px;padding:28px 0 8px;border-top:1px solid #dedede;color:#333;font-size:13px}
+.home-v2-utility-links,.home-v2-policy-links{display:flex;align-items:center;gap:28px}
+.home-v2-footer-bottom a{color:#333;text-decoration:none}
+.home-v2-footer-bottom a:hover{text-decoration:underline}
+.home-v2-age{margin:12px 0 0!important;color:#686868!important;font-size:12px!important;text-align:right}
+@media(max-width:1050px){
+  .home-v2-service-grid{gap:16px}.home-v2-service-copy{padding:30px 26px 24px}
+  .home-v2-footer-main{grid-template-columns:2fr repeat(2,1fr)}
+  .home-v2-brand-column{grid-row:span 2}
+  .home-v2-footer-bottom{grid-template-columns:1fr 1fr}.home-v2-footer-bottom>span{grid-column:1/-1}
+}
+@media(max-width:760px){
+  .home-v2-end{margin-top:46px}.home-v2-services{padding-bottom:48px}
+  .home-v2-service-grid{grid-template-columns:1fr;gap:16px}
+  .home-v2-service-card{min-height:0}.home-v2-service-copy{min-height:170px;padding:28px 24px 22px}
+  .home-v2-service-copy p{margin-top:20px}.home-v2-service-art{height:220px}
+  .home-v2-footer .wrap{padding-top:40px}
+  .home-v2-footer-main{grid-template-columns:1fr 1fr;gap:38px 24px}
+  .home-v2-brand-column{grid-column:1/-1;grid-row:auto}
+  .home-v2-social-row{align-items:flex-start;flex-wrap:wrap;gap:14px 22px}
+  .home-v2-social-row>span{flex-basis:100%}
+  .home-v2-footer-bottom{grid-template-columns:1fr;gap:22px}
+  .home-v2-footer-bottom>span{grid-column:auto}.home-v2-age{text-align:left}
+}
+@media(max-width:440px){
+  .home-v2-service-copy h2{font-size:26px}.home-v2-service-art{height:190px}
+  .home-v2-footer-main{grid-template-columns:1fr}
+  .home-v2-brand-column{grid-column:auto}
+  .home-v2-footer-column{padding-top:22px;border-top:1px solid #e2e2e2}
+  .home-v2-utility-links,.home-v2-policy-links{align-items:flex-start;flex-direction:column;gap:13px}
+}
+@media(prefers-reduced-motion:reduce){.home-v2-service-card{transition:none}}
+</style>
 </head>
 <body>
 <section id="welcomePage" aria-labelledby="welcomeTitle">
@@ -1923,74 +1987,98 @@ tiers:{t:"Membership has its perks \ud83d\udc9a",b:`
   <nav class="catalog-pagination pagination" id="catalogPagination" aria-label="Catalog pages"></nav>
 </main>
 
-<div class="end-flow">
-  <section class="content-section" id="locations" aria-labelledby="locationsTitle">
-    <div class="wrap"><p class="section-kicker">Visit DANK</p><h2 class="section-heading" id="locationsTitle">Our locations</h2>
-      <p class="section-intro">Choose the DANK location that works best for you. Open the verified map for directions.</p><div class="location-grid" id="locationGrid"></div>
+<!-- Homepage V2: service cards and reference-aligned footer -->
+<div class="home-v2-end">
+  <section class="home-v2-services" aria-label="Customer help">
+    <div class="wrap home-v2-service-grid">
+      <a class="home-v2-service-card" href="/faq/">
+        <div class="home-v2-service-copy"><h2>Frequently Asked<br>Questions</h2><p>Quick answers for safe shopping at DANK Bangkok.</p></div>
+        <div class="home-v2-service-art art-faq"><img src="/assets/promo-all-shops.jpg" alt="DANK Bangkok shopping information" loading="lazy"></div>
+      </a>
+      <a class="home-v2-service-card" href="#" onclick="openInfo();return false;">
+        <div class="home-v2-service-copy"><h2>Online Payment<br>Process</h2><p>Simple, secure payment information for your order.</p></div>
+        <div class="home-v2-service-art art-payment"><img src="/promo-first.jpg" alt="DANK Bangkok online payment information" loading="lazy"></div>
+      </a>
+      <a class="home-v2-service-card" href="/faq/">
+        <div class="home-v2-service-copy"><h2>Home Delivery<br>Options</h2><p>Explore delivery, pickup, and in-store order options.</p></div>
+        <div class="home-v2-service-art art-delivery"><img src="https://images.pexels.com/photos/32587596/pexels-photo-32587596/free-photo-of-smiling-retail-staff-in-a-modern-shopping-mall.jpeg?auto=compress&amp;cs=tinysrgb&amp;w=1200" alt="DANK Bangkok customer service" loading="lazy"></div>
+      </a>
     </div>
   </section>
-  <section class="content-section" id="faq" aria-labelledby="faqTitle">
-    <div class="wrap"><p class="section-kicker">Good to know</p><h2 class="section-heading" id="faqTitle">Frequently asked questions</h2>
-      <p class="section-intro">Quick answers based on the information already published by DANK BKK.</p><div class="faq-list" id="faqList"></div>
-    </div>
-  </section>
-</div>
 
-<!-- ============ FOOTER ============ -->
-<footer>
-  <div class="wrap">
-    <div class="foot-grid">
-      <div>
-        <h4 style="font-size:18px">🌿 <span id="footBrand">DANK BKK</span></h4>
-        <p id="footTag"></p>
-        <p id="footBranches"></p>
-      </div>
-      <div>
-        <h4>Shop</h4>
-        <a href="/products/">Browse all product pages</a>
-        <a href="#menu">Interactive shop menu</a>
-        <a href="build-your-joint.html">Build your joint 🚬</a>
-        <a href="#" onclick="openCart();return false;">Your cart</a>
-        <a href="#" onclick="openAI('Hi! What are you looking for today?');return false;">Ask DANK AI</a>
-        <a href="#" onclick="openCRM(isMember()?undefined:'login');return false;">Member login · 10% off 👤</a>
-        <a href="#" onclick="openWallet();return false;">My wallet · top up +10%</a>
-        <a href="#" onclick="openOrders();return false;">Track my order</a>
-        <a href="#" onclick="openInfo();return false;">Help & info</a>
-        <a id="footLine" target="_blank" rel="noopener">Order on LINE</a>
-      </div>
-      <div>
-        <h4>Visit & Contact</h4>
-        <a href="/locations/">All DANK locations</a>
-        <a href="/about/">About DANK BKK</a>
-        <a href="/faq/">Frequently asked questions</a>
-        <a href="/contact/">Contact DANK</a>
-        <p id="footHours"></p>
-        <a id="footPhone"></a>
-        <a id="footMaps" target="_blank" rel="noopener">Get directions</a>
-        <div style="display:flex;gap:10px;margin-top:10px">
-          <a id="socFb" target="_blank" rel="noopener" title="Facebook" aria-label="DANK on Facebook" style="font-size:20px">📘</a>
-          <a id="socIg" target="_blank" rel="noopener" title="Instagram" aria-label="DANK on Instagram" style="font-size:20px">📸</a>
-          <a id="socYt" target="_blank" rel="noopener" title="YouTube" aria-label="DANK on YouTube" style="font-size:20px">▶️</a>
-          <a id="socLt" target="_blank" rel="noopener" title="Linktree" aria-label="Every DANK link in one place" style="font-size:20px">🌳</a>
+  <footer class="home-v2-footer">
+    <div class="wrap">
+      <div class="home-v2-footer-main">
+        <div class="home-v2-brand-column">
+          <a class="home-v2-brand" href="/shop" aria-label="DANK Bangkok home"><span class="home-v2-brand-mark">D</span><span id="footBrand">DANK BKK</span></a>
+          <p id="footTag">Premium cannabis and friendly service in Bangkok.</p>
+          <p id="footBranches"></p>
+          <h3>Accepted Payments</h3>
+          <div class="home-v2-payments" aria-label="Accepted payment methods">
+            <span>Cash</span><span>PromptPay</span><span>VISA</span><span>Mastercard</span><span>Card</span>
+          </div>
         </div>
-        <!-- The Linktree is not a fifth social account, it is the page the other
-             ones hang off — LINE, the menu, promotions, all of it. A customer
-             cannot guess that from a tree emoji, so it gets said. -->
-        <a id="socLtText" target="_blank" rel="noopener" style="display:inline-block;margin-top:9px;font-size:12.5px">🌳 ทุกช่องทางของเรา · All our links</a>
-        <h4 style="margin-top:18px">Stay in the loop</h4>
-        <p style="font-size:12.5px">Be first to know about new strains & exclusive offers.</p>
-        <div style="display:flex;gap:6px;margin-top:6px">
-          <input id="nlEmail" placeholder="Your email" style="flex:1;background:var(--panel);border:1px solid var(--line2);color:var(--txt);padding:9px 11px;border-radius:9px;font-size:13px;outline:none">
-          <button class="btn btn-primary" style="padding:9px 14px;font-size:13px" onclick="subscribeNL()">Join</button>
-        </div>
+
+        <nav class="home-v2-footer-column" aria-label="Shop">
+          <h3>Shop</h3>
+          <a href="/products/">All products</a>
+          <a href="/products/flowers/">Flowers</a>
+          <a href="#menu">Interactive menu</a>
+          <a href="/build-your-joint.html">Build your joint</a>
+          <a href="#" onclick="openCart();return false;">Your cart</a>
+        </nav>
+
+        <nav class="home-v2-footer-column" aria-label="About DANK">
+          <h3>About us</h3>
+          <a href="/about/">About DANK BKK</a>
+          <a href="/locations/">Our locations</a>
+          <a href="/blog/">News &amp; Blog</a>
+          <a href="/contact/">Contact us</a>
+          <a id="footMaps" target="_blank" rel="noopener">Get directions</a>
+        </nav>
+
+        <nav class="home-v2-footer-column" aria-label="Services">
+          <h3>Services</h3>
+          <a href="#" onclick="openCRM(isMember()?undefined:'login');return false;">Member pricing</a>
+          <a href="#" onclick="openWallet();return false;">DANK wallet</a>
+          <a href="#" onclick="openOrders();return false;">Track your order</a>
+          <a href="#" onclick="openInfo();return false;">Shipping &amp; delivery</a>
+          <a id="footLine" target="_blank" rel="noopener">Order on LINE</a>
+        </nav>
+
+        <nav class="home-v2-footer-column" aria-label="Help">
+          <h3>Help</h3>
+          <a href="/faq/">DANK Help</a>
+          <a href="/faq/">Returns &amp; order help</a>
+          <a href="#" onclick="openAI('Hi! How can we help you today?');return false;">Ask DANK AI</a>
+          <a href="/contact/">Feedback</a>
+          <a id="footPhone"></a>
+          <p id="footHours"></p>
+        </nav>
       </div>
+
+      <div class="home-v2-social-row">
+        <span>Follow DANK Bangkok</span>
+        <a id="socFb" target="_blank" rel="noopener" aria-label="DANK on Facebook">Facebook</a>
+        <a id="socIg" target="_blank" rel="noopener" aria-label="DANK on Instagram">Instagram</a>
+        <a id="socYt" target="_blank" rel="noopener" aria-label="DANK on YouTube">YouTube</a>
+        <a id="socLt" target="_blank" rel="noopener" aria-label="All DANK links">All links</a>
+        <a id="socLtText" target="_blank" rel="noopener" class="home-v2-hidden-link">All our links</a>
+      </div>
+
+      <div class="home-v2-footer-bottom">
+        <div class="home-v2-utility-links">
+          <a href="/locations/">Find a store</a>
+          <a href="#" onclick="openWallet();return false;">DANK Wallet</a>
+          <a href="/faq/">Help Center</a>
+        </div>
+        <div class="home-v2-policy-links"><a href="#" onclick="openTerms();return false;">Terms of Use</a><a href="#" onclick="openPrivacy();return false;">Privacy Policy</a></div>
+        <span>© <span id="footYear"></span> <span id="footBrand2">DANK BKK</span>. All rights reserved.</span>
+      </div>
+      <p class="home-v2-age">For adults 20+. Please consume responsibly.</p>
     </div>
-    <div class="foot-bottom">
-      <span>© <span id="footYear"></span> <span id="footBrand2">DANK BKK</span> · dankbkk.com · <a href="#" onclick="openOwnerLogin();return false;" style="color:var(--muted);text-decoration:none" title="Owner login">Owner</a> · <a href="#" onclick="openPinPad();return false;" style="color:var(--muted);text-decoration:none" title="Promotions PIN">Promo</a></span>
-      <span>For adults 20+. Please consume responsibly.</span>
-    </div>
-  </div>
-</footer>
+  </footer>
+</div>
 
 <!-- ============ OVERLAY / DRAWERS / MODALS ============ -->
 <div class="overlay" id="overlay" onclick="closeAll()"></div>
