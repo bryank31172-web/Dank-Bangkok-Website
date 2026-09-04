@@ -28,6 +28,7 @@ header .st{margin-left:auto;font-size:12px;color:var(--muted2)}
 .top-search{width:min(360px,36vw);height:40px;border:1px solid var(--line2);border-radius:12px;background:#fafbfc;display:flex;align-items:center;gap:9px;padding:0 13px;color:var(--muted2)}
 .top-search input{border:0;outline:0;background:transparent;width:100%;font:inherit;color:var(--txt)}
 .profile-dot{width:36px;height:36px;border-radius:50%;background:#eaf7ef;color:var(--green2);display:grid;place-items:center;font-weight:800;border:1px solid #dcefe4;flex:none}.mobile-menu{display:none}.mobile-backdrop{display:none}
+header[hidden]{display:none!important}
 .pill{font-size:11px;font-weight:800;padding:3px 9px;border-radius:999px;border:1px solid var(--line2);color:var(--green2)}
 .pill.warn{color:var(--gold);border-color:var(--gold)}
 main{flex:1;display:flex;min-height:0;padding-top:74px}
@@ -176,7 +177,7 @@ body.drawer-open .mobile-backdrop{opacity:1;pointer-events:auto}
 <script>try{document.documentElement.dataset.theme=localStorage.getItem('dankPortalTheme')||'light'}catch(e){document.documentElement.dataset.theme='light'}</script>
 </head>
 <body>
-<header>
+<header id="portalHeader" hidden>
   <button class="mobile-menu" id="mobileMenu" type="button" onclick="toggleMobileNav()" aria-label="Open navigation" aria-controls="tabs" aria-expanded="false"><i class="ri-menu-2-line"></i></button>
   <h1>DANK Staff</h1>
   <label class="top-search"><i class="ri-search-line"></i><input type="search" placeholder="Search orders and reports…" aria-label="Search dashboard"></label>
@@ -343,7 +344,7 @@ async function login(){
   applyPermissions();
   try{ r=await authGet(`${API}?list=1`); }catch(e){r=null;}
   const j=r&&r.ok?await r.json():{};
-  $('#login').style.display='none'; $('#listWrap').style.display='flex'; $('#chatWrap').style.display='none'; $('#logoutBtn').style.display='';
+  $('#login').style.display='none'; $('#portalHeader').hidden=false; $('#listWrap').style.display='flex'; $('#chatWrap').style.display='none'; $('#logoutBtn').style.display='';
   updateAlertButton();
   pollOrders(); startOrderPoll(); startPresence(); clearInterval(dashboardSalesT); dashboardSalesT=setInterval(()=>loadDashboardSales(true),10800000);
   const hash=decodeURIComponent(location.hash.slice(1));
@@ -2296,7 +2297,7 @@ $('#list').addEventListener('change',e=>{
 /* Visual-QA mode is deliberately limited to the local Work Mode preview host.
    It never runs on dankbangkok.com and never bypasses production staff auth. */
 if(location.hostname==='terminal.local'&&new URLSearchParams(location.search).has('visual-qa')){
-  $('#login').style.display='none'; $('#listWrap').style.display='flex'; $('#logoutBtn').style.display='';
+  $('#login').style.display='none'; $('#portalHeader').hidden=false; $('#listWrap').style.display='flex'; $('#logoutBtn').style.display='';
   ORDERS=[{orderId:'DANK-260901-1042',status:'new',at:Date.now()-180000,payment:'PromptPay',payStatus:'paid',subtotal:2450,deliveryFee:80,discount:0,total:2530,fulfilment:'delivery',delivery:{address:'Sathorn, Bangkok',time:'20:30'},customer:{name:'Sample customer',phone:'+66 63-206-4884'},items:[{name:'Blue Zangria',effects:['Relaxed','Happy','Creative'],grams:3.5,qty:1,unitPrice:2450,lineTotal:2450,option:'3.5 g'}]}];
   DASH_SALES.day={now:48750,previous:42300,change:15.25,current:{summary:{gross:48750,orders:32,average:1523},topItems:[{name:'Blue Zangria',qty:28,gross:19600},{name:'Permanent Marker',qty:21,gross:14700},{name:'MellowZ',qty:15,gross:10500},{name:'Zooties',qty:8,gross:5600},{name:'Bangkok Lemon',qty:3,gross:2100}]}};
   ['week','month','year'].forEach((key,i)=>{const scale=[6,24,260][i];DASH_SALES[key]={...DASH_SALES.day,now:DASH_SALES.day.now*scale,previous:DASH_SALES.day.previous*scale};});
