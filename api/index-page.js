@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 
-let cached = "";
+const cached = {v1:"",v2:""};
 
 function replaceRequired(source, search, replacement, label) {
   if (!source.includes(search)) throw new Error(`Storefront cart migration failed: ${label}`);
@@ -13,10 +13,11 @@ function replaceRegexRequired(source, pattern, replacement, label) {
   return source.replace(pattern, replacement);
 }
 
-function storefrontHtml() {
-  if (cached) return cached;
+function storefrontHtml(version="v1") {
+  const key=version==="v2"?"v2":"v1";
+  if (cached[key]) return cached[key];
 
-  const file = path.join(process.cwd(), "index.html");
+  const file = path.join(process.cwd(), key==="v2"?"homepage-v2.html":"index.html");
   let html = fs.readFileSync(file, "utf8");
 
   html = replaceRequired(
@@ -164,7 +165,7 @@ if(window.Cart){
 </script>`;
 
   html = html.replace("</body>", redirectCheckout + "\n</body>");
-  cached = html;
+  cached[key] = html;
   return html;
 }
 
@@ -175,7 +176,7 @@ export default function handler(req, res) {
   }
 
   try {
-    const html = storefrontHtml();
+    const html = storefrontHtml(req.query?.version);
     res.setHeader("Content-Type", "text/html; charset=utf-8");
     res.setHeader("Cache-Control", "public, max-age=0, s-maxage=0, must-revalidate");
     if (req.method === "HEAD") return res.status(200).end();
