@@ -207,7 +207,7 @@ body.drawer-open .mobile-backdrop{opacity:1;pointer-events:auto}
       <button id="tabSettings" onclick="setTab('settings')"><i class="ri-settings-3-line"></i><span>Setting</span></button>
       <button class="sidebar-logout" id="logoutBtn" onclick="logout()"><i class="ri-logout-box-r-line"></i><span>Log Out</span></button>
     </div>
-    <div class="content-shell"><div id="pageHead"><div><h2 id="pageTitle">Dashboard</h2><p id="pageSub">A live overview of DANK orders and sales.</p></div></div><div id="list"></div></div>
+    <div class="content-shell"><div id="pageHead"><div><h2 id="pageTitle">Dashboard</h2><p id="pageSub">A fast overview of new orders and staff updates.</p></div></div><div id="list"></div></div>
   </div>
   <div id="chatWrap" style="display:none">
     <div class="emptyc" id="emptyc">Select a conversation ←</div>
@@ -343,11 +343,9 @@ async function login(){
   localStorage.setItem('dankStaffToken',KEY); localStorage.removeItem('dankStaffKey'); LIVE=true;
   if(auth.generated?.length) showGeneratedKeys(auth.generated);
   applyPermissions();
-  try{ r=await authGet(`${API}?list=1`); }catch(e){r=null;}
-  const j=r&&r.ok?await r.json():{};
   $('#login').style.display='none'; $('#portalHeader').hidden=false; $('#listWrap').style.display='flex'; $('#chatWrap').style.display='none'; $('#logoutBtn').style.display='';
   updateAlertButton();
-  pollOrders(); startOrderPoll(); startPresence(); clearInterval(dashboardSalesT); dashboardSalesT=setInterval(()=>loadDashboardSales(true),10800000);
+  pollOrders(); startOrderPoll(); startPresence();
   const hash=decodeURIComponent(location.hash.slice(1));
   const portalTabs=['dashboard','orders','products','promotions','sales','announcement','staffinfo','staffcontacts','settings'];
   const first=can('dashboard')?'dashboard':'orders'; setTab(portalTabs.includes(hash)&&tabAllowed(hash)?hash:first);
@@ -386,11 +384,11 @@ function setTab(t){ closeMobileNav(); if(typeof stopCamScan==='function') stopCa
   if(!tabAllowed(t)) t=can('dashboard')?'dashboard':'orders'; TAB=t;
   const ids={dashboard:'tabDashboard',orders:'tabOrders',products:'tabProducts',promotions:'tabPromotions',sales:'tabSales',announcement:'tabAnnouncement',staffinfo:'tabStaffInfo',staffcontacts:'tabStaffContacts',settings:'tabSettings'};
   Object.entries(ids).forEach(([name,id])=>$('#'+id)?.classList.toggle('active',t===name));
-  const copy={dashboard:['Dashboard','A live overview of DANK orders and sales.'],orders:['Orders','Manage website and table orders in real time.'],products:['Products','Create, edit and remove storefront products.'],promotions:['Promotion Codes','Create, edit and remove customer promotion codes.'],sales:['Sales Report','Review revenue, payments and order performance.'],announcement:['Announcement','Important updates for every DANK staff member.'],staffinfo:['',''],staffcontacts:['',''],settings:['Setting','Manage this device and staff-portal preferences.']};
+  const copy={dashboard:['Dashboard','A fast overview of new orders and staff updates.'],orders:['Orders','Manage website and table orders in real time.'],products:['Products','Create, edit and remove storefront products.'],promotions:['Promotion Codes','Create, edit and remove customer promotion codes.'],sales:['Sales Report','Review revenue, payments and order performance.'],announcement:['Announcement','Important updates for every DANK staff member.'],staffinfo:['',''],staffcontacts:['',''],settings:['Setting','Manage this device and staff-portal preferences.']};
   $('#pageHead').style.display=['staffinfo','staffcontacts'].includes(t)?'none':'';
   $('#pageTitle').textContent=copy[t][0]; $('#pageSub').textContent=copy[t][1];
   if(history.replaceState) history.replaceState(null,'',location.pathname);
-  if(t==='dashboard'){ renderDashboard(); loadDashboardSales(); }
+  if(t==='dashboard'){ renderDashboard(); }
   else if(t==='orders'){ renderOrders(); $('#ordCnt').style.display='none'; knownOrders=new Set(ORDERS.map(o=>o.orderId)); document.title=BASE_TITLE; $('#orderPop')?.classList.remove('on'); }
   else if(t==='sales'){ loadSales(); }
   else if(t==='products'){ loadStaffProducts(); }
@@ -546,53 +544,13 @@ async function saveStaffForm(id){
 }
 async function deleteStaff(id){const a=STAFF_DIRECTORY.find(x=>x.id===id);if(!a||!confirm('Delete '+a.name+' from Staff Management? This cannot be undone.'))return;try{await staffAction({action:'delete',id});loadStaffAccounts()}catch(e){alert(e.message)}}
 async function resetStaff(id){if(!confirm('Generate a new key for this staff member?'))return;try{const j=await staffAction({action:'reset',id});alert('New key for '+j.account.name+':\n\n'+j.key+'\n\nSave it now; the previous key no longer accepts new logins.');loadStaffAccounts()}catch(e){alert(e.message)}}
-const DASH_PERIODS={day:{label:'Day',days:1},week:{label:'Week',days:7},month:{label:'Month',days:30},year:{label:'Year',days:365}};
-let DASH_PERIOD='day', DASH_SALES={}, dashboardSalesT=null;
 const dashMoney=v=>'฿'+(Number(v)||0).toLocaleString('en-US',{maximumFractionDigits:0});
-async function loadDashboardSales(force=false){
-  if(!force&&DASH_SALES[DASH_PERIOD]){ if(TAB==='dashboard') renderDashboard(); return; }
-  const p=DASH_PERIODS[DASH_PERIOD], el=$('#list');
-  if(TAB==='dashboard'&&!DASH_SALES[DASH_PERIOD]) el.innerHTML='<div class="dash-card"><div class="empty-dash">Loading dashboard analytics…</div></div>';
-  try{
-    const [currentRes,doubleRes]=await Promise.all([authGet('/api/sales?days='+p.days+'&dashboard=1'),authGet('/api/sales?days='+(p.days*2)+'&dashboard=1')]);
-    if(!currentRes.ok||!doubleRes.ok) throw new Error('sales unavailable');
-    const current=await currentRes.json(), doubled=await doubleRes.json();
-    const now=Number(current.summary?.gross)||0, combined=Number(doubled.summary?.gross)||0, previous=Math.max(0,combined-now);
-    DASH_SALES[DASH_PERIOD]={current,now,previous,change:previous?((now-previous)/previous*100):(now?100:0),loadedAt:Date.now()};
-    if(TAB==='dashboard') renderDashboard();
-  }catch(e){ if(TAB==='dashboard') renderDashboard('Sales analytics are temporarily unavailable.'); }
-}
-function dashRank(items,lowest=false){
-  const rows=(Array.isArray(items)?items:[]).filter(x=>Number(x.qty)>0);
-  const picked=(lowest?[...rows].sort((a,b)=>Number(a.qty)-Number(b.qty)):rows).slice(0,5);
-  return picked.length?picked.map((x,i)=>`<div class="rank-row"><span class="rank">${i+1}</span><span class="name">${esc(x.name||'Unnamed product')}</span><span class="qty">${esc((x.qty||0)+' sold')}</span><span class="revenue">${esc(dashMoney(x.gross))}</span></div>`).join(''):'<div class="empty-dash">No product sales in this period.</div>';
-}
-function salesChart(rows){
-  const data=(Array.isArray(rows)?rows:[]).slice().sort((a,b)=>String(a.day).localeCompare(String(b.day)));
-  if(!data.length)return '<div class="empty-dash">No sales data for this period.</div>';
-  const W=720,H=190,L=18,R=12,T=12,B=28,base=H-B,max=Math.max(1,...data.map(x=>Number(x.gross)||0));
-  const x=i=>data.length===1?(W-L-R)/2+L:L+i*(W-L-R)/(data.length-1);
-  const y=v=>T+(max-(Number(v)||0))*(base-T)/max;
-  const pts=data.map((d,i)=>[x(i),y(d.gross)]);
-  const line=data.length===1?`M ${pts[0][0]-18} ${base} L ${pts[0][0]} ${pts[0][1]} L ${pts[0][0]+18} ${base}`:'M '+pts.map(p=>p.map(n=>n.toFixed(1)).join(' ')).join(' L ');
-  const area=data.length===1?`M ${pts[0][0]-18} ${base} L ${pts[0][0]} ${pts[0][1]} L ${pts[0][0]+18} ${base} Z`:`M ${pts[0][0]} ${base} L ${pts.map(p=>p.map(n=>n.toFixed(1)).join(' ')).join(' L ')} L ${pts[pts.length-1][0]} ${base} Z`;
-  const labelIndexes=[0,Math.floor((data.length-1)/2),data.length-1].filter((v,i,a)=>a.indexOf(v)===i);
-  const labels=labelIndexes.map(i=>`<text class="chart-label" x="${x(i)}" y="${H-7}" text-anchor="${i===0?'start':i===data.length-1?'end':'middle'}">${esc(String(data[i].day||'').slice(5))}</text>`).join('');
-  const dots=data.length<=31?pts.map(p=>`<circle class="chart-dot" cx="${p[0]}" cy="${p[1]}" r="3.5"/>`).join(''):'';
-  return `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Sales trend"><line class="chart-grid" x1="${L}" y1="${T}" x2="${W-R}" y2="${T}"/><line class="chart-grid" x1="${L}" y1="${(T+base)/2}" x2="${W-R}" y2="${(T+base)/2}"/><line class="chart-grid" x1="${L}" y1="${base}" x2="${W-R}" y2="${base}"/><path class="chart-area" d="${area}"/><path class="chart-line" d="${line}"/>${dots}${labels}</svg>`;
-}
-function renderDashboard(error=''){
-  const el=$('#list'), data=DASH_SALES[DASH_PERIOD], current=data?.current||{}, summary=current.summary||{}, pending=ORDERS.filter(o=>o.status!=='done'), done=ORDERS.filter(o=>o.status==='done');
-  const periodTabs=Object.entries(DASH_PERIODS).map(([key,p])=>`<button class="${DASH_PERIOD===key?'active':''}" data-act="dash-period" data-v="${key}">${p.label}</button>`).join('');
-  const delta=data?.change||0, deltaClass=delta>=0?'up':'down';
+function renderDashboard(){
+  const el=$('#list'), pending=ORDERS.filter(o=>o.status!=='done');
   const newOrders=pending.slice(0,5).map((o,index)=>`<button type="button" class="new-order-line${index===0?' new-order-alert':''}" data-act="recent-order" data-id="${esc(o.orderId||'')}"><div class="order-copy"><b>${esc(o.orderId||'New order')}</b><span>${esc(o.customer?.name||'Customer')} · ${esc(o.fulfilment||'order')}</span></div><strong>${esc(dashMoney(o.total??o.subtotal))}</strong><i class="ri-arrow-right-s-line" aria-hidden="true"></i></button>`).join('');
   el.innerHTML=`<div class="dashboard-grid">
-    <section class="dash-card new-orders-card"><div class="dash-head"><h3 class="dash-icon-title"><span class="dash-bell"><i class="ri-notification-3-line"></i></span>New Orders</h3><button class="ghost" data-act="dash-orders">View all</button></div>${newOrders||'<div class="empty-dash">No new orders right now.</div>'}<div class="dash-muted">Refreshes automatically every 3 minutes</div></section>
-    <section class="dash-card sales-card"><div class="dash-head"><h3>Sales</h3><div class="period-tabs">${periodTabs}</div></div>${error?`<div class="empty-dash">${esc(error)}</div>`:`<div class="sales-main"><div class="sales-value">${data?esc(dashMoney(data.now)):'—'}</div>${data?`<span class="delta ${deltaClass}">${delta>=0?'↑':'↓'} ${esc(Math.abs(delta).toFixed(1))}%</span>`:''}</div><div class="dash-muted">Compared with the previous ${esc(DASH_PERIODS[DASH_PERIOD].label.toLowerCase())} · refreshes every 3 hours</div><div class="sales-chart">${data?salesChart(current.byDay):''}</div>`}</section>
-
-    <section class="dash-card"><div class="dash-head"><h3>Best Sellers</h3></div><div class="rank-list">${dashRank(current.topItems,false)}</div></section>
-    <section class="dash-card"><div class="dash-head"><h3>Lowest Sellers</h3></div><div class="rank-list">${dashRank(current.topItems,true)}</div></section>
-    <section class="dash-card full"><div class="dash-head"><h3>Announcement</h3><button class="ghost" data-act="dash-announcement">View all</button></div><div class="portal-grid"><article class="portal-card"><h3>Welcome to the new Staff Portal</h3><p>Website orders and sales reports now live in one dashboard.</p></article><article class="portal-card"><h3>Keep order alerts enabled</h3><p>Allow browser notifications and keep your device volume on so new website orders are not missed.</p></article></div></section>
+    <section class="dash-card full new-orders-card"><div class="dash-head"><h3 class="dash-icon-title"><span class="dash-bell"><i class="ri-notification-3-line"></i></span>New Orders</h3><button class="ghost" data-act="dash-orders">View all</button></div>${newOrders||'<div class="empty-dash">No new orders right now.</div>'}<div class="dash-muted">Refreshes automatically every 3 minutes</div></section>
+    <section class="dash-card full"><div class="dash-head"><h3>Announcement</h3><button class="ghost" data-act="dash-announcement">View all</button></div><div class="portal-grid"><article class="portal-card"><h3>Welcome to the Staff Portal</h3><p>New orders and important staff updates are available from the dashboard.</p></article><article class="portal-card"><h3>Keep order alerts enabled</h3><p>Allow browser notifications and keep your device volume on so new website orders are not missed.</p></article></div></section>
   </div>`;
 }
 let GIFT_MENU=[], GIFT_SEL=new Set();
@@ -1178,11 +1136,11 @@ function startListPoll(){ clearInterval(listT); listT=setInterval(async()=>{ if(
    reliable path when a mobile browser suspends the page completely. */
 function startOrderPoll(ms=180000){ clearInterval(ordersT); ordersT=setInterval(pollOrders,ms); }
 function startThreadPoll(){ clearInterval(pollT); pollT=setInterval(()=>pull(false),3000); }
-function stopPolls(){ clearInterval(ordersT); clearInterval(listT); clearInterval(pollT); clearInterval(dashboardSalesT); ordersT=listT=pollT=dashboardSalesT=null; }
+function stopPolls(){ clearInterval(ordersT); clearInterval(listT); clearInterval(pollT); ordersT=listT=pollT=null; }
 document.addEventListener('visibilitychange',()=>{
   if(document.hidden){ stopPolls(); if(LIVE&&alertEnabled) startOrderPoll(180000); return; }
   if(!LIVE) return;
-  pollOrders(); startOrderPoll(); startListPoll(); dashboardSalesT=setInterval(()=>loadDashboardSales(true),10800000);
+  pollOrders(); startOrderPoll(); startListPoll();
   if(TAB==='chats') refreshChats();
   if(cur){ pull(false); startThreadPoll(); }
 });
@@ -2207,7 +2165,6 @@ $('#list').addEventListener('click',e=>{
   const el=e.target.closest('[data-act]'); if(!el) return;
   const d=el.dataset;
   switch(d.act){
-    case 'dash-period': DASH_PERIOD=d.v in DASH_PERIODS?d.v:'day'; renderDashboard(); loadDashboardSales(); break;
     case 'dash-orders': setTab('orders'); break;
     case 'recent-order': openRecentOrder(d.id); break;
     case 'dash-announcement': setTab('announcement'); break;
@@ -2301,8 +2258,6 @@ $('#list').addEventListener('change',e=>{
 if(location.hostname==='terminal.local'&&new URLSearchParams(location.search).has('visual-qa')){
   $('#login').style.display='none'; $('#portalHeader').hidden=false; $('#listWrap').style.display='flex'; $('#logoutBtn').style.display='';
   ORDERS=[{orderId:'DANK-260901-1042',status:'new',at:Date.now()-180000,payment:'PromptPay',payStatus:'paid',subtotal:2450,deliveryFee:80,discount:0,total:2530,fulfilment:'delivery',delivery:{address:'Sathorn, Bangkok',time:'20:30'},customer:{name:'Sample customer',phone:'+66 63-206-4884'},items:[{name:'Blue Zangria',effects:['Relaxed','Happy','Creative'],grams:3.5,qty:1,unitPrice:2450,lineTotal:2450,option:'3.5 g'}]}];
-  DASH_SALES.day={now:48750,previous:42300,change:15.25,current:{summary:{gross:48750,orders:32,average:1523},topItems:[{name:'Blue Zangria',qty:28,gross:19600},{name:'Permanent Marker',qty:21,gross:14700},{name:'MellowZ',qty:15,gross:10500},{name:'Zooties',qty:8,gross:5600},{name:'Bangkok Lemon',qty:3,gross:2100}]}};
-  ['week','month','year'].forEach((key,i)=>{const scale=[6,24,260][i];DASH_SALES[key]={...DASH_SALES.day,now:DASH_SALES.day.now*scale,previous:DASH_SALES.day.previous*scale};});
   setTab('dashboard');
 } else { $('#keyInput').value=''; if(KEY)login(); }
 </script>
