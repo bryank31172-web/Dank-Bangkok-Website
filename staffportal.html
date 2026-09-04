@@ -329,16 +329,17 @@ function startPresence(){
   contactsT=setInterval(()=>{if(TAB==='staffcontacts')loadStaffContacts()},300000);
 }
 
-async function login(){
+async function login(silent=false){
   const input=$('#keyInput'),k=input.value.trim()||KEY;
   input.value='';
-  if(!k){$('#loginErr').textContent="doesn't have key or incorrect password.";return;}
+  if(!silent)$('#loginErr').textContent='';
+  if(!k){if(!silent)$('#loginErr').textContent="doesn't have key or incorrect password.";return;}
   let r;
   try{ r=await fetch('/api/staff-auth',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'login',key:k})}); }
-  catch(e){ $('#loginErr').textContent='Network error — check your connection'; return; }
+  catch(e){ if(!silent)$('#loginErr').textContent='Network error — check your connection'; return; }
   const auth=await r.json().catch(()=>({}));
   if(!r.ok){
-    $('#loginErr').textContent="doesn't have key or incorrect password.";
+    if(!silent)$('#loginErr').textContent="doesn't have key or incorrect password.";
     if(k===KEY){KEY='';localStorage.removeItem('dankStaffToken');localStorage.removeItem('dankStaffKey')}
     return;
   }
@@ -2285,7 +2286,7 @@ if(location.hostname==='terminal.local'&&new URLSearchParams(location.search).ha
   $('#login').style.display='none'; $('#portalHeader').hidden=false; $('#listWrap').style.display='flex'; $('#logoutBtn').style.display='';
   ORDERS=[{orderId:'DANK-260901-1042',status:'new',at:Date.now()-180000,payment:'PromptPay',payStatus:'paid',subtotal:2450,deliveryFee:80,discount:0,total:2530,fulfilment:'delivery',delivery:{address:'Sathorn, Bangkok',time:'20:30'},customer:{name:'Sample customer',phone:'+66 63-206-4884'},items:[{name:'Blue Zangria',effects:['Relaxed','Happy','Creative'],grams:3.5,qty:1,unitPrice:2450,lineTotal:2450,option:'3.5 g'}]}];
   setTab('dashboard');
-} else { $('#keyInput').value=''; if(KEY)login(); }
+} else { $('#keyInput').value=''; if(KEY)login(true); }
 </script>
 <script src="i18n.js"></script>
 </body>
