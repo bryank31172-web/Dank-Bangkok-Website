@@ -6,6 +6,21 @@
       "permanent": true
     },
     {
+      "source": "/faqs.html",
+      "destination": "/faqs",
+      "permanent": true
+    },
+    {
+      "source": "/instant-delivery.html",
+      "destination": "/instant-delivery",
+      "permanent": true
+    },
+    {
+      "source": "/food.html",
+      "destination": "/food",
+      "permanent": true
+    },
+    {
       "source": "/staffportal.html",
       "destination": "/staffportal",
       "permanent": true
@@ -81,6 +96,18 @@
       "destination": "/homepage-v2.html"
     },
     {
+      "source": "/faqs",
+      "destination": "/faqs.html"
+    },
+    {
+      "source": "/instant-delivery",
+      "destination": "/instant-delivery.html"
+    },
+    {
+      "source": "/food",
+      "destination": "/food.html"
+    },
+    {
       "source": "/shop",
       "destination": "/api/index-page"
     },
@@ -148,6 +175,24 @@
   "headers": [
     {
       "source": "/homepage-v2",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, nofollow"
+        }
+      ]
+    },
+    {
+      "source": "/faqs",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, nofollow"
+        }
+      ]
+    },
+    {
+      "source": "/instant-delivery",
       "headers": [
         {
           "key": "X-Robots-Tag",
