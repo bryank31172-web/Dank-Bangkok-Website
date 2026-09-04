@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" href="/favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded&display=swap" rel="stylesheet">
+<title>Contact Us — DANK Bangkok</title>
+<meta name="description" content="Contact and visit DANK Bangkok at our Phatthanakan and Sathorn stores. View maps, addresses and tap to call.">
+<style>
+:root{--green:#007A4D;--green-dark:#005e3b;--ink:#0f1720;--muted:#627067;--line:#dfe8e2;--soft:#f3f7f4;--wrap:min(1180px,calc(100% - 40px))}
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;color:var(--ink);font-family:Inter,Arial,sans-serif;background:#fff}a{color:inherit}.wrap{width:var(--wrap);margin:auto}
+.sub-header{position:sticky;top:0;z-index:20;background:rgba(255,255,255,.96);border-bottom:1px solid var(--line);backdrop-filter:blur(10px)}
+.sub-nav{display:flex;align-items:center;justify-content:space-between;min-height:72px}.brand{display:flex;align-items:center;gap:10px;color:var(--ink);font-size:20px;font-weight:900;text-decoration:none}.brand i{display:grid;place-items:center;width:38px;height:38px;border-radius:11px;background:var(--green);color:#fff;font-style:normal}.back{display:flex;align-items:center;gap:7px;color:var(--green);font-size:13px;font-weight:800;text-decoration:none}
+.page-hero{padding:68px 0 48px;background:linear-gradient(135deg,#eff9f3,#dff2e8)}.page-hero small{color:var(--green);font-weight:900;letter-spacing:.1em;text-transform:uppercase}.page-hero h1{max-width:760px;margin:10px 0 14px;font-size:clamp(40px,5vw,68px);letter-spacing:-.055em;line-height:1}.page-hero p{max-width:680px;margin:0;color:var(--muted);line-height:1.65}
+.stores{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px;padding:42px 0 10px}.store{overflow:hidden;border:1px solid var(--line);border-radius:22px;background:#fff;box-shadow:0 16px 44px rgba(16,44,29,.08)}.store-map{position:relative;aspect-ratio:16/9;background:var(--soft)}.store-map iframe{position:absolute;inset:0;width:100%;height:100%;border:0}.store-body{padding:25px}.store-label{display:inline-flex;align-items:center;gap:7px;margin-bottom:12px;color:var(--green);font-size:12px;font-weight:900;letter-spacing:.08em;text-transform:uppercase}.store-label:before{content:"";width:8px;height:8px;border-radius:50%;background:var(--green)}.store h2{margin:0 0 20px;font-size:clamp(26px,3vw,34px);letter-spacing:-.04em}.details{display:grid;gap:15px;margin-bottom:24px}.detail{display:grid;grid-template-columns:34px 1fr;gap:12px;align-items:start}.detail-icon{display:grid;place-items:center;width:34px;height:34px;border-radius:10px;background:#e7f4ed;color:var(--green)}.detail-icon span{font-size:20px}.detail b{display:block;margin:1px 0 4px;font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}.detail a{font-size:14px;font-weight:650;line-height:1.55;text-decoration:none}.detail a:hover{text-decoration:underline}.actions{display:grid;grid-template-columns:1fr 1fr;gap:10px}.btn{display:flex;align-items:center;justify-content:center;gap:8px;min-height:48px;border:1px solid var(--green);border-radius:24px;color:var(--green);font-size:14px;font-weight:800;text-decoration:none;transition:.2s ease}.btn.primary{background:var(--green);color:#fff}.btn:hover{transform:translateY(-1px);box-shadow:0 8px 20px rgba(0,122,77,.18)}.btn.primary:hover{background:var(--green-dark)}
+.contact-note{display:flex;align-items:center;justify-content:space-between;gap:24px;margin:34px auto 0;padding:26px 30px;border-radius:18px;background:var(--ink);color:#fff}.contact-note h2{margin:0 0 5px;font-size:22px}.contact-note p{margin:0;color:#cdd6d1;font-size:14px}.contact-note .btn{flex:none;border-color:#fff;color:#fff;padding:0 22px}
+.page-footer{margin-top:60px;border-top:1px solid var(--line);padding:26px 0;color:var(--muted);font-size:12px}.footer-line{display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap}.footer-line a{color:var(--green)}
+@media(max-width:800px){.stores{grid-template-columns:1fr}.contact-note{align-items:flex-start;flex-direction:column}.store-map{aspect-ratio:16/8}}
+@media(max-width:650px){:root{--wrap:calc(100% - 28px)}.sub-nav{min-height:62px}.page-hero{padding:46px 0 34px}.stores{padding-top:24px;gap:18px}.store{border-radius:17px}.store-map{aspect-ratio:4/3}.store-body{padding:20px}.actions{grid-template-columns:1fr}.contact-note{padding:22px}.back span:last-child{display:none}}
+</style>
+</head>
+<body>
+<header class="sub-header"><div class="wrap sub-nav"><a class="brand" href="/homepage-v2"><i>D</i>DANK BKK</a><a class="back" href="/homepage-v2"><span class="material-symbols-rounded">arrow_back</span><span>Homepage</span></a></div></header>
+<main>
+<section class="page-hero"><div class="wrap"><small>Contact us</small><h1>Visit DANK Bangkok</h1><p>Find your nearest DANK store, call the team, or open turn-by-turn directions. Both locations are shown on Google Maps below.</p></div></section>
+<section class="wrap stores" aria-label="DANK Bangkok stores">
+<article class="store">
+<div class="store-map"><iframe title="Google Map for DANK Phatthanakan" src="https://www.google.com/maps?q=223%20Phatthanakan%20Rd%2C%20Suan%20Luang%2C%20Bangkok%2010250%2C%20Thailand&amp;output=embed" loading="lazy" referrerpolicy="no-referrer-when-downgrade" allowfullscreen></iframe></div>
+<div class="store-body"><div class="store-label">DANK Bangkok</div><h2>Phatthanakan</h2><div class="details">
+<div class="detail"><div class="detail-icon"><span class="material-symbols-rounded">location_on</span></div><div><b>Address</b><a href="https://www.google.com/maps/dir/?api=1&amp;destination=223%20Phatthanakan%20Rd%2C%20Suan%20Luang%2C%20Bangkok%2010250%2C%20Thailand" target="_blank" rel="noopener">223 Phatthanakan Rd, Suan Luang, Bangkok 10250, Thailand</a></div></div>
+<div class="detail"><div class="detail-icon"><span class="material-symbols-rounded">call</span></div><div><b>Phone</b><a href="tel:+66841620610">084 162 0610</a></div></div>
+</div><div class="actions"><a class="btn primary" href="tel:+66841620610"><span class="material-symbols-rounded">call</span>Call store</a><a class="btn" href="https://www.google.com/maps/dir/?api=1&amp;destination=223%20Phatthanakan%20Rd%2C%20Suan%20Luang%2C%20Bangkok%2010250%2C%20Thailand" target="_blank" rel="noopener"><span class="material-symbols-rounded">directions</span>Directions</a></div></div>
+</article>
+<article class="store">
+<div class="store-map"><iframe title="Google Map for DANK Sathorn" src="https://www.google.com/maps?q=76%2F10%20Nang%20Linchi%20Rd%2C%20Thung%20Maha%20Mek%2C%20Sathon%2C%20Bangkok%2010120%2C%20Thailand&amp;output=embed" loading="lazy" referrerpolicy="no-referrer-when-downgrade" allowfullscreen></iframe></div>
+<div class="store-body"><div class="store-label">DANK Bangkok</div><h2>Sathorn</h2><div class="details">
+<div class="detail"><div class="detail-icon"><span class="material-symbols-rounded">location_on</span></div><div><b>Address</b><a href="https://www.google.com/maps/dir/?api=1&amp;destination=76%2F10%20Nang%20Linchi%20Rd%2C%20Thung%20Maha%20Mek%2C%20Sathon%2C%20Bangkok%2010120%2C%20Thailand" target="_blank" rel="noopener">76/10 Nang Linchi Rd, Thung Maha Mek, Sathon, Bangkok 10120, Thailand</a></div></div>
+<div class="detail"><div class="detail-icon"><span class="material-symbols-rounded">call</span></div><div><b>Phone</b><a href="tel:+66942240702">094 224 0702</a></div></div>
+</div><div class="actions"><a class="btn primary" href="tel:+66942240702"><span class="material-symbols-rounded">call</span>Call store</a><a class="btn" href="https://www.google.com/maps/dir/?api=1&amp;destination=76%2F10%20Nang%20Linchi%20Rd%2C%20Thung%20Maha%20Mek%2C%20Sathon%2C%20Bangkok%2010120%2C%20Thailand" target="_blank" rel="noopener"><span class="material-symbols-rounded">directions</span>Directions</a></div></div>
+</article>
+</section>
+<aside class="wrap contact-note"><div><h2>Ready to shop?</h2><p>Browse current products online and place your order for Bangkok delivery.</p></div><a class="btn" href="/shop">Shop now <span class="material-symbols-rounded">arrow_forward</span></a></aside>
+</main>
+<footer class="page-footer"><div class="wrap footer-line"><span>© <span id="year"></span> DANK BKK</span><span>Adults 20+ only · Please use responsibly</span></div></footer>
+<script>document.getElementById("year").textContent=new Date().getFullYear()</script>
+</body>
+</html>
