@@ -119,7 +119,15 @@ function renderCategories(){
  var root=document.getElementById("categoryRail");
  categoryImagePools={};
  root.innerHTML=categoryDefs.map(function(category){
-  var seen={},pool=(products.concat(categoryImageProducts)).filter(function(item){
+  var seen={},categoryProducts=products.concat(categoryImageProducts);
+  if(category.key==="Flowers"){
+   categoryProducts=categoryProducts.slice().sort(function(a,b){
+    var aPreferred=String(a.id||"").toLowerCase()==="zkittles-top"||String(a.name||"").toLowerCase()==="zkittles";
+    var bPreferred=String(b.id||"").toLowerCase()==="zkittles-top"||String(b.name||"").toLowerCase()==="zkittles";
+    return Number(bPreferred)-Number(aPreferred);
+   });
+  }
+  var pool=categoryProducts.filter(function(item){
    var image=imageOf(item);
    if(groupOf(item)!==category.key||!image||seen[image])return false;
    seen[image]=true;return true;
