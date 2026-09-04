@@ -447,7 +447,13 @@ export async function fillImages(data) {
   const rollKeys = m.keys.filter((k) => ROLLED.test(k));
   return data.map((p) => {
     if (!p || typeof p !== "object") return p;
-    if (p.image && String(p.image).trim()) return p;
+    /* The POS previously sent our own generic fallback path as though it were
+       a product photo. Treat those four fallback files as "missing" so the
+       exact byName/keyword mapping below can restore the SKU's real photo.
+       Real POS/StoreHub/CDN images still win and are never overwritten. */
+    const suppliedImage = String(p.image || "").trim();
+    const isGeneratedFallback = /(?:^|\\/)assets\\/products\\/generated-fallbacks\\/(?:flower|retail|food-drink|pre-roll)\\.webp(?:[?#].*)?$/i.test(suppliedImage);
+    if (suppliedImage && !isGeneratedFallback) return p;
     /* 1. an exact photo of this very product */
     const flat = flatName(p.name);
     const words = wordsOf(p.name);
