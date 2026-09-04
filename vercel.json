@@ -1,309 +1,62 @@
 {
   "redirects": [
-    {
-      "source": "/homepage-v2.html",
-      "destination": "/homepage-v2",
-      "permanent": true
-    },
-    {
-      "source": "/faqs.html",
-      "destination": "/faqs",
-      "permanent": true
-    },
-    {
-      "source": "/instant-delivery.html",
-      "destination": "/instant-delivery",
-      "permanent": true
-    },
-    {
-      "source": "/food.html",
-      "destination": "/food",
-      "permanent": true
-    },
-    {
-      "source": "/staffportal.html",
-      "destination": "/staffportal",
-      "permanent": true
-    },
-    {
-      "source": "/staff.html",
-      "destination": "/staffportal",
-      "permanent": true
-    },
-    {
-      "source": "/",
-      "destination": "/shop",
-      "permanent": false
-    },
-    {
-      "source": "/checkout.html",
-      "destination": "/checkout",
-      "permanent": true
-    },
-    {
-      "source": "/products",
-      "destination": "/products/",
-      "permanent": true
-    },
-    {
-      "source": "/products/:category",
-      "destination": "/products/:category/",
-      "permanent": true
-    },
-    {
-      "source": "/products/:category/:product",
-      "destination": "/products/:category/:product/",
-      "permanent": true
-    },
-    {
-      "source": "/locations",
-      "destination": "/locations/",
-      "permanent": true
-    },
-    {
-      "source": "/locations/:location",
-      "destination": "/locations/:location/",
-      "permanent": true
-    },
-    {
-      "source": "/about",
-      "destination": "/about/",
-      "permanent": true
-    },
-    {
-      "source": "/faq",
-      "destination": "/faq/",
-      "permanent": true
-    },
-    {
-      "source": "/contact",
-      "destination": "/contact/",
-      "permanent": true
-    },
-    {
-      "source": "/blog",
-      "destination": "/blog/",
-      "permanent": true
-    }
+    {"source":"/homepage-v2.html","destination":"/homepage-v2","permanent":true},
+    {"source":"/faqs.html","destination":"/faqs","permanent":true},
+    {"source":"/instant-delivery.html","destination":"/instant-delivery","permanent":true},
+    {"source":"/food.html","destination":"/food","permanent":true},
+    {"source":"/contact.html","destination":"/contact/","permanent":true},
+    {"source":"/staffportal.html","destination":"/staffportal","permanent":true},
+    {"source":"/staff.html","destination":"/staffportal","permanent":true},
+    {"source":"/","destination":"/shop","permanent":false},
+    {"source":"/checkout.html","destination":"/checkout","permanent":true},
+    {"source":"/products","destination":"/products/","permanent":true},
+    {"source":"/products/:category","destination":"/products/:category/","permanent":true},
+    {"source":"/products/:category/:product","destination":"/products/:category/:product/","permanent":true},
+    {"source":"/locations","destination":"/locations/","permanent":true},
+    {"source":"/locations/:location","destination":"/locations/:location/","permanent":true},
+    {"source":"/about","destination":"/about/","permanent":true},
+    {"source":"/faq","destination":"/faq/","permanent":true},
+    {"source":"/contact","destination":"/contact/","permanent":true},
+    {"source":"/blog","destination":"/blog/","permanent":true}
   ],
   "rewrites": [
-    {
-      "source": "/staffportal",
-      "destination": "/staffportal.html"
-    },
-    {
-      "source": "/homepage-v2",
-      "destination": "/homepage-v2.html"
-    },
-    {
-      "source": "/faqs",
-      "destination": "/faqs.html"
-    },
-    {
-      "source": "/instant-delivery",
-      "destination": "/instant-delivery.html"
-    },
-    {
-      "source": "/food",
-      "destination": "/food.html"
-    },
-    {
-      "source": "/shop",
-      "destination": "/api/index-page"
-    },
-    {
-      "source": "/checkout",
-      "destination": "/api/checkout-page"
-    },
-    {
-      "source": "/products/",
-      "destination": "/api/seo?view=products"
-    },
-    {
-      "source": "/products/:category/",
-      "destination": "/api/seo?view=category&category=:category"
-    },
-    {
-      "source": "/products/:category/:product/",
-      "destination": "/api/seo?view=product&category=:category&product=:product"
-    },
-    {
-      "source": "/locations/",
-      "destination": "/api/seo?view=locations"
-    },
-    {
-      "source": "/locations/:location/",
-      "destination": "/api/seo?view=location&location=:location"
-    },
-    {
-      "source": "/about/",
-      "destination": "/api/seo?view=about"
-    },
-    {
-      "source": "/faq/",
-      "destination": "/api/seo?view=faq"
-    },
-    {
-      "source": "/contact/",
-      "destination": "/api/seo?view=contact"
-    },
-    {
-      "source": "/blog/",
-      "destination": "/api/seo?view=blog"
-    },
-    {
-      "source": "/sitemap-pages.xml",
-      "destination": "/api/seo?sitemap=pages"
-    },
-    {
-      "source": "/sitemap-products.xml",
-      "destination": "/api/seo?sitemap=products"
-    },
-    {
-      "source": "/sitemap-product-categories.xml",
-      "destination": "/api/seo?sitemap=product-categories"
-    },
-    {
-      "source": "/sitemap-blog.xml",
-      "destination": "/api/seo?sitemap=blog"
-    },
-    {
-      "source": "/sitemap-locations.xml",
-      "destination": "/api/seo?sitemap=locations"
-    }
+    {"source":"/staffportal","destination":"/staffportal.html"},
+    {"source":"/homepage-v2","destination":"/homepage-v2.html"},
+    {"source":"/faqs","destination":"/faqs.html"},
+    {"source":"/instant-delivery","destination":"/instant-delivery.html"},
+    {"source":"/food","destination":"/food.html"},
+    {"source":"/contact/","destination":"/contact.html"},
+    {"source":"/shop","destination":"/api/index-page"},
+    {"source":"/checkout","destination":"/api/checkout-page"},
+    {"source":"/products/","destination":"/api/seo?view=products"},
+    {"source":"/products/:category/","destination":"/api/seo?view=category&category=:category"},
+    {"source":"/products/:category/:product/","destination":"/api/seo?view=product&category=:category&product=:product"},
+    {"source":"/locations/","destination":"/api/seo?view=locations"},
+    {"source":"/locations/:location/","destination":"/api/seo?view=location&location=:location"},
+    {"source":"/about/","destination":"/api/seo?view=about"},
+    {"source":"/faq/","destination":"/api/seo?view=faq"},
+    {"source":"/blog/","destination":"/api/seo?view=blog"},
+    {"source":"/sitemap-pages.xml","destination":"/api/seo?sitemap=pages"},
+    {"source":"/sitemap-products.xml","destination":"/api/seo?sitemap=products"},
+    {"source":"/sitemap-product-categories.xml","destination":"/api/seo?sitemap=product-categories"},
+    {"source":"/sitemap-blog.xml","destination":"/api/seo?sitemap=blog"},
+    {"source":"/sitemap-locations.xml","destination":"/api/seo?sitemap=locations"}
   ],
   "headers": [
-    {
-      "source": "/homepage-v2",
-      "headers": [
-        {
-          "key": "X-Robots-Tag",
-          "value": "noindex, nofollow"
-        }
-      ]
-    },
-    {
-      "source": "/faqs",
-      "headers": [
-        {
-          "key": "X-Robots-Tag",
-          "value": "noindex, nofollow"
-        }
-      ]
-    },
-    {
-      "source": "/instant-delivery",
-      "headers": [
-        {
-          "key": "X-Robots-Tag",
-          "value": "noindex, nofollow"
-        }
-      ]
-    },
-    {
-      "source": "/staffportal.html",
-      "headers": [
-        {
-          "key": "X-Robots-Tag",
-          "value": "noindex, nofollow"
-        }
-      ]
-    },
-    {
-      "source": "/staffportal",
-      "headers": [
-        {
-          "key": "X-Robots-Tag",
-          "value": "noindex, nofollow"
-        }
-      ]
-    },
-    {
-      "source": "/customer-display.html",
-      "headers": [
-        {
-          "key": "X-Robots-Tag",
-          "value": "noindex, nofollow"
-        }
-      ]
-    },
-    {
-      "source": "/pos.html",
-      "headers": [
-        {
-          "key": "X-Robots-Tag",
-          "value": "noindex, nofollow"
-        }
-      ]
-    },
-    {
-      "source": "/labels.html",
-      "headers": [
-        {
-          "key": "X-Robots-Tag",
-          "value": "noindex, nofollow"
-        }
-      ]
-    },
-    {
-      "source": "/table-qr.html",
-      "headers": [
-        {
-          "key": "X-Robots-Tag",
-          "value": "noindex, nofollow"
-        }
-      ]
-    },
-    {
-      "source": "/sku-margins.html",
-      "headers": [
-        {
-          "key": "X-Robots-Tag",
-          "value": "noindex, nofollow"
-        }
-      ]
-    },
-    {
-      "source": "/photo-audit.html",
-      "headers": [
-        {
-          "key": "X-Robots-Tag",
-          "value": "noindex, nofollow"
-        }
-      ]
-    },
-    {
-      "source": "/status.html",
-      "headers": [
-        {
-          "key": "X-Robots-Tag",
-          "value": "noindex, nofollow"
-        }
-      ]
-    },
-    {
-      "source": "/analytics.html",
-      "headers": [
-        {
-          "key": "X-Robots-Tag",
-          "value": "noindex, nofollow"
-        }
-      ]
-    },
-    {
-      "source": "/follow-qr.html",
-      "headers": [
-        {
-          "key": "X-Robots-Tag",
-          "value": "noindex, nofollow"
-        }
-      ]
-    }
+    {"source":"/homepage-v2","headers":[{"key":"X-Robots-Tag","value":"noindex, nofollow"}]},
+    {"source":"/faqs","headers":[{"key":"X-Robots-Tag","value":"noindex, nofollow"}]},
+    {"source":"/instant-delivery","headers":[{"key":"X-Robots-Tag","value":"noindex, nofollow"}]},
+    {"source":"/staffportal.html","headers":[{"key":"X-Robots-Tag","value":"noindex, nofollow"}]},
+    {"source":"/staffportal","headers":[{"key":"X-Robots-Tag","value":"noindex, nofollow"}]},
+    {"source":"/customer-display.html","headers":[{"key":"X-Robots-Tag","value":"noindex, nofollow"}]},
+    {"source":"/pos.html","headers":[{"key":"X-Robots-Tag","value":"noindex, nofollow"}]},
+    {"source":"/labels.html","headers":[{"key":"X-Robots-Tag","value":"noindex, nofollow"}]},
+    {"source":"/table-qr.html","headers":[{"key":"X-Robots-Tag","value":"noindex, nofollow"}]},
+    {"source":"/sku-margins.html","headers":[{"key":"X-Robots-Tag","value":"noindex, nofollow"}]},
+    {"source":"/photo-audit.html","headers":[{"key":"X-Robots-Tag","value":"noindex, nofollow"}]},
+    {"source":"/status.html","headers":[{"key":"X-Robots-Tag","value":"noindex, nofollow"}]},
+    {"source":"/analytics.html","headers":[{"key":"X-Robots-Tag","value":"noindex, nofollow"}]},
+    {"source":"/follow-qr.html","headers":[{"key":"X-Robots-Tag","value":"noindex, nofollow"}]}
   ],
-  "crons": [
-    {
-      "path": "/api/line-summary",
-      "schedule": "0 15 * * *"
-    }
-  ]
+  "crons":[{"path":"/api/line-summary","schedule":"0 15 * * *"}]
 }
