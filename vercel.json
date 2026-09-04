@@ -26,11 +26,6 @@
       "permanent": true
     },
     {
-      "source": "/branches.html",
-      "destination": "/branches",
-      "permanent": true
-    },
-    {
       "source": "/staffportal.html",
       "destination": "/staffportal",
       "permanent": true
@@ -120,10 +115,6 @@
     {
       "source": "/contact/",
       "destination": "/contact.html"
-    },
-    {
-      "source": "/branches",
-      "destination": "/branches.html"
     },
     {
       "source": "/shop",
