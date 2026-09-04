@@ -1,6 +1,11 @@
 {
   "redirects": [
     {
+      "source": "/homepage-v2.html",
+      "destination": "/homepage-v2",
+      "permanent": true
+    },
+    {
       "source": "/staffportal.html",
       "destination": "/staffportal",
       "permanent": true
@@ -72,6 +77,10 @@
       "destination": "/staffportal.html"
     },
     {
+      "source": "/homepage-v2",
+      "destination": "/api/index-page?version=v2"
+    },
+    {
       "source": "/shop",
       "destination": "/api/index-page"
     },
@@ -137,6 +146,15 @@
     }
   ],
   "headers": [
+    {
+      "source": "/homepage-v2",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, nofollow"
+        }
+      ]
+    },
     {
       "source": "/staffportal.html",
       "headers": [
