@@ -8,7 +8,7 @@ export const SITE_URL = "https://dankbangkok.com";
 export const LOCATIONS = [
   {
     slug: "pattanakarn",
-    name: "DANK Cannabis Club — Pattanakarn",
+    name: "DANK Cannabis Club & (open24 hrs.) Weed Dispensary",
     type: "Store",
     address: "223 Phatthanakan Rd, Bangkok 10250, Thailand",
     locality: "Bangkok",
@@ -25,13 +25,13 @@ export const LOCATIONS = [
   },
   {
     slug: "sathorn",
-    name: "DANK — Sathorn",
+    name: "DANK Cannabis Club (Sathorn Rama 3) weed dispensary & co-working space",
     type: "Store",
     address: "76/10 Nang Linchi Rd, Bangkok 10120, Thailand",
     locality: "Bangkok",
     region: "Sathorn",
     postalCode: "10120",
-    phone: "+66841620610",
+    phone: "+66942240702",
     hours: "Open daily · call 24/7",
     map: "https://maps.app.goo.gl/X2j67wBR3q4ueNEU8?g_st=ic",
   },
