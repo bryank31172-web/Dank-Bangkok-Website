@@ -41,7 +41,12 @@ export default async function handler(req,res){
       else ov.promos[code]={type:["pct","fixed","freedelivery"].includes(b.type)?b.type:"pct",value:number(b.value),min:number(b.min),desc:text(b.desc,160),active:b.active!==false&&b.active!=="false"};
     } else {
       const id=text(b.id,120), name=text(b.name,120);if(!id&&!name)return res.status(400).json({error:"product required"});
-      const picture=text(b.picture,350000),strain=text(b.strain,120),cannabisType=text(b.cannabisType||b.type,60),description=text(b.description,1000),freeDelivery=b.freeDelivery===true||b.freeDelivery==="true",discountEnabled=b.discountEnabled===true||b.discountEnabled==="true",discountType=b.discountType==="fixed"?"fixed":"percent",discountValue=Math.max(0,number(b.discountValue)),available=b.available!==false&&b.available!=="false";if(picture&&!/^(https?:\/\/|\/|data:image\/)/i.test(picture))return res.status(400).json({error:"picture must be a URL"});
+      const rawPicture=String(b.picture??"").trim();
+      if(rawPicture.length>450000)return res.status(400).json({error:"uploaded picture is too large"});
+      const uploadedPicture=/^data:image\/(?:png|jpe?g|webp|gif);base64,[A-Za-z0-9+/=\r\n]+$/i.test(rawPicture);
+      const linkedPicture=/^(?:https?:\/\/|\/(?!\/)|(?:assets|images)\/)[^"'<>]*$/i.test(rawPicture);
+      if(rawPicture&&!uploadedPicture&&!linkedPicture)return res.status(400).json({error:"choose a picture from your device or enter a valid image URL"});
+      const picture=rawPicture,strain=text(b.strain,120),cannabisType=text(b.cannabisType||b.type,60),description=text(b.description,1000),freeDelivery=b.freeDelivery===true||b.freeDelivery==="true",discountEnabled=b.discountEnabled===true||b.discountEnabled==="true",discountType=b.discountType==="fixed"?"fixed":"percent",discountValue=Math.max(0,number(b.discountValue)),available=b.available!==false&&b.available!=="false";
       if(discountEnabled&&(discountValue<=0||(discountType==="percent"&&discountValue>100)))return res.status(400).json({error:"invalid discount"});
       if(action==="create"&&number(b.price)<=0)return res.status(400).json({error:"product price required"});
       if(action==="create") ov.added.push({id:"web-"+crypto.randomUUID(),name,category:text(b.category,80)||"Other",price:Math.max(0,number(b.price)),image:picture,picture,strain,strainType:cannabisType,type:cannabisType,description,freeDelivery,discountEnabled,discountType,discountValue,available,_hidden:!available,_source:"staff"});
