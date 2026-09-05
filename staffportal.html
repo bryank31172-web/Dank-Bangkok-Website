@@ -229,7 +229,7 @@ const SAVED_STAFF_TOKEN=localStorage.getItem('dankStaffToken')||sessionStorage.g
 let KEY=SAVED_STAFF_TOKEN||localStorage.getItem('dankStaffKey')||'';
 let PROFILE=null, PERMS=[];
 let cur=null, curSeq=0, pollT=null, listT=null, ordersT=null, presenceT=null, contactsT=null, lastSeen={};   // threadId -> last seq seen
-let TAB='dashboard', ORDERS=[], knownOrders=new Set(), firstOrderLoad=true, LIVE=false;
+let TAB='dashboard', ORDERS=[], knownOrders=new Set(), firstOrderLoad=true, dashboardAlertOrderId='', LIVE=false;
 let alertEnabled=localStorage.getItem('dankOrderAlerts')==='1', audioCtx=null, orderPopT=null;
 const BASE_TITLE='DANK BKK — Staff Portal';
 const $=s=>document.querySelector(s);
@@ -565,7 +565,7 @@ async function resetStaff(id){if(!confirm('Generate a new key for this staff mem
 const dashMoney=v=>'฿'+(Number(v)||0).toLocaleString('en-US',{maximumFractionDigits:0});
 function renderDashboard(){
   const el=$('#list'), pending=ORDERS.filter(o=>o.status!=='done');
-  const newOrders=pending.slice(0,5).map((o,index)=>`<button type="button" class="new-order-line${index===0?' new-order-alert':''}" data-act="recent-order" data-id="${esc(o.orderId||'')}"><div class="order-copy"><b>${esc(o.orderId||'New order')}</b><span>${esc(o.customer?.name||'Customer')} · ${esc(o.fulfilment||'order')}</span></div><strong>${esc(dashMoney(o.total??o.subtotal))}</strong><i class="ri-arrow-right-s-line" aria-hidden="true"></i></button>`).join('');
+  const newOrders=pending.slice(0,5).map(o=>`<button type="button" class="new-order-line${String(o.orderId||'')===String(dashboardAlertOrderId)?' new-order-alert':''}" data-act="recent-order" data-id="${esc(o.orderId||'')}"><div class="order-copy"><b>${esc(o.orderId||'New order')}</b><span>${esc(o.customer?.name||'Customer')} · ${esc(o.fulfilment||'order')}</span></div><strong>${esc(dashMoney(o.total??o.subtotal))}</strong><i class="ri-arrow-right-s-line" aria-hidden="true"></i></button>`).join('');
   el.innerHTML=`<div class="dashboard-grid">
     <section class="dash-card full new-orders-card"><div class="dash-head"><h3 class="dash-icon-title"><span class="dash-bell"><i class="ri-notification-3-line"></i></span>New Orders</h3><button class="ghost" data-act="dash-orders">View all</button></div>${newOrders||'<div class="empty-dash">No new orders right now.</div>'}<div class="dash-muted">Refreshes automatically every 3 minutes</div></section>
     <section class="dash-card full"><div class="dash-head"><h3>Announcement</h3><button class="ghost" data-act="dash-announcement">View all</button></div><div class="portal-grid"><article class="portal-card"><h3>Welcome to the Staff Portal</h3><p>New orders and important staff updates are available from the dashboard.</p></article><article class="portal-card"><h3>Keep order alerts enabled</h3><p>Allow browser notifications and keep your device volume on so new website orders are not missed.</p></article></div></section>
@@ -957,8 +957,9 @@ async function refreshChats(){ try{ const r=await authGet(`${API}?list=1`); if(r
 async function pollOrders(){
   try{ const r=await authGet('/api/orders'); if(!r.ok) return;
     ORDERS=(await r.json()).orders||[];
+    if(dashboardAlertOrderId&&!ORDERS.some(o=>String(o.orderId)===String(dashboardAlertOrderId)&&o.status!=='done'))dashboardAlertOrderId='';
     const fresh=ORDERS.filter(o=>!knownOrders.has(o.orderId)&&o.status!=='done');
-    if(!firstOrderLoad && fresh.length){ showOrderAlert(fresh); fresh.forEach(o=>knownOrders.add(o.orderId));
+    if(!firstOrderLoad && fresh.length){ dashboardAlertOrderId=String(fresh[0].orderId||'');showOrderAlert(fresh); fresh.forEach(o=>knownOrders.add(o.orderId));
       const c=$('#ordCnt'); if(TAB!=='orders'){ c.textContent=fresh.length; c.style.display='flex'; } }
     if(firstOrderLoad){ knownOrders=new Set(ORDERS.map(o=>o.orderId)); firstOrderLoad=false;
       const n=ORDERS.filter(o=>o.status!=='done').length; if(n&&TAB!=='orders'){ $('#ordCnt').textContent=n; $('#ordCnt').style.display='flex'; } }
@@ -1111,6 +1112,7 @@ async function completeRecentOrder(id,ov){
     const json=await response.json().catch(()=>({}));
     if(!response.ok)throw new Error(json.error||'Could not complete order');
     const completed=ORDERS.find(order=>String(order.orderId)===String(id));
+    if(String(dashboardAlertOrderId)===String(id))dashboardAlertOrderId='';
     if(completed){
       completed.status='done';
       completed.completedBy=json.completedBy||completed.completedBy||{name:'Staff',at:Date.now()};
