@@ -225,7 +225,8 @@ body.drawer-open .mobile-backdrop{opacity:1;pointer-events:auto}
 </main>
 <script>
 const API='/api/thread';
-let KEY=localStorage.getItem('dankStaffToken')||sessionStorage.getItem('dankStaffToken')||localStorage.getItem('dankStaffKey')||'';
+const SAVED_STAFF_TOKEN=localStorage.getItem('dankStaffToken')||sessionStorage.getItem('dankStaffToken')||'';
+let KEY=SAVED_STAFF_TOKEN||localStorage.getItem('dankStaffKey')||'';
 let PROFILE=null, PERMS=[];
 let cur=null, curSeq=0, pollT=null, listT=null, ordersT=null, presenceT=null, contactsT=null, lastSeen={};   // threadId -> last seq seen
 let TAB='dashboard', ORDERS=[], knownOrders=new Set(), firstOrderLoad=true, LIVE=false;
@@ -341,8 +342,9 @@ async function login(silent=false){
   input.value='';
   if(!silent)$('#loginErr').textContent='';
   if(!k){if(!silent)$('#loginErr').textContent="doesn't have key or incorrect password.";return;}
+  const restoringSession=silent&&Boolean(SAVED_STAFF_TOKEN)&&k===SAVED_STAFF_TOKEN;
   let r;
-  try{ r=await fetch('/api/staff-auth',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'login',key:k})}); }
+  try{ r=await fetch('/api/staff-auth',{method:'POST',headers:{'Content-Type':'application/json',...(restoringSession?{'X-Staff-Key':k,'Authorization':'Bearer '+k}:{})},body:JSON.stringify(restoringSession?{action:'verify'}:{action:'login',key:k})}); }
   catch(e){ if(!silent)$('#loginErr').textContent='Network error — check your connection'; return; }
   const auth=await r.json().catch(()=>({}));
   if(!r.ok){
@@ -350,7 +352,7 @@ async function login(silent=false){
     if(k===KEY){KEY='';localStorage.removeItem('dankStaffToken');sessionStorage.removeItem('dankStaffToken');localStorage.removeItem('dankStaffKey')}
     return;
   }
-  KEY=auth.token; PROFILE=auth.profile; PERMS=auth.permissions||[];
+  KEY=auth.token||k; PROFILE=auth.profile; PERMS=auth.permissions||[];
   const savePassword=$('#savePassword')?.checked;
   if(savePassword){localStorage.setItem('dankStaffToken',KEY);sessionStorage.removeItem('dankStaffToken')}
   else{sessionStorage.setItem('dankStaffToken',KEY);localStorage.removeItem('dankStaffToken')}
