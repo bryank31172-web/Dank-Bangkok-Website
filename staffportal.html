@@ -421,7 +421,7 @@ async function loadAnnouncements(){
     const composer=editor?`<div class="portal-card"><h3>Post announcement</h3><div class="setting-row"><input id="annTitle" placeholder="Title" style="padding:10px;border:1px solid var(--line2);border-radius:9px"><input id="annMessage" placeholder="Message" style="padding:10px;border:1px solid var(--line2);border-radius:9px;flex:1"><button class="ghost" data-act="ann-save">Post</button></div></div>`:'';
     const rows=(j.announcements||[]).map(a=>`<div class="portal-card"><div class="setting-row"><div><b>${esc(a.title)}</b><span>${esc(a.message)}</span></div>${editor?`<button class="ghost danger" data-act="ann-delete" data-id="${esc(a.id)}">Delete</button>`:''}</div></div>`).join('')||'<div class="portal-card"><p>No announcements yet.</p></div>';
     el.innerHTML='<section class="portal-panel">'+composer+rows+'</section>';
-  }catch(e){el.innerHTML='<section class="portal-panel product-workspace">'+panelHead+'<div class="portal-card">'+esc(e.message)+'</div></section>'}
+  }catch(e){el.innerHTML='<section class="portal-panel"><div class="portal-card">'+esc(e.message)+'</div></section>'}
 }
 async function saveAnnouncement(){try{await toolPost('announcements',{action:'save',title:$('#annTitle').value,message:$('#annMessage').value});loadAnnouncements()}catch(e){alert(e.message)}}
 async function deleteAnnouncement(id){if(confirm('Delete this announcement?')){try{await toolPost('announcements',{action:'delete',id});loadAnnouncements()}catch(e){alert(e.message)}}}
