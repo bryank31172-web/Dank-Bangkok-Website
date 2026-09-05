@@ -965,60 +965,55 @@ async function pollOrders(){
     if(TAB==='orders') renderOrders(); else if(TAB==='dashboard') renderDashboard();
   }catch(e){}
 }
+let ORDER_TABLE_QUERY='',ORDER_TABLE_STATUS='All',ORDER_TABLE_SORT='newest';
+function orderCategories(order){
+  const categories=(Array.isArray(order?.items)?order.items:[]).map(item=>String(item?.category||'').trim()).filter(Boolean);
+  return [...new Set(categories)];
+}
+function orderTableRows(){
+  const query=ORDER_TABLE_QUERY.trim().toLowerCase();
+  let rows=ORDERS.filter(order=>{
+    const completed=order.status==='done';
+    if(ORDER_TABLE_STATUS==='New'&&completed)return false;
+    if(ORDER_TABLE_STATUS==='Completed'&&!completed)return false;
+    const haystack=[order.orderId,order.customer?.name,order.customer?.phone,order.fulfilment,order.payment,...orderCategories(order)].join(' ').toLowerCase();
+    return !query||haystack.includes(query);
+  });
+  return rows.slice().sort((a,b)=>{
+    if(ORDER_TABLE_SORT==='oldest')return Number(a.at||0)-Number(b.at||0);
+    if(ORDER_TABLE_SORT==='total-desc')return Number(b.total??b.subtotal??0)-Number(a.total??a.subtotal??0);
+    return Number(b.at||0)-Number(a.at||0);
+  });
+}
 function renderOrders(){
-  const el=$('#list');
-  if(!ORDERS.length){ el.innerHTML='<div style="padding:30px;color:var(--muted2);text-align:center;font-size:13.5px">No orders yet.<br>Online orders appear here instantly.</div>'; return; }
-  /* Every field below is customer-supplied: POST /api/order takes no key and
-     spreads the whole posted body over the stored record, so even orderId and
-     status are whatever the sender chose. The card is still built with a
-     template literal because it is mostly layout, but that means every single
-     hole has to go through esc() — including the numbers, because
-     (5).toLocaleString() formats a number while ("<img …>").toLocaleString()
-     just returns the string it was given. */
-  const finite=(v,fallback=0)=>{ const n=Number(v); return Number.isFinite(n)?n:fallback; };
-  const money=v=>'฿'+finite(v).toLocaleString('en-US',{maximumFractionDigits:2});
-  const grams=i=>{
-    const saved=finite(i.totalGrams,NaN); if(Number.isFinite(saved)&&saved>0) return saved;
-    const per=finite(i.grams,NaN); if(Number.isFinite(per)&&per>0) return per*Math.max(1,finite(i.qty,1));
-    const m=String(i.option||'').match(/(\d+(?:\.\d+)?)\s*g\b/i);
-    return m?finite(m[1])*Math.max(1,finite(i.qty,1)):null;
-  };
-  el.innerHTML=ORDERS.map(o=>{
-    const items=(Array.isArray(o.items)?o.items:[]).map(i=>{
-      const qty=Math.max(1,finite(i.qty,1));
-      const unit=finite(i.unitPrice??i.price,0);
-      const line=finite(i.lineTotal,unit*qty);
-      const effects=(Array.isArray(i.effects)?i.effects:[]).slice(0,4).map(x=>`<span class="effect-chip">${esc(x)}</span>`).join('');
-      const g=grams(i),actual=finite(i.actualGrams,NaN);
-      return `<tr>
-        <td><div class="order-product">${esc(i.name||'Unnamed item')}</div><span class="order-option">${esc(i.option||i.category||'')}</span></td>
-        <td><div class="effect-list">${effects||'<span style="color:var(--muted2)">—</span>'}</div></td>
-        <td class="num">${g==null?'—':esc(g.toLocaleString('en-US',{maximumFractionDigits:2})+' g')}${Number.isFinite(actual)&&actual>0?`<span class="order-option">Actual: ${esc(actual.toFixed(2))} g</span>`:''}</td>
-        <td class="num">${esc(qty)}</td><td class="num">${esc(money(unit))}</td><td class="num"><b>${esc(money(line))}</b></td>
-      </tr>`;
-    }).join('');
-    /* A table order has no address and no pickup branch — the table IS the
-       destination, and it is the one thing a runner has to read at a glance,
-       so it gets the gold treatment instead of being squeezed into "🏬  ". */
-    const deliveryAddress=[o.delivery?.zone,o.delivery?.address].map(v=>String(v||'').trim()).filter((v,i,a)=>v&&a.indexOf(v)===i).join(', ');
-    const mapUrl=deliveryAddress?'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(deliveryAddress):'';
-    const where=o.fulfilment==='table'
-      ?`<b style="color:var(--gold);font-size:14px">🪑 ${esc(o.tableLabel||o.table||'')}</b> — in-house, bring it over`
-      :o.fulfilment==='delivery'
-      ?`🚚 ${esc(deliveryAddress||'Address not supplied')}${o.delivery?.time?`<br>🕐 Requested: ${esc(o.delivery.time)}`:''}${mapUrl?`<br><a class="map-link" href="${esc(mapUrl)}" target="_blank" rel="noopener noreferrer">📍 Open in Google Maps</a>`:''}`
-      :`🏬 ${esc(o.pickup?.branch||'')} ${o.pickup?.time?('· '+esc(o.pickup.time)):''}`;
-    const id=esc(o.orderId||'');
-    return `<div class="ocard ${o.status==='done'?'done':''}">
-      <div class="oh"><span class="oid">${id}</span><span class="badge ${o.status==='done'?'closed':'open'}">${esc(o.status==='done'?'Completed':(o.status||'New'))}</span><span class="ot">${o.at?ago(o.at):''}</span><button type="button" class="undo-btn order-details-btn" data-act="recent-order" data-id="${id}"><i class="ri-eye-line"></i> View details</button></div>
-      <div class="order-items-wrap"><table class="order-items-table"><thead><tr><th>Strain / item</th><th>Effects</th><th class="num">Grams</th><th class="num">Qty</th><th class="num">Unit</th><th class="num">Line total</th></tr></thead><tbody>${items||'<tr><td colspan="6" style="color:var(--muted2)">No item details</td></tr>'}</tbody></table></div>
-      <div class="order-summary"><div><span>Subtotal</span><b>${esc(money(o.subtotal))}</b></div><div><span>Delivery fee</span><b>${esc(money(o.deliveryFee))}</b></div><div><span>Discount</span><b>−${esc(money(o.discount))}</b></div><div><span>Order total</span><b style="color:var(--green2)">${esc(money(o.total??o.subtotal))}</b></div></div>
-      <div class="tot">${esc(o.payment||'Payment not set')}${o.member?' ⭐':''}${o.payStatus==='paid'?' <span style="color:var(--green2)">· PAID ✅</span>':(['PromptPay','Card'].includes(o.payment)?' <span style="color:var(--gold)">· unpaid</span>':'')}</div>
-      <div class="meta">${where}<br>👤 ${esc(o.customer?.name||'-')} · <a style="color:var(--green2)" href="tel:${esc(o.customer?.phone||'')}">${esc(o.customer?.phone||'')}</a>${o.notes?'<br>📝 '+esc(o.notes):''}</div>
-      <div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap">${o.slipUploaded?`<button class="undo-btn" data-act="slip" data-id="${id}">🧾 View slip</button>`:''}<button class="undo-btn" data-act="upload" data-id="${id}">📎 Upload proof</button></div>
-      <div class="orow">${o.status==='done'
-        ?`<button class="undo-btn" data-act="order" data-id="${id}" data-status="new">↩ Reopen</button>`
-        :`<button class="done-btn" data-act="order" data-id="${id}" data-status="done">✓ Mark done</button>`}</div>
-    </div>`;}).join('');
+  const el=$('#list'),rows=orderTableRows(),sortLabels={newest:'Newest',oldest:'Oldest','total-desc':'Highest total'};
+  const body=rows.map(order=>{
+    const id=String(order.orderId||''),completed=order.status==='done';
+    const categories=orderCategories(order);
+    const category=categories.length?categories.join(', '):'Other';
+    const total=Number(order.total??order.subtotal??0)||0;
+    const customer=String(order.customer?.name||'Customer');
+    return '<tr>'+
+      '<td><div class="product-table-name"><strong>'+esc(id||'New order')+'</strong></div></td>'+
+      '<td><strong>'+esc(customer)+'</strong><span class="order-option">'+esc(order.customer?.phone||'No phone')+'</span></td>'+
+      '<td>'+esc(category)+'</td>'+
+      '<td>'+esc(order.fulfilment||'Order')+'</td>'+
+      '<td><span class="product-status '+(completed?'in':'out')+'">'+(completed?'Completed':'New')+'</span></td>'+
+      '<td class="product-price">฿'+total.toLocaleString('en-US',{maximumFractionDigits:2})+'</td>'+
+      '<td>'+esc(order.at?ago(order.at):'Just received')+'</td>'+
+      '<td><div class="product-row-actions">'+
+        (completed?'<button class="product-icon-action" type="button" data-act="order" data-id="'+esc(id)+'" data-status="new" aria-label="Reopen '+esc(id)+'"><i class="ri-arrow-go-back-line"></i></button>':'')+
+        '<button class="product-icon-action" type="button" data-act="recent-order" data-id="'+esc(id)+'" aria-label="View '+esc(id)+'"><i class="ri-eye-line"></i></button>'+
+      '</div></td>'+
+    '</tr>';
+  }).join('');
+  el.innerHTML='<section class="portal-panel product-workspace"><div class="product-table-shell">'+
+    '<div class="product-table-toolbar"><label class="product-table-search"><i class="ri-search-line"></i><input id="orderTableSearch" type="search" placeholder="Search..." value="'+esc(ORDER_TABLE_QUERY)+'" aria-label="Search orders"></label>'+
+    '<div class="product-table-actions"><button class="product-table-control" type="button" data-act="order-sort"><i class="ri-sort-desc"></i><span>Sort</span><small>'+esc(sortLabels[ORDER_TABLE_SORT])+'</small></button>'+
+    '<select class="product-filter-select" id="orderStatusFilter" aria-label="Filter by order status"><option value="All">Filter</option><option value="New" '+(ORDER_TABLE_STATUS==='New'?'selected':'')+'>New</option><option value="Completed" '+(ORDER_TABLE_STATUS==='Completed'?'selected':'')+'>Completed</option></select></div></div>'+
+    '<div class="product-table-scroll"><table class="product-admin-table"><thead><tr><th>Order</th><th>Customer</th><th>Category</th><th>Fulfilment</th><th>Status</th><th>Total</th><th>Received</th><th style="text-align:right">Action</th></tr></thead><tbody>'+body+'</tbody></table>'+
+    (rows.length?'':'<div class="product-table-empty">'+(ORDERS.length?'No orders match your search.':'No orders yet. Online orders appear here instantly.')+'</div>')+
+    '</div></div></section>';
 }
 async function viewSlip(id){
   try{ const r=await authGet(`/api/slip?id=${encodeURIComponent(id)}`); const j=await r.json();
@@ -2201,6 +2196,7 @@ $('#list').addEventListener('click',e=>{
     case 'slip':       viewSlip(d.id); break;
     case 'upload':     staffUploadSlip(d.id); break;
     case 'order':      setOrder(d.id,d.status); break;
+    case 'order-sort': ORDER_TABLE_SORT=ORDER_TABLE_SORT==='newest'?'oldest':ORDER_TABLE_SORT==='oldest'?'total-desc':'newest';renderOrders(); break;
     case 'count-view': viewCount(d.id); break;
     case 'scale':      applyScale(d.code); break;
     case 'proof-del':  COUNT_PROOFS.splice(Number(d.i),1); renderProofGrid(); break;
@@ -2279,6 +2275,7 @@ $('#list').addEventListener('dragover',e=>{const u=e.target.closest('#productUpl
 $('#list').addEventListener('keydown',e=>{const card=e.target.closest('[data-act="staff-contact-open"]');if(card&&(e.key==='Enter'||e.key===' ')){e.preventDefault();openStaffContact(card.dataset.id)}});
 $('#list').addEventListener('input',e=>{
   const el=e.target.closest('[data-act="count"]'); if(el) setCount(el.dataset.code,el.value);
+  if(e.target.id==='orderTableSearch'){ORDER_TABLE_QUERY=e.target.value;renderOrders();requestAnimationFrame(()=>{const input=$('#orderTableSearch');if(input){input.focus();input.setSelectionRange(input.value.length,input.value.length)}});return}
   if(e.target.id==='productTableSearch'){PRODUCT_TABLE_QUERY=e.target.value;PRODUCT_TABLE_PAGE=1;renderStaffProductTable();requestAnimationFrame(()=>{const input=$('#productTableSearch');if(input){input.focus();input.setSelectionRange(input.value.length,input.value.length)}});return}
   if(e.target.id==='promotionTableSearch'){PROMOTION_QUERY=e.target.value;renderPromotionTable();requestAnimationFrame(()=>{const input=$('#promotionTableSearch');if(input){input.focus();input.setSelectionRange(input.value.length,input.value.length)}});return}
   if(['productName','productDescription'].includes(e.target.id))updateProductPreview();
@@ -2287,6 +2284,7 @@ $('#list').addEventListener('input',e=>{
    on this page that saves the moment it is touched, so it needs its own
    listener on #list rather than an inline handler. */
 $('#list').addEventListener('change',e=>{
+  if(e.target.id==='orderStatusFilter'){ORDER_TABLE_STATUS=e.target.value;renderOrders();return}
   if(e.target.id==='productTableFilter'){PRODUCT_TABLE_CATEGORY=e.target.value;PRODUCT_TABLE_PAGE=1;renderStaffProductTable();return}
   if(e.target.id==='promotionStatusFilter'){PROMOTION_STATUS=e.target.value;renderPromotionTable();return}
   if(e.target.id==='productPageSize'){PRODUCT_TABLE_SIZE=Math.max(1,Number(e.target.value)||11);PRODUCT_TABLE_PAGE=1;renderStaffProductTable();return}
