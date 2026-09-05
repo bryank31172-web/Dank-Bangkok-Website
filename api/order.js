@@ -12,7 +12,6 @@
    carries {walletPending:true, balance} and staff settle it from the
    console. See the wallet block below for why.                       */
 
-import crypto from "node:crypto";
 import { getJSON, setJSON, indexAdd, bump } from "./_store.js";
 import { listAccounts } from "./_staff-accounts.js";
 import { normPhone } from "./_phone.js";
@@ -27,12 +26,26 @@ import { validatePromotion, normalizePromotionCode } from "./_promotion.js";
 
 const OWNER_EMAIL = process.env.ORDER_EMAIL_TO || "dankclubbkk@gmail.com";
 
-const ID_ALPHABET = "0123456789ABCDEFGHJKMNPQRSTVWXYZ";
-function newOrderId() {
-  const bytes = crypto.randomBytes(4);
-  let tail = "";
-  for (const b of bytes) tail += ID_ALPHABET[b % 32];
-  return "DK" + Date.now().toString(36).toUpperCase() + tail;
+const pad2 = (value) => String(value).padStart(2, "0");
+function formattedOrderId(fulfilment, minuteOffset = 0) {
+  const bangkok = new Date(Date.now() + (7 * 60 + minuteOffset) * 60 * 1000);
+  const prefix = fulfilment === "delivery" ? "DR" : "AS";
+  return prefix
+    + pad2(bangkok.getUTCDate())
+    + pad2(bangkok.getUTCMonth() + 1)
+    + bangkok.getUTCFullYear()
+    + pad2(bangkok.getUTCHours())
+    + pad2(bangkok.getUTCMinutes());
+}
+async function newOrderId(fulfilment) {
+  /* Keep the requested minute-based ID readable while preventing two orders
+     received in the same minute from overwriting one another. A collision uses
+     the next unused minute code. */
+  for (let offset = 0; offset < 60; offset++) {
+    const candidate = formattedOrderId(fulfilment, offset);
+    if (!(await getJSON("order:" + candidate))) return candidate;
+  }
+  throw new Error("could not allocate order id");
 }
 
 export default async function handler(req, res) {
@@ -57,7 +70,7 @@ export default async function handler(req, res) {
   if (!o.items?.length || !o.customer?.phone) {
     return res.status(400).json({ error: "invalid order" });
   }
-  const orderId = newOrderId();
+  const orderId = await newOrderId(o.fulfilment);
 
   try {
     const items = o.items || [];
