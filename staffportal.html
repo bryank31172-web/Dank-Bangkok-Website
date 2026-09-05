@@ -1054,6 +1054,13 @@ function staffUploadSlip(id){ _slipUpId=id; let inp=document.getElementById('sta
     document.body.appendChild(inp); }
   inp.click();
 }
+function isFlowerOrderItem(item){
+  const category=String(item?.category||'').trim().toLowerCase().replace(/[\s_-]+/g,'');
+  const type=String(item?.type||item?.productType||'').trim().toLowerCase();
+  const flowerCategories=new Set(['flower','flowers','exotic','exotics','topshelf','midgrade','premium']);
+  const weight=Number(item?.totalGrams??item?.grams);
+  return flowerCategories.has(category)||type.includes('flower')||(Number.isFinite(weight)&&weight>0)||/(\d+(?:\.\d+)?)\s*g\b/i.test(String(item?.option||item?.size||''));
+}
 function orderItemGrams(item){
   const qty=Math.max(1,Number(item?.qty)||1);
   const total=Number(item?.totalGrams);
@@ -1083,9 +1090,9 @@ function openRecentOrder(id){
   const isDone=order.status==='done';
   const lines=items.map((item,index)=>{
     const ordered=orderItemGrams(item);
-    const flower=ordered!=null;
+    const flower=isFlowerOrderItem(item);
     const effects=(Array.isArray(item.effects)?item.effects:[]).slice(0,6);
-    return `<div class="recent-item"><div><h4>${esc(item.name||'Unnamed item')}</h4><div class="recent-effects">${effects.length?effects.map(effect=>`<span class="recent-effect">${esc(effect)}</span>`).join(''):'<span class="recent-effect">No effect listed</span>'}</div>${flower?`<div class="ordered-grams">Ordered: <b>${esc(ordered.toFixed(2))} grams</b></div>`:`<div class="ordered-grams">${esc(item.option||item.category||'Item')}</div>`}</div>${flower?`<div class="actual-weight"><label for="recentWeight${index}">Actual grams</label><div class="weight-field"><input id="recentWeight${index}" data-weight-index="${index}" type="number" min="0.01" max="1000" step="0.01" inputmode="decimal" placeholder="0.00" value="${Number(item.actualGrams)>0?esc(Number(item.actualGrams).toFixed(2)):''}" ${isDone?'readonly':'required'}><span>g</span></div></div>`:'<div></div>'}</div>`;
+    return `<div class="recent-item"><div><h4>${esc(item.name||'Unnamed item')}</h4><div class="recent-effects">${effects.length?effects.map(effect=>`<span class="recent-effect">${esc(effect)}</span>`).join(''):'<span class="recent-effect">No effect listed</span>'}</div>${flower?`<div class="ordered-grams">${ordered!=null?`Ordered: <b>${esc(ordered.toFixed(2))} grams</b>`:'Flower item'}</div>`:`<div class="ordered-grams">${esc(item.option||item.category||'Item')}</div>`}</div>${flower?`<div class="actual-weight"><label for="recentWeight${index}">Actual grams</label><div class="weight-field"><input id="recentWeight${index}" data-weight-index="${index}" type="number" min="0.01" max="1000" step="0.01" inputmode="decimal" placeholder="0.00" value="${Number(item.actualGrams)>0?esc(Number(item.actualGrams).toFixed(2)):''}" ${isDone?'readonly':'required'}><span>g</span></div></div>`:'<div></div>'}</div>`;
   }).join('');
   const ov=document.createElement('div');
   ov.id='recentOrderOv';ov.className='recent-order-modal';ov.setAttribute('role','dialog');ov.setAttribute('aria-modal','true');ov.setAttribute('aria-labelledby','recentOrderTitle');
@@ -1132,7 +1139,7 @@ async function completeRecentOrder(id,ov){
 document.addEventListener('keydown',event=>{if(event.key==='Escape'&&document.getElementById('recentOrderOv'))closeRecentOrder()});
 
 function orderFlowerLines(order){
-  return (Array.isArray(order?.items)?order.items:[]).map((item,index)=>({item,index})).filter(({item})=>{const n=Number(item?.totalGrams??item?.grams);return (Number.isFinite(n)&&n>0)||/(\d+(?:\.\d+)?)\s*g\b/i.test(String(item?.option||''));});
+  return (Array.isArray(order?.items)?order.items:[]).map((item,index)=>({item,index})).filter(({item})=>isFlowerOrderItem(item));
 }
 async function setOrder(id,status){
   const body={orderId:id,status};
@@ -1142,8 +1149,8 @@ async function setOrder(id,status){
       const raw=prompt('Actual flower weight for '+String(item.name||'Flower')+' (grams)\nExample: 0.58',item.actualGrams||'');
       if(raw===null)return;
       const grams=Number(raw);
-      if(!Number.isFinite(grams)||grams<=0||grams>1000){alert('Enter a valid gram amount, for example 0.58');return}
-      weights.push({index,grams:Math.round(grams*100)/100});
+      if(!/^(?:0|[1-9]\d{0,2}|1000)\.\d{2}$/.test(raw.trim())||!Number.isFinite(grams)||grams<=0||grams>1000){alert('Enter grams with exactly 2 decimal places, for example 0.58');return}
+      weights.push({index,grams});
     }
     body.weights=weights;
   }
