@@ -36,6 +36,8 @@ main{flex:1;display:flex;min-height:0;padding-top:74px}
 #login{margin:auto;background:var(--panel);border:1px solid var(--line2);box-shadow:0 16px 42px rgba(30,42,60,.08);border-radius:18px;padding:30px;max-width:360px;width:92%;text-align:center}
 #login input{width:100%;background:#fafbfc;border:1px solid var(--line2);color:var(--txt);padding:12px;border-radius:10px;font-size:15px;outline:none;margin:14px 0;text-align:center}
 .key-field{position:relative}.key-field input{padding-right:48px!important}.key-field button{position:absolute;right:8px;top:21px;width:34px;height:34px;border-radius:8px;color:var(--muted)}
+.save-password{display:flex;align-items:center;gap:9px;margin:-2px 0 16px;text-align:left;color:var(--muted);font-size:13px;cursor:pointer;user-select:none}
+#login .save-password input{width:17px;height:17px;margin:0;accent-color:var(--blue);cursor:pointer}
 .btn{background:var(--blue);color:#fff;font-weight:800;padding:12px 18px;border-radius:11px;width:100%;font-size:15px;box-shadow:0 7px 16px rgba(57,120,246,.22)}
 /* tabs */
 #tabs{width:240px;min-width:240px;height:calc(100vh - 74px);position:sticky;top:74px;display:flex;flex-direction:column;gap:5px;padding:20px 14px;border-right:1px solid var(--line);background:#fff}
@@ -197,6 +199,7 @@ body.drawer-open .mobile-backdrop{opacity:1;pointer-events:auto}
   <div id="login">
     <h2 style="margin:0 0 8px">Staff login</h2>
     <div class="key-login"><div class="key-field"><input id="keyInput" name="staff-access-key" type="password" value="" autocomplete="new-password" placeholder="Enter your password" onkeydown="if(event.key==='Enter')login()"><button type="button" onclick="toggleKey()" aria-label="Show staff key"><i class="ri-eye-line"></i></button></div></div>
+    <label class="save-password" for="savePassword"><input id="savePassword" type="checkbox"><span>Save password</span></label>
     <button class="btn" onclick="login()">Enter console</button>
     <p id="loginErr" style="color:var(--danger);font-size:12.5px;height:14px;margin:10px 0 0"></p>
   </div>
@@ -221,7 +224,7 @@ body.drawer-open .mobile-backdrop{opacity:1;pointer-events:auto}
 </main>
 <script>
 const API='/api/thread';
-let KEY=localStorage.getItem('dankStaffToken')||localStorage.getItem('dankStaffKey')||'';
+let KEY=localStorage.getItem('dankStaffToken')||sessionStorage.getItem('dankStaffToken')||localStorage.getItem('dankStaffKey')||'';
 let PROFILE=null, PERMS=[];
 let cur=null, curSeq=0, pollT=null, listT=null, ordersT=null, presenceT=null, contactsT=null, lastSeen={};   // threadId -> last seq seen
 let TAB='dashboard', ORDERS=[], knownOrders=new Set(), firstOrderLoad=true, LIVE=false;
@@ -343,11 +346,14 @@ async function login(silent=false){
   const auth=await r.json().catch(()=>({}));
   if(!r.ok){
     if(!silent)$('#loginErr').textContent="doesn't have key or incorrect password.";
-    if(k===KEY){KEY='';localStorage.removeItem('dankStaffToken');localStorage.removeItem('dankStaffKey')}
+    if(k===KEY){KEY='';localStorage.removeItem('dankStaffToken');sessionStorage.removeItem('dankStaffToken');localStorage.removeItem('dankStaffKey')}
     return;
   }
   KEY=auth.token; PROFILE=auth.profile; PERMS=auth.permissions||[];
-  localStorage.setItem('dankStaffToken',KEY); localStorage.removeItem('dankStaffKey'); LIVE=true;
+  const savePassword=$('#savePassword')?.checked;
+  if(savePassword){localStorage.setItem('dankStaffToken',KEY);sessionStorage.removeItem('dankStaffToken')}
+  else{sessionStorage.setItem('dankStaffToken',KEY);localStorage.removeItem('dankStaffToken')}
+  localStorage.removeItem('dankStaffKey'); LIVE=true;
   if(auth.generated?.length) showGeneratedKeys(auth.generated);
   applyPermissions();
   $('#login').style.display='none'; $('#portalHeader').hidden=false; $('#listWrap').style.display='flex'; $('#chatWrap').style.display='none'; $('#logoutBtn').style.display='';
@@ -358,7 +364,7 @@ async function login(silent=false){
   const first=can('dashboard')?'dashboard':'orders'; setTab(portalTabs.includes(hash)&&tabAllowed(hash)?hash:first);
   window.addEventListener('hashchange',()=>{ const h=decodeURIComponent(location.hash.slice(1)); if(portalTabs.includes(h)&&tabAllowed(h)) setTab(h); });
 }
-function logout(){ closeMobileNav();sendPresence('offline');clearInterval(presenceT);clearInterval(contactsT);localStorage.removeItem('dankStaffToken');localStorage.removeItem('dankStaffKey');LIVE=false;setTimeout(()=>location.reload(),120); }
+function logout(){ closeMobileNav();sendPresence('offline');clearInterval(presenceT);clearInterval(contactsT);localStorage.removeItem('dankStaffToken');sessionStorage.removeItem('dankStaffToken');localStorage.removeItem('dankStaffKey');LIVE=false;setTimeout(()=>location.reload(),120); }
 window.addEventListener('pagehide',()=>sendPresence('offline'));
 function toggleKey(){const i=$('#keyInput'),icon=document.querySelector('.key-field i');i.type=i.type==='password'?'text':'password';icon.className=i.type==='text'?'ri-eye-off-line':'ri-eye-line';}
 function portalTheme(){return document.documentElement.dataset.theme||'light'}
@@ -2274,7 +2280,7 @@ if(location.hostname==='terminal.local'&&new URLSearchParams(location.search).ha
   $('#login').style.display='none'; $('#portalHeader').hidden=false; $('#listWrap').style.display='flex'; $('#logoutBtn').style.display='';
   ORDERS=[{orderId:'DANK-260901-1042',status:'new',at:Date.now()-180000,payment:'PromptPay',payStatus:'paid',subtotal:2450,deliveryFee:80,discount:0,total:2530,fulfilment:'delivery',delivery:{address:'Sathorn, Bangkok',time:'20:30'},customer:{name:'Sample customer',phone:'+66 63-206-4884'},items:[{name:'Blue Zangria',effects:['Relaxed','Happy','Creative'],grams:3.5,qty:1,unitPrice:2450,lineTotal:2450,option:'3.5 g'}]}];
   setTab('dashboard');
-} else { $('#keyInput').value=''; if(KEY)login(true); }
+} else { $('#keyInput').value=''; $('#savePassword').checked=Boolean(localStorage.getItem('dankStaffToken')); if(KEY)login(true); }
 </script>
 <script src="i18n.js"></script>
 </body>
