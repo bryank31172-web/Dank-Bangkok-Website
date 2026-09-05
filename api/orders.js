@@ -43,7 +43,7 @@ export default async function handler(req, res) {
       const actor=staffIdentity(req);
       if(nextStatus==="done"){
         const items=Array.isArray(o.items)?o.items:[];
-        const isFlower=item=>{const category=String(item?.category||"").trim().toLowerCase().replace(/[\s_-]+/g,""),type=String(item?.type||item?.productType||"").trim().toLowerCase(),n=Number(item?.totalGrams??item?.grams);return ["flower","flowers","exotic","exotics","topshelf","midgrade","premium"].includes(category)||type.includes("flower")||(Number.isFinite(n)&&n>0)||(\d+(?:\.\d+)?)\s*g\b/i.test(String(item?.option||item?.size||""));};
+        const isFlower=item=>{const category=String(item?.category||"").trim().toLowerCase().replace(/[\s_-]+/g,""),type=String(item?.type||item?.productType||"").trim().toLowerCase(),n=Number(item?.totalGrams??item?.grams);return ["flower","flowers","exotic","exotics","topshelf","midgrade","premium"].includes(category)||type.includes("flower")||(Number.isFinite(n)&&n>0)||/(\d+(?:\.\d+)?)\s*g\b/i.test(String(item?.option||item?.size||""));};
         const required=items.map((item,index)=>({item,index})).filter(x=>isFlower(x.item));
         const supplied=Array.isArray(b.weights)?b.weights:[], byIndex=new Map(supplied.map(x=>[Number(x?.index),Number(x?.grams)]));
         const invalid=required.filter(x=>!Number.isFinite(byIndex.get(x.index))||byIndex.get(x.index)<=0||byIndex.get(x.index)>1000);
