@@ -40,6 +40,7 @@ export default async function handler(req, res) {
       const o = await getJSON("order:" + b.orderId);
       if (!o) return res.status(404).json({ error: "not found" });
       const nextStatus=b.status==="done"?"done":"new";
+      const actor=staffIdentity(req);
       if(nextStatus==="done"){
         const items=Array.isArray(o.items)?o.items:[];
         const isFlower=item=>{const n=Number(item?.totalGrams??item?.grams);return (Number.isFinite(n)&&n>0)||/(\d+(?:\.\d+)?)\s*g\b/i.test(String(item?.option||""));};
@@ -48,12 +49,14 @@ export default async function handler(req, res) {
         const invalid=required.filter(x=>!Number.isFinite(byIndex.get(x.index))||byIndex.get(x.index)<=0||byIndex.get(x.index)>1000);
         if(invalid.length)return res.status(400).json({error:"Enter the actual flower weight in grams before completing this order",flowerItems:invalid.map(x=>({index:x.index,name:String(x.item?.name||"Flower")}))});
         for(const {item,index} of required)item.actualGrams=Math.round(byIndex.get(index)*100)/100;
-        const actor=staffIdentity(req);
         o.flowerWeights={recordedAt:Date.now(),recordedBy:actor?.name||"Staff",items:required.map(x=>({index:x.index,name:String(x.item?.name||"Flower"),grams:x.item.actualGrams}))};
+        o.completedBy={id:String(actor?.id||""),name:String(actor?.name||"Staff"),at:Date.now()};
+      }else{
+        delete o.completedBy;
       }
       o.status=nextStatus;
       await setJSON("order:" + b.orderId, o);
-      return res.status(200).json({ ok: true });
+      return res.status(200).json({ ok: true, completedBy:o.completedBy||null });
     }
     return res.status(405).json({ error: "method" });
   } catch (e) {
