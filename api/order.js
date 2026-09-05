@@ -13,7 +13,7 @@
    console. See the wallet block below for why.                       */
 
 import crypto from "node:crypto";
-import { getJSON, setJSON, indexAdd } from "./_store.js";
+import { getJSON, setJSON, indexAdd, bump } from "./_store.js";
 import { listAccounts } from "./_staff-accounts.js";
 import { normPhone } from "./_phone.js";
 import { getBalance } from "./_wallet.js";
@@ -23,6 +23,7 @@ import { linePush } from "./_line.js";
 import { notifyStaffWhatsApp } from "./_whatsapp.js";
 import { pushShopifyOrder } from "./_shopify.js";
 import { requireRate } from "./_ratelimit.js";
+import { validatePromotion, normalizePromotionCode } from "./_promotion.js";
 
 const OWNER_EMAIL = process.env.ORDER_EMAIL_TO || "dankclubbkk@gmail.com";
 
@@ -65,9 +66,17 @@ export default async function handler(req, res) {
       const price = {};
       const products = new Map();
       for (const p of menu || []) {
-        products.set(String(p.shId || ""), p);
         const tiers = p.priceTiers || (p.price != null ? [{ label: p.option || "", price: p.price }] : []);
-        for (const t of tiers) price[`${p.shId}|${t.label}`] = Number(t.price);
+        for (const t of tiers) {
+          const shId = String(t.shId || p.shId || "");
+          if (shId) products.set(shId, p);
+          const base = Number(t.price);
+          const value = Math.max(0, Number(p.discountValue) || 0);
+          const discounted = p.discountEnabled === true
+            ? p.discountType === "fixed" ? base - value : base * (1 - Math.min(100, value) / 100)
+            : base;
+          price[`${shId}|${t.label}`] = Math.max(0, discounted);
+        }
       }
       for (const it of items) {
         const product = products.get(String(it.shId || ""));
@@ -103,6 +112,36 @@ export default async function handler(req, res) {
     }
   } catch (e) {
     console.error("price guard skipped:", e.message);
+  }
+
+  const submittedPromotion = normalizePromotionCode(o.promo);
+  const itemSubtotal = (o.items || []).reduce((sum, item) => {
+    const qty = Math.max(1, Number(item.qty) || 1);
+    const unit = Number(item.unitPrice ?? item.price);
+    const line = Number(item.lineTotal);
+    return sum + (Number.isFinite(unit) ? Math.max(0, unit) * qty : Number.isFinite(line) ? Math.max(0, line) : 0);
+  }, 0);
+  const authoritativeSubtotal = itemSubtotal > 0 ? Math.round(itemSubtotal) : Math.max(0, Number(o.subtotal) || 0);
+  const submittedDeliveryFee = matchedTable ? 0 : 100;
+  if (submittedPromotion) {
+    try {
+      const promotion = await validatePromotion(submittedPromotion, authoritativeSubtotal, submittedDeliveryFee);
+      if (!promotion.ok) return res.status(400).json({ error: "invalid promotion", reason: promotion.reason, minimum: promotion.minimum });
+      o.promo = promotion.code;
+      o.discount = promotion.discount;
+      o.deliveryFee = promotion.deliveryFee;
+      o.subtotal = authoritativeSubtotal;
+      o.total = promotion.total;
+    } catch (error) {
+      console.error("promotion validation failed:", error.message);
+      return res.status(503).json({ error: "promotion validation unavailable" });
+    }
+  } else {
+    o.promo = "";
+    o.discount = 0;
+    o.deliveryFee = submittedDeliveryFee;
+    o.subtotal = authoritativeSubtotal;
+    o.total = Math.max(0, authoritativeSubtotal + submittedDeliveryFee);
   }
 
   if (o.payment === "Wallet") {
@@ -184,6 +223,7 @@ export default async function handler(req, res) {
     await indexAdd(orderId, "orders:index");
     const who = normPhone(o.customer?.phone);
     if (who.length >= 6) await indexAdd(orderId, "orders:by:" + who);
+    if (o.promo) await bump("promotion:uses:" + o.promo, 60 * 60 * 24 * 365 * 10);
     saved = true;
   } catch (e) { console.error("order save failed:", e.message); }
 

@@ -20,7 +20,7 @@ const secret = () => process.env.STAFF_SESSION_SECRET || process.env.ADMIN_SECRE
 const hashKey = (key) => crypto.createHmac("sha256", secret()).update(String(key)).digest("hex");
 export const validStaffKey = (key) => {
   const s=String(key||"");
-  return s.length>=12&&s.length<=128&&/[A-Z]/.test(s)&&/[a-z]/.test(s)&&/[0-9]/.test(s)&&/[!@#$%^&*?_+\-]/.test(s)&&! /\s/.test(s);
+  return s.length>=8&&s.length<=128&&/[A-Z]/.test(s)&&/[a-z]/.test(s)&&/[0-9]/.test(s)&&/[!@#$%^&*?_+\-]/.test(s)&&! /\s/.test(s);
 };
 const makeKey = () => "Dk!" + crypto.randomInt(0,10) + crypto.randomBytes(24).toString("base64url");
 export async function listAccounts() {
@@ -31,7 +31,7 @@ async function saveAccounts(rows) {
   await setJSON(STORE_KEY, rows, TTL);
 }
 export function publicAccount(a) {
-  return { id:a.id, name:a.name, phone:a.phone||"", startDate:a.startDate||"", salary:Number(a.salary)||0, role:a.role, active:a.active !== false, createdAt:a.createdAt, updatedAt:a.updatedAt };
+  return { id:a.id, name:a.name, phone:a.phone||"", role:a.role, active:a.active !== false, createdAt:a.createdAt, updatedAt:a.updatedAt };
 }
 export async function authenticateAccountKey(given) {
   const legacy = process.env.STAFF_KEY || "";
@@ -51,7 +51,7 @@ export async function seedInitialAccounts() {
     ["Mon","professional"],
   ];
   const generated=[], accounts=specs.map(([name,role])=>{
-    const key=makeKey(), row={id:crypto.randomUUID(),name,phone:"",startDate:"",salary:0,role,keyHash:hashKey(key),active:true,createdAt:now,updatedAt:now};
+    const key=makeKey(), row={id:crypto.randomUUID(),name,phone:"",role,keyHash:hashKey(key),active:true,createdAt:now,updatedAt:now};
     generated.push({id:row.id,name,role,key});
     return row;
   });
@@ -65,10 +65,8 @@ export async function createAccount(actor, name, requestedRole, details={}) {
   const clean=String(name||"").trim().slice(0,80);
   if(!clean) throw new Error("full name required");
   const phone=String(details.phone||"").trim().slice(0,30);
-  const startDate=/^\d{4}-\d{2}-\d{2}$/.test(String(details.startDate||""))?String(details.startDate):"";
-  const salary=Math.max(0,Math.round(Number(details.salary)||0));
   const rows=await listAccounts(), now=Date.now(), key=makeKey();
-  const row={id:crypto.randomUUID(),name:clean,phone,startDate,salary,role,keyHash:hashKey(key),active:true,createdAt:now,updatedAt:now};
+  const row={id:crypto.randomUUID(),name:clean,phone,role,keyHash:hashKey(key),active:true,createdAt:now,updatedAt:now};
   rows.push(row); await saveAccounts(rows);
   return {account:publicAccount(row),key};
 }
@@ -84,7 +82,7 @@ export async function resetAccount(actor,id) {
   await saveAccounts(rows); return {account:publicAccount(row),key};
 }
 export async function setOwnAccountKey(actor,key) {
-  if(!validStaffKey(key)) throw new Error("key must be 12–128 characters with uppercase, lowercase, a number, and a special symbol");
+  if(!validStaffKey(key)) throw new Error("key must be 8–128 characters with uppercase, lowercase, a number, and a special symbol");
   if(!actor?.id||actor.id==="legacy-owner") throw new Error("use the named Bryan account to change its individual key");
   const rows=await listAccounts(), row=rows.find(a=>a.id===actor.id);
   if(!row) throw new Error("account not found");
@@ -92,7 +90,7 @@ export async function setOwnAccountKey(actor,key) {
   await saveAccounts(rows); return publicAccount(row);
 }
 export async function setAccountKey(actor,id,key) {
-  if(!validStaffKey(key)) throw new Error("key must be 12–128 characters with uppercase, lowercase, a number, and a special symbol");
+  if(!validStaffKey(key)) throw new Error("key must be 8–128 characters with uppercase, lowercase, a number, and a special symbol");
   const rows=await listAccounts(), row=rows.find(a=>a.id===id);
   if(!row) throw new Error("account not found");
   if(!mayManage(actor,row)) throw new Error("forbidden");
@@ -118,8 +116,6 @@ export async function updateAccount(actor,id,details={}) {
   if(row.id===actor.id&&role!==row.role) throw new Error("you cannot change your own role");
   row.name=name;
   row.phone=String(details.phone||"").trim().slice(0,30);
-  row.startDate=/^\d{4}-\d{2}-\d{2}$/.test(String(details.startDate||""))?String(details.startDate):"";
-  row.salary=Math.max(0,Math.round(Number(details.salary)||0));
   row.role=role;
   if(details.active!==undefined) row.active=Boolean(details.active);
   row.updatedAt=Date.now(); await saveAccounts(rows);

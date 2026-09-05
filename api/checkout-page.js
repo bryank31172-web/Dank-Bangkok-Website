@@ -54,13 +54,6 @@ function checkoutHtml() {
     "cart mutations"
   );
 
-  html = replaceRequired(
-    html,
-    "function applyPromo(){const code=document.getElementById('promo').value.trim().toUpperCase();state.promo=code;state.discount=code==='DANK10'?Math.round(subtotal()*.10):0;if(code&&!state.discount)alert('Promo code not recognised');renderSummary()}",
-    "function applyPromo(){const code=document.getElementById('promo').value.trim().toUpperCase();if(!window.CartUI)return;const result=CartUI.setPromo(code,{promos:{DANK10:{type:'pct',value:10}}});if(!result.ok){alert(result.reason==='minimum'?'Minimum order '+money(result.minimum)+' required':'Promo code not recognised');return;}summary=result.summary;cart=summary.items;renderSummary()}",
-    "promo handling"
-  );
-
   html = html.replace(
     "items:cart.map(x=>({shId:x.shId||'',name:x.name,option:x.tierLabel||'',qty:Number(x.qty)||1,unitPrice:Number(x.price)||0,lineTotal:(Number(x.price)||0)*(Number(x.qty)||1})),",
     "items:summary.items.map(x=>({shId:x.shId||'',name:x.name,option:x.tierLabel||'',qty:Number(x.qty)||1,unitPrice:Number(x.appliedPrice??x.price)||0,lineTotal:(Number(x.appliedPrice??x.price)||0)*(Number(x.qty)||1)})),"

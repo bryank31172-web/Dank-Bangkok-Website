@@ -48,11 +48,11 @@ export default async function handler(req,res){
       return res.status(200).json({ok:true,accounts:rows,roles:ROLE_LABELS,canAssignRoles:actor.role==="owner"});
     }
     if(b.action==="create"){
-      const out=await createAccount(actor,b.name,b.role,{phone:b.phone,startDate:b.startDate,salary:b.salary});
+      const out=await createAccount(actor,b.name,b.role,{phone:b.phone});
       return res.status(200).json({ok:true,...out});
     }
     if(b.action==="update"){
-      const account=await updateAccount(actor,b.id,{name:b.name,phone:b.phone,startDate:b.startDate,salary:b.salary,role:b.role,active:b.active});
+      const account=await updateAccount(actor,b.id,{name:b.name,phone:b.phone,role:b.role,active:b.active});
       return res.status(200).json({ok:true,account});
     }
     if(b.action==="delete"){

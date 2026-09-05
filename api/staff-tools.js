@@ -20,8 +20,9 @@ export default async function handler(req,res){
     if(req.method==="GET"){
       if(section==="products") return res.status(200).json({ok:true,products:(await getMenu()).data});
       if(section==="announcements") return res.status(200).json({ok:true,announcements:(await getJSON("staff:announcements"))||[]});
-      const ov=(await getJSON("admin:overrides"))||{};
-      return res.status(200).json({ok:true,promotions:ov.promos||{}});
+      const ov=(await getJSON("admin:overrides"))||{}, promotions=ov.promos||{};
+      const usage=Object.fromEntries(await Promise.all(Object.keys(promotions).map(async code=>[code,Math.max(0,Number(await getJSON("promotion:uses:"+code))||0)])));
+      return res.status(200).json({ok:true,promotions,usage});
     }
     if(req.method!=="POST") return res.status(405).json({error:"method"});
     const b=req.body||{}, action=String(b.action||"");
@@ -35,7 +36,9 @@ export default async function handler(req,res){
     if(section==="promotions"){
       const code=text(b.code,30).toUpperCase().replace(/[^A-Z0-9_-]/g,"");
       if(!code)return res.status(400).json({error:"promotion code required"});
-      if(action==="delete") delete ov.promos[code]; else ov.promos[code]={type:["pct","fixed","freedelivery"].includes(b.type)?b.type:"pct",value:number(b.value),min:number(b.min),desc:text(b.desc,160)};
+      if(action==="delete") delete ov.promos[code];
+      else if(action==="availability") ov.promos[code]={...(ov.promos[code]||{}),active:b.active===true||b.active==="true"};
+      else ov.promos[code]={type:["pct","fixed","freedelivery"].includes(b.type)?b.type:"pct",value:number(b.value),min:number(b.min),desc:text(b.desc,160),active:b.active!==false&&b.active!=="false"};
     } else {
       const id=text(b.id,120), name=text(b.name,120);if(!id&&!name)return res.status(400).json({error:"product required"});
       const picture=text(b.picture,350000),strain=text(b.strain,120),cannabisType=text(b.cannabisType||b.type,60),description=text(b.description,1000),freeDelivery=b.freeDelivery===true||b.freeDelivery==="true",discountEnabled=b.discountEnabled===true||b.discountEnabled==="true",discountType=b.discountType==="fixed"?"fixed":"percent",discountValue=Math.max(0,number(b.discountValue)),available=b.available!==false&&b.available!=="false";if(picture&&!/^(https?:\/\/|\/|data:image\/)/i.test(picture))return res.status(400).json({error:"picture must be a URL"});
