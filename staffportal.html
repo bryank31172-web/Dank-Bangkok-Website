@@ -976,7 +976,7 @@ function orderTableRows(){
     const completed=order.status==='done';
     if(ORDER_TABLE_STATUS==='New'&&completed)return false;
     if(ORDER_TABLE_STATUS==='Completed'&&!completed)return false;
-    const haystack=[order.orderId,order.customer?.name,order.customer?.phone,order.fulfilment,order.payment,...orderCategories(order)].join(' ').toLowerCase();
+    const haystack=[order.orderId,order.customer?.name,order.customer?.phone,order.fulfilment,order.payment,order.completedBy?.name,order.flowerWeights?.recordedBy,...orderCategories(order)].join(' ').toLowerCase();
     return !query||haystack.includes(query);
   });
   return rows.slice().sort((a,b)=>{
@@ -993,12 +993,14 @@ function renderOrders(){
     const category=categories.length?categories.join(', '):'Other';
     const total=Number(order.total??order.subtotal??0)||0;
     const customer=String(order.customer?.name||'Customer');
+    const completedBy=completed?String(order.completedBy?.name||order.flowerWeights?.recordedBy||'Staff'):'—';
     return '<tr>'+
       '<td><div class="product-table-name"><strong>'+esc(id||'New order')+'</strong></div></td>'+
       '<td><strong>'+esc(customer)+'</strong><span class="order-option">'+esc(order.customer?.phone||'No phone')+'</span></td>'+
       '<td>'+esc(category)+'</td>'+
       '<td>'+esc(order.fulfilment||'Order')+'</td>'+
       '<td><span class="product-status '+(completed?'in':'out')+'">'+(completed?'Completed':'New')+'</span></td>'+
+      '<td>'+esc(completedBy)+'</td>'+
       '<td class="product-price">฿'+total.toLocaleString('en-US',{maximumFractionDigits:2})+'</td>'+
       '<td>'+esc(order.at?ago(order.at):'Just received')+'</td>'+
       '<td><div class="product-row-actions">'+
@@ -1011,7 +1013,7 @@ function renderOrders(){
     '<div class="product-table-toolbar"><label class="product-table-search"><i class="ri-search-line"></i><input id="orderTableSearch" type="search" placeholder="Search..." value="'+esc(ORDER_TABLE_QUERY)+'" aria-label="Search orders"></label>'+
     '<div class="product-table-actions"><button class="product-table-control" type="button" data-act="order-sort"><i class="ri-sort-desc"></i><span>Sort</span><small>'+esc(sortLabels[ORDER_TABLE_SORT])+'</small></button>'+
     '<select class="product-filter-select" id="orderStatusFilter" aria-label="Filter by order status"><option value="All">Filter</option><option value="New" '+(ORDER_TABLE_STATUS==='New'?'selected':'')+'>New</option><option value="Completed" '+(ORDER_TABLE_STATUS==='Completed'?'selected':'')+'>Completed</option></select></div></div>'+
-    '<div class="product-table-scroll"><table class="product-admin-table"><thead><tr><th>Order</th><th>Customer</th><th>Category</th><th>Fulfilment</th><th>Status</th><th>Total</th><th>Received</th><th style="text-align:right">Action</th></tr></thead><tbody>'+body+'</tbody></table>'+
+    '<div class="product-table-scroll"><table class="product-admin-table"><thead><tr><th>Order</th><th>Customer</th><th>Category</th><th>Fulfilment</th><th>Status</th><th>Completed by</th><th>Total</th><th>Received</th><th style="text-align:right">Action</th></tr></thead><tbody>'+body+'</tbody></table>'+
     (rows.length?'':'<div class="product-table-empty">'+(ORDERS.length?'No orders match your search.':'No orders yet. Online orders appear here instantly.')+'</div>')+
     '</div></div></section>';
 }
@@ -1066,7 +1068,7 @@ function closeRecentOrder(){
 }
 function syncRecentOrderComplete(ov){
   const fields=[...ov.querySelectorAll('[data-weight-index]')];
-  const valid=fields.every(input=>{const n=Number(input.value);return Number.isFinite(n)&&n>0&&n<=1000});
+  const valid=fields.every(input=>{const raw=input.value.trim(),n=Number(raw);return /^(?:0|[1-9]\d{0,2}|1000)\.\d{2}$/.test(raw)&&Number.isFinite(n)&&n>0&&n<=1000});
   const button=ov.querySelector('[data-recent-complete]');
   if(button)button.disabled=!valid;
   const error=ov.querySelector('.recent-order-error');
@@ -1086,7 +1088,7 @@ function openRecentOrder(id){
   }).join('');
   const ov=document.createElement('div');
   ov.id='recentOrderOv';ov.className='recent-order-modal';ov.setAttribute('role','dialog');ov.setAttribute('aria-modal','true');ov.setAttribute('aria-labelledby','recentOrderTitle');
-  ov.innerHTML=`<section class="recent-order-card"><header class="recent-order-head"><div><div class="recent-order-kicker">Recent order</div><h3 id="recentOrderTitle">${esc(order.orderId||'New order')}</h3><div class="dash-muted">${order.at?esc(ago(order.at)):'Just received'}</div></div><button type="button" class="recent-order-close" data-recent-close aria-label="Close order details"><i class="ri-close-line"></i></button></header><div class="recent-order-body"><div class="recent-customer"><div class="recent-info"><span>Name</span><b>${esc(order.customer?.name||'Not supplied')}</b></div><div class="recent-info"><span>Phone</span><b>${esc(order.customer?.phone||'Not supplied')}</b></div><div class="recent-info"><span>Order type</span><b>${esc(order.fulfilment||'Order')}</b></div><div class="recent-info"><span>Total</span><b>${esc(dashMoney(order.total??order.subtotal))}</b></div></div><div>${lines||'<div class="empty-dash">No item details supplied.</div>'}</div><div class="recent-order-error">Enter a valid decimal weight for every flower item.</div><div class="recent-order-note">Ordered grams are taken directly from the customer’s order and cannot be edited. Enter the actual measured weight before completing the order.</div></div><footer class="recent-order-actions">${isDone?'<span class="badge closed" style="margin-right:auto">Completed</span>':''}<button type="button" class="ghost" data-recent-close>${isDone?'Close':'Cancel'}</button>${isDone?'':`<button type="button" class="recent-order-complete" data-recent-complete data-id="${esc(order.orderId||'')}" ${orderFlowerLines(order).length?'disabled':''}>Complete order</button>`}</footer></section>`;
+  ov.innerHTML=`<section class="recent-order-card"><header class="recent-order-head"><div><div class="recent-order-kicker">Recent order</div><h3 id="recentOrderTitle">${esc(order.orderId||'New order')}</h3><div class="dash-muted">${order.at?esc(ago(order.at)):'Just received'}</div></div><button type="button" class="recent-order-close" data-recent-close aria-label="Close order details"><i class="ri-close-line"></i></button></header><div class="recent-order-body"><div class="recent-customer"><div class="recent-info"><span>Name</span><b>${esc(order.customer?.name||'Not supplied')}</b></div><div class="recent-info"><span>Phone</span><b>${esc(order.customer?.phone||'Not supplied')}</b></div><div class="recent-info"><span>Order type</span><b>${esc(order.fulfilment||'Order')}</b></div><div class="recent-info"><span>Total</span><b>${esc(dashMoney(order.total??order.subtotal))}</b></div>${isDone?`<div class="recent-info"><span>Completed by</span><b>${esc(order.completedBy?.name||order.flowerWeights?.recordedBy||'Staff')}</b></div>`:''}</div><div>${lines||'<div class="empty-dash">No item details supplied.</div>'}</div><div class="recent-order-error">Enter every flower weight with exactly 2 decimal places, for example 0.58.</div><div class="recent-order-note">Ordered grams are taken directly from the customer’s order and cannot be edited. Enter the actual measured weight before completing the order.</div></div><footer class="recent-order-actions">${isDone?'<span class="badge closed" style="margin-right:auto">Completed</span>':''}<button type="button" class="ghost" data-recent-close>${isDone?'Close':'Cancel'}</button>${isDone?'':`<button type="button" class="recent-order-complete" data-recent-complete data-id="${esc(order.orderId||'')}" ${orderFlowerLines(order).length?'disabled':''}>Complete order</button>`}</footer></section>`;
   ov.addEventListener('click',event=>{
     if(event.target===ov||event.target.closest('[data-recent-close]')){closeRecentOrder();return}
     const done=event.target.closest('[data-recent-complete]');if(done)completeRecentOrder(done.dataset.id,ov);
@@ -1098,8 +1100,9 @@ function openRecentOrder(id){
 }
 async function completeRecentOrder(id,ov){
   const fields=[...ov.querySelectorAll('[data-weight-index]')];
-  const weights=fields.map(input=>({index:Number(input.dataset.weightIndex),grams:Math.round(Number(input.value)*100)/100}));
-  if(weights.some(weight=>!Number.isFinite(weight.grams)||weight.grams<=0||weight.grams>1000)){
+  const invalidFormat=fields.some(input=>{const raw=input.value.trim(),n=Number(raw);return !/^(?:0|[1-9]\d{0,2}|1000)\.\d{2}$/.test(raw)||!Number.isFinite(n)||n<=0||n>1000});
+  const weights=fields.map(input=>({index:Number(input.dataset.weightIndex),grams:Number(input.value)}));
+  if(invalidFormat){
     const error=ov.querySelector('.recent-order-error');if(error)error.style.display='block';return;
   }
   const button=ov.querySelector('[data-recent-complete]');if(button){button.disabled=true;button.textContent='Completing…'}
@@ -1110,6 +1113,7 @@ async function completeRecentOrder(id,ov){
     const completed=ORDERS.find(order=>String(order.orderId)===String(id));
     if(completed){
       completed.status='done';
+      completed.completedBy=json.completedBy||completed.completedBy||{name:'Staff',at:Date.now()};
       for(const weight of weights){
         if(Array.isArray(completed.items)&&completed.items[weight.index])completed.items[weight.index].actualGrams=weight.grams;
       }
