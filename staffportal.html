@@ -1014,7 +1014,7 @@ function renderOrders(){
     '<div class="product-table-toolbar"><label class="product-table-search"><i class="ri-search-line"></i><input id="orderTableSearch" type="search" placeholder="Search..." value="'+esc(ORDER_TABLE_QUERY)+'" aria-label="Search orders"></label>'+
     '<div class="product-table-actions"><button class="product-table-control" type="button" data-act="order-sort"><i class="ri-sort-desc"></i><span>Sort</span><small>'+esc(sortLabels[ORDER_TABLE_SORT])+'</small></button>'+
     '<select class="product-filter-select" id="orderStatusFilter" aria-label="Filter by order status"><option value="All">Filter</option><option value="New" '+(ORDER_TABLE_STATUS==='New'?'selected':'')+'>New</option><option value="Completed" '+(ORDER_TABLE_STATUS==='Completed'?'selected':'')+'>Completed</option></select></div></div>'+
-    '<div class="product-table-scroll"><table class="product-admin-table"><thead><tr><th>Order</th><th>Customer</th><th>Category</th><th>Fulfilment</th><th>Status</th><th>Total</th><th>Received</th><th style="text-align:right">Action</th><th style="text-align:right">Completed by</th></tr></thead><tbody>'+body+'</tbody></table>'+
+    '<div class="product-table-scroll"><table class="product-admin-table"><thead><tr><th>Order ID</th><th>Customer</th><th>Category</th><th>Fulfilment</th><th>Status</th><th>Total</th><th>Received</th><th style="text-align:right">Action</th><th style="text-align:right">Completed by</th></tr></thead><tbody>'+body+'</tbody></table>'+
     (rows.length?'':'<div class="product-table-empty">'+(ORDERS.length?'No orders match your search.':'No orders yet. Online orders appear here instantly.')+'</div>')+
     '</div></div></section>';
 }
