@@ -1,0 +1,35 @@
+name: Remove Role Management label
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/remove-role-management.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Remove Role Management tab label
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('staffportal.html')
+          s = p.read_text()
+          old = '<span>Role Management ${new Set(STAFF_DIRECTORY.map(a=>a.role)).size}</span>'
+          if old not in s:
+              raise SystemExit('Target Role Management markup not found')
+          p.write_text(s.replace(old, '', 1))
+          PY
+      - name: Commit change and remove temporary workflow
+        run: |
+          rm .github/workflows/remove-role-management.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add staffportal.html .github/workflows/remove-role-management.yml
+          git commit -m 'Remove Role Management label from staff management'
+          git push origin main
