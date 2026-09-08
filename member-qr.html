@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml"/>
+<link rel="icon" href="/favicon.ico" sizes="32x32"/>
+<link rel="apple-touch-icon" href="/apple-touch-icon.png"/>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>New member poster · DANK BKK</title>
+<style>
+  /* Screen furniture matches the other print pages; the poster itself is the
+     shop's dark brand look rather than white paper, because this one is a
+     promo sign, not a QR card — printed dark it reads like the storefront. */
+  :root{ --bg:#0b100c; --panel:#121a13; --line2:#2a3a2e; --txt:#eaf3ec;
+         --muted:#9db3a3; --green:#4ade80; --gold:#cfa85a; }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--txt);
+       font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans Thai",sans-serif}
+  .wrap{max-width:1000px;margin:0 auto;padding:22px 16px 60px}
+  h1{font-size:22px;margin:0 0 6px}
+  p.lead{color:var(--muted);font-size:14px;line-height:1.6;margin:0 0 16px}
+  label{display:block;font-size:12px;color:var(--muted);margin:14px 0 5px}
+  input{width:100%;background:var(--panel);border:1px solid var(--line2);color:var(--txt);
+        padding:11px 12px;border-radius:10px;font-size:14px;outline:none}
+  input:focus{border-color:var(--green)}
+  .sizes{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0 2px}
+  .sz{background:var(--panel);border:1px solid var(--line2);color:var(--muted);border-radius:999px;
+      padding:9px 17px;font-size:14px;font-weight:700;cursor:pointer;min-height:42px}
+  .sz.on{background:rgba(74,222,128,.15);border-color:var(--green);color:var(--green)}
+  .btn{display:inline-flex;align-items:center;gap:8px;margin-top:16px;padding:13px 20px;border-radius:12px;
+       font-weight:800;font-size:15px;border:none;cursor:pointer;min-height:44px;
+       background:linear-gradient(135deg,var(--green),#16a34a);color:#04180d}
+  .note{background:rgba(207,168,90,.1);border:1px solid var(--gold);color:var(--gold);
+        border-radius:11px;padding:12px 14px;font-size:13px;line-height:1.65;margin-top:16px}
+  .note b{color:#e8d9a8}
+
+  .sheet{display:grid;gap:14px;margin-top:24px}
+  .sheet.poster{grid-template-columns:1fr}
+  .sheet.a5{grid-template-columns:repeat(2,1fr)}
+
+  /* The poster. Dark, with the offer as the hero and the two codes beneath. */
+  .card{background:#0a120c;color:#eaf3ec;border-radius:18px;break-inside:avoid;
+        border:1px solid #24402e;padding:34px 30px;text-align:center;
+        display:flex;flex-direction:column;align-items:center}
+  .card .brand{font-weight:900;letter-spacing:3px;color:#4ade80}
+  .card .kick{color:#cfa85a;font-weight:800;letter-spacing:1.5px;margin-top:14px}
+  .card .big{font-weight:900;line-height:1.05;margin:6px 0 0;color:#fff}
+  .card .joint{color:#4ade80}
+  .card .cond{color:#cfa85a;font-weight:800;margin-top:10px}
+  .card .plus{color:#9db3a3;margin-top:14px;line-height:1.5}
+  .codes{display:flex;gap:18px;justify-content:center;margin-top:22px;flex-wrap:wrap}
+  .code{background:#fff;border-radius:14px;padding:14px 14px 10px;text-align:center}
+  .code img{display:block;image-rendering:pixelated}
+  .code .cl{color:#0a120c;font-weight:900;margin-top:8px}
+  .code .cu{color:#666;font-size:10px;margin-top:2px}
+  .card .rules{color:#7f9a89;line-height:1.6;margin-top:20px;text-align:left;
+               border-top:1px solid #24402e;padding-top:14px;width:100%}
+  .card .age{color:#cfa85a;font-weight:800;letter-spacing:1px;margin-top:14px}
+
+  .poster .brand{font-size:15px} .poster .kick{font-size:14px}
+  .poster .big{font-size:44px} .poster .cond{font-size:19px} .poster .plus{font-size:16px}
+  .poster .code img{width:190px;height:190px} .poster .code .cl{font-size:14px}
+  .poster .rules{font-size:12px} .poster .age{font-size:12px}
+
+  .a5 .card{padding:22px 18px}
+  .a5 .brand{font-size:11px} .a5 .kick{font-size:11px}
+  .a5 .big{font-size:29px} .a5 .cond{font-size:14px} .a5 .plus{font-size:12px}
+  .a5 .code img{width:128px;height:128px} .a5 .code .cl{font-size:11px} .a5 .code .cu{font-size:8px}
+  .a5 .rules{font-size:9.5px} .a5 .age{font-size:9.5px}
+
+  @media print{
+    body{background:#fff}
+    .noprint{display:none !important}
+    .wrap{padding:0;max-width:none}
+    .sheet{gap:8px}
+    .sheet.poster .card{min-height:96vh}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="noprint">
+    <h1>💚 โปสเตอร์สมาชิกใหม่ · New member poster</h1>
+    <p class="lead">
+      โปสเตอร์ joint ฟรีสำหรับสมาชิกใหม่ — QR ซ้ายเปิดหน้าสมัครสมาชิกให้เลย
+      QR ขวาเปิดหน้าร้าน<br>
+      Pick a size and print. The left code opens the sign-up form directly.
+    </p>
+
+    <label for="base">ที่อยู่เว็บ · Site address</label>
+    <input id="base" value="https://www.dankbangkok.com" oninput="build()">
+
+    <label>ขนาด · Size</label>
+    <div class="sizes" id="sizes"></div>
+
+    <button class="btn" onclick="window.print()">🖨 พิมพ์ · Print</button>
+
+    <div class="note">
+      <b>เงื่อนไขบนโปสเตอร์ตรงกับในเว็บแล้ว</b> — joint ฟรีต้องซื้อครบ ฿500 ขึ้นไป
+      และได้ครั้งเดียวตอนสมัครใหม่ · ส่วนลด 10% ได้ทุกออเดอร์ตราบใดที่ล็อกอินสมาชิกอยู่<br><br>
+      ถ้าเปลี่ยนเงื่อนไข ต้องแก้ <b>CONFIG.crm</b> ใน index.html ด้วย ไม่งั้นป้ายกับเว็บจะพูดคนละอย่าง<br><br>
+      <b>ทดสอบก่อนพิมพ์เยอะ</b> — พิมพ์ 1 แผ่นแล้วสแกนทั้ง 2 โค้ดด้วยมือถือจริง
+    </div>
+  </div>
+
+  <div class="sheet poster" id="sheet"></div>
+</div>
+
+<script src="qr.js"></script>
+<script>
+/* Drawn locally with qr.js like the table cards and the review signs — a
+   printed poster that has to phone a QR service prints blank the day that
+   service is slow or gone.
+
+   The left code is NOT the shop's home page. ?open=member is a deep link the
+   storefront already honours (DEEPLINK.member → openCRM), so scanning it opens
+   the sign-up form rather than dropping the customer on the shelf to find it.
+   The poster Bryan drew had both codes pointing at the same home page, which
+   made the "JOIN MEMBERS" label a lie the scanner could not see. */
+function qr(data){ return DankQR.dataUrl(data, { ecl: "Q", quiet: 2 }); }
+
+var SIZES = [
+  { id:"poster", label:"โปสเตอร์ A4 · 1 ใบ/หน้า", n:1 },
+  { id:"a5",     label:"A5 · 2 ใบ/หน้า", n:2 },
+];
+var current = "poster";
+function pick(id){ current = id; build(); renderSizes(); }
+function renderSizes(){
+  document.getElementById("sizes").innerHTML = SIZES.map(function(s){
+    return '<button class="sz'+(s.id===current?' on':'')+'" onclick="pick(\'' + s.id + '\')">'+s.label+'</button>';
+  }).join("");
+}
+function esc(s){ return String(s == null ? "" : s)
+  .replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
+
+function build(){
+  var base = (document.getElementById("base").value || "").trim().replace(/\/+$/, "");
+  var join = base + "/?open=member";
+  var shop = base + "/";
+  var s = SIZES.filter(function(x){ return x.id === current; })[0];
+
+  var one =
+    '<div class="card">' +
+      '<div class="brand">DANK CANNABIS CLUB</div>' +
+      '<div class="kick">สมาชิกใหม่ · NEW MEMBER GIFT</div>' +
+      '<div class="big">สมัครสมาชิกครั้งแรก<br>รับ <span class="joint">JOINT ฟรี</span></div>' +
+      '<div class="cond">เมื่อซื้อครบ ฿500 ขึ้นไป</div>' +
+      '<div class="plus">First-time sign-up — a free joint on orders over ฿500<br>' +
+        '<b style="color:#4ade80">+ ลด 10% ทุกออเดอร์</b> ตลอดที่เป็นสมาชิก · 10% off every order</div>' +
+      '<div class="codes">' +
+        '<div class="code"><img src="' + qr(join) + '" alt="QR — สมัครสมาชิก">' +
+          '<div class="cl">สมัครสมาชิก</div><div class="cu">JOIN MEMBERS</div></div>' +
+        '<div class="code"><img src="' + qr(shop) + '" alt="QR — สั่งซื้อออนไลน์">' +
+          '<div class="cl">สั่งซื้อออนไลน์</div><div class="cu">SHOP ONLINE</div></div>' +
+      '</div>' +
+      '<div class="rules">' +
+        '<b>วิธีรับ · How to claim</b><br>' +
+        '1. สแกน “สมัครสมาชิก” แล้วกรอกเบอร์โทร — ฟรี ใช้เวลา 10 วินาที<br>' +
+        '2. สั่งซื้อครบ ฿500 ขึ้นไป — joint จะขึ้นในตะกร้าให้เอง<br>' +
+        '<span style="color:#5f7a6b">รับได้ครั้งเดียวต่อสมาชิก · ค่าส่งคิดตามปกติ · One per member</span>' +
+      '</div>' +
+      '<div class="age">20+ ONLY  |  VALID ID REQUIRED</div>' +
+    '</div>';
+
+  var out = "";
+  for(var i = 0; i < s.n; i++) out += one;
+  var sheet = document.getElementById("sheet");
+  sheet.className = "sheet " + s.id;
+  sheet.innerHTML = out;
+}
+
+renderSizes(); build();
+</script>
+</body>
+</html>
