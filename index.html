@@ -1930,11 +1930,14 @@ tiers:{t:"Membership has its perks \ud83d\udc9a",b:`
              ones hang off — LINE, the menu, promotions, all of it. A customer
              cannot guess that from a tree emoji, so it gets said. -->
         <a id="socLtText" target="_blank" rel="noopener" style="display:inline-block;margin-top:9px;font-size:12.5px">🌳 ทุกช่องทางของเรา · All our links</a>
-        <h4 style="margin-top:18px">Stay in the loop</h4>
-        <p style="font-size:12.5px">Be first to know about new strains & exclusive offers.</p>
-        <div style="display:flex;gap:6px;margin-top:6px">
-          <input id="nlEmail" placeholder="Your email" style="flex:1;background:var(--panel);border:1px solid var(--line2);color:var(--txt);padding:9px 11px;border-radius:9px;font-size:13px;outline:none">
-          <button class="btn btn-primary" style="padding:9px 14px;font-size:13px" onclick="subscribeNL()">Join</button>
+        <h4 style="margin-top:18px">Collect your free-joint coupon</h4>
+        <p style="font-size:12.5px">Enter your phone number or email. We’ll send your unique coupon for your next purchase.</p>
+        <div style="display:grid;gap:7px;margin-top:7px">
+          <input id="couponName" autocomplete="name" placeholder="Your name (optional)" style="background:var(--panel);border:1px solid var(--line2);color:var(--txt);padding:9px 11px;border-radius:9px;font-size:13px;outline:none">
+          <input id="couponContact" autocomplete="email" placeholder="Email or phone number" style="background:var(--panel);border:1px solid var(--line2);color:var(--txt);padding:9px 11px;border-radius:9px;font-size:13px;outline:none">
+          <label style="display:flex;gap:8px;align-items:flex-start;font-size:11.5px;color:var(--muted);line-height:1.45"><input id="couponConsent" type="checkbox" style="margin-top:2px"> I agree to receive this coupon and occasional DANK offers by email or SMS. I can opt out anytime.</label>
+          <button id="couponBtn" class="btn btn-primary" style="padding:9px 14px;font-size:13px" onclick="collectCoupon()">Collect coupon</button>
+          <div id="couponResult" role="status" aria-live="polite" style="font-size:12.5px;color:var(--green2)"></div>
         </div>
       </div>
     </div>
@@ -5871,11 +5874,23 @@ function applyConfig(){
     $("#fabImg").outerHTML="🤖"; $("#aiAvatarImg").outerHTML="🤖";
   }
 }
-function subscribeNL(){
-  const em=($("#nlEmail").value||"").trim();
-  if(!/.+@.+\..+/.test(em)){ toast("Please enter a valid email"); return; }
-  location.href=`mailto:${CONFIG.ownerEmail}?subject=${encodeURIComponent("Newsletter signup — dankbkk.com")}&body=${encodeURIComponent("Please add me to the DANK BKK list: "+em)}`;
-  $("#nlEmail").value=""; toast("Thanks! Opening your email app ✉️");
+async function collectCoupon(){
+  const name=($("#couponName")?.value||"").trim(), contact=($("#couponContact")?.value||"").trim();
+  const consent=!!$("#couponConsent")?.checked, result=$("#couponResult"), btn=$("#couponBtn");
+  const email=contact.includes("@")?contact:"", phone=email?"":contact;
+  if(!contact){ toast("Enter your email or phone number"); return; }
+  if(!consent){ toast("Please agree before collecting the coupon"); return; }
+  btn.disabled=true; btn.textContent="Creating coupon…"; result.textContent="";
+  try{
+    const r=await fetch("/api/coupon",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({name,email,phone,consent:true})});
+    const j=await r.json().catch(()=>({}));
+    if(!r.ok||!j.ok) throw new Error(j.error||"Could not create coupon");
+    LS.set("couponCode",j.code);
+    const delivered=[j.email&&j.email.sent?"email":"",j.sms&&j.sms.sent?"SMS":""].filter(Boolean).join(" and ");
+    result.innerHTML=`🎁 Your coupon: <b>${esc(j.code)}</b><br>${delivered?`Sent by ${delivered}. `:"Save this code. "}Use it with your next purchase for one free joint.`;
+    toast("🎁 Free-joint coupon collected!");
+  }catch(e){ result.style.color="#ff9f9f"; result.textContent=e.message||"Coupon service is temporarily unavailable."; }
+  finally{ btn.disabled=false; btn.textContent="Collect coupon"; }
 }
 /* ---- My Orders / track ---- */
 async function openOrders(){
