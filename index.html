@@ -57,16 +57,16 @@ window.addEventListener("appinstalled", function () {
 <meta name="description" content="DANK BKK — premium cannabis in Bangkok. Live menu, member prices, PromptPay & card checkout, delivery & pickup across Pattanakarn & Sathorn. Ask DANK AI 24/7." />
 <meta property="og:type" content="website"/>
 <meta property="og:title" content="🌿 DANK BKK — Premium Cannabis Bangkok"/>
-<meta property="og:description" content="Shop top-shelf to exotics, edibles & vapes. Buy 3 get 1 free. Delivery or pickup, PromptPay & card. Ask DANK AI 24/7."/>
+<meta property="og:description" content="Shop top-shelf to exotics, edibles & vapes. Buy 3, get 1 free on cannabis products in the same grade and price group. Delivery or pickup."/>
 <meta property="og:url" content="https://dankbangkok.com/"/>
 <meta property="og:type" content="website"/>
 <meta property="og:site_name" content="DANK BKK"/>
 <meta property="og:locale" content="en_US"/>
 <meta property="og:locale:alternate" content="th_TH"/>
-<meta property="og:image" content="https://dankbangkok.com/assets/promo-exotic-cards.jpg"/>
-<meta property="og:image:alt" content="DANK BKK exotic flower shelf"/>
+<meta property="og:image" content="https://dankbangkok.com/assets/promo-buy3-get1.jpg"/>
+<meta property="og:image:alt" content="DANK BKK buy 3 get 1 free cannabis promotion"/>
 <meta name="twitter:card" content="summary_large_image"/>
-<meta name="twitter:image" content="https://dankbangkok.com/assets/promo-exotic-cards.jpg"/>
+<meta name="twitter:image" content="https://dankbangkok.com/assets/promo-buy3-get1.jpg"/>
 <meta name="robots" content="index,follow,max-image-preview:large"/>
 <link rel="canonical" href="https://dankbangkok.com/"/>
 <!-- Structured data. Only what the shop already states about itself elsewhere
@@ -77,7 +77,7 @@ window.addEventListener("appinstalled", function () {
 {"@context":"https://schema.org","@type":"Store","name":"DANK BKK",
  "alternateName":"DANK Cannabis Club",
  "url":"https://dankbangkok.com/",
- "image":"https://dankbangkok.com/assets/promo-exotic-cards.jpg",
+ "image":"https://dankbangkok.com/assets/promo-buy3-get1.jpg",
  "description":"Premium cannabis in Bangkok — live menu from the shop, member prices, delivery or pickup.",
  "telephone":"+66841620610",
  "areaServed":"Bangkok",
@@ -1267,7 +1267,7 @@ window.addEventListener("appinstalled", function () {
       <span>💚 <b>Midgrade</b> 18–23% · ฿200/½g</span>
       <span>⭐ <b>Topshelf</b> 24–27% · ฿300/½g</span>
       <span>🚀 <b>Exotics</b> 28–34% · ฿400/½g</span>
-      <span>🔥 <b>Buy 3 get 1 FREE</b> every strain</span>
+      <span>🔥 <b>Buy 3, get 1 FREE</b> · same grade &amp; price</span>
       <span>🤖 <b id="heroAI">DANK AI answers 24/7</b></span>
     </div>
   </div>
@@ -1370,12 +1370,12 @@ window.addEventListener("appinstalled", function () {
         <p>Pick the flower, pick the paper — we roll it fresh. Buy 3g and the 4th gram is free.</p>
         <span class="promo-btn">Start building</span></div>
     </div>
-    <div class="promo" onclick="openPromo('b3g1')" style="background-color:#0f1c12;background-image:url('https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-6890.png?v=1782732640&width=1600')">
-      <div class="promo-shade"></div><span class="tagchip">EVERY STRAIN</span>
+    <div class="promo" onclick="openPromo('b3g1')" style="background-color:#0f1c12;background-image:url('assets/promo-buy3-get1.jpg')">
+      <div class="promo-shade"></div><span class="tagchip">ALL CANNABIS PRODUCTS</span>
       <div class="promo-txt"><div class="promo-kick">Automatic in your cart</div>
-        <h3>Buy 3g, get 1g free</h3>
-        <p>Stack it: 5g &rarr; 2 free &middot; 9g &rarr; 3 &middot; 12g &rarr; 4 &middot; 15g &rarr; 5. The cart adds them itself.</p>
-        <span class="promo-btn">Shop flower</span></div>
+        <h3>Buy 3, get 1 free</h3>
+        <p>All cannabis products. Free item must be from the same grade and the same price group.</p>
+        <span class="promo-btn">Shop cannabis</span></div>
     </div>
     <div class="promo" onclick="openPromo('first')" style="background-color:#181208;background-image:url('promo-first.jpg')">
       <div class="promo-shade"></div><span class="tagchip">MEMBERS' FIRST ORDER</span>
@@ -1401,15 +1401,12 @@ let SITE_SLIDES=[
  {key:"joint", tag:"ROLLED FRESH", kick:"Any strain on the menu", title:"Build your joint",
   text:"Pick the flower, pick the paper \u2014 we roll it fresh. Buy 3g and the 4th gram is free.",
   btn:"Start building", img:"assets/products/alienmint.jpg", bg:"#0f1c12", detail:""},
- {key:"b3g1", tag:"EVERY STRAIN", kick:"Automatic in your cart", title:"Buy 3g, get 1g free",
-  text:"Stack it: 5g \u2192 2 free \u00b7 9g \u2192 3 \u00b7 12g \u2192 4 \u00b7 15g \u2192 5. The cart adds them itself.",
-  btn:"Shop flower", img:"https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-6890.png?v=1782732640&width=1600", bg:"#0f1c12", detail:""},
+ {key:"b3g1", tag:"ALL CANNABIS PRODUCTS", kick:"Automatic in your cart", title:"Buy 3, get 1 free",
+  text:"Free item must be from the same cannabis grade and the same price group. Every 3 paid promotional units earns 1 free.",
+  btn:"Shop cannabis", img:"assets/promo-buy3-get1.jpg", bg:"#0f1c12", detail:""},
  {key:"first", tag:"MEMBERS' FIRST ORDER", kick:"Sign up free \u00b7 10% off every order", title:"First order? 1g + 1g free",
   text:"Join DANK Members, buy your first gram \u2014 a second gram rides along free.",
   btn:"Join & claim", img:"promo-first.jpg", bg:"#181208", detail:""},
- {key:"happyhour", tag:"HAPPY HOUR", kick:"Sathorn 5\u20137pm \u00b7 Pattanakarn 4\u20137pm", title:"Happy Hour \u2014 buy 3g, get 2g free",
-  text:"Time to buy, time to save: every day during Happy Hour the volume deal is boosted \u2014 the cart adds the free grams itself.",
-  btn:"See Happy Hour", img:"assets/promo-happyhour.jpg", bg:"#0c1408", detail:""},
  {key:"cards", tag:"COLLECTOR CARDS", kick:"Collect all 9 \u2192 2g free", title:"Collect all 9 Exotic Cards",
   text:"Buy 1g of any exotic strain and its collector card comes with it. Complete the set of 9 \u2014 cash it in for 2 grams free.",
   btn:"See the cards", img:"assets/promo-exotic-cards.jpg", bg:"#1a0f24", detail:""},
@@ -1762,9 +1759,9 @@ function shopDetailsHTML(includeQr){
 function openPromo(key,back){
   const _sl=SITE_SLIDES.find(s=>s.key===key)||null;
   const img=pUrl((_sl&&_sl.img)||{box:"assets/products/toadvenom.jpg",joint:"assets/products/alienmint.jpg",
-    b3g1:"https://cdn.shopify.com/s/files/1/0812/7053/8528/files/IMG-6890.png?v=1782732640&width=1200",first:"promo-first.jpg"}[key]||"");
-  const ladder=(CONFIG.gramLadder||[[3,1],[5,2],[9,3],[12,4],[15,5]]).slice().sort((a,b)=>a[0]-b[0]);
-  const lrows=ladder.map(([b,f])=>`<div style="display:flex;justify-content:space-between;padding:8px 2px;border-bottom:1px solid var(--line2);font-size:14.5px"><span><b>Buy ${b}g</b></span><span style="color:var(--green2);font-weight:800">+${f}g FREE 🌿</span></div>`).join("");
+    b3g1:"assets/promo-buy3-get1.jpg",first:"promo-first.jpg"}[key]||"");
+  const ladder=(CONFIG.gramLadder||[[3,1],[6,2],[9,3],[12,4],[15,5]]).slice().sort((a,b)=>a[0]-b[0]);
+  const lrows=ladder.map(([b,f])=>`<div style="display:flex;justify-content:space-between;padding:8px 2px;border-bottom:1px solid var(--line2);font-size:14.5px"><span><b>Buy ${b}</b></span><span style="color:var(--green2);font-weight:800">+${f} FREE 🌿</span></div>`).join("");
   let H={
 shops:{t:"All DANK shops 📍",b:shopDetailsHTML(true)},
 box:{t:"Build your DANK box 📦",b:`
@@ -1783,11 +1780,11 @@ joint:{t:"Build your joint 🚬",b:`
     🌿 Any strain, rolled to order<br>🔥 Buy 3g — 4th gram free, automatically<br>⚡ Ready in minutes at the bar</div>
   <a class="btn btn-gold btn-block" href="build-your-joint.html">🚬 Start building</a>
   <button class="btn btn-ghost btn-block" style="margin-top:8px" onclick="closeAll();document.getElementById('menu').scrollIntoView({behavior:'smooth'})">Browse strains first</button>`},
-b3g1:{t:"Buy 3g — get 1g FREE 🔥",b:`
-  <p style="color:var(--muted);font-size:14px;margin:0 0 12px">On every strain, every day. Add flower to your cart and the free grams appear on their own — no code.</p>
+b3g1:{t:"Buy 3 — get 1 FREE 🔥",b:`
+  <p style="color:var(--muted);font-size:14px;margin:0 0 12px">On all cannabis products, every day. Buy three promotional units from the same grade and price group and the free item appears automatically — no code.</p>
   <div style="background:var(--panel2);border:1px solid var(--line2);border-radius:12px;padding:6px 14px;margin-bottom:14px">${lrows}</div>
-  <p style="color:var(--muted);font-size:12.5px;margin:0 0 14px">Free grams come from the strain you bought most of — switch them in the cart.</p>
-  <button class="btn btn-primary btn-block" onclick="closeAll();document.getElementById('menu').scrollIntoView({behavior:'smooth'})">🌿 Shop flower</button>`},
+  <p style="color:var(--muted);font-size:12.5px;margin:0 0 14px">The free item matches an eligible paid product from the same grade and price group.</p>
+  <button class="btn btn-primary btn-block" onclick="closeAll();document.getElementById('menu').scrollIntoView({behavior:'smooth'})">🌿 Shop cannabis</button>`},
 first:{t:"First order — 1g + 1g free 💚",b:`
   <p style="color:var(--muted);font-size:14px;margin:0 0 12px">New here? Join DANK Members free — you get 10% off every order, and on your first order of 1g or more a second gram comes free.</p>
   <div style="background:var(--panel2);border:1px solid var(--line2);border-radius:12px;padding:12px 14px;margin-bottom:14px;font-size:14px;line-height:1.9">
@@ -2001,7 +1998,7 @@ const CONFIG = {
   brand:"DANK BKK", domain:"dankbkk.com", currency:"฿",
   tagline:"Premium cannabis, curated for Bangkok. Consume responsibly — 20+ only.",
   heroTitle:"Bangkok's dankest — Midgrade to Exotics.",
-  heroSub:"The full DANK Cannabis Club menu: flowers from ฿200/½g, buy-3-get-1-free on every strain, edibles, vapes & more. Delivery or pickup at Pattanakarn & Sathorn — or just ask DANK AI, 24/7.",
+  heroSub:"The full DANK Cannabis Club menu: flowers from ฿200/½g, plus buy 3 get 1 free on all cannabis products in the same grade and price group. Delivery or pickup at Pattanakarn & Sathorn — or just ask DANK AI, 24/7.",
 
   branches:["All branches","Pattanakarn","Sathorn"],
   payments:["PromptPay","Card","Cash","Transfer","Crypto"],   // PromptPay+Card via Omise; rest pay on arrival
@@ -2059,7 +2056,7 @@ const CONFIG = {
         sub:"Sign up free and save 10% on every order, plus members-only drops. Takes 10 seconds.",
         firstDelayMs:1200, repeatMs:60000 },   // shows on entry, then re-invites every ~60s until they join
   // ---- Volume deal: buy more grams of flower, get grams free (cart-wide total) ----
-  gramLadder:[ [3,1],[5,2],[7,3],[10,4] ],   // [buy grams, free grams]
+  gramLadder:[ [3,1],[6,2],[9,3],[12,4],[15,5] ],   // every 3 paid promo units earns 1 free
   /* Happy Hour: boosted ladder inside the windows below (Bangkok time).
      The cart applies it automatically; promoHintsHTML announces it.
 
@@ -2068,7 +2065,7 @@ const CONFIG = {
      grams bought, so a happy-hour list that jumped 3 to 9 while the base
      ladder had a rung at 7 handed a customer buying 7g two free grams during
      Happy Hour and three outside it. Same buy-points, one gram better. */
-  happyHour:{ enabled:true, tz:"Asia/Bangkok",
+  happyHour:{ enabled:false, tz:"Asia/Bangkok",
     windows:[ {name:"Sathorn",from:17,to:19}, {name:"Pattanakarn",from:16,to:19} ],
     ladder:[ [3,2],[5,3],[7,4],[10,5] ] },
   firstOrder:{ enabled:false, code:"FIRST1G", title:"Buy 1G get 1G FREE 🎁",
@@ -2698,8 +2695,9 @@ function submitMemberLead(name,phone){
   if(location.protocol==="file:") return;
   try{ fetch("/api/member",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({name,phone,at:Date.now(),source:"web"})}).catch(()=>{}); }catch(e){}
 }
-/* ---- Volume deal: cart-wide free grams by total flower grams bought ----
-   Ladder from CONFIG.gramLadder: 3g→1g, 5g→2g, 9g→3g, 12g→4g, 15g→5g free. */
+/* ---- Buy 3, get 1 free -----------------------------------------------
+   Cannabis products are grouped by grade/category and effective unit price.
+   Flower uses grams as units; joints, edibles and vapes use item quantity. */
 function gramsOf(line){
   if(!line||line.bonus) return 0;
   if(!isFlowerCatName(line.category)) return 0;
@@ -2853,15 +2851,45 @@ function freeGramStrain(extra){
   let id=null,best=-1; for(const k in g){ if(g[k]>best){ best=g[k]; id=k; } }
   return id?DATA.find(p=>p.id===id):null;
 }
+const PROMO_CANNABIS_CATS=new Set(["midgrade","premium","topshelf","exotics","joints","edibles","vapes"]);
+function promoUnits(line){
+  if(!line||line.bonus||!PROMO_CANNABIS_CATS.has(String(line.category||"").trim().toLowerCase())) return 0;
+  if(isFlowerCatName(line.category)) return gramsOf(line);
+  return Math.max(0,Number(line.qty)||0);
+}
+function promoUnitPrice(line){
+  const units=promoUnits({...line,qty:1});
+  return units>0?Math.round((Math.max(0,Number(line.price)||0)/units)*100)/100:0;
+}
+function promoGroups(){
+  const groups=new Map();
+  cart.filter(c=>!c.bonus).forEach(c=>{
+    const units=promoUnits(c), price=promoUnitPrice(c);
+    if(units<=0||price<=0) return;
+    const grade=String(c.category||"").trim().toLowerCase();
+    const key=grade+"|"+price;
+    const group=groups.get(key)||{key,grade,price,units:0,lines:[]};
+    group.units+=units; group.lines.push({line:c,units}); groups.set(key,group);
+  });
+  return Array.from(groups.values());
+}
 function ensureBonus(){
   const before=cart.map(c=>c.key).join(" ");
   cart=cart.filter(c=>!c.bonus);
+  let free=0;
+  promoGroups().forEach(group=>{
+    const earned=Math.floor((group.units+1e-9)/3);
+    if(earned<1) return;
+    free+=earned;
+    group.lines.sort((a,b)=>b.units-a.units);
+    const source=group.lines[0].line;
+    const flower=isFlowerCatName(source.category);
+    cart.push({key:"BONUS|"+group.key,id:source.id,name:source.name,
+      tierLabel:flower?"1g · FREE 🌿":String(source.tierLabel||source.category||"Item")+" · FREE 🌿",
+      price:0,qty:earned,image:source.image,type:source.type,category:source.category,bonus:true,
+      promoGrade:source.category,promoPrice:group.price});
+  });
   const G=cartFlowerGrams();
-  const free=ladderFree(G);
-  const strain=free>0?freeGramStrain():null;
-  if(strain) for(let i=0;i<free;i++){
-    cart.push({key:"BONUS|"+strain.id+"|"+i,id:strain.id,name:strain.name,tierLabel:hhActive()?"1g · HAPPY HOUR FREE 🔥":"1g · FREE 🌿",price:0,qty:1,image:strain.image,type:strain.type,category:strain.category,bonus:true});
-  }
   /* Members' first order: buy 1g+, a second gram rides along free. Only when
      the ladder hasn't already granted (3g+ orders get the ladder gram instead),
      and only once — clearCartAfterOrder marks it used when the order goes out. */
@@ -4400,7 +4428,7 @@ function cartLineHTML(c,idx){
   const thumb=imgTag(DATA.find(x=>x.id===c.id)||c,false);
   if(c.bonus) return `<div class="cart-line bonus">
     <div class="ci-thumb">${thumb}</div>
-    <div class="ci-main"><h4>${esc(c.name)} <span class="gift-badge">FREE</span></h4>
+    <div class="ci-main"><h4>${esc(c.name)} <span class="gift-badge">FREE${(Number(c.qty)||1)>1?' ×'+(Number(c.qty)||1):''}</span></h4>
       <div class="ci-opt">Volume deal · ${esc(c.tierLabel)}</div>
       <div class="ci-row"><span style="font-size:12px;color:var(--green2)">🌿 On the house</span>
       <div class="ci-price">฿0</div></div></div></div>`;
@@ -4436,14 +4464,12 @@ function renderCart(){
     ${below?`<div class="minorder">Minimum order ${money(CONFIG.minOrder)} — add ${money(CONFIG.minOrder-sub)} more</div>`:''}
     ${boxHintHTML(box)}
     ${promoHintsHTML()}
-    ${(function(){ const G=cartFlowerGrams(), got=cart.filter(c=>c.bonus).length, nx=nextLadder(G);
-      const up=upsellHTML();   // the one-tap "here is the cheapest way to the next rung" card
-      // Already earning free grams: keep the status line (it owns the change-strain link) and
-      // put the card underneath it, so the next rung is offered without hiding the current one.
-      if(got>0) return `<div class="minorder" style="color:var(--green2)">🌿 Volume deal: <b>${got}g FREE</b> added${nx?` · add ${nx.need}g more → ${nx.free}g free`:' · max deal reached 🎉'} — <button style="background:none;border:none;color:var(--green2);text-decoration:underline;cursor:pointer;font-size:12.5px" onclick="openFreePicker()">change strain</button></div>`+up;
-      if(up) return up;        // the card says everything the plain hint below would have
-      if(nx&&G>0) return `<div class="minorder" style="color:var(--gold)">🌿 Add <b>${nx.need}g</b> more flower → get <b>${nx.free}g FREE</b></div>`;
-      if(G===0) return `<div class="minorder" style="color:var(--muted)">🌿 ${hhActive()?'Happy Hour: buy 3g flower get 2g free':'Buy 3g flower get 1g free · up to 15g→5g free'}</div>`;
+    ${(function(){ const G=cartFlowerGrams(), got=cart.filter(c=>c.bonus).reduce((n,c)=>n+(Number(c.qty)||1),0), nx=nextLadder(G);
+      if(got>0) return `<div class="minorder" style="color:var(--green2)">🌿 Buy 3, get 1: <b>${got} FREE</b> added automatically · same cannabis grade and price</div>`;
+      const up=upsellHTML();
+      if(up) return up;
+      if(nx&&G>0) return `<div class="minorder" style="color:var(--gold)">🌿 Add <b>${nx.need}g</b> more in the same grade and price group → get <b>${nx.free}g FREE</b></div>`;
+      if(G===0) return `<div class="minorder" style="color:var(--muted)">🌿 Buy 3, get 1 free on all cannabis products · same grade and price</div>`;
       return ''; })()}
     <button class="btn btn-primary btn-block" style="margin-top:12px${below?';opacity:.5;pointer-events:none':''}" onclick="openCheckout()">Checkout · ${money(tot)}</button>`;
 }
@@ -5684,7 +5710,7 @@ function builtinRespond(q){
     aiCTA(th?"📋 ดูเมนูทั้งหมด":"📋 Open full menu","scrollMenu"); renderQuick(cats.slice(0,5)); return true;
   }
   if(has("promotion","promo","deal","offer","discount code","3+1","buy 3","โปร","โปรโมชั่น")){
-    aiPush("ai",th?"โปรตอนนี้ 🔥 ซื้อ 3g ฟรี 1g · 5g ฟรี 2g · 9g ฟรี 3g · 12g ฟรี 4g · 15g ฟรี 5g — เลือกดอกตัวไหนก็ได้ค่ะ":"Live right now 🔥 buy 3g get 1g free · 5g get 2 · 9g get 3 · 12g get 4 · 15g get 5 — on any flower.");
+    aiPush("ai",th?"โปรตอนนี้ 🔥 สินค้ากัญชาซื้อ 3 ฟรี 1 โดยสินค้าฟรีต้องอยู่ในเกรดและราคาเดียวกัน ระบบจะเพิ่มของแถมให้อัตโนมัติค่ะ":"Live right now 🔥 buy 3, get 1 free on all cannabis products. The free item must be in the same grade and price group, and the cart adds it automatically.");
     renderQuick(th?["Exotics 3+1","Topshelf 3+1","Midgrade 3+1"]:["Exotics 3+1","Topshelf 3+1","Midgrade 3+1"]); return true;
   }
 
@@ -5923,7 +5949,7 @@ function openInfo(){
       <div class="pd-section-t">Payment</div>
       <p style="color:var(--muted);margin:0 0 10px">PromptPay QR & card online (secured by Omise), or cash / transfer on delivery/pickup. Members save ~10%.</p>
       <div class="pd-section-t">Promo codes</div>
-      <p style="color:var(--muted);margin:0 0 10px">Members get <b>10% off</b> every order — tap Member or join the pop-up. Volume deal: <b>buy 3g get 1g free</b>, up to <b>15g → 5g free</b> — free grams are added automatically in your cart.</p>
+      <p style="color:var(--muted);margin:0 0 10px">Members get <b>10% off</b> every order — tap Member or join the pop-up. Cannabis promotion: <b>buy 3, get 1 free</b> in the same grade and price group — the free item is added automatically in your cart.</p>
       <div class="pd-section-t">Age & responsibility</div>
       <p style="color:var(--muted);margin:0 0 10px">Strictly 20+ with ID. Please consume responsibly.</p>
       <div class="pd-section-t">Contact</div>
