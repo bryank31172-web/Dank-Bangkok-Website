@@ -5,7 +5,7 @@
      3) "สรุป"      → typed in any chat/group, replies an instant Thai summary.
 
    Set this URL in LINE Developers Console → Messaging API → Webhook URL:
-     https://www.dankbkk.com/api/line-webhook?k=YOUR_STAFF_KEY
+     https://www.dankbangkok.com/api/line-webhook?k=YOUR_STAFF_KEY
    (the ?k= gate is an extra check on top of the LINE signature.)
 
    Env: LINE_CHANNEL_ACCESS_TOKEN, LINE_CHANNEL_SECRET, LINE_TO (staff),
@@ -57,7 +57,7 @@ Rules:
 - Warm, concise (2-4 sentences), salesy-but-honest. Help them choose and order.
 - Reply in the customer's language (Thai or English).
 - Only recommend items from the MENU; quote real ฿ prices.
-- No medical claims; 20+ only. To buy: send them to https://www.dankbkk.com or say staff will help.`;
+- No medical claims; 20+ only. To buy: send them to https://www.dankbangkok.com or say staff will help.`;
   const messages = [
     { role: "system", content: system },
     ...history.slice(-8),
@@ -96,7 +96,24 @@ export default async function handler(req, res) {
       const src = ev.source || {};
       const sourceType = src.type; // 'user' | 'group' | 'room'
       const sourceId = src.groupId || src.roomId || src.userId;
-      if (!sourceId || !isMonitored(sourceType, sourceId)) continue;
+      if (!sourceId) continue;
+
+      // Temporary setup command: reveal only the current chat's own recipient ID
+      // so the owner can configure LINE_TO and MONITORED_GROUP_IDS in Vercel.
+      const isGroupChat = sourceType === "group" || sourceType === "room";
+      const isRegistrationCommand =
+        isGroupChat &&
+        ev.message?.type === "text" &&
+        ev.message.text.trim().toLowerCase() === "!dank-register";
+      if (isRegistrationCommand) {
+        await lineReply(
+          ev.replyToken,
+          `✅ DANK staff group detected.\n\nLINE group ID:\n${sourceId}\n\nAdd this value in Vercel as LINE_TO and MONITORED_GROUP_IDS.`
+        );
+        continue;
+      }
+
+      if (!isMonitored(sourceType, sourceId)) continue;
 
       const uid = src.userId || null;
       let displayName = null;
@@ -162,7 +179,7 @@ export default async function handler(req, res) {
       await lineReply(
         ev.replyToken,
         reply ||
-          "สวัสดีค่ะ 🌿 หนูน้องแดงค์เองค่ะ! ดูเมนูและสั่งได้ที่ www.dankbkk.com หรือพิมพ์ \"ติดต่อคน\" เพื่อคุยกับทีมงานค่ะ\n(Browse & order at www.dankbkk.com, or type \"staff\" to reach our team.)"
+          "สวัสดีค่ะ 🌿 หนูน้องแดงค์เองค่ะ! ดูเมนูและสั่งได้ที่ www.dankbangkok.com หรือพิมพ์ \"ติดต่อคน\" เพื่อคุยกับทีมงานค่ะ\n(Browse & order at www.dankbangkok.com, or type \"staff\" to reach our team.)"
       );
     } catch (e) { console.error("LINE event error:", e.message); }
   }
