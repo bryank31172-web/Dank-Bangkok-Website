@@ -5,17 +5,16 @@
      3) "สรุป"      → typed in any chat/group, replies an instant Thai summary.
 
    Set this URL in LINE Developers Console → Messaging API → Webhook URL:
-     https://www.dankbangkok.com/api/line-webhook?k=YOUR_STAFF_KEY
-   (the ?k= gate is an extra check on top of the LINE signature.)
+     https://www.dankbangkok.com/api/line-webhook
+   Incoming events are accepted only when the LINE signature is valid.
 
    Env: LINE_CHANNEL_ACCESS_TOKEN, LINE_CHANNEL_SECRET, LINE_TO (staff),
-        an AI key (see _ai.js), STAFF_KEY, MONITORED_GROUP_IDS (optional). */
+        an AI key (see _ai.js), MONITORED_GROUP_IDS (optional). */
 import { lineReply, notifyStaffLine, getLineProfile, verifyLineSignature } from "./_line.js";
 import { getJSON, setJSON } from "./_store.js";
 import { getMenu } from "./_menu.js";
 import { logMessage, isMonitored, getMessagesSince, summarize } from "./_linelog.js";
 import { computeEta, etaText, routeConfigured } from "./_route.js";
-import { isStaffKey } from "./_auth.js";
 import { aiChat, aiOn } from "./_ai.js";
 
 export const config = { api: { bodyParser: false } }; // we need the raw body for the signature
@@ -77,39 +76,13 @@ Rules:
 export default async function handler(req, res) {
   if (req.method !== "POST") return res.status(405).end();
 
-  // Robust body + auth: on Vercel the raw stream may already be parsed, so accept
-  // either a valid LINE signature (raw available) OR the ?k= gate on the URL.
+  // Preserve the raw body so the LINE signature can be verified exactly.
   const raw = await readRaw(req);
   let body = {};
   if (raw) { try { body = JSON.parse(raw); } catch { return res.status(200).end(); } }
   else if (req.body) { body = req.body; }
   const sigOk = raw ? verifyLineSignature(raw, req.headers["x-line-signature"]) : false;
-  const keyOk = isStaffKey(req.query?.k);
-  if (!sigOk && !keyOk) return res.status(401).end();
-
-  // Registration must finish before the HTTP response. Vercel may freeze
-  // serverless work started after res.json(), which would prevent the LINE reply.
-  const registrationEvents = (body.events || []).filter((ev) => {
-    const sourceType = ev.source?.type;
-    return (
-      ev.type === "message" &&
-      (sourceType === "group" || sourceType === "room") &&
-      ev.message?.type === "text" &&
-      ev.message.text.trim().toLowerCase() === "!dank-register"
-    );
-  });
-  if (registrationEvents.length) {
-    for (const ev of registrationEvents) {
-      const sourceId = ev.source.groupId || ev.source.roomId;
-      if (!sourceId) continue;
-      const result = await lineReply(
-        ev.replyToken,
-        `✅ DANK staff group detected.\n\nLINE group ID:\n${sourceId}\n\nAdd this value in Vercel as LINE_TO and MONITORED_GROUP_IDS.`
-      );
-      if (!result?.ok) console.error("LINE group registration reply failed:", result?.error || "unknown error");
-    }
-    return res.status(200).json({ ok: true });
-  }
+  if (!sigOk) return res.status(401).end();
 
   // Respond 200 fast, then process (LINE requires a quick ack)
   res.status(200).json({ ok: true });
