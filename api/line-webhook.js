@@ -87,6 +87,30 @@ export default async function handler(req, res) {
   const keyOk = isStaffKey(req.query?.k);
   if (!sigOk && !keyOk) return res.status(401).end();
 
+  // Registration must finish before the HTTP response. Vercel may freeze
+  // serverless work started after res.json(), which would prevent the LINE reply.
+  const registrationEvents = (body.events || []).filter((ev) => {
+    const sourceType = ev.source?.type;
+    return (
+      ev.type === "message" &&
+      (sourceType === "group" || sourceType === "room") &&
+      ev.message?.type === "text" &&
+      ev.message.text.trim().toLowerCase() === "!dank-register"
+    );
+  });
+  if (registrationEvents.length) {
+    for (const ev of registrationEvents) {
+      const sourceId = ev.source.groupId || ev.source.roomId;
+      if (!sourceId) continue;
+      const result = await lineReply(
+        ev.replyToken,
+        `✅ DANK staff group detected.\n\nLINE group ID:\n${sourceId}\n\nAdd this value in Vercel as LINE_TO and MONITORED_GROUP_IDS.`
+      );
+      if (!result?.ok) console.error("LINE group registration reply failed:", result?.error || "unknown error");
+    }
+    return res.status(200).json({ ok: true });
+  }
+
   // Respond 200 fast, then process (LINE requires a quick ack)
   res.status(200).json({ ok: true });
 
@@ -97,21 +121,6 @@ export default async function handler(req, res) {
       const sourceType = src.type; // 'user' | 'group' | 'room'
       const sourceId = src.groupId || src.roomId || src.userId;
       if (!sourceId) continue;
-
-      // Temporary setup command: reveal only the current chat's own recipient ID
-      // so the owner can configure LINE_TO and MONITORED_GROUP_IDS in Vercel.
-      const isGroupChat = sourceType === "group" || sourceType === "room";
-      const isRegistrationCommand =
-        isGroupChat &&
-        ev.message?.type === "text" &&
-        ev.message.text.trim().toLowerCase() === "!dank-register";
-      if (isRegistrationCommand) {
-        await lineReply(
-          ev.replyToken,
-          `✅ DANK staff group detected.\n\nLINE group ID:\n${sourceId}\n\nAdd this value in Vercel as LINE_TO and MONITORED_GROUP_IDS.`
-        );
-        continue;
-      }
 
       if (!isMonitored(sourceType, sourceId)) continue;
 
