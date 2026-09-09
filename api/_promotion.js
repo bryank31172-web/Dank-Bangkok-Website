@@ -10,7 +10,8 @@ export async function validatePromotion(codeValue, subtotalValue, deliveryFeeVal
   if (!code) return { ok: false, reason: "empty", code, subtotal, discount: 0, deliveryFee };
 
   const overrides = (await getJSON("admin:overrides")) || {};
-  const stored = overrides.promos && typeof overrides.promos === "object" ? overrides.promos[code] : null;
+  const savedCoupon = await getJSON("coupon:" + code);
+  const stored = (overrides.promos && typeof overrides.promos === "object" ? overrides.promos[code] : null) || savedCoupon;
   if (!stored || stored.active === false) return { ok: false, reason: "invalid", code };
 
   const now = Date.now();
@@ -26,13 +27,13 @@ export async function validatePromotion(codeValue, subtotalValue, deliveryFeeVal
   const minimum = Math.max(0, Number(stored.min) || 0);
   if (subtotal < minimum) return { ok: false, reason: "minimum", code, minimum };
 
-  const type = ["pct", "fixed", "freedelivery"].includes(stored.type) ? stored.type : "pct";
+  const type = ["pct", "fixed", "freedelivery", "gift"].includes(stored.type) ? stored.type : "pct";
   const value = Math.max(0, Number(stored.value) || 0);
   const discount = type === "pct"
     ? Math.min(subtotal, Math.round(subtotal * Math.min(100, value) / 100))
     : type === "fixed" ? Math.min(subtotal, value) : 0;
   const finalDeliveryFee = type === "freedelivery" ? 0 : deliveryFee;
-  const promotion = { code, type, value, min: minimum, quantity, used, desc: String(stored.desc || "").slice(0, 160) };
+  const promotion = { code, type, value, min: minimum, quantity, used, desc: String(stored.desc || "").slice(0, 160), gift: String(stored.gift || "").slice(0, 120) };
 
   return {
     ok: true,
