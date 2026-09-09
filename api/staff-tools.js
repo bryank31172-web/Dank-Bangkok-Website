@@ -38,7 +38,7 @@ export default async function handler(req,res){
       if(!code)return res.status(400).json({error:"promotion code required"});
       if(action==="delete") delete ov.promos[code];
       else if(action==="availability") ov.promos[code]={...(ov.promos[code]||{}),active:b.active===true||b.active==="true"};
-      else ov.promos[code]={type:["pct","fixed","freedelivery"].includes(b.type)?b.type:"pct",value:number(b.value),min:number(b.min),desc:text(b.desc,160),active:b.active!==false&&b.active!=="false"};
+      else {const quantity=Math.floor(number(b.quantity));if(quantity<1)return res.status(400).json({error:"promotion quantity must be a whole number of at least 1"});ov.promos[code]={type:["pct","fixed","freedelivery"].includes(b.type)?b.type:"pct",value:number(b.value),min:number(b.min),quantity,desc:text(b.desc,160),active:b.active!==false&&b.active!=="false"};}
     } else {
       const id=text(b.id,120), name=text(b.name,120);if(!id&&!name)return res.status(400).json({error:"product required"});
       const rawPicture=String(b.picture??"").trim();
