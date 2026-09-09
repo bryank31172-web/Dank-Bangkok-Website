@@ -141,6 +141,7 @@ export default async function handler(req, res) {
       const promotion = await validatePromotion(submittedPromotion, authoritativeSubtotal, submittedDeliveryFee);
       if (!promotion.ok) return res.status(400).json({ error: "invalid promotion", reason: promotion.reason, minimum: promotion.minimum });
       o.promo = promotion.code;
+      o.promoGift = promotion.promotion?.type === "gift" ? promotion.promotion.gift : "";
       o.discount = promotion.discount;
       o.deliveryFee = promotion.deliveryFee;
       o.subtotal = authoritativeSubtotal;
@@ -210,7 +211,7 @@ export default async function handler(req, res) {
     : `🏬 Pickup — ${o.pickup?.branch || ""}${o.pickup?.time ? " at " + o.pickup.time : ""}`;
   const promoCode = String(o.promo || "").trim().toUpperCase().slice(0, 24);
   const promoBlock = promoCode
-    ? `\n🎟️ Code: ${promoCode}${/^FREEJOINT$/.test(promoCode) ? "  ← 🚬 ADD ONE FREE JOINT" : ""}`
+    ? `\n🎟️ Code: ${promoCode}${o.promoGift ? `  ← 🚬 ${String(o.promoGift).toUpperCase()}` : /^FREEJOINT$/.test(promoCode) ? "  ← 🚬 ADD ONE FREE JOINT" : ""}`
     : "";
 
   const staffAlert =
