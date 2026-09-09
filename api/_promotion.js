@@ -17,6 +17,12 @@ export async function validatePromotion(codeValue, subtotalValue, deliveryFeeVal
   if (stored.startsAt && now < Number(stored.startsAt)) return { ok: false, reason: "not-started", code };
   if (stored.expiresAt && now > Number(stored.expiresAt)) return { ok: false, reason: "expired", code };
 
+  const quantity = Math.max(0, Math.floor(Number(stored.quantity) || 0));
+  const used = Math.max(0, Number(await getJSON("promotion:uses:" + code)) || 0);
+  if (quantity > 0 && used >= quantity) {
+    return { ok: false, reason: "quantity-exhausted", code, quantity, used };
+  }
+
   const minimum = Math.max(0, Number(stored.min) || 0);
   if (subtotal < minimum) return { ok: false, reason: "minimum", code, minimum };
 
@@ -26,7 +32,7 @@ export async function validatePromotion(codeValue, subtotalValue, deliveryFeeVal
     ? Math.min(subtotal, Math.round(subtotal * Math.min(100, value) / 100))
     : type === "fixed" ? Math.min(subtotal, value) : 0;
   const finalDeliveryFee = type === "freedelivery" ? 0 : deliveryFee;
-  const promotion = { code, type, value, min: minimum, desc: String(stored.desc || "").slice(0, 160) };
+  const promotion = { code, type, value, min: minimum, quantity, used, desc: String(stored.desc || "").slice(0, 160) };
 
   return {
     ok: true,
