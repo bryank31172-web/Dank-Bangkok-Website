@@ -232,6 +232,8 @@ let cur=null, curSeq=0, pollT=null, listT=null, ordersT=null, presenceT=null, co
 let TAB='dashboard', ORDERS=[], knownOrders=new Set(), firstOrderLoad=true, dashboardAlertOrderId='', LIVE=false;
 let alertEnabled=localStorage.getItem('dankOrderAlerts')==='1', audioCtx=null, orderPopT=null;
 const BASE_TITLE='DANK BKK — Staff Portal';
+// One-time queue reset: preserve completed history but hide unresolved orders created before this reset.
+const NEW_ORDER_DISPLAY_RESET_AT=Date.parse('2026-09-09T11:42:00Z');
 const $=s=>document.querySelector(s);
 
 /* Everything this console displays on the Orders and Chats tabs arrives from
@@ -956,7 +958,7 @@ async function labDelete(){
 async function refreshChats(){ try{ const r=await authGet(`${API}?list=1`); if(r.ok) renderList((await r.json()).threads); }catch(e){} }
 async function pollOrders(){
   try{ const r=await authGet('/api/orders'); if(!r.ok) return;
-    ORDERS=(await r.json()).orders||[];
+    ORDERS=((await r.json()).orders||[]).filter(order=>order.status==='done'||Number(order.at)>=NEW_ORDER_DISPLAY_RESET_AT);
     if(dashboardAlertOrderId&&!ORDERS.some(o=>String(o.orderId)===String(dashboardAlertOrderId)&&o.status!=='done'))dashboardAlertOrderId='';
     const fresh=ORDERS.filter(o=>!knownOrders.has(o.orderId)&&o.status!=='done');
     if(!firstOrderLoad && fresh.length){ dashboardAlertOrderId=String(fresh[0].orderId||'');showOrderAlert(fresh); fresh.forEach(o=>knownOrders.add(o.orderId));
