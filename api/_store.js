@@ -164,7 +164,9 @@ export async function getJSON(key) {
     },
   });
   if (r.ok) return r.v;
-  return mem.has(key) ? JSON.parse(mem.get(key)) : null;
+  if (mem.has(key)) return JSON.parse(mem.get(key));
+  const counter = counts.get(key);
+  return counter && counter.exp > Date.now() ? counter.n : null;
 }
 
 export async function setJSON(key, val, ttlSeconds = 60 * 60 * 24 * 14) {
