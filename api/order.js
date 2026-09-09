@@ -2,7 +2,7 @@
    The order is always written to storage first, then offered to every channel
    that is configured (all optional, any combination):
      - Telegram / LINE / WhatsApp   → staff phones buzz
-     - Shopify (dankbkk.com)        → created as an unpaid order, see _shopify.js
+     - Shopify (dankbangkok.com)        → created as an unpaid order, see _shopify.js
      - RESEND_API_KEY set           → emailed to ORDER_EMAIL_TO
        (default dankclubbkk@gmail.com) via resend.com (free tier).
    Returns {ok:true, orderId} whenever the order was written down, whatever
@@ -18,7 +18,7 @@ import { normPhone } from "./_phone.js";
 import { getBalance } from "./_wallet.js";
 import { boxesInOrder, issueGifts, giftAlertLines, getGiftConfig } from "./_boxgifts.js";
 import { getMenu } from "./_menu.js";
-import { linePush } from "./_line.js";
+import { notifyStaffLine } from "./_line.js";
 import { notifyStaffWhatsApp } from "./_whatsapp.js";
 import { pushShopifyOrder } from "./_shopify.js";
 import { requireRate } from "./_ratelimit.js";
@@ -198,7 +198,7 @@ export default async function handler(req, res) {
       ).replace(/\n/g, "<br>")}</p>`
     : "";
 
-  const host = req.headers?.["x-forwarded-host"] || req.headers?.host || "dankbkk.com";
+  const host = req.headers?.["x-forwarded-host"] || req.headers?.host || "www.dankbangkok.com";
   const itemLines = o.items
     .map((i) => `• ${i.name} (${i.option || ""}) ×${i.qty} — ฿${i.lineTotal}`)
     .join("\n");
@@ -214,7 +214,7 @@ export default async function handler(req, res) {
     : "";
 
   const staffAlert =
-    `🛒 NEW ORDER ${orderId} — dankbkk.com\n\n${itemLines}${giftBlock}${promoBlock}\n\n` +
+    `🛒 NEW ORDER ${orderId} — dankbangkok.com\n\n${itemLines}${giftBlock}${promoBlock}\n\n` +
     `Total: ฿${o.total ?? o.subtotal}${o.member ? " (member ⭐)" : ""}\n` +
     `Pay: ${o.payment}\n${where}\n` +
     `Customer: ${o.customer?.name || "-"} · ${o.customer?.phone}\n` +
@@ -240,11 +240,9 @@ export default async function handler(req, res) {
     saved = true;
   } catch (e) { console.error("order save failed:", e.message); }
 
-  /* Destinations are developer-managed server secrets, never staff-account
-     fields. Set STAFF_NOTIFICATION_DESTINATIONS_JSON in the deployment
-     environment as {"account-id":{"telegramChatId":"123","lineUserId":"U..."}}
-     (a staff name may be used as a fallback key). The online heartbeat still
-     decides whether that destination receives this minimal alert. */
+  /* Telegram destinations remain developer-managed server secrets and use
+     the online heartbeat. LINE is intentionally different: every saved order
+     is pushed once to the configured staff group in LINE_TO. */
   try {
     let configured={};
     try{configured=JSON.parse(process.env.STAFF_NOTIFICATION_DESTINATIONS_JSON||"{}")}catch(e){console.error("invalid staff notification destinations JSON")}
@@ -258,16 +256,27 @@ export default async function handler(req, res) {
       destinations.push(target&&typeof target==="object"?target:{});
     }
     const telegramIds=[...new Set(destinations.map(x=>String(x.telegramChatId||"").trim()).filter(x=>/^-?\d{5,20}$/.test(x)))];
-    const lineIds=[...new Set(destinations.map(x=>String(x.lineUserId||"").trim()).filter(x=>/^U[0-9a-f]{32}$/i.test(x)))];
     const sends=[];
     if(process.env.TELEGRAM_BOT_TOKEN)for(const chatId of telegramIds)sends.push(
       fetch(`https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/sendMessage`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({chat_id:chatId,text:onlineStaffAlert})})
         .then(async r=>{if(!r.ok){const why=await r.json().catch(()=>({}));console.error("telegram staff send failed:",r.status,why.description||"")}return r.ok})
         .catch(e=>{console.error("telegram staff send threw:",e.message);return false})
     );
-    if(process.env.LINE_CHANNEL_ACCESS_TOKEN)for(const userId of lineIds)sends.push(linePush(userId,onlineStaffAlert).then(r=>Boolean(r.ok)).catch(()=>false));
     if(sends.length)results.push(...await Promise.all(sends));
   }catch(e){console.error("online staff notification lookup failed:",e.message)}
+
+  if (saved) {
+    try {
+      const r = await notifyStaffLine(staffAlert);
+      if (!r.skipped) {
+        results.push(Boolean(r.ok));
+        if (!r.ok) console.error("LINE staff group send failed:", r.error || "unknown error");
+      }
+    } catch (e) {
+      results.push(false);
+      console.error("LINE staff group send threw:", e.message);
+    }
+  }
 
   try {
     const r = await notifyStaffWhatsApp(staffAlert);
@@ -297,7 +306,7 @@ export default async function handler(req, res) {
       const lines = o.items
         .map((i) => `• ${i.name} (${i.option}) ×${i.qty} — ฿${i.lineTotal}`)
         .join("<br>");
-      const html = `<h2>🌿 New order ${orderId} — dankbkk.com</h2>
+      const html = `<h2>🌿 New order ${orderId} — dankbangkok.com</h2>
         <p>${lines}</p>
         ${giftHtml}
         <p><b>Subtotal:</b> ฿${o.subtotal}${o.member ? " (member)" : ""}<br>
@@ -317,7 +326,7 @@ export default async function handler(req, res) {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          from: process.env.ORDER_EMAIL_FROM || "orders@dankbkk.com",
+          from: process.env.ORDER_EMAIL_FROM || "orders@dankbangkok.com",
           to: [OWNER_EMAIL],
           subject: `🌿 Order ${orderId} · ฿${o.total ?? o.subtotal} · ${o.fulfilment}`,
           html,
