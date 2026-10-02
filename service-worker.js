@@ -1,4 +1,4 @@
-const VERSION = "dank-pwa-v2";
+const VERSION = "dank-pwa-v3";
 const STATIC_CACHE = `${VERSION}-static`;
 const RUNTIME_CACHE = `${VERSION}-runtime`;
 const IMAGE_CACHE = `${VERSION}-images`;
@@ -18,6 +18,7 @@ const PRECACHE = [
 ];
 
 const NEVER_CACHE = [
+  /^\/(?:delivery|driver-delivery)(?:\.html|\/|$)/,
   /^\/api\//,
   /^\/checkout(?:\/|$)/,
   /^\/staff(?:\.html|\/|$)/,

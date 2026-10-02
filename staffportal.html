@@ -1014,7 +1014,7 @@ function renderOrders(){
   }).join('');
   el.innerHTML='<section class="portal-panel product-workspace"><div class="product-table-shell">'+
     '<div class="product-table-toolbar"><label class="product-table-search"><i class="ri-search-line"></i><input id="orderTableSearch" type="search" placeholder="Search..." value="'+esc(ORDER_TABLE_QUERY)+'" aria-label="Search orders"></label>'+
-    '<div class="product-table-actions"><button class="product-table-control" type="button" data-act="order-sort"><i class="ri-sort-desc"></i><span>Sort</span><small>'+esc(sortLabels[ORDER_TABLE_SORT])+'</small></button>'+
+    '<div class="product-table-actions">'+(can('products')?'<button class="product-table-control" type="button" data-act="delivery-products">Delivery products</button>':'')+'<button class="product-table-control" type="button" data-act="order-sort"><i class="ri-sort-desc"></i><span>Sort</span><small>'+esc(sortLabels[ORDER_TABLE_SORT])+'</small></button>'+
     '<select class="product-filter-select" id="orderStatusFilter" aria-label="Filter by order status"><option value="All">Filter</option><option value="New" '+(ORDER_TABLE_STATUS==='New'?'selected':'')+'>New</option><option value="Completed" '+(ORDER_TABLE_STATUS==='Completed'?'selected':'')+'>Completed</option></select></div></div>'+
     '<div class="product-table-scroll"><table class="product-admin-table"><thead><tr><th>Order ID</th><th>Customer</th><th>Category</th><th>Fulfilment</th><th>Status</th><th>Total</th><th>Received</th><th style="text-align:right">Action</th><th style="text-align:right">Completed by</th></tr></thead><tbody>'+body+'</tbody></table>'+
     (rows.length?'':'<div class="product-table-empty">'+(ORDERS.length?'No orders match your search.':'No orders yet. Online orders appear here instantly.')+'</div>')+
@@ -1072,6 +1072,59 @@ function orderItemGrams(item){
   const match=String(item?.option||'').match(/(\d+(?:\.\d+)?)\s*g\b/i);
   return match?Number(match[1])*qty:null;
 }
+async function openDeliveryProducts(){
+  try{
+    const r=await authGet('/api/delivery-products'),data=await r.json();if(!r.ok)throw new Error(data.error||'Could not load delivery products');
+    document.getElementById('deliveryProducts')?.remove();
+    const ov=document.createElement('div');ov.id='deliveryProducts';ov.className='recent-order-modal';ov.setAttribute('role','dialog');ov.setAttribute('aria-modal','true');ov.setAttribute('aria-labelledby','deliveryProductsTitle');
+    const selected=new Set(data.ids||[]),products=data.products||[];
+    ov.innerHTML=`<section class="recent-order-card"><header class="recent-order-head"><h3 id="deliveryProductsTitle">Delivery tracking products</h3><button type="button" class="ghost" data-products-close>Close</button></header><div class="recent-order-body"><p>Select food and ordinary merchandise that should open delivery tracking after checkout. Every item in an order must be selected.</p><p class="dash-muted">Connected catalog: ${esc(data.source)} · ${products.length} supported products</p><input id="deliveryProductSearch" type="search" placeholder="Search products" aria-label="Search delivery products" style="width:100%;padding:12px;margin:12px 0"><div id="deliveryProductRows"></div><p id="deliveryProductMessage" role="status"></p><button class="btn" type="button" data-products-save>Save products</button></div></section>`;
+    const message=text=>ov.querySelector('#deliveryProductMessage').textContent=text;
+    const render=()=>{const q=ov.querySelector('#deliveryProductSearch').value.trim().toLowerCase(),rows=products.filter(p=>[p.name,p.category,p.option,p.id].join(' ').toLowerCase().includes(q));ov.querySelector('#deliveryProductRows').innerHTML=rows.length?rows.map(p=>`<label style="display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--line)"><input type="checkbox" data-product-id="${esc(p.id)}" ${selected.has(p.id)?'checked':''}><span><b>${esc(p.name)}</b><small style="display:block">${esc(p.category)}${p.option?' · '+esc(p.option):''}${p.price!=null?' · ฿'+esc(p.price):''}</small></span></label>`).join(''):'<p>No supported products match this search.</p>'};
+    ov.addEventListener('change',event=>{const id=event.target.dataset.productId;if(id)event.target.checked?selected.add(id):selected.delete(id)});
+    ov.addEventListener('click',async event=>{
+      if(event.target===ov||event.target.closest('[data-products-close]')){ov.remove();return}
+      const save=event.target.closest('[data-products-save]');if(!save)return;save.disabled=true;
+      try{const r=await authPost('/api/delivery-products',{ids:[...selected]}),j=await r.json();if(!r.ok)throw new Error(j.error);message('Saved. Delivery tracking is enabled for '+j.ids.length+' selected products.');}catch(e){message(e.message)}finally{save.disabled=false}
+    });
+    ov.querySelector('#deliveryProductSearch').addEventListener('input',render);document.body.appendChild(ov);render();ov.querySelector('#deliveryProductSearch').focus();
+  }catch(e){alert(e.message||'Could not open delivery products')}
+}
+
+async function openDeliveryManager(id){
+  try{
+    const r=await authGet('/api/delivery?role=staff&id='+encodeURIComponent(id)),data=await r.json();
+    if(!r.ok)throw new Error(data.error||'Tracking unavailable');
+    document.getElementById('deliveryManager')?.remove();
+    const ov=document.createElement('div');ov.id='deliveryManager';ov.className='recent-order-modal';
+    ov.setAttribute('role','dialog');ov.setAttribute('aria-modal','true');ov.setAttribute('aria-label','Manage delivery tracking');
+    const ended=['completed','cancelled'].includes(data.status);
+    ov.innerHTML=`<section class="recent-order-card"><header class="recent-order-head"><h3>Delivery · ${esc(id)}</h3><button type="button" class="ghost" data-delivery-close>Close</button></header><div class="recent-order-body"><p>${esc(data.address||'Delivery destination')}</p><p>Status: ${esc(data.status.replaceAll('_',' '))}</p><form id="deliveryForm"><label>Driver name<input name="name" value="${esc(data.driver?.name||'')}" maxlength="80" required style="width:100%;padding:12px;margin:8px 0"></label><label>Contact number<input name="phone" type="tel" value="${esc(data.driver?.phone||'')}" required style="width:100%;padding:12px;margin:8px 0"></label><label>Profile picture<input name="photo" type="file" accept="image/jpeg,image/png,image/webp" style="width:100%;margin:8px 0"></label><div style="display:grid;grid-template-columns:1fr 1fr;gap:12px"><label>Destination latitude<input name="lat" type="number" step="any" min="-90" max="90" value="${esc(data.destination?.lat??'')}" required style="width:100%;padding:12px;margin:8px 0"></label><label>Destination longitude<input name="lng" type="number" step="any" min="-180" max="180" value="${esc(data.destination?.lng??'')}" required style="width:100%;padding:12px;margin:8px 0"></label></div><p>Confirm the destination. Assigning again replaces the previous driver's link.</p><button class="btn" type="submit" ${ended?'disabled':''}>Assign driver</button></form><div style="margin:16px 0"><label>Customer tracking link<input id="deliveryCustomerLink" readonly style="width:100%;padding:12px;margin-top:8px"></label><button class="ghost" type="button" data-copy-customer>Copy customer link</button></div><div><label>Private driver link<input id="deliveryDriverLink" readonly style="width:100%;padding:12px;margin-top:8px"></label><button class="ghost" type="button" data-copy-driver>Copy driver link</button></div><p id="deliveryMessage" role="status"></p><button class="ghost" type="button" data-delivery-complete ${ended?'disabled':''}>Complete delivery</button> <button class="ghost" type="button" data-delivery-cancel ${ended?'disabled':''}>Cancel delivery</button></div></section>`;
+    const full=url=>url?location.origin+url:'';
+    document.body.appendChild(ov);
+    ov.querySelector('#deliveryCustomerLink').value=full(data.customerUrl);
+    ov.querySelector('#deliveryDriverLink').value=full(data.driverUrl);
+    let photo=data.driver?.photo||'';
+    const message=s=>ov.querySelector('#deliveryMessage').textContent=s;
+    ov.querySelector('[name=photo]').addEventListener('change',async event=>{
+      const file=event.target.files?.[0];if(!file)return;
+      try{photo=await staffResize(file,240,.75);message('Profile picture ready. Save it by assigning the driver.')}catch{message('Could not read profile picture.')}
+    });
+    ov.querySelector('form').addEventListener('submit',async event=>{
+      event.preventDefault();const form=event.target,button=form.querySelector('button');button.disabled=true;
+      try{const r=await authPost('/api/delivery',{role:'staff',id,action:'assign',name:form.elements.name.value,phone:form.elements.phone.value,photo,destination:{lat:Number(form.elements.lat.value),lng:Number(form.elements.lng.value)}}),j=await r.json();if(!r.ok)throw new Error(j.error);ov.querySelector('#deliveryDriverLink').value=full(j.driverUrl);message('Driver assigned. Copy the private driver link and send it to the driver.')}catch(e){message(e.message)}finally{button.disabled=false}
+    });
+    ov.addEventListener('click',async event=>{
+      if(event.target===ov||event.target.closest('[data-delivery-close]')){ov.remove();return}
+      const copy=event.target.closest('[data-copy-customer],[data-copy-driver]');
+      if(copy){const input=ov.querySelector(copy.hasAttribute('data-copy-driver')?'#deliveryDriverLink':'#deliveryCustomerLink');if(!input.value){message('Assign a driver first.');return}try{await navigator.clipboard.writeText(input.value);message('Link copied. Keep it private.')}catch{input.select();message('Select and copy this private link.')}return}
+      const end=event.target.closest('[data-delivery-complete],[data-delivery-cancel]');
+      if(end){const action=end.hasAttribute('data-delivery-complete')?'complete':'cancel';if(!confirm(action==='complete'?'Confirm this order was delivered?':'Cancel this delivery and stop location sharing?'))return;end.disabled=true;try{const r=await authPost('/api/delivery',{role:'staff',id,action}),j=await r.json();if(!r.ok)throw new Error(j.error);ov.remove();closeRecentOrder();pollOrders()}catch(e){message(e.message);end.disabled=false}}
+    });
+    ov.querySelector('[data-delivery-close]').focus();
+  }catch(e){alert(e.message||'Could not open delivery tracking')}
+}
+
 function closeRecentOrder(){
   const ov=document.getElementById('recentOrderOv');
   if(ov)ov.remove();
@@ -1098,7 +1151,7 @@ function openRecentOrder(id){
   }).join('');
   const ov=document.createElement('div');
   ov.id='recentOrderOv';ov.className='recent-order-modal';ov.setAttribute('role','dialog');ov.setAttribute('aria-modal','true');ov.setAttribute('aria-labelledby','recentOrderTitle');
-  ov.innerHTML=`<section class="recent-order-card"><header class="recent-order-head"><div><div class="recent-order-kicker">Recent order</div><h3 id="recentOrderTitle">${esc(order.orderId||'New order')}</h3><div class="dash-muted">${order.at?esc(ago(order.at)):'Just received'}</div></div><button type="button" class="recent-order-close" data-recent-close aria-label="Close order details"><i class="ri-close-line"></i></button></header><div class="recent-order-body"><div class="recent-customer"><div class="recent-info"><span>Name</span><b>${esc(order.customer?.name||'Not supplied')}</b></div><div class="recent-info"><span>Phone</span><b>${esc(order.customer?.phone||'Not supplied')}</b></div><div class="recent-info"><span>Order type</span><b>${esc(order.fulfilment||'Order')}</b></div><div class="recent-info"><span>Total</span><b>${esc(dashMoney(order.total??order.subtotal))}</b></div>${isDone?`<div class="recent-info"><span>Completed by</span><b>${esc(order.completedBy?.name||order.flowerWeights?.recordedBy||'Staff')}</b></div>`:''}</div><div>${lines||'<div class="empty-dash">No item details supplied.</div>'}</div><div class="recent-order-error">Enter every flower weight with exactly 2 decimal places, for example 0.58.</div><div class="recent-order-note">Ordered grams are taken directly from the customer’s order and cannot be edited. Enter the actual measured weight before completing the order.</div></div><footer class="recent-order-actions">${isDone?'<span class="badge closed" style="margin-right:auto">Completed</span>':''}<button type="button" class="ghost" data-recent-close>${isDone?'Close':'Cancel'}</button>${isDone?'':`<button type="button" class="recent-order-complete" data-recent-complete data-id="${esc(order.orderId||'')}" ${orderFlowerLines(order).length?'disabled':''}>Complete order</button>`}</footer></section>`;
+  ov.innerHTML=`<section class="recent-order-card"><header class="recent-order-head"><div><div class="recent-order-kicker">Recent order</div><h3 id="recentOrderTitle">${esc(order.orderId||'New order')}</h3><div class="dash-muted">${order.at?esc(ago(order.at)):'Just received'}</div></div><button type="button" class="recent-order-close" data-recent-close aria-label="Close order details"><i class="ri-close-line"></i></button></header><div class="recent-order-body"><div class="recent-customer"><div class="recent-info"><span>Name</span><b>${esc(order.customer?.name||'Not supplied')}</b></div><div class="recent-info"><span>Phone</span><b>${esc(order.customer?.phone||'Not supplied')}</b></div><div class="recent-info"><span>Order type</span><b>${esc(order.fulfilment||'Order')}</b></div><div class="recent-info"><span>Total</span><b>${esc(dashMoney(order.total??order.subtotal))}</b></div>${isDone?`<div class="recent-info"><span>Completed by</span><b>${esc(order.completedBy?.name||order.flowerWeights?.recordedBy||'Staff')}</b></div>`:''}</div>${order.deliveryTrackingAvailable?`<button type="button" class="btn" data-act="delivery-manage" data-id="${esc(order.orderId)}">Manage delivery tracking</button>`:''}<div>${lines||'<div class="empty-dash">No item details supplied.</div>'}</div><div class="recent-order-error">Enter every flower weight with exactly 2 decimal places, for example 0.58.</div><div class="recent-order-note">Ordered grams are taken directly from the customer’s order and cannot be edited. Enter the actual measured weight before completing the order.</div></div><footer class="recent-order-actions">${isDone?'<span class="badge closed" style="margin-right:auto">Completed</span>':''}<button type="button" class="ghost" data-recent-close>${isDone?'Close':'Cancel'}</button>${isDone?'':`<button type="button" class="recent-order-complete" data-recent-complete data-id="${esc(order.orderId||'')}" ${orderFlowerLines(order).length?'disabled':''}>Complete order</button>`}</footer></section>`;
   ov.addEventListener('click',event=>{
     if(event.target===ov||event.target.closest('[data-recent-close]')){closeRecentOrder();return}
     const done=event.target.closest('[data-recent-complete]');if(done)completeRecentOrder(done.dataset.id,ov);
@@ -2193,6 +2246,8 @@ function salesCSV(){
    on #list (which outlives every re-render) reads them back and calls the
    function directly. Nothing here builds code out of a string. */
 document.addEventListener('click',event=>{
+  const manage=event.target.closest('[data-act="delivery-manage"]');
+  if(manage){event.preventDefault();event.stopPropagation();openDeliveryManager(manage.dataset.id);return}
   const trigger=event.target.closest('[data-act="recent-order"]');
   if(!trigger)return;
   event.preventDefault();
@@ -2204,6 +2259,8 @@ $('#list').addEventListener('click',e=>{
   const d=el.dataset;
   switch(d.act){
     case 'dash-orders': setTab('orders'); break;
+    case 'delivery-products': openDeliveryProducts(); break;
+    case 'delivery-manage': openDeliveryManager(d.id); break;
     case 'recent-order': openRecentOrder(d.id); break;
     case 'dash-announcement': setTab('announcement'); break;
     case 'thread':     openThread(d.id); break;

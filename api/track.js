@@ -1,3 +1,4 @@
+import { terminalKey } from "./_delivery.js";
 /* GET /api/track?id=DK... — customer-facing order status lookup.
    Returns only what the order-holder already knows (status, fulfilment,
    items summary, totals) — no other customers' data, no staff fields.
@@ -20,10 +21,11 @@ export default async function handler(req, res) {
   try {
     const o = await getJSON("order:" + id);
     if (!o) return res.status(200).json({ found: false });
+    const ended = await getJSON(terminalKey(id));
     return res.status(200).json({
       found: true,
       orderId: o.orderId,
-      status: o.status || "new",              // new | done
+      status: ended?.status === "completed" ? "done" : o.status || "new",              // new | done
       payStatus: o.payStatus || (["PromptPay","Card"].includes(o.payment) ? "unpaid" : "on_arrival"),
       payment: o.payment,
       fulfilment: o.fulfilment,
