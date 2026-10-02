@@ -1014,7 +1014,7 @@ function renderOrders(){
   }).join('');
   el.innerHTML='<section class="portal-panel product-workspace"><div class="product-table-shell">'+
     '<div class="product-table-toolbar"><label class="product-table-search"><i class="ri-search-line"></i><input id="orderTableSearch" type="search" placeholder="Search..." value="'+esc(ORDER_TABLE_QUERY)+'" aria-label="Search orders"></label>'+
-    '<div class="product-table-actions"><button class="product-table-control" type="button" data-act="order-sort"><i class="ri-sort-desc"></i><span>Sort</span><small>'+esc(sortLabels[ORDER_TABLE_SORT])+'</small></button>'+
+    '<div class="product-table-actions">'+(can('products')?'<button class="product-table-control" type="button" data-act="delivery-products">Delivery products</button>':'')+'<button class="product-table-control" type="button" data-act="order-sort"><i class="ri-sort-desc"></i><span>Sort</span><small>'+esc(sortLabels[ORDER_TABLE_SORT])+'</small></button>'+
     '<select class="product-filter-select" id="orderStatusFilter" aria-label="Filter by order status"><option value="All">Filter</option><option value="New" '+(ORDER_TABLE_STATUS==='New'?'selected':'')+'>New</option><option value="Completed" '+(ORDER_TABLE_STATUS==='Completed'?'selected':'')+'>Completed</option></select></div></div>'+
     '<div class="product-table-scroll"><table class="product-admin-table"><thead><tr><th>Order ID</th><th>Customer</th><th>Category</th><th>Fulfilment</th><th>Status</th><th>Total</th><th>Received</th><th style="text-align:right">Action</th><th style="text-align:right">Completed by</th></tr></thead><tbody>'+body+'</tbody></table>'+
     (rows.length?'':'<div class="product-table-empty">'+(ORDERS.length?'No orders match your search.':'No orders yet. Online orders appear here instantly.')+'</div>')+
@@ -1072,6 +1072,25 @@ function orderItemGrams(item){
   const match=String(item?.option||'').match(/(\d+(?:\.\d+)?)\s*g\b/i);
   return match?Number(match[1])*qty:null;
 }
+async function openDeliveryProducts(){
+  try{
+    const r=await authGet('/api/delivery-products'),data=await r.json();if(!r.ok)throw new Error(data.error||'Could not load delivery products');
+    document.getElementById('deliveryProducts')?.remove();
+    const ov=document.createElement('div');ov.id='deliveryProducts';ov.className='recent-order-modal';ov.setAttribute('role','dialog');ov.setAttribute('aria-modal','true');ov.setAttribute('aria-labelledby','deliveryProductsTitle');
+    const selected=new Set(data.ids||[]),products=data.products||[];
+    ov.innerHTML=`<section class="recent-order-card"><header class="recent-order-head"><h3 id="deliveryProductsTitle">Delivery tracking products</h3><button type="button" class="ghost" data-products-close>Close</button></header><div class="recent-order-body"><p>Select food and ordinary merchandise that should open delivery tracking after checkout. Every item in an order must be selected.</p><p class="dash-muted">Connected catalog: ${esc(data.source)} · ${products.length} supported products</p><input id="deliveryProductSearch" type="search" placeholder="Search products" aria-label="Search delivery products" style="width:100%;padding:12px;margin:12px 0"><div id="deliveryProductRows"></div><p id="deliveryProductMessage" role="status"></p><button class="btn" type="button" data-products-save>Save products</button></div></section>`;
+    const message=text=>ov.querySelector('#deliveryProductMessage').textContent=text;
+    const render=()=>{const q=ov.querySelector('#deliveryProductSearch').value.trim().toLowerCase(),rows=products.filter(p=>[p.name,p.category,p.option,p.id].join(' ').toLowerCase().includes(q));ov.querySelector('#deliveryProductRows').innerHTML=rows.length?rows.map(p=>`<label style="display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--line)"><input type="checkbox" data-product-id="${esc(p.id)}" ${selected.has(p.id)?'checked':''}><span><b>${esc(p.name)}</b><small style="display:block">${esc(p.category)}${p.option?' · '+esc(p.option):''}${p.price!=null?' · ฿'+esc(p.price):''}</small></span></label>`).join(''):'<p>No supported products match this search.</p>'};
+    ov.addEventListener('change',event=>{const id=event.target.dataset.productId;if(id)event.target.checked?selected.add(id):selected.delete(id)});
+    ov.addEventListener('click',async event=>{
+      if(event.target===ov||event.target.closest('[data-products-close]')){ov.remove();return}
+      const save=event.target.closest('[data-products-save]');if(!save)return;save.disabled=true;
+      try{const r=await authPost('/api/delivery-products',{ids:[...selected]}),j=await r.json();if(!r.ok)throw new Error(j.error);message('Saved. Delivery tracking is enabled for '+j.ids.length+' selected products.');}catch(e){message(e.message)}finally{save.disabled=false}
+    });
+    ov.querySelector('#deliveryProductSearch').addEventListener('input',render);document.body.appendChild(ov);render();ov.querySelector('#deliveryProductSearch').focus();
+  }catch(e){alert(e.message||'Could not open delivery products')}
+}
+
 async function openDeliveryManager(id){
   try{
     const r=await authGet('/api/delivery?role=staff&id='+encodeURIComponent(id)),data=await r.json();
@@ -2240,6 +2259,7 @@ $('#list').addEventListener('click',e=>{
   const d=el.dataset;
   switch(d.act){
     case 'dash-orders': setTab('orders'); break;
+    case 'delivery-products': openDeliveryProducts(); break;
     case 'delivery-manage': openDeliveryManager(d.id); break;
     case 'recent-order': openRecentOrder(d.id); break;
     case 'dash-announcement': setTab('announcement'); break;

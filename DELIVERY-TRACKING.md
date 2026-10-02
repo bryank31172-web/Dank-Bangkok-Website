@@ -16,9 +16,12 @@ review button appears if a valid Google review URL has been configured.
 
 ## Enable in Vercel
 
-1. Settings -> Environment Variables: set DELIVERY_ALLOWED_PRODUCT_IDS to
-   comma-separated StoreHub SKU IDs for verified ordinary food/merchandise.
-   The server checks live product names/categories; mixed orders are excluded.
+1. Staff portal -> Orders -> Delivery products: select eligible food/ordinary
+   merchandise from the existing live POS/database catalog and press Save products.
+   Selections persist in the connected database. Mixed orders are excluded.
+   An empty saved selection disables new tracking. The legacy
+   DELIVERY_ALLOWED_PRODUCT_IDS environment variable is only a fallback before
+   the first database selection is saved. Bundled/demo catalogs cannot enable tracking.
 2. Confirm durable storage: Supabase service-role credentials or Upstash.
    Tracking refuses to run on per-instance memory or after a storage failure.
 3. Set GOOGLE_MAPS_BROWSER_KEY, restricted to your website domains, with Maps
@@ -29,6 +32,16 @@ review button appears if a valid Google review URL has been configured.
 5. Google Business Profile -> Ask for reviews -> copy link into
    GOOGLE_REVIEW_URL. No review destination is guessed.
 6. Deployments -> Redeploy after setting variables.
+
+## Product connection
+
+The picker uses the existing shared menu service: the saved POS/database feed,
+configured live feed, or StoreHub. It does not create another product catalog or
+modify product price/stock. Product selections use the durable `delivery:products`
+record. Editing selections requires the existing products permission; delivery
+assignment continues to require orders permission. New orders are validated
+against the current live catalog, so deleted or newly unsupported products cannot
+qualify using stale selections or customer-provided names/categories.
 
 ## Staff workflow
 
@@ -65,7 +78,7 @@ no-store and excluded from the PWA cache.
 
 ## Verification
 
-Run `node --test tests/delivery.test.js` for authorization, expiry, eligibility,
+Run `node --test tests/delivery*.test.js` for authorization, expiry, eligibility,
 GPS validation, reassignment, stale updates, completion and storage failure.
 Then test a configured eligible order with two phones: one customer and one
 driver. Verify actual GPS, Google API access, calling, review destination and
