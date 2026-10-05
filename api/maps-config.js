@@ -1,4 +1,4 @@
 export default function handler(req, res) {
   res.setHeader('Cache-Control', 'public, max-age=300, s-maxage=300');
-  res.status(200).json({ key: process.env.GOOGLE_MAPS_BROWSER_KEY || '', mapIdConfigured: Boolean(process.env.GOOGLE_MAPS_MAP_ID), routesConfigured: Boolean(process.env.GOOGLE_MAPS_API_KEY), reviewEnabled: false });
+  res.status(200).json({ key: process.env.GOOGLE_MAPS_BROWSER_KEY || '', mapId: process.env.GOOGLE_MAPS_MAP_ID || 'DEMO_MAP_ID', mapIdConfigured: Boolean(process.env.GOOGLE_MAPS_MAP_ID), routesConfigured: Boolean(process.env.GOOGLE_MAPS_API_KEY), reviewEnabled: false });
 }

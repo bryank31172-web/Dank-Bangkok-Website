@@ -5,6 +5,12 @@ New orders containing any other products keep the existing checkout flow.
 
 ## What customers see
 
+For a browser-only walkthrough without an order or real rider, open
+`/delivery.html?demo=1`. Use Start delivery, Next location (20 sample positions),
+Complete delivery and Restart test. Only the public map configuration is fetched;
+no order records, delivery APIs, phone GPS or notifications are used. This previews
+the customer stages and Google map; positions and ETA are simulated.
+
 Checkout opens a private link: Preparing -> On the way -> Completed.
 On the way uses a 70/30 desktop split: Google map and driver information, with
 profile photo, name, phone and Call now. Mobile puts the map above the driver
