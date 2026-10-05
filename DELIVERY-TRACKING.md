@@ -7,8 +7,9 @@ New orders containing any other products keep the existing checkout flow.
 
 For a browser-only walkthrough without an order or real rider, open
 `/delivery.html?demo=1`. Use Start delivery, Next location (20 sample positions),
-Complete delivery and Restart test. Only the public map configuration is fetched;
-no order records, delivery APIs, phone GPS or notifications are used. This previews
+Complete delivery and Restart test. Only public map configuration and a fixed public Google road route are fetched;
+no order records, phone GPS or notifications are used. The route is cached for
+five minutes and rate limited to ten requests per five minutes. This previews
 the customer stages and Google map; positions and ETA are simulated.
 
 Checkout opens a private link: Preparing -> On the way -> Completed.
@@ -119,3 +120,20 @@ GPS validation, reassignment, stale updates, completion and storage failure.
 Then test a configured eligible order with two phones: one customer and one
 driver. Verify actual GPS, Google API access, calling, completion screen and
 background/locked-phone behavior before production use.
+
+## Route map presentation
+
+Customer and rider pages share the reference-style map: destination pill, red
+destination pin, motorcycle marker, outlined green road route and green time /
+distance badge. Desktop keeps the 70/30 map and rider-panel split; mobile uses a
+70svh map with a rounded white information panel. The actual remaining route is
+computed from each accepted rider GPS update every 45 seconds. Stale GPS hides
+the route and estimate, and pause/completion removes the rider route. The driver
+page refreshes its route after sending GPS and keeps the existing Start / Pause /
+Complete and Open navigation controls. Map failures do not disable those controls.
+
+The browser demo uses a real Google road route from the public Sathorn shop
+coordinates to Siam Paragon. Its rider moves through twenty simulated points
+on that geometry, shortening the displayed route. It never requests phone GPS,
+creates an order, or sends LINE messages. Production route geometry and distance
+come from Google Routes; failure never invents a road route.

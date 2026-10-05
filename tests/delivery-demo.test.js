@@ -22,10 +22,11 @@ function browser(search) {
   const document = {hidden: false, head: new Element(), createElement: () => new Element(), getElementById: get, querySelector: get, addEventListener() {}};
   const context = vm.createContext({document, location: {search, hash: '#id=FAKE-ORDER&token=FAKE-TOKEN'}, URLSearchParams, AbortSignal, Date, console, Image: Element,
     setInterval(fn, delay) {const id = ++counter; intervals.set(id, {fn, delay}); return id;}, clearInterval(id) {intervals.delete(id);},
-    fetch: async (url, options) => {requests.push({url, options}); return {ok: true, json: async () => url === '/api/maps-config' ? {key: 'test-browser-key', mapId: 'test-map'} : {orderId: 'FAKE-ORDER', status: 'preparing', items: [], total: 0}};}});
+    fetch: async (url, options) => {requests.push({url, options}); return {ok: true, json: async () => url === '/api/maps-config' ? {key: 'test-browser-key', mapId: 'test-map'} : url === '/api/delivery?action=demo-route' ? {destination:{lat:43.252,lng:-126.453},destinationLabel:'Sample destination',route:{polyline:'_p~iF~ps|U_ulLnnqC_mqNvxq`@',minutes:10,km:5}} : {orderId: 'FAKE-ORDER', status: 'preparing', items: [], total: 0}};}});
   context.window = context;
   const html = readFileSync(new URL('../delivery.html', import.meta.url), 'utf8');
   const script = html.match(/<script>([\s\S]*?)<\/script>/)[1];
+  vm.runInContext(readFileSync(new URL('../delivery-map.js', import.meta.url), 'utf8'), context);
   vm.runInContext(script, context);
   vm.runInContext(readFileSync(new URL('../delivery-demo.js', import.meta.url), 'utf8'), context);
   return {context, elements, requests, intervals, get, html};
@@ -56,7 +57,7 @@ test('demo walks through all 20 positions and completion without live order or G
   assert.equal(vm.runInContext('last.status', b.context), 'preparing');
   // Visibility changes and explicit refreshes must never request live delivery data.
   await vm.runInContext('poll()', b.context);
-  assert.deepEqual(b.requests.map(r => r.url), ['/api/maps-config']);
+  assert.deepEqual(b.requests.map(r => r.url), ['/api/maps-config', '/api/delivery?action=demo-route']);
   assert.equal(b.requests[0].options.method, undefined);
 });
 

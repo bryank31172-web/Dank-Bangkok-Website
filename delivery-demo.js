@@ -1,4 +1,4 @@
-// Browser-only sample data. Never calls order/delivery APIs or device GPS.
+// Simulated rider on a fixed public Google road route; no orders or device GPS.
 function startDeliveryDemo() {
   if (!isDemo) return;
   document.title = 'Delivery demo — DANK BKK';
@@ -8,14 +8,16 @@ function startDeliveryDemo() {
   panel.innerHTML = '<b>Delivery test · simulated rider</b><p>No purchase or real rider needed. Start delivery, move through 20 sample locations, then complete. Positions and arrival times are simulated; the Google map is real. Automatic movement runs every 45 seconds.</p><div style="display:flex;flex-wrap:wrap;gap:8px;margin:14px 0"><button class="btn" data-demo="start">Start delivery</button><button class="btn" data-demo="next">Next location</button><button class="btn" data-demo="complete">Complete delivery</button><button class="btn secondary" data-demo="reset">Restart test</button></div><p role="status" id="demoProgress"></p>';
   document.querySelector('main').prepend(panel);
   const buttons = Object.fromEntries(['start', 'next', 'complete', 'reset'].map(action => [action, panel.querySelector('[data-demo="' + action + '"]')]));
-  const path = Array.from({length: 20}, (_, i) => ({lat: 13.7463 - i * 0.0001, lng: 100.5346 + i * 0.0001}));
+  let path = Array.from({length: 20}, (_, i) => ({lat: 13.7463 - i * 0.0001, lng: 100.5346 + i * 0.0001}));
+  let roadRoute = null, fullPath = [], destination = path[19], destinationLabel = 'Delivery destination';
   let index = 0, movement, config = {key: '', mapId: 'DEMO_MAP_ID'};
   let state = 'preparing';
   function display() {
     const moving = state === 'on_the_way';
-    render({orderId: 'DEMO-ONLY', status: state, completedAt: state === 'completed' ? Date.now() : null,
-      destination: state === 'completed' ? null : path[19],
-      location: moving ? {...path[index], capturedAt: Date.now(), route: {minutes: Math.max(1, 10 - Math.floor(index / 2))}} : null,
+    const remaining = roadRoute ? {...roadRoute, polyline: encodeDeliveryRoute([path[index], ...fullPath.slice(Math.floor(index * (fullPath.length - 1) / 19) + 1)]), minutes: Math.max(1, Math.round(roadRoute.minutes * (1 - index / 20))), km: Math.round(roadRoute.km * (1 - index / 20) * 10) / 10} : null;
+    render({orderId: 'DEMO-ONLY', status: state, demo: true, destinationLabel, completedAt: state === 'completed' ? Date.now() : null,
+      destination: state === 'completed' ? null : destination,
+      location: moving ? {...path[index], capturedAt: Date.now(), route: remaining} : null,
       stale: !moving, driver: state === 'completed' ? null : {name: 'Simulated rider', phone: '', photo: ''},
       items: [{name: 'Sample sandwich (test only)', qty: 1}], total: 100, reviewUrl: '',
       mapsKey: config.key, mapId: config.mapId});
@@ -34,4 +36,18 @@ function startDeliveryDemo() {
     .then(response => {if (!response.ok) throw new Error('Map configuration unavailable'); return response.json();})
     .then(data => {config = {key: data.key || '', mapId: data.mapId || 'DEMO_MAP_ID'}; display();})
     .catch(() => {panel.querySelector('#demoProgress').textContent += ' Google map configuration could not load; reload to retry.';});
+  fetch('/api/delivery?action=demo-route', {cache: 'default', signal: AbortSignal.timeout(10000)})
+    .then(response => {if (!response.ok) throw new Error('Demo route unavailable'); return response.json();})
+    .then(data => {
+      if (!data.route?.polyline) throw new Error('Demo route unavailable');
+      fullPath = decodeDeliveryRoute(data.route.polyline);
+      if (fullPath.length < 2) throw new Error('Demo route unavailable');
+      // Keep the simulated rider on Google's route geometry, including bends.
+      path = Array.from({length: 20}, (_, i) => {
+        const offset = i * (fullPath.length - 1) / 19, a = Math.floor(offset), b = Math.min(fullPath.length - 1, a + 1), fraction = offset - a;
+        return {lat: fullPath[a].lat + (fullPath[b].lat - fullPath[a].lat) * fraction, lng: fullPath[a].lng + (fullPath[b].lng - fullPath[a].lng) * fraction};
+      });
+      destination = data.destination; destinationLabel = data.destinationLabel; roadRoute = data.route; display();
+    })
+    .catch(() => {panel.querySelector('#demoProgress').textContent += ' Google road route unavailable. No estimated route is drawn.';});
 }

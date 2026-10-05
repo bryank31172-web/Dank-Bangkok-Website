@@ -77,15 +77,16 @@ export async function routeFor(location, destination) {
     const r = await fetch('https://routes.googleapis.com/directions/v2:computeRoutes', {
       method: 'POST', signal: AbortSignal.timeout(5000),
       headers: { 'Content-Type': 'application/json', 'X-Goog-Api-Key': process.env.GOOGLE_MAPS_API_KEY,
-        'X-Goog-FieldMask': 'routes.duration,routes.polyline.encodedPolyline' },
+        'X-Goog-FieldMask': 'routes.duration,routes.distanceMeters,routes.polyline.encodedPolyline' },
       body: JSON.stringify({ origin: waypoint(location), destination: waypoint(destination),
         travelMode: process.env.DELIVERY_MODE === 'TWO_WHEELER' ? 'TWO_WHEELER' : 'DRIVE',
         routingPreference: 'TRAFFIC_AWARE', computeAlternativeRoutes: false })
     });
     if (!r.ok) return null;
     const route = (await r.json()).routes?.[0];
-    const seconds = parseFloat(route?.duration);
-    return route?.polyline?.encodedPolyline && Number.isFinite(seconds)
-      ? { polyline: route.polyline.encodedPolyline, minutes: Math.max(1, Math.ceil(seconds / 60)), at: Date.now() } : null;
+    const seconds = /^\d+(?:\.\d+)?s$/.test(route?.duration || '') ? parseFloat(route.duration) : NaN;
+    return route?.polyline?.encodedPolyline && Number.isFinite(seconds) && seconds >= 0
+      ? { polyline: route.polyline.encodedPolyline, minutes: Math.max(1, Math.ceil(seconds / 60)),
+          ...(Number.isFinite(route.distanceMeters) && route.distanceMeters >= 0 ? {km: Math.round(route.distanceMeters / 100) / 10} : {}), at: Date.now() } : null;
   } catch { return null; }
 }

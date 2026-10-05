@@ -7,12 +7,25 @@ import {createRidersHandler} from './_delivery-line.js';
 // Dependency injection keeps lifecycle/security tests isolated from real orders.
 export function createHandler(deps = {}) {
   const d = { ...delivery, get: getJSON, permission: requirePermission, rate: requireRate, ...deps };
+  let demoRouteCache, demoRouteFlight;
   return async function handler(req, res) {
     res.setHeader('Cache-Control', 'private, no-store');
     res.setHeader('Referrer-Policy', 'no-referrer');
     if (!['GET', 'POST'].includes(req.method)) return res.status(405).json({ error: 'Method not allowed' });
     if (!(await d.rate(req, res, 'delivery', 120, 300))) return;
     const b = req.method === 'GET' ? req.query || {} : req.body || {};
+    if (b.action === 'demo-route') {
+      if (req.method !== 'GET') return res.status(405).json({error: 'GET only'});
+      if (!(await d.rate(req, res, 'delivery-demo-route', 10, 300))) return;
+      res.setHeader('Cache-Control', 'public, max-age=300, s-maxage=300');
+      // Fixed public locations only; no order, private driver token or device GPS.
+      const origin = {lat: 13.7108, lng: 100.5375}, destination = {lat: 13.7463, lng: 100.5346};
+      if (!demoRouteCache || Date.now() - demoRouteCache.at > (demoRouteCache.route ? 300000 : 30000)) {
+        if (!demoRouteFlight) demoRouteFlight = d.routeFor(origin, destination).then(route => (demoRouteCache = {route, at: Date.now()})).catch(() => (demoRouteCache = {route: null, at: Date.now()})).finally(() => {demoRouteFlight = null;});
+        await demoRouteFlight;
+      }
+      return res.status(200).json({origin, destination, destinationLabel: 'Siam Paragon', route: demoRouteCache.route});
+    }
     if (b.action === 'riders') return createRidersHandler(deps)(req, res);
     const id = String(b.id || '');
     if (!/^[A-Za-z0-9_-]{3,80}$/.test(id)) return res.status(400).json({ error: 'Invalid order reference' });
