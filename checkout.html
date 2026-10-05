@@ -100,6 +100,7 @@ body{background:linear-gradient(180deg,#fbfcfb 0,#f6f9f7 52%,#fbfcfb 100%)}
  .actions{position:static;background:none;padding:0;backdrop-filter:none;flex-direction:column-reverse}.actions>*{width:100%;text-align:center}.actions .primary{min-width:0}
  .trust-inner{grid-template-columns:1fr;padding:20px}.trust-item{justify-content:flex-start}
 }
+.place-search{position:relative}.place-suggestions{position:absolute;top:calc(100% + 4px);left:0;right:0;z-index:30;background:#fff;border:1px solid var(--line);border-radius:9px;box-shadow:var(--shadow);overflow:hidden}.place-options{max-height:270px;overflow-y:auto}.place-option{padding:12px 13px;cursor:pointer;font-size:13px;border-bottom:1px solid var(--line)}.place-option:hover,.place-option[aria-selected="true"]{background:var(--blue-soft)}.place-attribution{padding:10px 13px 5px;text-align:right;font-family:Roboto,sans-serif;font-size:12px;font-weight:400;color:#5e5e5e;white-space:nowrap}
 </style>
 </head>
 <body>
@@ -122,7 +123,7 @@ body{background:linear-gradient(180deg,#fbfcfb 0,#f6f9f7 52%,#fbfcfb 100%)}
         <div class="grid">
           <div class="field" id="nameField"><label>FULL NAME</label><input id="name" autocomplete="name" placeholder="Full name" required><div class="field-error" id="nameError">Please enter your full name.</div></div>
           <div class="field" id="phoneField"><label>WHATSAPP</label><div class="phone-control"><div class="country-picker"><span class="phone-flag" aria-hidden="true"><span id="phoneFlag">🇹🇭</span></span><span class="phone-dial" id="phoneDial">(+66)</span><span class="material-symbols-rounded country-chevron" aria-hidden="true">expand_more</span><select id="phoneCountry" aria-label="WhatsApp country code"></select></div><input id="phone" autocomplete="tel-national" inputmode="tel" placeholder="63-206-4884" required aria-label="WhatsApp number"></div><div class="field-error" id="phoneError">Please enter a valid WhatsApp number.</div></div>
-          <div class="field full" id="zoneField"><label>WHERE TO DELIVERY?</label><input id="zone" autocomplete="street-address" aria-autocomplete="list" spellcheck="false" placeholder="Search your delivery location on Google Maps" required><div class="field-error" id="zoneError">Please choose where to deliver.</div></div>
+          <div class="field full" id="zoneField"><label for="zone">WHERE TO DELIVERY?</label><div class="place-search"><input id="zone" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="zoneOptions" spellcheck="false" placeholder="Search your delivery location on Google Maps" required><div id="zoneSuggestions" class="place-suggestions hidden"><div id="zoneOptions" role="listbox" aria-label="Delivery locations"></div><div class="place-attribution" translate="no">Google Maps</div></div></div><div id="zoneSearchStatus" class="small" role="status" aria-live="polite"></div><div class="field-error" id="zoneError">Please choose where to deliver.</div></div>
           <div class="field" id="timeField"><label>PREFERRED TIME</label><select id="time" required><option value="">Select delivery time</option><option>Delivery now</option><option>15 minutes</option><option>30 minutes</option><option>45 minutes</option><option>1 hour</option><option>1 hour 30 minutes</option><option>2 hours</option><option>Schedule with staff</option></select><div class="field-error" id="timeError">Please select a delivery time.</div></div>
           <div class="field full"><label>NOTES</label><textarea id="notes" placeholder="Room number, landmark, gate code or special instructions"></textarea></div>
         </div>
@@ -370,8 +371,82 @@ function orderPayload(){
 }
 function clearCheckoutCart(){if(window.Cart)Cart.clear();else{localStorage.removeItem(STORE);sessionStorage.removeItem('dank_checkout_cart')}if(typeof summary!=='undefined')summary={items:[],subtotal:0,discount:0,promo:'',deliveryFee:0,total:0};cart=[]}
 async function placeOrder(){if(!cart.length){document.getElementById('payError').textContent='Your cart is empty.';return}const btn=document.getElementById('placeBtn');btn.disabled=true;btn.textContent='Placing order…';try{const r=await fetch('/api/order',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(orderPayload())});if(!r.ok)throw new Error('Could not place order');const j=await r.json().catch(()=>({}));const id=j.orderId||j.id||'Pending confirmation';clearCheckoutCart();if(j.deliveryUrl&&j.deliveryUrl.startsWith('/delivery.html#')){try{localStorage.setItem('dank_delivery:'+id,JSON.stringify(j.deliveryUrl));const known=JSON.parse(localStorage.getItem('dank_orders')||'[]');if(!known.includes(id))localStorage.setItem('dank_orders',JSON.stringify([id,...known].slice(0,30)))}catch{}location.assign(j.deliveryUrl);return}document.getElementById('orderRef').innerHTML='<strong>Order reference:</strong> '+esc(id)+'<br><strong>Payment:</strong> '+esc(state.payment);goStep(3);renderSummary()}catch(e){document.getElementById('payError').textContent='We could not reach the order system. Please try again or contact us on WhatsApp.';btn.disabled=false;renderSummary()}}
-async function initPlaces(){try{const r=await fetch('/api/maps-config');const {key}=await r.json();if(!key)return;const s=document.createElement('script');s.src='https://maps.googleapis.com/maps/api/js?key='+encodeURIComponent(key)+'&libraries=places&callback=initCheckoutPlaces';s.async=true;s.defer=true;document.head.appendChild(s)}catch(e){}}
-window.initCheckoutPlaces=function(){if(window.google?.maps?.places){const ac=new google.maps.places.Autocomplete(zoneEl(),{componentRestrictions:{country:'th'},fields:['formatted_address','geometry','name']});ac.addListener('place_changed',()=>{const p=ac.getPlace();zoneEl().value=p.formatted_address||p.name||zoneEl().value;deliveryCoordinates=p.geometry?.location?{lat:p.geometry.location.lat(),lng:p.geometry.location.lng()}:null})}}
+function placesUnavailable(){document.getElementById('zoneSearchStatus').textContent='Location search is unavailable. Enter your full delivery address.'}
+async function initPlaces(){
+ if(CANNABIS_TABLE)return;
+ try{
+  const r=await fetch('/api/maps-config');if(!r.ok)throw new Error('Maps config unavailable');
+  const {key}=await r.json();if(!key){placesUnavailable();return}
+  const s=document.createElement('script');
+  s.src='https://maps.googleapis.com/maps/api/js?key='+encodeURIComponent(key)+'&loading=async&libraries=places&callback=initCheckoutPlaces';
+  s.async=true;s.onerror=placesUnavailable;document.head.appendChild(s);
+ }catch{placesUnavailable()}
+}
+window.initCheckoutPlaces=async function(){
+ try{
+  const {AutocompleteSuggestion,AutocompleteSessionToken}=await google.maps.importLibrary('places');
+  const input=zoneEl(),panel=document.getElementById('zoneSuggestions'),options=document.getElementById('zoneOptions'),status=document.getElementById('zoneSearchStatus');
+  options.classList.add('place-options');
+  let timer,revision=0,sessionToken=null,predictions=[],active=-1;
+  function close(){panel.classList.add('hidden');input.setAttribute('aria-expanded','false');input.removeAttribute('aria-activedescendant');active=-1}
+  function invalidate(){clearTimeout(timer);revision++;close()}
+  function highlight(index){
+   active=index;
+   Array.from(options.children).forEach((el,i)=>el.setAttribute('aria-selected',String(i===active)));
+   if(active>=0){input.setAttribute('aria-activedescendant','zoneOption'+active);options.children[active].scrollIntoView({block:'nearest'})}
+   else input.removeAttribute('aria-activedescendant');
+  }
+  async function select(index){
+   const prediction=predictions[index];if(!prediction)return;
+   invalidate();const selectedRevision=revision;deliveryCoordinates=null;sessionToken=null;
+   status.textContent='Finding delivery location…';
+   try{
+    const place=prediction.toPlace();
+    await place.fetchFields({fields:['formattedAddress','location']});
+    if(selectedRevision!==revision)return;
+    if(!place.location)throw new Error('No location');
+    input.value=place.formattedAddress||prediction.text.toString();
+    deliveryCoordinates={lat:place.location.lat(),lng:place.location.lng()};
+    status.textContent='Delivery location selected.';
+    input.dispatchEvent(new Event('change',{bubbles:true}));
+   }catch{if(selectedRevision===revision)placesUnavailable()}
+  }
+  async function search(requestRevision){
+   const query=input.value.trim();if(query.length<2)return;
+   sessionToken ||= new AutocompleteSessionToken();
+   try{
+    const {suggestions}=await AutocompleteSuggestion.fetchAutocompleteSuggestions({input:query,includedRegionCodes:['th'],sessionToken});
+    if(requestRevision!==revision||document.activeElement!==input)return;
+    predictions=suggestions.map(s=>s.placePrediction).filter(Boolean);
+    options.replaceChildren();
+    predictions.forEach((prediction,index)=>{
+     const option=document.createElement('div');option.id='zoneOption'+index;option.className='place-option';
+     option.setAttribute('role','option');option.setAttribute('aria-selected','false');
+     option.textContent=prediction.text.toString();
+     option.addEventListener('mousedown',event=>event.preventDefault());
+     option.addEventListener('click',()=>select(index));options.appendChild(option);
+    });
+    status.textContent=predictions.length?'':'No matching location. Enter your full delivery address.';
+    if(predictions.length){panel.classList.remove('hidden');input.setAttribute('aria-expanded','true')}
+    else close();
+   }catch{if(requestRevision===revision){close();placesUnavailable()}}
+  }
+  input.addEventListener('input',()=>{
+   invalidate();deliveryCoordinates=null;status.textContent='';
+   if(!input.value.trim())sessionToken=null;
+   const requestRevision=revision;timer=setTimeout(()=>search(requestRevision),300);
+  });
+  input.addEventListener('keydown',event=>{
+   if(event.key==='Escape'){invalidate();return}
+   if(panel.classList.contains('hidden'))return;
+   if(event.key==='ArrowDown'||event.key==='ArrowUp'){
+    event.preventDefault();highlight((active+(event.key==='ArrowDown'?1:predictions.length-1)+predictions.length)%predictions.length);
+   }else if(event.key==='Enter'){event.preventDefault();if(active>=0)select(active)}
+   else if(event.key==='Tab')close();
+  });
+  input.addEventListener('blur',()=>{clearTimeout(timer);close()});
+ }catch{placesUnavailable()}
+}
 ;['name','phone','zone','time'].forEach(id=>{
   document.getElementById(id).addEventListener('input',function(){
     document.getElementById(id+'Field')?.classList.remove('is-invalid');
