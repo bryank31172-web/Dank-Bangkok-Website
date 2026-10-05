@@ -191,6 +191,34 @@ export async function setJSON(key, val, ttlSeconds = 60 * 60 * 24 * 14) {
   mem.set(key, JSON.stringify(val));
 }
 
+/* GPS writes compare timestamps inside the backing store, across instances. */
+export async function setJSONIfNewer(key, value, ttlSeconds = 3600) {
+  if (!Number.isFinite(value?.capturedAt)) throw new Error('Invalid GPS timestamp');
+  const backend = storageBackend();
+  if (!backend) throw new Error('Delivery storage unavailable');
+  const r = await run({
+    async supabase() {
+      const row = { key, value, expires_at: sbExpiry(ttlSeconds), updated_at: new Date().toISOString() };
+      const inserted = await sb('/site_kv?on_conflict=key', {
+        method: 'POST', headers: { Prefer: 'resolution=ignore-duplicates,return=representation' },
+        body: JSON.stringify([row]),
+      });
+      if (inserted?.length) return true;
+      const updated = await sb(`/site_kv?key=eq.${enc(key)}&or=(value->capturedAt.is.null,value->capturedAt.lt.${value.capturedAt})`, {
+        method: 'PATCH', headers: { Prefer: 'return=representation' },
+        body: JSON.stringify({ value, expires_at: row.expires_at, updated_at: row.updated_at }),
+      });
+      return Boolean(updated?.length);
+    },
+    async redis() {
+      const script = "local old=redis.call('GET',KEYS[1]); if old then local ok,v=pcall(cjson.decode,old); if ok and type(v)=='table' and tonumber(v.capturedAt) and tonumber(v.capturedAt)>=tonumber(ARGV[1]) then return 0 end end; redis.call('SET',KEYS[1],ARGV[2],'EX',ARGV[3]); return 1";
+      return Number(await redis(['EVAL', script, '1', key, String(value.capturedAt), JSON.stringify(value), String(ttlSeconds)])) === 1;
+    },
+  });
+  if (!r.ok) throw new Error('Delivery storage unavailable');
+  return r.v;
+}
+
 /* Counter used by the rate limiters. Redis INCR is atomic, which is what makes
    the limit hold when two requests from the same address land on different
    serverless instances at the same moment; the in-memory fallback is

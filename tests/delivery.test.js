@@ -9,7 +9,7 @@ function fixture(overrides={}){
   db.set('order:'+id,{orderId:id,status:'new',total:100,items:[{name:'Sandwich',qty:1}],delivery:{zone:'Bangkok',address:'Lobby'},customer:{phone:'private'}});
   let generation=0,storage=true;
   const get=async k=>structuredClone(db.get(k)||null),write=async(k,v)=>{db.set(k,structuredClone(v))};
-  const handler=createHandler({get,write,ready:()=>storage,rate:async()=>true,permission:(req,res)=>{if(req.headers.authorization==='staff')return true;res.status(401).json({error:'bad key'});return false},token:()=>String(++generation).repeat(64),routeFor:async()=>({polyline:'abc',minutes:4,at:Date.now()}),endDelivery:async(id,status)=>{await write(terminalKey(id),{status,at:Date.now()})},...overrides});
+  const handler=createHandler({get,write,writeLocation:async(k,v)=>{const old=db.get(k);if(old?.capturedAt>=v.capturedAt)return false;await write(k,v);return true},ready:()=>storage,rate:async()=>true,permission:(req,res)=>{if(req.headers.authorization==='staff')return true;res.status(401).json({error:'bad key'});return false},token:()=>String(++generation).repeat(64),routeFor:async()=>({polyline:'abc',minutes:4,at:Date.now()}),endDelivery:async(id,status)=>{await write(terminalKey(id),{status,at:Date.now()})},...overrides});
   async function call({role='',action,token=customerToken,body={},method,staff=false}={}){
     const req={method:method||(action?'POST':'GET'),headers:{'x-delivery-token':token,...(staff?{authorization:'staff'}:{})},query:{id,role},body:{id,role,action,...body}};
     const res={code:200,headers:{},setHeader(k,v){this.headers[k]=v},status(c){this.code=c;return this},json(j){this.data=j;return this}};
@@ -83,4 +83,13 @@ test('a pause during route lookup wins over an in-flight start',async()=>{
  let f;f=fixture({routeFor:async()=>{f.db.set(pausedKey(f.id,f.driverToken),{at:Date.now()+1});return null}});
  const r=await f.call({role:'driver',action:'start',token:f.driverToken,body:gps()});assert.equal(r.code,409);
  assert.equal((await f.call()).data.location,null);
+});
+
+test('overlapping route requests preserve the newest GPS update',async()=>{
+ let releaseOld,entered;const reached=new Promise(r=>entered=r);let calls=0;
+ const f=fixture({routeFor:async()=>{if(++calls===1){entered();await new Promise(r=>releaseOld=r)}return null}});
+ const now=Date.now(),old={location:{lat:13.71,lng:100.51,accuracy:8,capturedAt:now-1000}},fresh={location:{lat:13.72,lng:100.52,accuracy:8,capturedAt:now}};
+ const first=f.call({role:'driver',action:'start',token:f.driverToken,body:old});await reached;
+ await f.call({role:'driver',action:'start',token:f.driverToken,body:fresh});releaseOld();await first;
+ assert.equal(f.db.get(locationKey(f.id,f.driverToken)).capturedAt,now);
 });

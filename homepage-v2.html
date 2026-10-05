@@ -273,7 +273,7 @@ function reverseGeocode(latitude,longitude){
   return new Promise(function(resolve,reject){
    var geocoder=new google.maps.Geocoder();
    geocoder.geocode({location:{lat:latitude,lng:longitude}},function(results,status){
-    if(status!=="OK"||!results||!results.length){reject(new Error("Address could not be found"));return}
+    if(status!=="OK"||!results||!results.length){reject(new Error(status==="REQUEST_DENIED"?"Address lookup is unavailable. Enter your delivery address at checkout.":"Address could not be found"));return}
     var result=results[0],parts=result.address_components||[];
     function part(types){var match=parts.find(function(item){return types.some(function(type){return item.types.indexOf(type)>=0})});return match?match.long_name:""}
     var area=part(["sublocality_level_1","sublocality","neighborhood"])||part(["administrative_area_level_2","locality"])||"";

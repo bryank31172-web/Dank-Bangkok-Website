@@ -84,7 +84,7 @@ export function createHandler(deps = {}) {
         const latestPause = await d.get(d.pausedKey(id, record.driver.token));
         if (latestPause && capturedAt <= latestPause.at) return res.status(409).json({ error: 'Sharing paused. Tap Start delivery to resume.' });
         if (b.action === 'start') await d.write(d.pausedKey(id, record.driver.token), null, 1);
-        await d.write(lk, { ...p, accuracy: b.location.accuracy, capturedAt, at: Date.now(), route }, 3600);
+        await d.writeLocation(lk, { ...p, accuracy: b.location.accuracy, capturedAt, at: Date.now(), route });
         if (!started) await d.write(d.startedKey(id, record.driver.token), { at: Date.now() });
         return res.status(200).json({ ok: true });
       }

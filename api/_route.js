@@ -53,7 +53,7 @@ export async function getBranches() {
 async function routeOne(origin, destination, key, mode) {
   try {
     const r = await fetch("https://routes.googleapis.com/directions/v2:computeRoutes", {
-      method: "POST",
+      method: "POST", signal: AbortSignal.timeout(5000),
       headers: {
         "Content-Type": "application/json",
         "X-Goog-Api-Key": key,
@@ -71,7 +71,8 @@ async function routeOne(origin, destination, key, mode) {
     if (!r.ok) return null;
     const route = (await r.json()).routes?.[0];
     if (!route) return null;
-    const sec = parseInt(String(route.duration || "0").replace("s", ""), 10) || 0;
+    const sec = parseFloat(route.duration);
+    if (!Number.isFinite(sec) || sec < 0) return null;
     return { sec, meters: route.distanceMeters ?? null };
   } catch { return null; }
 }
@@ -87,7 +88,7 @@ export async function computeEta({ destLat, destLng, address } = {}) {
   if (process.env.ROUTE_API_URL) {
     try {
       const r = await fetch(process.env.ROUTE_API_URL, {
-        method: "POST", headers: { "Content-Type": "application/json" },
+        method: "POST", signal: AbortSignal.timeout(5000), headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ destLat, destLng, address }),
       });
       if (r.ok) {

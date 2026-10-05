@@ -32,6 +32,7 @@ export default async function handler(req, res) {
           const ended = await getJSON(terminalKey(id));
           o.deliveryTrackingAvailable = Boolean(delivery && delivery.expiresAt > Date.now());
           if (ended?.status === "completed") o.status = "done";
+          if (ended?.status === "cancelled") o.status = "cancelled";
           orders.push(o);
         }
       }
@@ -47,8 +48,8 @@ export default async function handler(req, res) {
       const o = await getJSON("order:" + b.orderId);
       if (!o) return res.status(404).json({ error: "not found" });
       const deliveryEnded = await getJSON(terminalKey(b.orderId));
-      if (b.status !== "done" && deliveryEnded?.status === "completed")
-        return res.status(409).json({ error: "Completed tracked deliveries cannot be reopened" });
+      if (deliveryEnded?.status === "cancelled" || (b.status !== "done" && deliveryEnded?.status === "completed"))
+        return res.status(409).json({ error: "Ended tracked deliveries cannot be reopened" });
       const nextStatus=b.status==="done"?"done":"new";
       const actor=staffIdentity(req);
       if(nextStatus==="done"){

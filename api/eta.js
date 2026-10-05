@@ -6,6 +6,7 @@
    Used by the LINE webhook (location pin) and can be called by staff tools.   */
 import { computeEta, etaText, routeConfigured } from "./_route.js";
 import { lineReply, linePush } from "./_line.js";
+import { requireRate } from "./_ratelimit.js";
 import { requirePermission } from "./_auth.js";
 
 export default async function handler(req, res) {
@@ -13,11 +14,21 @@ export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
   if (req.method === "OPTIONS") return res.status(204).end();
   if (req.method !== "POST") return res.status(405).json({ error: "POST only" });
+  if (!(await requireRate(req, res, "eta", 12, 300))) return;
   if (!routeConfigured()) return res.status(200).json({ ok: false, error: "route provider not configured" });
 
   const b = req.body || {};
   if (b.destLat == null && b.destLng == null && !b.address)
     return res.status(400).json({ error: "destLat/destLng or address required" });
+
+  const hasCoordinates = b.destLat != null || b.destLng != null;
+  if (hasCoordinates && (typeof b.destLat !== 'number' || typeof b.destLng !== 'number' ||
+      !Number.isFinite(b.destLat) || !Number.isFinite(b.destLng) || Math.abs(b.destLat) > 90 || Math.abs(b.destLng) > 180))
+    return res.status(400).json({ error: 'Valid latitude and longitude required' });
+  if (!hasCoordinates && (typeof b.address !== 'string' || !b.address.trim() || b.address.length > 500))
+    return res.status(400).json({ error: 'Valid delivery address required' });
+  // Public ETA requests never send messages; notifications use the authenticated webhook.
+  if (b.replyToken && !requirePermission(req, res, "owner_tools")) return;
 
   // Pushing a message to an arbitrary LINE userId is a staff action and costs a
   // billable message. The check used to sit further down, after the routing

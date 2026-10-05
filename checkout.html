@@ -363,7 +363,7 @@ function promotionError(result){if(result.reason==='minimum')return 'Minimum ord
 async function applyPromo(){const input=document.getElementById('promo'),button=document.getElementById('promoButton'),message=document.getElementById('promoMessage'),code=input.value.trim().toUpperCase();message.textContent='';if(!code){if(window.CartUI){const cleared=CartUI.setPromo('',{});summary=cleared.summary;cart=summary.items}else{state.promo='';state.discount=0}message.textContent='Promotion removed.';renderSummary();return}button.disabled=true;button.textContent='Checking…';try{const response=await fetch('/api/promotion',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({code,subtotal:subtotal(),deliveryFee:window.CartUI?summary.deliveryFee:state.deliveryFee})});const result=await response.json().catch(()=>({reason:'unavailable'}));if(!response.ok||!result.ok){message.textContent=promotionError(result);return}if(window.CartUI){const promotions={};promotions[result.code]=result.promotion;const applied=CartUI.setPromo(result.code,{promos});if(!applied.ok){message.textContent=promotionError(applied);return}summary=applied.summary;cart=summary.items}else{state.promo=result.code;state.discount=result.discount;state.deliveryFee=result.deliveryFee}input.value=result.code;message.textContent=result.promotion?.desc||'Promotion applied.';renderSummary()}catch(error){message.textContent='Promotion service is temporarily unavailable.'}finally{button.disabled=false;button.textContent='Apply'}}
 function nameEl(){return document.getElementById('name')}function phoneEl(){return document.getElementById('phone')}function zoneEl(){return document.getElementById('zone')}
 let deliveryCoordinates=null;
-zoneEl().addEventListener("input",()=>{deliveryCoordinates=null});
+zoneEl().addEventListener("input",()=>{deliveryCoordinates=null;document.getElementById('zoneSearchStatus').textContent='Choose a Google Maps suggestion to confirm your delivery pin.'});
 function orderPayload(){
  state.payment='Cash';
  const table=CANNABIS_TABLE;
@@ -371,7 +371,7 @@ function orderPayload(){
 }
 function clearCheckoutCart(){if(window.Cart)Cart.clear();else{localStorage.removeItem(STORE);sessionStorage.removeItem('dank_checkout_cart')}if(typeof summary!=='undefined')summary={items:[],subtotal:0,discount:0,promo:'',deliveryFee:0,total:0};cart=[]}
 async function placeOrder(){if(!cart.length){document.getElementById('payError').textContent='Your cart is empty.';return}const btn=document.getElementById('placeBtn');btn.disabled=true;btn.textContent='Placing order…';try{const r=await fetch('/api/order',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(orderPayload())});if(!r.ok)throw new Error('Could not place order');const j=await r.json().catch(()=>({}));const id=j.orderId||j.id||'Pending confirmation';clearCheckoutCart();if(j.deliveryUrl&&j.deliveryUrl.startsWith('/delivery.html#')){try{localStorage.setItem('dank_delivery:'+id,JSON.stringify(j.deliveryUrl));const known=JSON.parse(localStorage.getItem('dank_orders')||'[]');if(!known.includes(id))localStorage.setItem('dank_orders',JSON.stringify([id,...known].slice(0,30)))}catch{}location.assign(j.deliveryUrl);return}document.getElementById('orderRef').innerHTML='<strong>Order reference:</strong> '+esc(id)+'<br><strong>Payment:</strong> '+esc(state.payment);goStep(3);renderSummary()}catch(e){document.getElementById('payError').textContent='We could not reach the order system. Please try again or contact us on WhatsApp.';btn.disabled=false;renderSummary()}}
-function placesUnavailable(){document.getElementById('zoneSearchStatus').textContent='Location search is unavailable. Enter your full delivery address.'}
+function placesUnavailable(){document.getElementById('zoneSearchStatus').textContent='Location search is unavailable. Enter your full delivery address; staff must confirm the map pin before dispatch.'}
 async function initPlaces(){
  if(CANNABIS_TABLE)return;
  try{
@@ -432,7 +432,7 @@ window.initCheckoutPlaces=async function(){
    }catch{if(requestRevision===revision){close();placesUnavailable()}}
   }
   input.addEventListener('input',()=>{
-   invalidate();deliveryCoordinates=null;status.textContent='';
+   invalidate();deliveryCoordinates=null;status.textContent='Choose a suggestion to confirm your delivery pin. A typed address requires staff confirmation.';
    if(!input.value.trim())sessionToken=null;
    const requestRevision=revision;timer=setTimeout(()=>search(requestRevision),300);
   });

@@ -25,7 +25,7 @@ export default async function handler(req, res) {
     return res.status(200).json({
       found: true,
       orderId: o.orderId,
-      status: ended?.status === "completed" ? "done" : o.status || "new",              // new | done
+      status: ended?.status === "cancelled" ? "cancelled" : ended?.status === "completed" ? "done" : o.status || "new",              // new | done
       payStatus: o.payStatus || (["PromptPay","Card"].includes(o.payment) ? "unpaid" : "on_arrival"),
       payment: o.payment,
       fulfilment: o.fulfilment,

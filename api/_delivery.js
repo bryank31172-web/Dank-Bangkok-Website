@@ -1,7 +1,7 @@
 /* Private, post-checkout tracking for explicitly approved ordinary retail SKUs.
    Separate records prevent GPS writes from overwriting payment/order records. */
 import crypto from 'node:crypto';
-import { getJSON, setJSON, storageBackend } from './_store.js';
+import { getJSON, setJSON, setJSONIfNewer, storageBackend } from './_store.js';
 import { getMenu } from './_menu.js';
 export const TTL = 7 * 86400;
 export const token = () => crypto.randomBytes(32).toString('hex');
@@ -54,6 +54,7 @@ export async function write(k, value, ttl = TTL) {
   await setJSON(k, value, ttl);
   if (!ready()) throw new Error('Delivery storage unavailable');
 }
+export async function writeLocation(k, value) { return setJSONIfNewer(k, value, 3600); }
 export async function createDelivery(order) {
   if (!ready()) return null;
   const [menu, config] = await Promise.all([getMenu(), getJSON(PRODUCTS_CONFIG_KEY)]);

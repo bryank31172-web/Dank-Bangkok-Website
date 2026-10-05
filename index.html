@@ -5925,12 +5925,12 @@ async function trackCard(id){
   try{ if(location.protocol==="file:") return "";
     const r=await fetch("/api/track?id="+encodeURIComponent(id)); const j=await r.json();
     if(!j.found){ trackMissing.add(id); return ""; }
-    const paid=j.payStatus==="paid", onarr=j.payStatus==="on_arrival", done=j.status==="done";
-    const steps=["Placed", (paid||onarr)?"Confirmed":"Payment", done?"Completed":"Preparing"];
-    const stage=done?3:((paid||onarr)?2:1);
+    const paid=j.payStatus==="paid", onarr=j.payStatus==="on_arrival", done=j.status==="done", cancelled=j.status==="cancelled";
+    const steps=["Placed", (paid||onarr)?"Confirmed":"Payment", cancelled?"Cancelled":done?"Completed":"Preparing"];
+    const stage=(done||cancelled)?3:((paid||onarr)?2:1);
     return `<div class="track-card">
       <div class="oh"><b style="color:var(--green2)">${esc(j.orderId)}</b>
-      <span class="badge ${done?'closed':'open'}" style="margin-left:auto">${done?'completed':'in progress'}</span></div>
+      <span class="badge ${(done||cancelled)?'closed':'open'}" style="margin-left:auto">${cancelled?'cancelled':done?'completed':'in progress'}</span></div>
       <div style="font-size:12.5px;color:var(--muted);margin:4px 0">${(j.items||[]).map(i=>`${esc(i.name)} ×${esc(i.qty)}`).join(" · ")}</div>
       <div class="track-bar">${steps.map((st,i)=>`<div class="tstep ${i<stage?'on':''}"><i></i><span>${st}</span></div>`).join("")}</div>
       <div style="font-size:12.5px;margin-top:6px">${money(j.total)} · ${j.fulfilment==="delivery"?"🚚 "+esc(j.zone||"Delivery"):"🏬 "+esc(j.branch||"Pickup")} · ${paid?'<span style="color:var(--green2)">PAID ✅</span>':j.payStatus==="unpaid"?'<span style="color:var(--gold)">awaiting payment</span>':'pay on arrival'}</div>
