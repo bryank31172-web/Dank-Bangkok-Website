@@ -93,13 +93,11 @@ export function createHandler(deps = {}) {
       const loc = !ended && !paused && started && await d.get(d.locationKey(id, record.driver.token));
       if (!d.ready()) throw new Error('Storage unavailable');
       const status = ended?.status || (started ? 'on_the_way' : 'preparing');
-      let reviewUrl = process.env.GOOGLE_REVIEW_URL || '';
-      try { const u = new URL(reviewUrl); if (u.protocol !== 'https:' || !['search.google.com','www.google.com','maps.google.com','maps.app.goo.gl','g.page'].includes(u.hostname)) reviewUrl = ''; } catch { reviewUrl = ''; }
       const result = { orderId: id, status, completedAt: ended?.at || null,
         destination: ended ? null : record.destination, location: loc || null,
         stale: !loc || Date.now() - loc.capturedAt > 90000,
         driver: !ended && record.driver ? { name: record.driver.name, phone: record.driver.phone, photo: record.driver.photo } : null,
-        reviewUrl: status === 'completed' ? reviewUrl : '',
+        reviewUrl: '', // Delivery ends without a review prompt.
         items: (order.items || []).map(i => ({ name: String(i.name || ''), qty: i.qty })), total: order.total ?? order.subtotal,
         mapsKey: process.env.GOOGLE_MAPS_BROWSER_KEY || '', mapId: process.env.GOOGLE_MAPS_MAP_ID || 'DEMO_MAP_ID' };
       if (driver || staff) result.address = [order.delivery?.zone, order.delivery?.address].filter(Boolean).join(', ');

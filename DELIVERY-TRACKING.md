@@ -11,8 +11,8 @@ profile photo, name, phone and Call now. Mobile puts the map above the driver
 card. The page polls every 45 seconds without reloading Google Maps. Routes and
 ETA come from Google Routes; unavailable routing never creates a fake ETA or
 straight-line driving route. Location older than 90 seconds is clearly marked.
-Completion stops polling and removes driver details and location. The Google
-review button appears if a valid Google review URL has been configured.
+Completion stops polling and removes driver details and location. The
+completion screen shows the order summary and Back to shop; no review is requested.
 
 ## Enable in Vercel
 
@@ -29,8 +29,7 @@ review button appears if a valid Google review URL has been configured.
 4. Set GOOGLE_MAPS_API_KEY server-side with Routes API enabled; it is never
    returned to the customer. Map rendering still works without Routes, but
    there will be no road route or arrival estimate.
-5. Google Business Profile -> Ask for reviews -> copy link into
-   GOOGLE_REVIEW_URL. No review destination is guessed.
+5. No Google review URL is required. Delivery ends at the completed screen.
 6. Deployments -> Redeploy after setting variables.
 
 ## Product connection
@@ -81,5 +80,5 @@ no-store and excluded from the PWA cache.
 Run `node --test tests/delivery*.test.js` for authorization, expiry, eligibility,
 GPS validation, reassignment, stale updates, completion and storage failure.
 Then test a configured eligible order with two phones: one customer and one
-driver. Verify actual GPS, Google API access, calling, review destination and
+driver. Verify actual GPS, Google API access, calling, completion screen and
 background/locked-phone behavior before production use.
