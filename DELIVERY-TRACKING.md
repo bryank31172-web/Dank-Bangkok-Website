@@ -8,7 +8,7 @@ New orders containing any other products keep the existing checkout flow.
 Checkout opens a private link: Preparing -> On the way -> Completed.
 On the way uses a 70/30 desktop split: Google map and driver information, with
 profile photo, name, phone and Call now. Mobile puts the map above the driver
-card. The page polls every 30 seconds without reloading Google Maps. Routes and
+card. The page polls every 45 seconds without reloading Google Maps. Routes and
 ETA come from Google Routes; unavailable routing never creates a fake ETA or
 straight-line driving route. Location older than 90 seconds is clearly marked.
 Completion stops polling and removes driver details and location. The Google
