@@ -1,3 +1,4 @@
+import { key as deliveryKey, terminalKey, endDelivery } from "./_delivery.js";
 /* /api/orders — staff-only order list for the console (key = STAFF_KEY).
      GET  ?key=...                                  → {orders:[...]} newest first
      GET  ?key=...&limit=200&offset=200&archive=1   → page further back
@@ -26,7 +27,13 @@ export default async function handler(req, res) {
       const orders = [];
       for (const id of page) {
         const o = await getJSON("order:" + id);
-        if (o) orders.push(o);
+        if (o) {
+          const delivery = await getJSON(deliveryKey(id));
+          const ended = await getJSON(terminalKey(id));
+          o.deliveryTrackingAvailable = Boolean(delivery && delivery.expiresAt > Date.now());
+          if (ended?.status === "completed") o.status = "done";
+          orders.push(o);
+        }
       }
       const nextOffset = offset + page.length;
       return res.status(200).json({
@@ -39,6 +46,9 @@ export default async function handler(req, res) {
       const b = req.body || {};
       const o = await getJSON("order:" + b.orderId);
       if (!o) return res.status(404).json({ error: "not found" });
+      const deliveryEnded = await getJSON(terminalKey(b.orderId));
+      if (b.status !== "done" && deliveryEnded?.status === "completed")
+        return res.status(409).json({ error: "Completed tracked deliveries cannot be reopened" });
       const nextStatus=b.status==="done"?"done":"new";
       const actor=staffIdentity(req);
       if(nextStatus==="done"){
@@ -56,6 +66,7 @@ export default async function handler(req, res) {
       }
       o.status=nextStatus;
       await setJSON("order:" + b.orderId, o);
+      if (nextStatus === "done") await endDelivery(b.orderId);
       return res.status(200).json({ ok: true, completedBy:o.completedBy||null });
     }
     return res.status(405).json({ error: "method" });

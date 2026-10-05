@@ -12,6 +12,7 @@
    carries {walletPending:true, balance} and staff settle it from the
    console. See the wallet block below for why.                       */
 
+import { createDelivery } from "./_delivery.js";
 import { getJSON, setJSON, indexAdd, bump } from "./_store.js";
 import { listAccounts } from "./_staff-accounts.js";
 import { normPhone } from "./_phone.js";
@@ -337,11 +338,17 @@ export default async function handler(req, res) {
     } catch (e) { results.push(false); }
   }
 
-  if (results.some(Boolean)) return res.status(200).json({ ok: true, orderId, delivered: true, ...walletInfo });
+  let deliveryUrl = null;
+  if (saved) {
+    try { deliveryUrl = await createDelivery({ ...o, orderId }); }
+    catch { console.error("Delivery tracking setup unavailable"); }
+  }
+  const tracking = deliveryUrl ? { deliveryUrl } : {};
+  if (results.some(Boolean)) return res.status(200).json({ ok: true, orderId, delivered: true, ...walletInfo, ...tracking });
 
   if (results.length === 0) console.log("ORDER (no channels configured):", orderId, JSON.stringify(o));
   else console.error("ORDER: every alert channel failed, order saved:", saved, orderId);
-  if (saved) return res.status(200).json({ ok: true, orderId, delivered: false, ...walletInfo });
+  if (saved) return res.status(200).json({ ok: true, orderId, delivered: false, ...walletInfo, ...tracking });
   return res.status(502).json({ error: "all order channels failed" });
 }
 
