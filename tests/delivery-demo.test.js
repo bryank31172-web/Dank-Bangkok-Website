@@ -44,7 +44,8 @@ test('demo walks through all 20 positions and completion without live order or G
   assert.equal(b.get('[data-demo="next"]').disabled, true);
   assert.match(b.get('#demoProgress').textContent, /20 of 20/);
   assert.match(b.get('eta').textContent, /Simulated arrival/);
-  assert.equal(b.get('call').hidden.has('hidden'), true);
+  assert.equal(b.get('call').hidden.has('hidden'), false);
+  assert.equal(b.get('call').href, 'tel:+66841620610');
   b.get('[data-demo="complete"]').click();
   assert.equal(vm.runInContext('last.status', b.context), 'completed');
   assert.equal(vm.runInContext('last.location', b.context), null);

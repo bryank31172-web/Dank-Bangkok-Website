@@ -3,7 +3,7 @@ function startDeliveryDemo() {
   if (!isDemo) return;
   document.title = 'Delivery demo — DANK BKK';
   const panel = document.createElement('section');
-  panel.className = 'error';
+  panel.className = 'error demo-panel';
   panel.setAttribute('aria-label', 'Delivery demo controls');
   panel.innerHTML = '<b>Delivery test · simulated rider</b><p>No purchase or real rider needed. Start delivery, move through 20 sample locations, then complete. Positions and arrival times are simulated; the Google map is real. Automatic movement runs every 45 seconds.</p><div style="display:flex;flex-wrap:wrap;gap:8px;margin:14px 0"><button class="btn" data-demo="start">Start delivery</button><button class="btn" data-demo="next">Next location</button><button class="btn" data-demo="complete">Complete delivery</button><button class="btn secondary" data-demo="reset">Restart test</button></div><p role="status" id="demoProgress"></p>';
   document.querySelector('main').prepend(panel);

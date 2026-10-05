@@ -13,7 +13,8 @@ the customer stages and Google map; positions and ETA are simulated.
 
 Checkout opens a private link: Preparing -> On the way -> Completed.
 On the way uses a 70/30 desktop split: Google map and driver information, with
-profile photo, name, phone and Call now. Mobile puts the map above the driver
+profile photo, name and phone. Call now dials the DANK BKK shop at
+084 162 0610. Mobile puts the map above the driver
 card. The page polls every 45 seconds without reloading Google Maps. Routes and
 ETA come from Google Routes; unavailable routing never creates a fake ETA or
 straight-line driving route. Location older than 90 seconds is clearly marked.
