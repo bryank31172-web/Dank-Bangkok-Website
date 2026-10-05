@@ -51,6 +51,36 @@ qualify using stale selections or customer-provided names/categories.
 
 ## Staff workflow
 
+### LINE group dispatch
+
+For eligible tracked orders, the saved order now creates tracking before the LINE
+notification. The group receives the order details plus two buttons: Check your
+delivery (customer tracking) and Choose rider (an in-group picker). The picker
+shows only registered, active staff with a valid phone and Rider on shift enabled.
+After selection, the assigned rider receives their private Start delivery / Pause
+sharing / Complete delivery link in a direct LINE message; the group gets an
+assignment confirmation. Private rider credentials never appear in the group.
+
+One-time setup: the LINE Official Account needs Messaging API, a valid webhook at
+`https://www.dankbangkok.com/api/line-webhook`, channel token/secret and membership
+in the staff group identified by LINE_TO. Each dispatcher and rider adds the OA
+as a friend and sends `rider id` in a private chat to retrieve their LINE user ID.
+A manager opens Staff portal → Orders → LINE riders, enters those IDs against
+existing staff accounts, and marks the available riders on shift. Set staff phone
+numbers in Staff management. Availability is explicit here and does not require
+the rider to keep the staff portal open. Turn the setting off when their shift ends.
+
+Only registered staff with orders permission can select riders, and only from the
+configured group. An atomic claim prevents simultaneous group selections from
+assigning multiple riders. Reassignment uses the existing staff portal, which
+rotates the previous private token. After a failed direct send, tap Choose rider
+again and select the assigned rider to retry with the same LINE retry key. Order
+saving and customer checkout continue even if LINE notifications fail.
+
+The browser demo previews tracking only; it does not send LINE messages. Live
+dispatch requires the above account and group setup and a configured eligible
+order. Automated tests use simulated LINE requests and do not contact real staff.
+
 Staff portal -> Orders -> open an eligible order -> Manage delivery tracking.
 Enter driver name/phone, upload profile photo and confirm destination coordinates.
 The checkout captures coordinates when the customer selects a Google Places

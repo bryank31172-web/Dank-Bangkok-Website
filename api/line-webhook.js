@@ -16,6 +16,8 @@ import { getMenu } from "./_menu.js";
 import { logMessage, isMonitored, getMessagesSince, summarize } from "./_linelog.js";
 import { computeEta, etaText, routeConfigured } from "./_route.js";
 import { aiChat, aiOn } from "./_ai.js";
+import {createDeliveryLineHandler} from "./_delivery-line.js";
+const deliveryLine = createDeliveryLineHandler();
 
 export const config = { api: { bodyParser: false } }; // we need the raw body for the signature
 
@@ -84,11 +86,18 @@ export default async function handler(req, res) {
   const sigOk = raw ? verifyLineSignature(raw, req.headers["x-line-signature"]) : false;
   if (!sigOk) return res.status(401).end();
 
-  // Respond 200 fast, then process (LINE requires a quick ack)
+  // Dispatch must finish before responding: Vercel may suspend work after send.
+  const handledDeliveryEvents = new Set();
+  for (const ev of body.events || []) {
+    if (await deliveryLine(ev)) handledDeliveryEvents.add(ev);
+  }
+
+  // Existing chat and monitoring flow.
   res.status(200).json({ ok: true });
 
   for (const ev of body.events || []) {
     try {
+      if (handledDeliveryEvents.has(ev)) continue;
       if (ev.type !== "message") continue;
       const src = ev.source || {};
       const sourceType = src.type; // 'user' | 'group' | 'room'

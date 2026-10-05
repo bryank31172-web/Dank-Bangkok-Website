@@ -19,7 +19,8 @@ import { normPhone } from "./_phone.js";
 import { getBalance } from "./_wallet.js";
 import { boxesInOrder, issueGifts, giftAlertLines, getGiftConfig } from "./_boxgifts.js";
 import { getMenu } from "./_menu.js";
-import { notifyStaffLine } from "./_line.js";
+import { notifyStaffLine, lineMessages } from "./_line.js";
+import { deliveryOrderCard } from "./_delivery-line.js";
 import { notifyStaffWhatsApp } from "./_whatsapp.js";
 import { pushShopifyOrder } from "./_shopify.js";
 import { requireRate } from "./_ratelimit.js";
@@ -242,6 +243,12 @@ export default async function handler(req, res) {
     saved = true;
   } catch (e) { console.error("order save failed:", e.message); }
 
+  let deliveryUrl = null;
+  if (saved) {
+    try { deliveryUrl = await createDelivery({ ...o, orderId }); }
+    catch { console.error("Delivery tracking setup unavailable"); }
+  }
+
   /* Telegram destinations remain developer-managed server secrets and use
      the online heartbeat. LINE is intentionally different: every saved order
      is pushed once to the configured staff group in LINE_TO. */
@@ -269,7 +276,9 @@ export default async function handler(req, res) {
 
   if (saved) {
     try {
-      const r = await notifyStaffLine(staffAlert);
+      const r = deliveryUrl
+        ? await lineMessages(process.env.LINE_TO, [{type: 'text', text: staffAlert.slice(0,4900)}, deliveryOrderCard({...o, orderId}, deliveryUrl)])
+        : await notifyStaffLine(staffAlert);
       if (!r.skipped) {
         results.push(Boolean(r.ok));
         if (!r.ok) console.error("LINE staff group send failed:", r.error || "unknown error");
@@ -338,11 +347,6 @@ export default async function handler(req, res) {
     } catch (e) { results.push(false); }
   }
 
-  let deliveryUrl = null;
-  if (saved) {
-    try { deliveryUrl = await createDelivery({ ...o, orderId }); }
-    catch { console.error("Delivery tracking setup unavailable"); }
-  }
   const tracking = deliveryUrl ? { deliveryUrl } : {};
   if (results.some(Boolean)) return res.status(200).json({ ok: true, orderId, delivered: true, ...walletInfo, ...tracking });
 

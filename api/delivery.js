@@ -2,6 +2,7 @@ import { getJSON } from './_store.js';
 import { requirePermission, safeEq } from './_auth.js';
 import { requireRate } from './_ratelimit.js';
 import * as delivery from './_delivery.js';
+import {createRidersHandler} from './_delivery-line.js';
 
 // Dependency injection keeps lifecycle/security tests isolated from real orders.
 export function createHandler(deps = {}) {
@@ -12,6 +13,7 @@ export function createHandler(deps = {}) {
     if (!['GET', 'POST'].includes(req.method)) return res.status(405).json({ error: 'Method not allowed' });
     if (!(await d.rate(req, res, 'delivery', 120, 300))) return;
     const b = req.method === 'GET' ? req.query || {} : req.body || {};
+    if (b.action === 'riders') return createRidersHandler(deps)(req, res);
     const id = String(b.id || '');
     if (!/^[A-Za-z0-9_-]{3,80}$/.test(id)) return res.status(400).json({ error: 'Invalid order reference' });
     try {

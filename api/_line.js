@@ -17,6 +17,20 @@ const STAFF_TO = process.env.LINE_TO || "";
 export const lineConfigured = () => Boolean(TOKEN);
 export const lineStaffConfigured = () => Boolean(TOKEN && STAFF_TO);
 
+// Structured messages support delivery buttons without changing existing alerts.
+export async function lineMessages(target, messages, {reply = false, retryKey} = {}) {
+  if (!TOKEN || !target) return {ok: false, skipped: true};
+  try {
+    const r = await fetch('https://api.line.me/v2/bot/message/' + (reply ? 'reply' : 'push'), {
+      method: 'POST', signal: AbortSignal.timeout(5000),
+      headers: {'Content-Type': 'application/json', Authorization: `Bearer ${TOKEN}`,
+        ...(!reply && retryKey ? {'X-Line-Retry-Key': retryKey} : {})},
+      body: JSON.stringify({[reply ? 'replyToken' : 'to']: target, messages}),
+    });
+    return {ok: r.ok || (!reply && Boolean(retryKey) && r.status === 409)};
+  } catch { return {ok: false}; }
+}
+
 // LINE caps a single text at 5000 chars and 5 messages per request.
 const chunk = (text) => (String(text).match(/[\s\S]{1,4900}/g) || [""]).slice(0, 5);
 

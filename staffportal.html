@@ -1015,7 +1015,7 @@ function renderOrders(){
   }).join('');
   el.innerHTML='<section class="portal-panel product-workspace"><div class="product-table-shell">'+
     '<div class="product-table-toolbar"><label class="product-table-search"><i class="ri-search-line"></i><input id="orderTableSearch" type="search" placeholder="Search..." value="'+esc(ORDER_TABLE_QUERY)+'" aria-label="Search orders"></label>'+
-    '<div class="product-table-actions">'+(can('products')?'<button class="product-table-control" type="button" data-act="delivery-products">Delivery products</button>':'')+'<button class="product-table-control" type="button" data-act="order-sort"><i class="ri-sort-desc"></i><span>Sort</span><small>'+esc(sortLabels[ORDER_TABLE_SORT])+'</small></button>'+
+    '<div class="product-table-actions">'+(can('staff_manage')?'<button class="product-table-control" type="button" data-act="delivery-riders">LINE riders</button>':'')+(can('products')?'<button class="product-table-control" type="button" data-act="delivery-products">Delivery products</button>':'')+'<button class="product-table-control" type="button" data-act="order-sort"><i class="ri-sort-desc"></i><span>Sort</span><small>'+esc(sortLabels[ORDER_TABLE_SORT])+'</small></button>'+
     '<select class="product-filter-select" id="orderStatusFilter" aria-label="Filter by order status"><option value="All">Filter</option><option value="New" '+(ORDER_TABLE_STATUS==='New'?'selected':'')+'>New</option><option value="Completed" '+(ORDER_TABLE_STATUS==='Completed'?'selected':'')+'>Completed</option><option value="Cancelled" '+(ORDER_TABLE_STATUS==='Cancelled'?'selected':'')+'>Cancelled</option></select></div></div>'+
     '<div class="product-table-scroll"><table class="product-admin-table"><thead><tr><th>Order ID</th><th>Customer</th><th>Category</th><th>Fulfilment</th><th>Status</th><th>Total</th><th>Received</th><th style="text-align:right">Action</th><th style="text-align:right">Completed by</th></tr></thead><tbody>'+body+'</tbody></table>'+
     (rows.length?'':'<div class="product-table-empty">'+(ORDERS.length?'No orders match your search.':'No orders yet. Online orders appear here instantly.')+'</div>')+
@@ -1073,6 +1073,18 @@ function orderItemGrams(item){
   const match=String(item?.option||'').match(/(\d+(?:\.\d+)?)\s*g\b/i);
   return match?Number(match[1])*qty:null;
 }
+async function openDeliveryRiders(){
+  try{
+    const r=await authGet('/api/delivery?action=riders'),data=await r.json();if(!r.ok)throw new Error(data.error);
+    document.getElementById('deliveryRiders')?.remove();
+    const ov=document.createElement('div');ov.id='deliveryRiders';ov.className='recent-order-modal';ov.setAttribute('role','dialog');ov.setAttribute('aria-modal','true');ov.setAttribute('aria-labelledby','deliveryRidersTitle');
+    const accounts=data.accounts||[],saved=new Map((data.riders||[]).map(r=>[r.accountId,r]));
+    ov.innerHTML=`<section class="recent-order-card"><header class="recent-order-head"><h3 id="deliveryRidersTitle">LINE riders and dispatch staff</h3><button class="ghost" type="button" data-riders-close>Close</button></header><div class="recent-order-body"><p>Register the LINE IDs of staff who choose riders and riders who receive delivery links. Each person must add the shop LINE Official Account as a friend, then message it <b>rider id</b> to get their ID.</p><p>Only people marked Rider on shift appear in the LINE group picker. Add their contact phone in Staff management first. Shift availability is set here separately from staff online status.</p><div>${accounts.map(a=>{const v=saved.get(a.id)||{};return `<div data-rider-account="${esc(a.id)}" style="padding:14px 0;border-bottom:1px solid var(--line)"><b>${esc(a.name)}</b><small> · ${esc(a.phone||'Add phone in Staff management')}</small><label style="display:block">LINE user ID<input data-line-id value="${esc(v.lineUserId||'')}" placeholder="U followed by 32 characters" maxlength="33" style="width:100%;padding:12px;margin:8px 0"></label><label><input type="checkbox" data-on-shift ${v.onShift?'checked':''}> Rider on shift</label></div>`}).join('')}</div><p id="ridersMessage" role="status"></p><button class="btn" type="button" data-riders-save>Save LINE riders</button></div></section>`;
+    ov.addEventListener('click',async event=>{if(event.target===ov||event.target.closest('[data-riders-close]')){ov.remove();return}const button=event.target.closest('[data-riders-save]');if(!button)return;button.disabled=true;try{const riders=[...ov.querySelectorAll('[data-rider-account]')].map(row=>({accountId:row.dataset.riderAccount,lineUserId:row.querySelector('[data-line-id]').value.trim(),onShift:row.querySelector('[data-on-shift]').checked})).filter(row=>row.lineUserId||row.onShift);const r=await authPost('/api/delivery',{action:'riders',riders}),j=await r.json();if(!r.ok)throw new Error(j.error);ov.querySelector('#ridersMessage').textContent='Saved. These on-shift riders can now be selected in the LINE group.'}catch(e){ov.querySelector('#ridersMessage').textContent=e.message}finally{button.disabled=false}});
+    document.body.appendChild(ov);
+  }catch(e){alert(e.message||'Could not load LINE riders')}
+}
+
 async function openDeliveryProducts(){
   try{
     const r=await authGet('/api/delivery-products'),data=await r.json();if(!r.ok)throw new Error(data.error||'Could not load delivery products');
@@ -2261,6 +2273,7 @@ $('#list').addEventListener('click',e=>{
   switch(d.act){
     case 'dash-orders': setTab('orders'); break;
     case 'delivery-products': openDeliveryProducts(); break;
+    case 'delivery-riders': openDeliveryRiders(); break;
     case 'delivery-manage': openDeliveryManager(d.id); break;
     case 'recent-order': openRecentOrder(d.id); break;
     case 'dash-announcement': setTab('announcement'); break;
