@@ -9,7 +9,7 @@ function fixture(overrides={}){
   db.set('order:'+id,{orderId:id,status:'new',total:100,items:[{name:'Sandwich',qty:1}],delivery:{zone:'Bangkok',address:'Lobby'},customer:{phone:'private'}});
   let generation=0,storage=true;
   const get=async k=>structuredClone(db.get(k)||null),write=async(k,v)=>{db.set(k,structuredClone(v))};
-  const handler=createHandler({get,write,writeLocation:async(k,v)=>{const old=db.get(k);if(old?.capturedAt>=v.capturedAt)return false;await write(k,v);return true},ready:()=>storage,rate:async()=>true,permission:(req,res)=>{if(req.headers.authorization==='staff')return true;res.status(401).json({error:'bad key'});return false},token:()=>String(++generation).repeat(64),routeFor:async()=>({polyline:'abc',minutes:4,at:Date.now()}),endDelivery:async(id,status)=>{await write(terminalKey(id),{status,at:Date.now()})},...overrides});
+  const handler=createHandler({get,write,claim:async()=>1,send:async()=>({ok:true}),group:()=>'C'+'c'.repeat(32),writeLocation:async(k,v)=>{const old=db.get(k);if(old?.capturedAt>=v.capturedAt)return false;await write(k,v);return true},ready:()=>storage,rate:async()=>true,permission:(req,res)=>{if(req.headers.authorization==='staff')return true;res.status(401).json({error:'bad key'});return false},token:()=>String(++generation).repeat(64),routeFor:async()=>({polyline:'abc',minutes:4,at:Date.now()}),endDelivery:async(id,status)=>{await write(terminalKey(id),{status,at:Date.now()})},...overrides});
   async function call({role='',action,token=customerToken,body={},method,staff=false}={}){
     const req={method:method||(action?'POST':'GET'),headers:{'x-delivery-token':token,...(staff?{authorization:'staff'}:{})},query:{id,role},body:{id,role,action,...body}};
     const res={code:200,headers:{},setHeader(k,v){this.headers[k]=v},status(c){this.code=c;return this},json(j){this.data=j;return this}};
@@ -47,7 +47,7 @@ test('fresh GPS starts delivery, stale/inaccurate GPS is rejected',async()=>{
  assert.equal((await f.call({role:'driver',action:'start',token:f.driverToken,body:{location:{...gps().location,accuracy:600}}})).code,400);
  assert.equal((await f.call({role:'driver',action:'start',token:f.driverToken,body:gps()})).code,200);
  const r=await f.call();assert.equal(r.data.status,'on_the_way');assert.equal(r.data.stale,false);assert.equal(r.data.location.route.minutes,4);
- const loc=f.db.get(locationKey(f.id,f.driverToken));loc.capturedAt=Date.now()-100000;
+ const loc=f.db.get(locationKey(f.id,f.driverToken));loc.capturedAt=Date.now()-211000;
  assert.equal((await f.call()).data.stale,true);
 });
 test('pause removes visible coordinates but keeps on-the-way stage',async()=>{
@@ -74,8 +74,8 @@ test('expired link and persistent storage failure fail closed',async()=>{
  f.db.get(key(f.id)).expiresAt=Date.now()-1;assert.equal((await f.call()).code,404);
 });
 test('only an authenticated assigned driver can complete a started delivery',async()=>{
- const f=fixture();assert.equal((await f.call({role:'driver',action:'complete',token:f.driverToken})).code,409);
- await f.call({role:'driver',action:'start',token:f.driverToken,body:gps()});assert.equal((await f.call({role:'driver',action:'complete',token:f.driverToken})).code,200);
+ const f=fixture();assert.equal((await f.call({role:'driver',action:'complete',token:f.driverToken,body:{photo:'data:image/jpeg;base64,/9j/2Q=='}})).code,409);
+ await f.call({role:'driver',action:'start',token:f.driverToken,body:gps()});assert.equal((await f.call({role:'driver',action:'complete',token:f.driverToken,body:{photo:'data:image/jpeg;base64,/9j/2Q=='}})).code,200);
  assert.equal((await f.call()).data.status,'completed');
 });
 
@@ -92,4 +92,53 @@ test('overlapping route requests preserve the newest GPS update',async()=>{
  const first=f.call({role:'driver',action:'start',token:f.driverToken,body:old});await reached;
  await f.call({role:'driver',action:'start',token:f.driverToken,body:fresh});releaseOld();await first;
  assert.equal(f.db.get(locationKey(f.id,f.driverToken)).capturedAt,now);
+});
+
+test('new deliveries require an assigned rider departure photo before start; customer can view it privately',async()=>{
+ const f=fixture(),record=f.db.get(key(f.id));record.departurePhotoRequired=true;
+ assert.equal((await f.call({role:'driver',action:'start',token:f.driverToken,body:gps()})).code,409);
+ const photo='data:image/jpeg;base64,/9j/2Q==';
+ assert.equal((await f.call({action:'departure-photo',body:{photo}})).code,403);
+ assert.equal((await f.call({role:'driver',action:'departure-photo',token:f.driverToken,body:{photo}})).code,200);
+ assert.equal((await f.call()).data.departurePhoto,photo);
+ assert.equal((await f.call({role:'driver',action:'start',token:f.driverToken,body:gps()})).code,200);
+ await f.call({role:'driver',action:'complete',token:f.driverToken,body:{photo:'data:image/jpeg;base64,/9j/2Q=='}});
+ assert.equal((await f.call()).data.departurePhoto,null);
+ assert.equal((await f.call({role:'driver',action:'departure-photo',token:f.driverToken,body:{photo}})).code,409);
+});
+test('departure upload rejects malformed and oversized images and reassignment removes access to the old photo',async()=>{
+ const f=fixture(),photo='data:image/jpeg;base64,/9j/2Q==';
+ for(const photo of ['data:image/svg+xml;base64,PHN2Zz4=','data:image/jpeg;base64,YWJjZA==','data:image/jpeg;base64,'+'A'.repeat(160001)])
+ assert.equal((await f.call({role:'driver',action:'departure-photo',token:f.driverToken,body:{photo}})).code,400);
+ await f.call({role:'driver',action:'departure-photo',token:f.driverToken,body:{photo}});
+ await f.call({role:'staff',staff:true,action:'assign',body:{name:'New rider',phone:'0812345678',destination:{lat:13.8,lng:100.6}}});
+ assert.equal((await f.call()).data.departurePhoto,null);
+ assert.equal((await f.call({role:'driver',action:'departure-photo',token:f.driverToken,body:{photo}})).code,403);
+});
+
+test('customer contact and receipt remain private to the assigned rider after completion',async()=>{
+ const f=fixture();const order=f.db.get('order:'+f.id);order.customer={name:'Customer One',phone:'+66 (81) 234-5678'};
+ const customer=await f.call();assert.equal(customer.data.customer,undefined);assert.equal(customer.data.address,undefined);
+ const rider=await f.call({role:'driver',token:f.driverToken});assert.deepEqual(rider.data.customer,{name:'Customer One',phone:'+66812345678'});
+ order.customer.phone='javascript:alert(1)';assert.equal((await f.call({role:'driver',token:f.driverToken})).data.customer.phone,'');
+ await f.call({role:'staff',staff:true,action:'complete'});const ended=await f.call({role:'driver',token:f.driverToken});assert.deepEqual(ended.data.customer,{name:'Customer One',phone:''});assert.equal(ended.data.address,'Bangkok, Lobby');assert.equal((await f.call()).data.customer,undefined);assert.equal((await f.call()).data.address,undefined);
+});
+
+test('90-second cadence stays fresh across one delayed refresh but stale GPS is hidden after 210 seconds',async()=>{
+ const f=fixture();f.db.set(startedKey(f.id,f.driverToken),{at:Date.now()-100000});
+ f.db.set(locationKey(f.id,f.driverToken),{lat:13.7,lng:100.5,capturedAt:Date.now()-100000});assert.equal((await f.call()).data.stale,false);
+ f.db.set(locationKey(f.id,f.driverToken),{lat:13.7,lng:100.5,capturedAt:Date.now()-211000});assert.equal((await f.call()).data.stale,true);
+});
+
+
+test('rider route preview validates GPS and never starts sharing or writes device location',async()=>{
+ const f=fixture();const before=structuredClone([...f.db]);
+ assert.equal((await f.call({action:'preview-route',body:gps()})).code,403);
+ assert.equal((await f.call({role:'driver',token:f.driverToken,action:'preview-route',body:{location:{...gps().location,capturedAt:Date.now()-130000}}})).code,400);
+ const r=await f.call({role:'driver',token:f.driverToken,action:'preview-route',body:gps()});assert.equal(r.code,200);assert.equal(r.data.location.route.minutes,4);assert.deepEqual([...f.db],before);assert.equal((await f.call()).data.location,null);
+ await f.call({role:'driver',token:f.driverToken,action:'start',body:gps()});assert.equal((await f.call({role:'driver',token:f.driverToken,action:'preview-route',body:gps()})).code,409);
+});
+test('completion during route preview cannot return rider GPS',async()=>{
+ let f;f=fixture({routeFor:async()=>{f.db.set(terminalKey(f.id),{status:'completed'});return {minutes:4}}});
+ const r=await f.call({role:'driver',token:f.driverToken,action:'preview-route',body:gps()});assert.equal(r.code,409);assert.equal(r.data.location,undefined);
 });

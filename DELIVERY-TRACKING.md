@@ -13,12 +13,12 @@ five minutes and rate limited to ten requests per five minutes. This previews
 the customer stages and Google map; positions and ETA are simulated.
 
 Checkout opens a private link: Preparing -> On the way -> Completed.
-On the way uses a 70/30 desktop split: Wayfinder map and driver information, with
+On the way uses a Wayfinder map with a rounded rider information panel, with
 profile photo, name and phone. Call now dials the DANK BKK shop at
 084 162 0610. Mobile puts the map above the driver
-card. The page polls every 45 seconds without reloading Google Maps. Routes and
+card. The page polls every 90 seconds without reloading Google Maps. Routes and
 ETA come from Google Routes; unavailable routing never creates a fake ETA or
-straight-line driving route. Location older than 90 seconds is clearly marked.
+straight-line driving route. Location older than 210 seconds is clearly marked.
 Completion stops polling and removes driver details and location. The
 completion screen shows the order summary and Back to shop; no review is requested.
 
@@ -127,7 +127,7 @@ Customer and rider pages share the reference-style map: destination pill, red
 destination pin, motorcycle marker, outlined green road route and green time /
 distance badge. Desktop keeps the 70/30 map and rider-panel split; mobile uses a
 70svh map with a rounded white information panel. The actual remaining route is
-computed from each accepted rider GPS update every 45 seconds. Stale GPS hides
+computed from each accepted rider GPS update every 90 seconds. Stale GPS hides
 the route and estimate, and pause/completion removes the rider route. The driver
 page refreshes its route after sending GPS and keeps the existing Start / Pause /
 Complete and Open navigation controls. Map failures do not disable those controls.
@@ -155,3 +155,65 @@ left. Basemap rendering does not require GOOGLE_MAPS_BROWSER_KEY or a map ID.
 Google Places checkout and server-side Google Routes retain their existing
 configuration. Style changes restore the latest route without reviving paused
 or completed locations. Guide: https://carto.elemnt.earth/USE.md.
+
+## Reference delivery panel and departure photo
+
+The customer journey now uses a full map with floating back/delivery/You pills,
+blue rider and red destination pins with white location labels, a green road
+route and ETA badge. On phones the rounded rider panel sits below the map.
+On desktop it floats over the lower-left map corner. It shows rider profile,
+arrival estimate, departure photo preview, shop call icon and order details;
+there is no vehicle selection, cash/offer selector or booking action.
+
+Before starting a new tracked order, the assigned rider uploads a departure
+photo on their private page. The phone resizes and exports a JPEG through canvas
+without EXIF metadata. The server limits the encoded size, rate limits uploads,
+checks driver credentials and stores it separately per assignment. The customer
+can open the full photo only through the private tracking API. Reassignment
+clears the old photo, completion/cancellation removes customer access, and
+storage expires no later than the tracking record. Existing legacy orders may
+start without the new requirement. The demo uses a labeled illustration rather
+than a real rider photo.
+
+
+### Traffic and remaining route (October 2026)
+
+Google Routes now requests `TRAFFIC_ON_POLYLINE` and returns normalized speed intervals with the private rider location. The customer Wayfinder overlay uses green (normal), amber (slow), and red (traffic jam). Without traffic intervals, the route stays green; it does not invent congestion. Google traffic-aware polyline requests have a higher billing tier.
+
+Passed geometry is clipped at the nearest route projection within 100 metres. Progress only advances on the same polyline to avoid GPS jitter restoring passed sections. New Google route geometry resets that projection. The scooter animation updates clipping between received fixes, and stale, paused or terminal deliveries remove the route.
+
+After Start delivery, the rider page loads Google Maps JavaScript using the existing public `GOOGLE_MAPS_BROWSER_KEY` from `/api/maps-config`. Maps JavaScript API must be enabled and the browser key must allow the production and preview referrers. The server Routes key is never exposed. The rider map shows Google live traffic, destination, scooter and remaining route; dragging stops following until Recenter. Location sharing still runs every 90 seconds with the page open and phone awake. Pause/completion clears overlays. A Google loading failure retains Wayfinder and the external navigation button.
+
+This is an in-page map and route viewer. Spoken turn-by-turn navigation uses the Google Maps app button. Paired demos use the same fixed public road route and provider traffic snapshot with simulated rider progress; no real GPS, orders or LINE messages are sent.
+
+
+### Rider customer sheet and cost estimate
+
+The rider sheet fills the bottom of the screen and can be dragged by its handle or expanded/collapsed by tapping it. Starting delivery collapses it to 200px. It shows the customer name and a circular call action using the authenticated order contact. Customer contact is exposed only to the assigned rider/staff, validates telephone characters, and is cleared on completion/cancellation. Demo customer call is disabled because no real customer number is used.
+
+As of 7 October 2026, traffic-on-polyline requests trigger Compute Routes Enterprise ($15/1,000 requests; 1,000 free/month). Dynamic Maps is $7/1,000 loads with 10,000 free/month. Link creation and customer polling do not themselves invoke Google. One 30-minute trip at 45-second route updates is about 41 requests plus one rider map load ($0.622 before any applicable free allowance). At a hypothetical 90-second interval it is about 21 requests plus one map load ($0.322). This is an estimate excluding checkout Places, taxes, repeated page loads, retries and other account usage. The user subsequently selected 90-second live updates. Live customer polling and rider GPS/route publishing now run every 90 seconds, with immediate Start, Pause and Complete actions. Stale threshold is 210 seconds (two intervals plus a network grace period). Paired demo customer polling remains 5 seconds to see manual test actions promptly; automatic demo movement is 90 seconds.
+
+Official pricing: https://developers.google.com/maps/billing-and-pricing/pricing
+Enterprise traffic trigger: https://developers.google.com/maps/billing-and-pricing/sku-details#routes-compute-routes-enterprise
+
+Preview Google Maps currently requires authorizing the exact preview origin in the browser key's website referrers. The server traffic route returned actual NORMAL, SLOW and TRAFFIC_JAM intervals in live preview testing. A rejected browser referrer switches back to Wayfinder instead of leaving a broken Google map.
+
+
+### Rider three-step primary action
+
+The rider sheet has a fixed action footer with a circular camera action and a wide bright-green pill, plus three labelled steps: Take a picture, Delivered, Finish. The primary action opens the camera (sample photo in demo), or shares the selected preview. Successfully sharing the departure image starts location sharing; the secondary Start button remains available for permission retries or resume. Delivered requires a started delivery and confirmation, persists completion and stops GPS immediately. Finish acknowledges the ended delivery locally and disables the final action, without creating another server event. The footer remains visible while the detail body scrolls; the compact sheet is 240px to fit the customer row and action footer.
+
+Rider photo action: the green Take a picture button opens the system image picker (gallery, camera, or image file as supported by the phone). It does not force camera capture. Choosing an image compresses and attaches it, then starts delivery automatically. Cancelling leaves the step unchanged; failed attachment can be retried through the same button. Extra order text, navigation link, sample controls, and separate upload/start/pause buttons are hidden from the rider sheet. Demo images remain local and its customer view uses the sample photo.
+
+Rider completion: confirming Delivered completes and finishes the workflow automatically. There is no separate Finish tap. The sheet displays the order reference, purchased items, quantities, and total. GPS sharing stops and customer contact/location access is cleared.
+# Delivery photo confirmation
+
+The rider's Google map uses the same destination pin, both DANK shop origin pins, address pills, scooter artwork, zoom sizing and traffic colors as the customer view. The scooter eases between received positions and the passed route is removed during that animation. Pins remain anchored to their geographic address while zooming. Google remains the rider basemap; Wayfinder remains the customer basemap. The rider ETA pill shows the route minutes and actual GPS capture time.
+
+The collapsed rider sheet fits the customer row and green action button. The handle still expands and collapses the sheet.
+
+After starting, **Delivered** opens the same native image picker as **Take a picture**, allowing camera, gallery or an image file. Canceling leaves the delivery active. Choosing a photo compresses it to JPEG, uploads it, stops tracking and opens the completed delivery details automatically.
+
+The staff LINE group receives a Flex card with a `#00B65B` green header, white **Delivery confirmed** text, customer name, address, phone, products, total price and delivery photo. The photo uses a separate unguessable HTTPS image capability, expires after seven days and grants no access to the order or rider controls. Retries keep the original photo and LINE retry key. Authenticated orders staff can retry a failed notification with `POST /api/delivery`, `role: staff`, `action: resend-proof`, and the order ID. A LINE API success means accepted, not proof that a person's device displayed it.
+
+Paired demos use the same picker flow but never store the uploaded image or send LINE messages. Live receipt testing requires a registered rider, a test order and staff authentication.

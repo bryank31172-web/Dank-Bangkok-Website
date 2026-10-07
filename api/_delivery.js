@@ -8,6 +8,7 @@ export const token = () => crypto.randomBytes(32).toString('hex');
 export const key = id => 'delivery:' + id;
 export const terminalKey = id => 'delivery-ended:' + id;
 export const locationKey = (id, generation) => `delivery-location:${id}:${generation}`;
+export const departureKey = (id, generation) => `delivery-departure:${id}:${generation}`;
 export const pausedKey = (id, generation) => `delivery-paused:${id}:${generation}`;
 export const startedKey = (id, generation) => `delivery-started:${id}:${generation}`;
 export function point(p) {
@@ -60,7 +61,7 @@ export async function createDelivery(order) {
   const [menu, config] = await Promise.all([getMenu(), getJSON(PRODUCTS_CONFIG_KEY)]);
   if (!ready() || !LIVE_MENU_SOURCES.has(menu.source) || !eligible(order, menu.data, configuredProductIds(config))) return null;
   const record = { orderId: order.orderId, customerToken: token(), createdAt: Date.now(),
-    expiresAt: Date.now() + TTL * 1000, destination: point(order.delivery?.coordinates), driver: null };
+    expiresAt: Date.now() + TTL * 1000, destination: point(order.delivery?.coordinates), departurePhotoRequired: true, driver: null };
   await write(key(order.orderId), record);
   return '/delivery.html#' + new URLSearchParams({ id: order.orderId, token: record.customerToken });
 }
@@ -68,7 +69,7 @@ export async function endDelivery(id, status = 'completed') {
   const d = await getJSON(key(id));
   if (!d || d.expiresAt <= Date.now()) return;
   await write(terminalKey(id), { status, at: Date.now() }, 14 * 86400);
-  if (d.driver) await write(locationKey(id, d.driver.token), null, 1);
+  if (d.driver) {await write(locationKey(id, d.driver.token), null, 1);await write(departureKey(id, d.driver.token), null, 1);}
 }
 export async function routeFor(location, destination) {
   if (!location || !destination || !process.env.GOOGLE_MAPS_API_KEY) return null;
@@ -77,16 +78,17 @@ export async function routeFor(location, destination) {
     const r = await fetch('https://routes.googleapis.com/directions/v2:computeRoutes', {
       method: 'POST', signal: AbortSignal.timeout(5000),
       headers: { 'Content-Type': 'application/json', 'X-Goog-Api-Key': process.env.GOOGLE_MAPS_API_KEY,
-        'X-Goog-FieldMask': 'routes.duration,routes.distanceMeters,routes.polyline.encodedPolyline' },
+        'X-Goog-FieldMask': 'routes.duration,routes.distanceMeters,routes.polyline.encodedPolyline,routes.travelAdvisory.speedReadingIntervals' },
       body: JSON.stringify({ origin: waypoint(location), destination: waypoint(destination),
-        travelMode: process.env.DELIVERY_MODE === 'TWO_WHEELER' ? 'TWO_WHEELER' : 'DRIVE',
-        routingPreference: 'TRAFFIC_AWARE', computeAlternativeRoutes: false })
+        travelMode: 'TWO_WHEELER',
+        routingPreference: 'TRAFFIC_AWARE_OPTIMAL', extraComputations: ['TRAFFIC_ON_POLYLINE'], computeAlternativeRoutes: false })
     });
     if (!r.ok) return null;
     const route = (await r.json()).routes?.[0];
     const seconds = /^\d+(?:\.\d+)?s$/.test(route?.duration || '') ? parseFloat(route.duration) : NaN;
     return route?.polyline?.encodedPolyline && Number.isFinite(seconds) && seconds >= 0
-      ? { polyline: route.polyline.encodedPolyline, minutes: Math.max(1, Math.ceil(seconds / 60)),
+      ? { mode: 'TWO_WHEELER', polyline: route.polyline.encodedPolyline, traffic: Array.isArray(route.travelAdvisory?.speedReadingIntervals) ? route.travelAdvisory.speedReadingIntervals.filter(i => Number.isInteger(i.startPolylinePointIndex ?? 0) && (i.startPolylinePointIndex ?? 0) >= 0 && Number.isInteger(i.endPolylinePointIndex) && i.endPolylinePointIndex > (i.startPolylinePointIndex ?? 0) && ['NORMAL','SLOW','TRAFFIC_JAM'].includes(i.speed)).map(i => ({start: i.startPolylinePointIndex ?? 0, end: i.endPolylinePointIndex, speed: i.speed})) : [], minutes: Math.max(1, Math.ceil(seconds / 60)),
           ...(Number.isFinite(route.distanceMeters) && route.distanceMeters >= 0 ? {km: Math.round(route.distanceMeters / 100) / 10} : {}), at: Date.now() } : null;
   } catch { return null; }
 }
+

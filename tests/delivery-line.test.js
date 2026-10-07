@@ -25,14 +25,16 @@ test('order card has customer tracking and group rider selection, no driver cred
   assert.equal(buttons[1].action.type,'postback');
   assert.doesNotMatch(JSON.stringify(card),/driver-delivery|driver-token/);
 });
-test('group selection shows only on-shift registered riders and pushes private controls directly',async()=>{
+test('group selection assigns an on-shift rider and shares the same link privately and in the staff group',async()=>{
   const f=fixture();await f.handle(f.ev());const picker=f.messages[0];assert.equal(picker.content[0].quickReply.items.length,1);
   assert.equal(picker.content[0].quickReply.items[0].action.label,'Rider');
   await f.handle(f.ev('assign'));const push=f.messages.find(m=>m.to===riderId);
   assert.match(push.content[0].text,/driver-delivery.html#id=DR-TEST&token=driver-token/);
   assert.equal(push.options.retryKey,f.db.get(key('DR-TEST')).driver.retryKey);
   assert.equal(f.db.get(key('DR-TEST')).driver.accountId,'rider');
-  assert.ok(f.messages.filter(m=>m.options.reply).every(m=>!JSON.stringify(m.content).includes('driver-token')));
+  assert.doesNotMatch(JSON.stringify(picker.content),/driver-token/);
+  assert.match(f.messages.at(-1).content[0].text,/Rider delivery link:\nhttps:\/\/www.dankbangkok.com\/driver-delivery.html#id=DR-TEST&token=driver-token/);
+  assert.match(f.messages.at(-1).content[0].text,/LINE accepted/);
 });
 test('unknown actor, wrong group and private-chat postbacks cannot assign',async()=>{
   for(const source of [{type:'group',groupId:group,userId:'unknown'},{type:'group',groupId:'wrong',userId:managerId},{type:'user',userId:managerId}]){
@@ -49,6 +51,7 @@ test('twenty simultaneous selections create just one assignment',async()=>{
 });
 test('failed direct push can retry with the same token and LINE retry key',async()=>{
   const f=fixture();f.setPush(false);await f.handle(f.ev('assign'));assert.match(f.messages.at(-1).content[0].text,/could not accept/);
+  assert.match(f.messages.at(-1).content[0].text,/Rider delivery link:/);
   const first=f.messages.find(m=>m.to===riderId);f.setPush(true);await f.handle(f.ev('assign'));
   const pushes=f.messages.filter(m=>m.to===riderId);assert.equal(pushes[1].options.retryKey,first.options.retryKey);assert.equal(pushes[1].content[0].text,first.content[0].text);
 });
