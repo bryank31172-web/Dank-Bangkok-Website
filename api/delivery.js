@@ -136,7 +136,11 @@ export function createHandler(deps = {}) {
         reviewUrl: '', // Delivery ends without a review prompt.
         items: (order.items || []).map(i => ({ name: String(i.name || ''), qty: i.qty })), total: order.total ?? order.subtotal,
         mapsKey: process.env.GOOGLE_MAPS_BROWSER_KEY || '', mapId: process.env.GOOGLE_MAPS_MAP_ID || 'DEMO_MAP_ID' };
-      if (driver || staff) result.address = [order.delivery?.zone, order.delivery?.address].filter(Boolean).join(', ');
+      if (driver || staff) {
+        result.address = ended ? '' : [order.delivery?.zone, order.delivery?.address].filter(Boolean).join(', ');
+        const phone=String(order.customer?.phone || order.customer?.contact || '').trim().replace(/[\s()-]/g,'');
+        result.customer = ended ? null : {name:String(order.customer?.name || 'Customer').slice(0,80),phone:/^\+?\d{7,15}$/.test(phone)?phone:''};
+      }
       if (staff) {
         result.customerUrl = '/delivery.html#' + new URLSearchParams({ id, token: record.customerToken });
         result.driverUrl = record.driver ? '/driver-delivery.html#' + new URLSearchParams({ id, token: record.driver.token }) : '';

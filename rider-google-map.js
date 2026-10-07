@@ -28,6 +28,7 @@ async function loadRiderGoogleMaps() {
 function createRiderGoogleMap(ids) {
   const node=document.getElementById(ids.google), fallback=document.getElementById(ids.fallback);
   let map,rider,destination,traffic,lines=[],last,version=0,following=true,encoded='',points=[],progress=0;
+  window.addEventListener?.('rider-sheet-resize',()=>{if(map){google.maps.event?.trigger(map,'resize');if(following&&last?.location)map.panTo(last.location);}});
   riderGoogleFailures.add(()=>{const data=last;clear();if(data)ids.onFallback?.(data);});
   function removeLines(){lines.forEach(line=>line.setMap(null));lines=[];}
   function clear(){version++;last=null;removeLines();rider?.setMap(null);destination?.setMap(null);rider=destination=null;traffic?.setMap(null);encoded='';points=[];progress=0;node.classList.add('hidden');fallback.classList.remove('hidden');}

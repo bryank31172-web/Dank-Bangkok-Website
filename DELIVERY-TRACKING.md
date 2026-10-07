@@ -185,3 +185,15 @@ Passed geometry is clipped at the nearest route projection within 100 metres. Pr
 After Start delivery, the rider page loads Google Maps JavaScript using the existing public `GOOGLE_MAPS_BROWSER_KEY` from `/api/maps-config`. Maps JavaScript API must be enabled and the browser key must allow the production and preview referrers. The server Routes key is never exposed. The rider map shows Google live traffic, destination, scooter and remaining route; dragging stops following until Recenter. Location sharing still runs every 45 seconds with the page open and phone awake. Pause/completion clears overlays. A Google loading failure retains Wayfinder and the external navigation button.
 
 This is an in-page map and route viewer. Spoken turn-by-turn navigation uses the Google Maps app button. Paired demos use the same fixed public road route and provider traffic snapshot with simulated rider progress; no real GPS, orders or LINE messages are sent.
+
+
+### Rider customer sheet and cost estimate
+
+The rider sheet fills the bottom of the screen and can be dragged by its handle or expanded/collapsed by tapping it. Starting delivery collapses it to 200px. It shows the customer name and a circular call action using the authenticated order contact. Customer contact is exposed only to the assigned rider/staff, validates telephone characters, and is cleared on completion/cancellation. Demo customer call is disabled because no real customer number is used.
+
+As of 7 October 2026, traffic-on-polyline requests trigger Compute Routes Enterprise ($15/1,000 requests; 1,000 free/month). Dynamic Maps is $7/1,000 loads with 10,000 free/month. Link creation and customer polling do not themselves invoke Google. One 30-minute trip at 45-second route updates is about 41 requests plus one rider map load ($0.622 before any applicable free allowance). At a hypothetical 90-second interval it is about 21 requests plus one map load ($0.322). This is an estimate excluding checkout Places, taxes, repeated page loads, retries and other account usage. No interval change was made when answering the conditional pricing question.
+
+Official pricing: https://developers.google.com/maps/billing-and-pricing/pricing
+Enterprise traffic trigger: https://developers.google.com/maps/billing-and-pricing/sku-details#routes-compute-routes-enterprise
+
+Preview Google Maps currently requires authorizing the exact preview origin in the browser key's website referrers. The server traffic route returned actual NORMAL, SLOW and TRAFFIC_JAM intervals in live preview testing. A rejected browser referrer switches back to Wayfinder instead of leaving a broken Google map.

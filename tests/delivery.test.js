@@ -115,3 +115,11 @@ test('departure upload rejects malformed and oversized images and reassignment r
  assert.equal((await f.call()).data.departurePhoto,null);
  assert.equal((await f.call({role:'driver',action:'departure-photo',token:f.driverToken,body:{photo}})).code,403);
 });
+
+test('customer contact is available only to the assigned rider and disappears after delivery ends',async()=>{
+ const f=fixture();const order=f.db.get('order:'+f.id);order.customer={name:'Customer One',phone:'+66 (81) 234-5678'};
+ const customer=await f.call();assert.equal(customer.data.customer,undefined);assert.equal(customer.data.address,undefined);
+ const rider=await f.call({role:'driver',token:f.driverToken});assert.deepEqual(rider.data.customer,{name:'Customer One',phone:'+66812345678'});
+ order.customer.phone='javascript:alert(1)';assert.equal((await f.call({role:'driver',token:f.driverToken})).data.customer.phone,'');
+ await f.call({role:'staff',staff:true,action:'complete'});const ended=await f.call({role:'driver',token:f.driverToken});assert.equal(ended.data.customer,null);assert.equal(ended.data.address,'');
+});

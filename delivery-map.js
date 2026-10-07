@@ -50,6 +50,7 @@ function createDeliveryMap(ids) {
   const el = name => document.getElementById(ids[name]);
   let map, pending, version = 0, last, fitted = false, rider, destination, routePath = [], errorText = '', mode = 'light', riderKind = '', riderPosition, riderHeading = 0, movementFrame;
   let shops=[], routeTraffic=[], routeProgress=0, routeEncoded='';
+  window.addEventListener?.('rider-sheet-resize',()=>map?.resize());
   const empty = () => ({type:'FeatureCollection',features:[]});
   function drawRoute() {
     if (!map?.isStyleLoaded()) return;
