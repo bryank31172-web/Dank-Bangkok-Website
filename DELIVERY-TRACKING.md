@@ -208,6 +208,8 @@ Rider photo action: the green Take a picture button opens the system image picke
 Rider completion: confirming Delivered completes and finishes the workflow automatically. There is no separate Finish tap. The sheet displays the order reference, purchased items, quantities, and total. GPS sharing stops and customer contact/location access is cleared.
 # Delivery photo confirmation
 
+The rider's Google map uses the same destination pin, both DANK shop origin pins, address pills, scooter artwork, zoom sizing and traffic colors as the customer view. The scooter eases between received positions and the passed route is removed during that animation. Pins remain anchored to their geographic address while zooming. Google remains the rider basemap; Wayfinder remains the customer basemap. The rider ETA pill shows the route minutes and actual GPS capture time.
+
 The collapsed rider sheet fits the customer row and green action button. The handle still expands and collapses the sheet.
 
 After starting, **Delivered** opens the same native image picker as **Take a picture**, allowing camera, gallery or an image file. Canceling leaves the delivery active. Choosing a photo compresses it to JPEG, uploads it, stops tracking and opens the completed delivery details automatically.
@@ -215,4 +217,3 @@ After starting, **Delivered** opens the same native image picker as **Take a pic
 The staff LINE group receives a Flex card with a `#00B65B` green header, white **Delivery confirmed** text, customer name, address, phone, products, total price and delivery photo. The photo uses a separate unguessable HTTPS image capability, expires after seven days and grants no access to the order or rider controls. Retries keep the original photo and LINE retry key. Authenticated orders staff can retry a failed notification with `POST /api/delivery`, `role: staff`, `action: resend-proof`, and the order ID. A LINE API success means accepted, not proof that a person's device displayed it.
 
 Paired demos use the same picker flow but never store the uploaded image or send LINE messages. Live receipt testing requires a registered rider, a test order and staff authentication.
-
