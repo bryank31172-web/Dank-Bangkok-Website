@@ -1,6 +1,7 @@
 // Simulated rider on a fixed public Google road route; no orders or device GPS.
 function startDeliveryDemo() {
   if (!isDemo) return;
+  if(new URLSearchParams(location.hash.slice(1)).has("session")){startLinkedDeliveryDemo();return;}
   document.title = 'Delivery demo — DANK BKK';
   const panel = document.createElement('section');
   panel.className = 'error demo-panel';
