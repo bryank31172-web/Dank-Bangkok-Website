@@ -6,8 +6,8 @@ test('rider sheet collapses after start, drags both ways, clamps height and supp
  const events={},attrs={},styles={},windowEvents={};let resizes=0;
  const sheet={getBoundingClientRect:()=>({height:300})},handle={addEventListener(e,fn){events[e]=fn},setAttribute(k,v){attrs[k]=v},setPointerCapture(){}};
  const c=vm.createContext({Event:class{},document:{getElementById:id=>id==='sheet'?sheet:handle,documentElement:{style:{setProperty(k,v){styles[k]=v}}}},innerHeight:800,addEventListener(e,fn){windowEvents[e]=fn},dispatchEvent(){resizes++}});c.window=c;
- vm.runInContext(readFileSync(new URL('../rider-sheet.js',import.meta.url),'utf8'),c);const control=vm.runInContext("createRiderSheet('sheet','handle')",c);control.setActive(true);assert.equal(styles['--rider-sheet-height'],'200px');
+ vm.runInContext(readFileSync(new URL('../rider-sheet.js',import.meta.url),'utf8'),c);const control=vm.runInContext("createRiderSheet('sheet','handle')",c);control.setActive(true);assert.equal(styles['--rider-sheet-height'],'240px');
  events.pointerdown({pointerId:1,clientY:400});events.pointermove({pointerId:1,clientY:100});assert.equal(styles['--rider-sheet-height'],'600px');assert.equal(attrs['aria-expanded'],'true');events.pointerup();events.click();assert.equal(styles['--rider-sheet-height'],'600px');
- events.click();assert.equal(styles['--rider-sheet-height'],'200px');events.click();assert.equal(styles['--rider-sheet-height'],'560px');
+ events.click();assert.equal(styles['--rider-sheet-height'],'240px');events.click();assert.equal(styles['--rider-sheet-height'],'560px');
  events.pointerdown({pointerId:1,clientY:400});events.pointermove({pointerId:1,clientY:900});assert.equal(styles['--rider-sheet-height'],'156px');events.pointercancel();assert.ok(resizes>=5);
 });

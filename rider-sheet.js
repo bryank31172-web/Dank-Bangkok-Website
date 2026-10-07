@@ -7,7 +7,7 @@ function createRiderSheet(sheetId,handleId){
   handle.addEventListener('pointermove',e=>{if(!drag||drag.id!==e.pointerId)return;if(Math.abs(e.clientY-drag.y)>4)dragged=true;resize(drag.height+drag.y-e.clientY);});
   handle.addEventListener('pointerup',()=>{drag=null;});
   handle.addEventListener('pointercancel',()=>{drag=null;});
-  handle.addEventListener('click',()=>{if(dragged){dragged=false;return;}resize((height||sheet.getBoundingClientRect().height)>viewport()*0.5?200:viewport()*0.7);});
+  handle.addEventListener('click',()=>{if(dragged){dragged=false;return;}resize((height||sheet.getBoundingClientRect().height)>viewport()*0.5?240:viewport()*0.7);});
   window.addEventListener('resize',()=>{if(height)resize(height);});
-  return {setActive(active){if(active&&!wasActive)resize(200);wasActive=active;}};
+  return {setActive(active){if(active&&!wasActive)resize(240);wasActive=active;}};
 }

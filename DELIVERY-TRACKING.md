@@ -197,3 +197,8 @@ Official pricing: https://developers.google.com/maps/billing-and-pricing/pricing
 Enterprise traffic trigger: https://developers.google.com/maps/billing-and-pricing/sku-details#routes-compute-routes-enterprise
 
 Preview Google Maps currently requires authorizing the exact preview origin in the browser key's website referrers. The server traffic route returned actual NORMAL, SLOW and TRAFFIC_JAM intervals in live preview testing. A rejected browser referrer switches back to Wayfinder instead of leaving a broken Google map.
+
+
+### Rider three-step primary action
+
+The rider sheet has a fixed action footer with a circular camera action and a wide bright-green pill, plus three labelled steps: Take a picture, Delivered, Finish. The primary action opens the camera (sample photo in demo), or shares the selected preview. Successfully sharing the departure image starts location sharing; the secondary Start button remains available for permission retries or resume. Delivered requires a started delivery and confirmation, persists completion and stops GPS immediately. Finish acknowledges the ended delivery locally and disables the final action, without creating another server event. The footer remains visible while the detail body scrolls; the compact sheet is 240px to fit the customer row and action footer.
