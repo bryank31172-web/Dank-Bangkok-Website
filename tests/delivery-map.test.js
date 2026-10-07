@@ -19,10 +19,10 @@ function browser(defer=false){
  return {map,maps,markers,controls,protocols,el,data,context,frames,tick(time){const callbacks=[...frames.values()];frames.clear();callbacks.forEach(fn=>fn(time))},finish(){maps[0].loaded=true;maps[0].events.load()}};
 }
 test('MapLibre registers PMTiles, draws road geometry and keeps visible credits',async()=>{
- const f=browser();await f.map.update(f.data());const m=f.maps[0];assert.deepEqual(f.protocols,['pmtiles']);assert.match(m.options.style,/wayfinder\/style.json$/);assert.equal(m.layers.length,2);assert.equal(m.getSource('delivery-route').data.geometry.coordinates.length,3);assert.equal(f.el('badge').textContent,'Best route · 8 min · 5.4 km');assert.equal(m.bounds.points.length,7);assert.ok(f.controls.some(c=>c.position==='bottom-right'&&c.control.options.compact===false));assert.equal(f.controls.find(c=>c.position==='bottom-left').node.href,'https://elemnt.earth');
+ const f=browser();await f.map.update(f.data());const m=f.maps[0];assert.deepEqual(f.protocols,['pmtiles']);assert.match(m.options.style,/wayfinder\/style.json$/);assert.equal(m.layers.length,2);assert.equal(m.getSource('delivery-route').data.features.length,2);assert.equal(f.el('badge').textContent,'Best route · 8 min · 5.4 km');assert.equal(m.bounds.points.length,7);assert.ok(f.controls.some(c=>c.position==='bottom-right'&&c.control.options.compact===false));assert.equal(f.controls.find(c=>c.position==='bottom-left').node.href,'https://elemnt.earth');
 });
 test('theme changes restore current route and paused maps stay empty',async()=>{
- const f=browser();await f.map.update(f.data());const toggle=f.controls.find(c=>c.node?.className.includes('delivery-theme')).node;toggle.click();assert.match(f.maps[0].style,/style.dark.json$/);assert.equal(f.maps[0].getSource('delivery-route').data.geometry.coordinates.length,3);f.map.clear();toggle.click();assert.equal(f.maps[0].getSource('delivery-route').data.features.length,0);assert.ok(f.markers.every(m=>m.map===null));
+ const f=browser();await f.map.update(f.data());const toggle=f.controls.find(c=>c.node?.className.includes('delivery-theme')).node;toggle.click();assert.match(f.maps[0].style,/style.dark.json$/);assert.equal(f.maps[0].getSource('delivery-route').data.features.length,2);f.map.clear();toggle.click();assert.equal(f.maps[0].getSource('delivery-route').data.features.length,0);assert.ok(f.markers.every(m=>m.map===null));
 });
 test('stale updates remove route and badge',async()=>{
  const f=browser();await f.map.update(f.data());f.map.stale();assert.equal(f.maps[0].getSource('delivery-route').data.features.length,0);assert.equal(f.el('badge').hidden,true);
@@ -76,4 +76,26 @@ test('zoom resizes the active scooter within readable limits without changing it
 test('both DANK shop pins stay fixed across rider movement and style swaps, then clear on completion',async()=>{
  const f=browser();await f.map.update(f.data());const shops=f.markers.filter(m=>m.options.element.className==='delivery-origin-pin');assert.equal(shops.length,2);assert.deepEqual([...shops[0].position],[100.6004,13.7419]);assert.deepEqual([...shops[1].position],[100.5375,13.7108]);
  await f.map.update({...f.data(),location:{lat:39,lng:-120}});f.controls.find(c=>c.node?.className.includes('delivery-theme')).node.click();assert.deepEqual([...shops[0].position],[100.6004,13.7419]);assert.equal(f.markers.filter(m=>m.options.element.className==='delivery-origin-pin').length,2);await f.map.update({status:'completed'});assert.ok(shops.every(m=>m.map===null));
+});
+
+
+test('traffic colours follow Google interval indices, with shared boundaries and unknown fallback',()=>{
+ const f=browser();const result=vm.runInContext("deliveryRouteFeatures([{lat:0,lng:0},{lat:0,lng:1},{lat:0,lng:2},{lat:0,lng:3}], [{start:0,end:1,speed:'NORMAL'},{start:1,end:2,speed:'SLOW'},{start:2,end:3,speed:'TRAFFIC_JAM'}], 0.5)",f.context);
+ assert.deepEqual(Array.from(result.features,x=>x.properties.color),['#00b65b','#efad23','#e84d43']);assert.equal(result.features[0].geometry.coordinates[0][0],0.5);
+});
+test('passed route disappears with animated rider movement and cannot grow back with GPS jitter or style changes',async()=>{
+ const f=browser();const polyline=vm.runInContext("encodeDeliveryRoute([{lat:13,lng:100},{lat:13,lng:100.001},{lat:13,lng:100.002}])",f.context);
+ const data=lng=>({...f.data(),location:{lat:13,lng,route:{polyline,traffic:[{start:0,end:1,speed:'SLOW'},{start:1,end:2,speed:'TRAFFIC_JAM'}]}}});
+ await f.map.update(data(100));await f.map.update(data(100.001));f.tick(0);f.tick(600);
+ const source=f.maps[0].getSource('delivery-route');assert.ok(source.data.features[0].geometry.coordinates[0][0]>100);f.tick(1200);assert.equal(source.data.features.length,1);assert.equal(source.data.features[0].properties.color,'#e84d43');
+ await f.map.update(data(100.00099));f.tick(2000);f.tick(3200);assert.equal(source.data.features[0].geometry.coordinates[0][0],100.001);
+ f.controls.find(c=>c.node?.className.includes('delivery-theme')).node.click();assert.equal(f.maps[0].getSource('delivery-route').data.features.length,1);
+ await f.map.update(data(100.002));f.tick(4000);f.tick(5200);assert.equal(f.maps[0].getSource('delivery-route').data.features.length,0);
+});
+test('off-route position does not erase distant road sections and a replacement route resets progress',()=>{
+ const f=browser();assert.equal(vm.runInContext("deliveryRouteProgress([{lat:13,lng:100},{lat:13,lng:100.01}],{lat:14,lng:100.01},0)",f.context),0);
+});
+test('route API requests traffic and normalizes omitted zero index while rejecting malformed intervals',async()=>{
+ const previous=process.env.GOOGLE_MAPS_API_KEY,oldFetch=globalThis.fetch;process.env.GOOGLE_MAPS_API_KEY='test';
+ try{globalThis.fetch=async(url,o)=>{const body=JSON.parse(o.body);assert.deepEqual(body.extraComputations,['TRAFFIC_ON_POLYLINE']);assert.match(o.headers['X-Goog-FieldMask'],/speedReadingIntervals/);return {ok:true,json:async()=>({routes:[{duration:'120s',polyline:{encodedPolyline:encoded},travelAdvisory:{speedReadingIntervals:[{endPolylinePointIndex:1,speed:'NORMAL'},{startPolylinePointIndex:1,endPolylinePointIndex:2,speed:'SLOW'},{startPolylinePointIndex:-1,endPolylinePointIndex:2,speed:'TRAFFIC_JAM'},{endPolylinePointIndex:2,speed:'FAKE'}]}}]})};};const route=await routeFor({lat:13,lng:100},{lat:14,lng:100});assert.deepEqual(route.traffic,[{start:0,end:1,speed:'NORMAL'},{start:1,end:2,speed:'SLOW'}]);}finally{globalThis.fetch=oldFetch;if(previous===undefined)delete process.env.GOOGLE_MAPS_API_KEY;else process.env.GOOGLE_MAPS_API_KEY=previous;}
 });

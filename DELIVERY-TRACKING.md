@@ -174,3 +174,14 @@ clears the old photo, completion/cancellation removes customer access, and
 storage expires no later than the tracking record. Existing legacy orders may
 start without the new requirement. The demo uses a labeled illustration rather
 than a real rider photo.
+
+
+### Traffic and remaining route (October 2026)
+
+Google Routes now requests `TRAFFIC_ON_POLYLINE` and returns normalized speed intervals with the private rider location. The customer Wayfinder overlay uses green (normal), amber (slow), and red (traffic jam). Without traffic intervals, the route stays green; it does not invent congestion. Google traffic-aware polyline requests have a higher billing tier.
+
+Passed geometry is clipped at the nearest route projection within 100 metres. Progress only advances on the same polyline to avoid GPS jitter restoring passed sections. New Google route geometry resets that projection. The scooter animation updates clipping between received fixes, and stale, paused or terminal deliveries remove the route.
+
+After Start delivery, the rider page loads Google Maps JavaScript using the existing public `GOOGLE_MAPS_BROWSER_KEY` from `/api/maps-config`. Maps JavaScript API must be enabled and the browser key must allow the production and preview referrers. The server Routes key is never exposed. The rider map shows Google live traffic, destination, scooter and remaining route; dragging stops following until Recenter. Location sharing still runs every 45 seconds with the page open and phone awake. Pause/completion clears overlays. A Google loading failure retains Wayfinder and the external navigation button.
+
+This is an in-page map and route viewer. Spoken turn-by-turn navigation uses the Google Maps app button. Paired demos use the same fixed public road route and provider traffic snapshot with simulated rider progress; no real GPS, orders or LINE messages are sent.
