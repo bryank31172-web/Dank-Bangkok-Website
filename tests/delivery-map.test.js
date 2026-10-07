@@ -5,32 +5,33 @@ import {readFileSync} from 'node:fs';
 import {createHandler} from '../api/delivery.js';
 import {routeFor} from '../api/_delivery.js';
 const encoded = '_p~iF~ps|U_ulLnnqC_mqNvxq`@';
-function browser(defer = false) {
-  const nodes = new Map(), lines = [], markers = [], bounds = [], scripts = [];
-  const el = id => {if (!nodes.has(id)) nodes.set(id, {textContent:'', hidden:true, classList:{add(){nodes.get(id).hidden=true},remove(){nodes.get(id).hidden=false}}});return nodes.get(id);};
-  const c=vm.createContext({console,document:{getElementById:el,createElement:()=>({}),head:{appendChild(s){scripts.push(s);if(!defer)c.initDeliveryRouteMap()}}},google:{maps:{
-    Map:class{fitBounds(b){bounds.push(b.points)}setCenter(){}},LatLngBounds:class{points=[];extend(p){this.points.push(p)}isEmpty(){return !this.points.length}},
-    Polyline:class{constructor(opts){Object.assign(this,opts);lines.push(this)}setMap(m){this.map=m}},marker:{AdvancedMarkerElement:class{constructor(opts){Object.assign(this,opts);markers.push(this)}}}}}});c.window=c;
-  vm.runInContext(readFileSync(new URL('../delivery-map.js',import.meta.url),'utf8'),c);
-  const map=vm.runInContext("createDeliveryMap({map:'map',badge:'badge',label:'label',note:'note'})",c);
-  const data=(capturedAt=Date.now())=>({status:'on_the_way',mapsKey:'test',mapId:'test-map',destination:{lat:43.252,lng:-126.453},destinationLabel:'Sample destination',location:{lat:38.5,lng:-120.2,capturedAt,route:{polyline:encoded,minutes:8,km:5.4}},stale:false});
-  return {c,map,data,lines,markers,bounds,el,scripts};
+function browser(defer=false){
+ const nodes=new Map(),maps=[],markers=[],controls=[],protocols=[];
+ const el=id=>{if(!nodes.has(id))nodes.set(id,{textContent:'',hidden:true,classList:{add(){nodes.get(id).hidden=true},remove(){nodes.get(id).hidden=false}}});return nodes.get(id)};
+ const context=vm.createContext({console,document:{getElementById:el,createElement:()=>({setAttribute(){},addEventListener(event,fn){this.click=fn},remove(){}})},pmtiles:{Protocol:class{tile(){}}},maplibregl:{
+ addProtocol(name){protocols.push(name)},AttributionControl:class{constructor(options){this.options=options}},NavigationControl:class{},
+ Map:class{constructor(options){this.options=options;this.sources=new Map();this.layers=[];this.events={};maps.push(this)}isStyleLoaded(){return !defer||this.loaded}addControl(control,position){controls.push({control,position,node:control.onAdd?.()});return this}on(event,fn){this.events[event]=fn}once(event,fn){this.events[event]=fn;if(!defer&&event==='load'){this.loaded=true;fn()}}resize(){}getSource(id){return this.sources.get(id)}addSource(id,source){this.sources.set(id,{data:source.data,setData(data){this.data=data}})}addLayer(layer){this.layers.push(layer)}fitBounds(bounds){this.bounds=bounds}setCenter(){}setStyle(style){this.style=style;this.sources.clear();this.layers=[];this.events['style.load']?.()}},
+ LngLatBounds:class{points=[];extend(p){this.points.push(p)}isEmpty(){return !this.points.length}},
+ Marker:class{constructor(options){this.options=options;markers.push(this)}setLngLat(p){this.position=p;return this}addTo(map){this.map=map;return this}remove(){this.map=null}}
+ }});context.window=context;vm.runInContext(readFileSync(new URL('../delivery-map.js',import.meta.url),'utf8'),context);
+ const map=vm.runInContext("createDeliveryMap({map:'map',badge:'badge',label:'label',note:'note'})",context);
+ const data=()=>({status:'on_the_way',destination:{lat:43.252,lng:-126.453},location:{lat:38.5,lng:-120.2,route:{polyline:encoded,minutes:8,km:5.4}},stale:false});
+ return {map,maps,markers,controls,protocols,el,data,context,finish(){maps[0].loaded=true;maps[0].events.load()}};
 }
-test('map draws the actual road polyline with outline, time, distance and full route bounds',async()=>{
-  const f=browser();await f.map.update(f.data());assert.equal(f.lines.length,2);assert.equal(f.lines[1].strokeColor,'#00b65b');assert.equal(f.lines[1].path.length,3);
-  assert.equal(f.el('badge').textContent,'On the way · 8 min · 5.4 km');assert.equal(f.el('label').textContent,'Sample destination');assert.equal(f.bounds[0].length,5);
-  assert.equal(f.scripts[0].referrerPolicy,'strict-origin-when-cross-origin');assert.equal(f.markers.length,2);
-  const roundtrip=vm.runInContext(`decodeDeliveryRoute(encodeDeliveryRoute(decodeDeliveryRoute('${encoded}')))`,f.c);assert.equal(roundtrip[1].lat,40.7);
+test('MapLibre registers PMTiles, draws road geometry and keeps visible credits',async()=>{
+ const f=browser();await f.map.update(f.data());const m=f.maps[0];assert.deepEqual(f.protocols,['pmtiles']);assert.match(m.options.style,/wayfinder\/style.json$/);assert.equal(m.layers.length,2);assert.equal(m.getSource('delivery-route').data.geometry.coordinates.length,3);assert.equal(f.el('badge').textContent,'On the way · 8 min · 5.4 km');assert.equal(m.bounds.points.length,5);assert.ok(f.controls.some(c=>c.position==='bottom-right'&&c.control.options.compact===false));assert.equal(f.controls.find(c=>c.position==='bottom-left').node.href,'https://elemnt.earth');
 });
-test('newer location replaces route and stale updates remove lines and route badge',async()=>{
-  const f=browser();await f.map.update(f.data());const old=f.lines.slice();await f.map.update({...f.data(),location:{...f.data().location,route:{polyline:encoded,minutes:3,km:2}}});
-  assert.ok(old.every(l=>l.map===null));assert.match(f.el('badge').textContent,/3 min · 2 km/);f.map.stale();assert.ok(f.lines.every(l=>l.map===null));assert.equal(f.el('badge').hidden,true);
+test('theme changes restore current route and paused maps stay empty',async()=>{
+ const f=browser();await f.map.update(f.data());const toggle=f.controls.find(c=>c.node?.className.includes('delivery-theme')).node;toggle.click();assert.match(f.maps[0].style,/style.dark.json$/);assert.equal(f.maps[0].getSource('delivery-route').data.geometry.coordinates.length,3);f.map.clear();toggle.click();assert.equal(f.maps[0].getSource('delivery-route').data.features.length,0);assert.ok(f.markers.every(m=>m.map===null));
 });
-test('pause and completion during delayed map loading cannot restore rider or route',async()=>{
-  for(const stop of ['pause','complete']){const f=browser(true);const update=f.map.update(f.data());f.map.clear();f.c.initDeliveryRouteMap();await update;assert.equal(f.markers.length,0);assert.equal(f.lines.length,0);assert.equal(f.el('badge').hidden,true);}
+test('stale updates remove route and badge',async()=>{
+ const f=browser();await f.map.update(f.data());f.map.stale();assert.equal(f.maps[0].getSource('delivery-route').data.features.length,0);assert.equal(f.el('badge').hidden,true);
 });
-test('overlapping map loads display only newest location',async()=>{
-  const f=browser(true),a=f.data(),b={...f.data(),location:{...f.data().location,lat:40.7}};const p=f.map.update(a),q=f.map.update(b);f.c.initDeliveryRouteMap();await Promise.all([p,q]);assert.equal(f.markers.find(m=>m.title==='Delivery rider').position.lat,40.7);assert.equal(f.lines.length,2);
+test('completion during map loading cannot restore private position',async()=>{
+ const f=browser(true),p=f.map.update(f.data());f.map.clear();f.finish();await p;assert.equal(f.markers.length,0);assert.equal(f.el('badge').hidden,true);
+});
+test('overlapping updates display only the newest position',async()=>{
+ const f=browser(true),p=f.map.update(f.data()),q=f.map.update({...f.data(),location:{...f.data().location,lat:40.7}});f.finish();await Promise.all([p,q]);assert.equal(f.markers.find(m=>m.options.anchor==='center').position[1],40.7);
 });
 test('fixed demo route caches parallel requests and cannot read orders or accept supplied locations',async()=>{
   let calls=0;const route={polyline:encoded,minutes:8,km:5.4};const handler=createHandler({rate:async()=>true,get:async()=>{throw new Error('Must not read private storage')},routeFor:async(a,b)=>{calls++;assert.deepEqual(a,{lat:13.7108,lng:100.5375});assert.deepEqual(b,{lat:13.7463,lng:100.5346});return route;}});
