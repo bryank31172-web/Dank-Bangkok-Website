@@ -6,17 +6,17 @@ import {createHandler} from '../api/delivery.js';
 import {routeFor} from '../api/_delivery.js';
 const encoded = '_p~iF~ps|U_ulLnnqC_mqNvxq`@';
 function browser(defer=false){
- const nodes=new Map(),maps=[],markers=[],controls=[],protocols=[];
+ const nodes=new Map(),maps=[],markers=[],controls=[],protocols=[],frames=new Map();let nextFrame=0;
  const el=id=>{if(!nodes.has(id))nodes.set(id,{textContent:'',hidden:true,classList:{add(){nodes.get(id).hidden=true},remove(){nodes.get(id).hidden=false}}});return nodes.get(id)};
- const context=vm.createContext({console,document:{getElementById:el,createElement:()=>({querySelector(){return {textContent:''}},setAttribute(){},addEventListener(event,fn){this.click=fn},remove(){}})},pmtiles:{Protocol:class{tile(){}}},maplibregl:{
+ const context=vm.createContext({console,requestAnimationFrame(fn){const id=++nextFrame;frames.set(id,fn);return id},cancelAnimationFrame(id){frames.delete(id)},document:{getElementById:el,createElement:()=>({querySelector(){return {textContent:''}},setAttribute(){},addEventListener(event,fn){this.click=fn},remove(){}})},pmtiles:{Protocol:class{tile(){}}},maplibregl:{
  addProtocol(name){protocols.push(name)},AttributionControl:class{constructor(options){this.options=options}},NavigationControl:class{},
  Map:class{constructor(options){this.options=options;this.sources=new Map();this.layers=[];this.events={};maps.push(this)}isStyleLoaded(){return !defer||this.loaded}addControl(control,position){controls.push({control,position,node:control.onAdd?.()});return this}on(event,fn){this.events[event]=fn}once(event,fn){this.events[event]=fn;if(!defer&&event==='load'){this.loaded=true;fn()}}resize(){}getSource(id){return this.sources.get(id)}addSource(id,source){this.sources.set(id,{data:source.data,setData(data){this.data=data}})}addLayer(layer){this.layers.push(layer)}fitBounds(bounds){this.bounds=bounds}setCenter(){}setStyle(style){this.style=style;this.sources.clear();this.layers=[];this.events['style.load']?.()}},
  LngLatBounds:class{points=[];extend(p){this.points.push(p)}isEmpty(){return !this.points.length}},
- Marker:class{constructor(options){this.options=options;markers.push(this)}setLngLat(p){this.position=p;return this}addTo(map){this.map=map;return this}remove(){this.map=null}}
+ Marker:class{constructor(options){this.options=options;markers.push(this)}setLngLat(p){this.position=p;return this}setRotation(degrees){this.rotation=degrees;return this}addTo(map){this.map=map;return this}remove(){this.map=null}}
  }});context.window=context;vm.runInContext(readFileSync(new URL('../delivery-map.js',import.meta.url),'utf8'),context);
  const map=vm.runInContext("createDeliveryMap({map:'map',badge:'badge',label:'label',note:'note'})",context);
  const data=()=>({status:'on_the_way',destination:{lat:43.252,lng:-126.453},location:{lat:38.5,lng:-120.2,route:{polyline:encoded,minutes:8,km:5.4}},stale:false});
- return {map,maps,markers,controls,protocols,el,data,context,finish(){maps[0].loaded=true;maps[0].events.load()}};
+ return {map,maps,markers,controls,protocols,el,data,context,frames,tick(time){const callbacks=[...frames.values()];frames.clear();callbacks.forEach(fn=>fn(time))},finish(){maps[0].loaded=true;maps[0].events.load()}};
 }
 test('MapLibre registers PMTiles, draws road geometry and keeps visible credits',async()=>{
  const f=browser();await f.map.update(f.data());const m=f.maps[0];assert.deepEqual(f.protocols,['pmtiles']);assert.match(m.options.style,/wayfinder\/style.json$/);assert.equal(m.layers.length,2);assert.equal(m.getSource('delivery-route').data.geometry.coordinates.length,3);assert.equal(f.el('badge').textContent,'Best route · 8 min · 5.4 km');assert.equal(m.bounds.points.length,5);assert.ok(f.controls.some(c=>c.position==='bottom-right'&&c.control.options.compact===false));assert.equal(f.controls.find(c=>c.position==='bottom-left').node.href,'https://elemnt.earth');
@@ -50,3 +50,19 @@ test('Google route distance is included, invalid durations fail without an inven
 });
 
 test('unavailable WebGL shows a readable fallback rather than renderer internals',async()=>{const f=browser();f.context.maplibregl.Map=class{constructor(){throw new Error('WebGL renderer error {private internals}')}};await f.map.update(f.data());assert.match(f.map.error(),/This browser cannot display the map/);assert.doesNotMatch(f.map.error(),/internals/);});
+
+// Lifecycle and interpolation tests ensure an ended assignment cannot keep moving.
+test('start replaces the location pin with one scooter and keeps the destination',async()=>{
+ const f=browser();await f.map.update({...f.data(),status:'preparing'});const pin=f.markers.find(m=>m.options.anchor==='center'),destination=f.markers[0];
+ await f.map.update(f.data());assert.equal(pin.map,null);assert.equal(destination.map,f.maps[0]);const scooter=f.markers.at(-1);assert.equal(scooter.options.element.className,'delivery-moving-rider');assert.match(scooter.options.element.innerHTML,/delivery-rider.svg/);assert.equal(f.markers.filter(m=>m.map).length,2);
+});
+test('scooter eases between real fixes, faces movement, and freezes at the latest stale fix',async()=>{
+ const f=browser();await f.map.update(f.data());const scooter=f.markers.at(-1),next={...f.data(),location:{lat:38.5,lng:-120.19}};await f.map.update(next);
+ assert.equal(scooter.position[0],-120.2);assert.equal(scooter.rotation,90);f.tick(0);f.tick(600);assert.ok(scooter.position[0]>-120.2&&scooter.position[0]<-120.19);f.tick(1200);assert.equal(scooter.position[0],-120.19);assert.equal(f.frames.size,0);
+ await f.map.update({...next,location:{lat:38.51,lng:-120.19}});f.tick(2000);f.tick(2300);f.map.stale();assert.equal(f.frames.size,0);assert.equal(scooter.position[1],38.51);
+});
+test('completion and pause cancel pending scooter movement without restoring it on theme change',async()=>{
+ for(const ended of [true,false]){const f=browser();await f.map.update(f.data());await f.map.update({...f.data(),location:{lat:39,lng:-120}});assert.equal(f.frames.size,1);
+ await f.map.update(ended?{status:'completed'}:{...f.data(),location:null});assert.equal(f.frames.size,0);assert.equal(f.markers.find(m=>m.options.element.className==='delivery-moving-rider').map,null);f.controls.find(c=>c.node?.className.includes('delivery-theme')).node.click();f.tick(9999);assert.equal(f.markers.filter(m=>m.map&&m.options.anchor==='center').length,0);}
+});
+test('reduced motion places the scooter directly at each received fix',async()=>{const f=browser();f.context.matchMedia=()=>({matches:true});await f.map.update(f.data());await f.map.update({...f.data(),location:{lat:39,lng:-120}});assert.equal(f.frames.size,0);assert.equal(f.markers.at(-1).position[1],39);});

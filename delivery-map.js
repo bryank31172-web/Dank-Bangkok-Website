@@ -18,7 +18,7 @@ const DELIVERY_STYLES = {
 let deliveryProtocolRegistered = false;
 function createDeliveryMap(ids) {
   const el = name => document.getElementById(ids[name]);
-  let map, pending, version = 0, last, fitted = false, rider, destination, routePath = [], errorText = '', mode = 'light';
+  let map, pending, version = 0, last, fitted = false, rider, destination, routePath = [], errorText = '', mode = 'light', riderKind = '', riderPosition, riderHeading = 0, movementFrame;
   const empty = () => ({type:'FeatureCollection',features:[]});
   function drawRoute() {
     if (!map?.isStyleLoaded()) return;
@@ -30,8 +30,9 @@ function createDeliveryMap(ids) {
     } else map.getSource('delivery-route').setData(geometry);
   }
   function removeLines() {routePath = []; drawRoute(); el('badge').classList.add('hidden');}
-  function clear() {version++; last = null; errorText = ''; removeLines(); rider?.remove(); destination?.remove(); rider = destination = null; fitted = false;}
-  function stale() {removeLines();}
+  function stopMovement() {if(movementFrame!==undefined)cancelAnimationFrame(movementFrame);movementFrame=undefined;}
+  function clear() {stopMovement();riderPosition=null;riderKind='';riderHeading=0;version++; last = null; errorText = ''; removeLines(); rider?.remove(); destination?.remove(); rider = destination = null; fitted = false;}
+  function stale() {stopMovement();if(rider&&last?.location){riderPosition=[last.location.lng,last.location.lat];rider.setLngLat(riderPosition);}removeLines();}
   function fit() {
     if (!map || !last) return;
     map.resize();
@@ -67,6 +68,36 @@ function createDeliveryMap(ids) {
     content.querySelector('.delivery-location-pill').textContent=label||(home?'Your delivery':'Your rider');
     return new maplibregl.Marker({element:content,anchor:home?'bottom':'center'}).setLngLat([position.lng,position.lat]).addTo(map);
   }
+  function movingRider(position) {
+    const content=document.createElement('div');
+    content.className='delivery-moving-rider';
+    content.setAttribute('aria-label','Delivery rider on scooter');
+    content.innerHTML='<img src="/assets/delivery-rider.svg" width="76" height="88" alt="" draggable="false">';
+    return new maplibregl.Marker({element:content,anchor:'center',rotationAlignment:'map'}).setLngLat([position.lng,position.lat]).addTo(map);
+  }
+  function moveRider(position,animate) {
+    stopMovement();
+    const target=[position.lng,position.lat],start=riderPosition;
+    if(start){
+      const radians=Math.PI/180,dx=(target[0]-start[0])*Math.cos(start[1]*radians),dy=target[1]-start[1];
+      // Ignore GPS jitter when deciding which way the scooter faces.
+      if(Math.hypot(dx,dy)*111320>3)riderHeading=Math.atan2(dx,dy)/radians;
+    }
+    if(riderKind==='scooter')rider.setRotation(riderHeading);
+    if(!animate||!start||window.matchMedia?.('(prefers-reduced-motion: reduce)').matches||!window.requestAnimationFrame){riderPosition=target;rider.setLngLat(target);return;}
+    if(start[0]===target[0]&&start[1]===target[1])return;
+    // Ease between received GPS fixes only; never predict unreported movement.
+    let began;
+    const marker=rider;
+    function frame(now){
+      if(marker!==rider)return;
+      began??=now;const t=Math.min(1,(now-began)/1200),ease=t*t*(3-2*t);
+      riderPosition=[start[0]+(target[0]-start[0])*ease,start[1]+(target[1]-start[1])*ease];
+      marker.setLngLat(riderPosition);
+      if(t<1)movementFrame=requestAnimationFrame(frame);else movementFrame=undefined;
+    }
+    movementFrame=requestAnimationFrame(frame);
+  }
   async function update(data) {
     const current=++version;last=data;
     if (['completed','cancelled'].includes(data.status)) {clear();return;}
@@ -75,7 +106,11 @@ function createDeliveryMap(ids) {
       await load(data);if(current!==version||last!==data)return;
       errorText='';map.resize();
       if(data.destination){if(!destination)destination=pin(data.destination,true,data.destinationLabel);else destination.setLngLat([data.destination.lng,data.destination.lat]);}
-      if(data.location){if(!rider)rider=pin(data.location,false);else rider.setLngLat([data.location.lng,data.location.lat]);}else{rider?.remove();rider=null;}
+      if(data.location){
+        const kind=data.status==='on_the_way'?'scooter':'pin';
+        if(!rider||riderKind!==kind){stopMovement();rider?.remove();riderPosition=null;riderHeading=0;riderKind=kind;rider=kind==='scooter'?movingRider(data.location):pin(data.location,false);}
+        moveRider(data.location,kind==='scooter'&&!data.stale);
+      }else{stopMovement();rider?.remove();rider=null;riderPosition=null;riderKind='';}
       removeLines();const route=data.location?.route;
       if(!data.stale&&route?.polyline){routePath=decodeDeliveryRoute(route.polyline);drawRoute();el('badge').textContent=(data.demo?'Demo route · ':'Best route · ')+route.minutes+' min'+(Number.isFinite(route.km)?' · '+route.km+' km':'');el('badge').classList.remove('hidden');}
       if(!fitted&&data.location){fit();fitted=true;}else if(!fitted&&data.destination)map.setCenter([data.destination.lng,data.destination.lat]);
