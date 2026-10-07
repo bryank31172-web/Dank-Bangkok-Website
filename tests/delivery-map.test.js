@@ -19,7 +19,7 @@ function browser(defer=false){
  return {map,maps,markers,controls,protocols,el,data,context,frames,tick(time){const callbacks=[...frames.values()];frames.clear();callbacks.forEach(fn=>fn(time))},finish(){maps[0].loaded=true;maps[0].events.load()}};
 }
 test('MapLibre registers PMTiles, draws road geometry and keeps visible credits',async()=>{
- const f=browser();await f.map.update(f.data());const m=f.maps[0];assert.deepEqual(f.protocols,['pmtiles']);assert.match(m.options.style,/wayfinder\/style.json$/);assert.equal(m.layers.length,2);assert.equal(m.getSource('delivery-route').data.geometry.coordinates.length,3);assert.equal(f.el('badge').textContent,'Best route · 8 min · 5.4 km');assert.equal(m.bounds.points.length,5);assert.ok(f.controls.some(c=>c.position==='bottom-right'&&c.control.options.compact===false));assert.equal(f.controls.find(c=>c.position==='bottom-left').node.href,'https://elemnt.earth');
+ const f=browser();await f.map.update(f.data());const m=f.maps[0];assert.deepEqual(f.protocols,['pmtiles']);assert.match(m.options.style,/wayfinder\/style.json$/);assert.equal(m.layers.length,2);assert.equal(m.getSource('delivery-route').data.geometry.coordinates.length,3);assert.equal(f.el('badge').textContent,'Best route · 8 min · 5.4 km');assert.equal(m.bounds.points.length,7);assert.ok(f.controls.some(c=>c.position==='bottom-right'&&c.control.options.compact===false));assert.equal(f.controls.find(c=>c.position==='bottom-left').node.href,'https://elemnt.earth');
 });
 test('theme changes restore current route and paused maps stay empty',async()=>{
  const f=browser();await f.map.update(f.data());const toggle=f.controls.find(c=>c.node?.className.includes('delivery-theme')).node;toggle.click();assert.match(f.maps[0].style,/style.dark.json$/);assert.equal(f.maps[0].getSource('delivery-route').data.geometry.coordinates.length,3);f.map.clear();toggle.click();assert.equal(f.maps[0].getSource('delivery-route').data.features.length,0);assert.ok(f.markers.every(m=>m.map===null));
@@ -53,8 +53,8 @@ test('unavailable WebGL shows a readable fallback rather than renderer internals
 
 // Lifecycle and interpolation tests ensure an ended assignment cannot keep moving.
 test('start replaces the location pin with one scooter and keeps the destination',async()=>{
- const f=browser();await f.map.update({...f.data(),status:'preparing'});const pin=f.markers.find(m=>m.options.anchor==='center'),destination=f.markers[0];
- await f.map.update(f.data());assert.equal(pin.map,null);assert.equal(destination.map,f.maps[0]);const scooter=f.markers.at(-1);assert.equal(scooter.options.element.className,'delivery-moving-rider');assert.match(scooter.options.element.innerHTML,/delivery-rider.svg/);assert.equal(f.markers.filter(m=>m.map).length,2);
+ const f=browser();await f.map.update({...f.data(),status:'preparing'});const pin=f.markers.find(m=>m.options.anchor==='center'),destination=f.markers.find(m=>m.options.element.className==='delivery-destination-pin');
+ await f.map.update(f.data());assert.equal(pin.map,null);assert.equal(destination.map,f.maps[0]);const scooter=f.markers.at(-1);assert.equal(scooter.options.element.className,'delivery-moving-rider');assert.match(scooter.options.element.innerHTML,/delivery-rider.svg/);assert.equal(f.markers.filter(m=>m.map).length,4);
 });
 test('scooter eases between real fixes, faces movement, and freezes at the latest stale fix',async()=>{
  const f=browser();await f.map.update(f.data());const scooter=f.markers.at(-1),next={...f.data(),location:{lat:38.5,lng:-120.19}};await f.map.update(next);
@@ -68,7 +68,12 @@ test('completion and pause cancel pending scooter movement without restoring it 
 test('reduced motion places the scooter directly at each received fix',async()=>{const f=browser();f.context.matchMedia=()=>({matches:true});await f.map.update(f.data());await f.map.update({...f.data(),location:{lat:39,lng:-120}});assert.equal(f.frames.size,0);assert.equal(f.markers.at(-1).position[1],39);});
 
 test('zoom resizes the active scooter within readable limits without changing its position',async()=>{
- const f=browser();await f.map.update(f.data());const m=f.maps[0],scooter=f.markers.at(-1),content=scooter.getElement(),position=[...scooter.position];assert.equal(parseFloat(content.style.width),53.2);
- m.zoom=16;m.events.zoom();assert.ok(parseFloat(content.style.width)>53.2);m.zoom=12;m.events.zoom();assert.ok(parseFloat(content.style.width)<53.2);
- m.zoom=22;m.events.zoom();assert.equal(parseFloat(content.style.width),76);m.zoom=0;m.events.zoom();assert.equal(parseFloat(content.style.width),36);assert.deepEqual([...scooter.position],position);f.map.clear();m.events.zoom();assert.equal(scooter.map,null);
+ const f=browser();await f.map.update(f.data());const m=f.maps[0],scooter=f.markers.at(-1),content=scooter.getElement(),position=[...scooter.position];assert.equal(parseFloat(content.style.width),47.88);
+ m.zoom=16;m.events.zoom();assert.ok(parseFloat(content.style.width)>47.88);m.zoom=12;m.events.zoom();assert.ok(parseFloat(content.style.width)<47.88);
+ m.zoom=22;m.events.zoom();assert.equal(parseFloat(content.style.width),68.4);m.zoom=0;m.events.zoom();assert.equal(parseFloat(content.style.width),32.4);assert.deepEqual([...scooter.position],position);f.map.clear();m.events.zoom();assert.equal(scooter.map,null);
+});
+
+test('both DANK shop pins stay fixed across rider movement and style swaps, then clear on completion',async()=>{
+ const f=browser();await f.map.update(f.data());const shops=f.markers.filter(m=>m.options.element.className==='delivery-origin-pin');assert.equal(shops.length,2);assert.deepEqual([...shops[0].position],[100.6004,13.7419]);assert.deepEqual([...shops[1].position],[100.5375,13.7108]);
+ await f.map.update({...f.data(),location:{lat:39,lng:-120}});f.controls.find(c=>c.node?.className.includes('delivery-theme')).node.click();assert.deepEqual([...shops[0].position],[100.6004,13.7419]);assert.equal(f.markers.filter(m=>m.options.element.className==='delivery-origin-pin').length,2);await f.map.update({status:'completed'});assert.ok(shops.every(m=>m.map===null));
 });

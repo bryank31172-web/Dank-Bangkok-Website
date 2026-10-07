@@ -15,10 +15,15 @@ const DELIVERY_STYLES = {
   light: 'https://carto.elemnt.earth/2026-06-22_wayfinder/style.json',
   dark: 'https://carto.elemnt.earth/2026-06-22_wayfinder/style.dark.json'
 };
+const DELIVERY_SHOPS = [
+  {id:'pattanakarn',name:'DANK Phatthanakan',lat:13.7419,lng:100.6004},
+  {id:'sathorn',name:'DANK Sathorn',lat:13.7108,lng:100.5375}
+];
 let deliveryProtocolRegistered = false;
 function createDeliveryMap(ids) {
   const el = name => document.getElementById(ids[name]);
   let map, pending, version = 0, last, fitted = false, rider, destination, routePath = [], errorText = '', mode = 'light', riderKind = '', riderPosition, riderHeading = 0, movementFrame;
+  let shops=[];
   const empty = () => ({type:'FeatureCollection',features:[]});
   function drawRoute() {
     if (!map?.isStyleLoaded()) return;
@@ -31,7 +36,7 @@ function createDeliveryMap(ids) {
   }
   function removeLines() {routePath = []; drawRoute(); el('badge')?.classList.add('hidden');}
   function stopMovement() {if(movementFrame!==undefined)cancelAnimationFrame(movementFrame);movementFrame=undefined;}
-  function clear() {stopMovement();riderPosition=null;riderKind='';riderHeading=0;version++; last = null; errorText = ''; removeLines(); rider?.remove(); destination?.remove(); rider = destination = null; fitted = false;}
+  function clear() {stopMovement();riderPosition=null;riderKind='';riderHeading=0;version++; last = null; errorText = ''; removeLines(); rider?.remove(); destination?.remove();shops.forEach(marker=>marker.remove());shops=[]; rider = destination = null; fitted = false;}
   function stale() {stopMovement();if(rider&&last?.location){riderPosition=[last.location.lng,last.location.lat];rider.setLngLat(riderPosition);}removeLines();}
   function fit() {
     if (!map || !last) return;
@@ -40,6 +45,7 @@ function createDeliveryMap(ids) {
     if (last.destination) bounds.extend([last.destination.lng,last.destination.lat]);
     if (last.location) bounds.extend([last.location.lng,last.location.lat]);
     routePath.forEach(p => bounds.extend([p.lng,p.lat]));
+    DELIVERY_SHOPS.forEach(shop=>bounds.extend([shop.lng,shop.lat]));
     if (!bounds.isEmpty()) map.fitBounds(bounds,{padding:{top:110,right:60,bottom:100,left:60},maxZoom:16,duration:500});
   }
   function load(data) {
@@ -60,17 +66,17 @@ function createDeliveryMap(ids) {
     }).catch(error=>{pending=null;throw error;});
     return pending;
   }
-  function pin(position,home,label) {
+  function pin(position,home,label,shop=false) {
     const content=document.createElement('div');
-    content.className=home?'delivery-destination-pin':'delivery-rider-pin';
-    content.setAttribute('aria-label',home?'Delivery destination':'Delivery rider');
-    const pinShape = '<svg viewBox="0 0 36 48" aria-hidden="true"><path d="M18 2C8 2 2 9 2 18c0 12 16 27 16 27s16-15 16-27C34 9 28 2 18 2Z" fill="'+(home?'#ef5544':'#009ee8')+'" stroke="white" stroke-width="2"/><circle cx="18" cy="18" r="6" fill="white"/></svg>';
+    content.className=shop?'delivery-origin-pin':home?'delivery-destination-pin':'delivery-rider-pin';
+    content.setAttribute('aria-label',shop?'Shop origin: '+label:home?'Delivery destination':'Delivery rider');
+    const pinShape = '<svg viewBox="0 0 36 48" aria-hidden="true"><path d="M18 2C8 2 2 9 2 18c0 12 16 27 16 27s16-15 16-27C34 9 28 2 18 2Z" fill="'+(shop?'#008f4b':home?'#ef5544':'#009ee8')+'" stroke="white" stroke-width="2"/><circle cx="18" cy="18" r="6" fill="white"/></svg>';
     content.innerHTML='<span class="delivery-pin-shape">'+pinShape+'</span><span class="delivery-location-pill"></span>';
     content.querySelector('.delivery-location-pill').textContent=label||(home?'Your delivery':'Your rider');
-    return new maplibregl.Marker({element:content,anchor:home?'bottom':'center'}).setLngLat([position.lng,position.lat]).addTo(map);
+    return new maplibregl.Marker({element:content,anchor:home||shop?'bottom':'center'}).setLngLat([position.lng,position.lat]).addTo(map);
   }
   function sizeScooter(content) {
-    const width=Math.max(36,Math.min(76,53.2*Math.pow(2,(map.getZoom()-14)/4)));
+    const width=Math.max(32.4,Math.min(68.4,47.88*Math.pow(2,(map.getZoom()-14)/4)));
     content.style.width=width+'px';content.style.height=(width*88/76)+'px';
   }
   function resizeScooter() {if(riderKind==='scooter'&&rider)sizeScooter(rider.getElement());}
@@ -112,6 +118,7 @@ function createDeliveryMap(ids) {
     try {
       await load(data);if(current!==version||last!==data)return;
       errorText='';map.resize();
+      if(!shops.length)shops=DELIVERY_SHOPS.map(shop=>pin(shop,false,shop.name,true));
       if(data.destination){if(!destination)destination=pin(data.destination,true,data.destinationLabel);else destination.setLngLat([data.destination.lng,data.destination.lat]);}
       if(data.location){
         const kind=data.status==='on_the_way'?'scooter':'pin';
