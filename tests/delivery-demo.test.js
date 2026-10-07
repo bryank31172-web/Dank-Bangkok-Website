@@ -91,6 +91,6 @@ test('normal private tracking retains live lookup and does not initialize demo',
 
 test('customer toolbar shows route ETA, hides removed pills, and never keeps a stale ETA',async()=>{
  const b=browser('?demo=1');vm.runInContext('startDeliveryDemo()',b.context);await new Promise(resolve=>setImmediate(resolve));b.get('[data-demo="start"]').click();assert.match(b.get('arrivalTime').textContent,/\d+ min away/);assert.doesNotMatch(b.html,/class="you-pill"|id="routeBadge"|<span>DANK Delivery<\/span>/);
- vm.runInContext('last.location.capturedAt=Date.now()-91000;updateAge()',b.context);assert.equal(b.get('arrivalTime').textContent,'ETA unavailable');
- vm.runInContext('last.location=null;updateAge()',b.context);assert.equal(b.get('arrivalTime').textContent,'Waiting for rider');
+ vm.runInContext("last.location.capturedAt=new Date('2026-10-07T08:52:30Z').getTime();updateAge()",b.context);assert.equal(b.get('arrivalRefresh').textContent,'GPS updated 15:52:30');vm.runInContext('updateAge()',b.context);assert.equal(b.get('arrivalRefresh').textContent,'GPS updated 15:52:30');vm.runInContext('last.location.capturedAt=Date.now()-91000;updateAge()',b.context);assert.equal(b.get('arrivalTime').textContent,'ETA unavailable');
+ vm.runInContext('last.location=null;updateAge()',b.context);assert.equal(b.get('arrivalTime').textContent,'Waiting for rider');assert.equal(b.get('arrivalRefresh').textContent,'No GPS update yet');
 });
