@@ -12,7 +12,7 @@ function startDeliveryDemo() {
   const buttons = Object.fromEntries(['start', 'next', 'complete', 'reset'].map(action => [action, panel.querySelector('[data-demo="' + action + '"]')]));
   let path = Array.from({length: 20}, (_, i) => ({lat: 13.7463 - i * 0.0001, lng: 100.5346 + i * 0.0001}));
   let roadRoute = null, fullPath = [], destination = path[19], destinationLabel = 'Delivery destination';
-  let index = 0, movement, finishTimer;
+  let index = 0, movement, finishTimer, startTimer;
   const movementInterval = replay ? 2000 : 90000;
   let state = 'preparing';
   function display() {
@@ -34,7 +34,7 @@ function startDeliveryDemo() {
   buttons.start.addEventListener('click', () => {state = 'on_the_way'; display(); movement = setInterval(next, movementInterval);});
   buttons.next.addEventListener('click', next);
   buttons.complete.addEventListener('click', () => {clearInterval(movement);clearTimeout(finishTimer); state = 'completed'; display();});
-  buttons.reset.addEventListener('click', () => {clearInterval(movement);clearTimeout(finishTimer); state = 'preparing'; index = 0; display();});
+  buttons.reset.addEventListener('click', () => {clearInterval(movement);clearTimeout(finishTimer);clearTimeout(startTimer); state = 'preparing'; index = 0; display();});
   display();
   fetch('/api/delivery?action=demo-route', {cache: 'default', signal: AbortSignal.timeout(10000)})
     .then(response => {if (!response.ok) throw new Error('Demo route unavailable'); return response.json();})
@@ -47,7 +47,7 @@ function startDeliveryDemo() {
         const offset = i * (fullPath.length - 1) / 19, a = Math.floor(offset), b = Math.min(fullPath.length - 1, a + 1), fraction = offset - a;
         return {lat: fullPath[a].lat + (fullPath[b].lat - fullPath[a].lat) * fraction, lng: fullPath[a].lng + (fullPath[b].lng - fullPath[a].lng) * fraction};
       });
-      destination = data.destination; path[19] = {...destination}; destinationLabel = data.destinationLabel; roadRoute = data.route; display(); if(replay)buttons.start.click();
+      destination = data.destination; path[19] = {...destination}; destinationLabel = data.destinationLabel; roadRoute = data.route; display(); if(replay)startTimer=setTimeout(()=>{if(state==='preparing')buttons.start.click();},3000);
     })
     .catch(() => {panel.querySelector('#demoProgress').textContent += ' Google road route unavailable. No estimated route is drawn.';});
 }
