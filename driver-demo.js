@@ -3,7 +3,7 @@ async function demoCall(session,role,action){const r=await fetch('/api/delivery-
 function demoView(state,data){
  const full=data.route?.polyline?decodeDeliveryRoute(data.route.polyline):[],index=state.index||0,destination=data.destination||{lat:13.7463,lng:100.5346};
  const offset=index*(full.length-1)/19,a=Math.max(0,Math.floor(offset)),b=Math.min(full.length-1,a+1),t=offset-a;
- const position=full.length>1?{lat:full[a].lat+(full[b].lat-full[a].lat)*t,lng:full[a].lng+(full[b].lng-full[a].lng)*t}:{lat:13.7108+(destination.lat-13.7108)*index/19,lng:100.5375+(destination.lng-100.5375)*index/19};
+ const position=index>=19?{...destination}:full.length>1?{lat:full[a].lat+(full[b].lat-full[a].lat)*t,lng:full[a].lng+(full[b].lng-full[a].lng)*t}:{lat:13.7108+(destination.lat-13.7108)*index/19,lng:100.5375+(destination.lng-100.5375)*index/19};
  const route=full.length>1?{...data.route,minutes:Math.max(1,Math.round(data.route.minutes*(1-index/20))),km:Math.round(data.route.km*(1-index/20)*10)/10}:null;
  const ended=state.status==='completed',moving=state.status==='on_the_way'&&!state.paused;
  return {customer:ended?null:{name:'Demo customer',phone:''},orderId:'DEMO-RIDER',status:state.status,demo:true,address:'Siam Paragon · sample delivery only',destinationLabel:'Siam Paragon',destination:ended?null:destination,location:moving?{...position,accuracy:5,capturedAt:state.updatedAt,route}:null,stale:!moving||Date.now()-state.updatedAt>210000,departurePhoto:!ended&&state.photo?'/assets/delivery-demo-photo.svg':null,departurePhotoRequired:true,driver:ended?null:{name:'Simulated rider',phone:'',photo:''},items:[{name:'Sample sandwich (test only)',qty:1}],total:100};

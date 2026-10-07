@@ -30,7 +30,7 @@ function startDeliveryDemo() {
     buttons.complete.disabled = !moving;
     panel.querySelector('#demoProgress').textContent = state === 'preparing' ? 'Step 1: order confirmed and preparing.' : state === 'completed' ? 'Step 3: completed. No review prompt. Restart to try again.' : 'Step 2: on the way · sample location ' + (index + 1) + ' of 20.';
   }
-  function next() {if (state !== 'on_the_way') return; index = Math.min(19, index + 1); display(); if (index === 19) clearInterval(movement);}
+  function next() {if (state !== 'on_the_way') return; index = Math.min(19, index + 1); display(); if (index === 19) {clearInterval(movement);if(replay)movement=setInterval(display,90000);}}
   buttons.start.addEventListener('click', () => {state = 'on_the_way'; display(); movement = setInterval(next, movementInterval);});
   buttons.next.addEventListener('click', next);
   buttons.complete.addEventListener('click', () => {clearInterval(movement); state = 'completed'; display();});
@@ -47,7 +47,7 @@ function startDeliveryDemo() {
         const offset = i * (fullPath.length - 1) / 19, a = Math.floor(offset), b = Math.min(fullPath.length - 1, a + 1), fraction = offset - a;
         return {lat: fullPath[a].lat + (fullPath[b].lat - fullPath[a].lat) * fraction, lng: fullPath[a].lng + (fullPath[b].lng - fullPath[a].lng) * fraction};
       });
-      destination = data.destination; destinationLabel = data.destinationLabel; roadRoute = data.route; display(); if(replay)buttons.start.click();
+      destination = data.destination; path[19] = {...destination}; destinationLabel = data.destinationLabel; roadRoute = data.route; display(); if(replay)buttons.start.click();
     })
     .catch(() => {panel.querySelector('#demoProgress').textContent += ' Google road route unavailable. No estimated route is drawn.';});
 }

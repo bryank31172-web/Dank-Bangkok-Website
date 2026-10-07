@@ -101,7 +101,7 @@ function createDeliveryMap(ids) {
     const pinShape = '<svg viewBox="0 0 36 48" aria-hidden="true"><path d="M18 2C8 2 2 9 2 18c0 12 16 27 16 27s16-15 16-27C34 9 28 2 18 2Z" fill="'+(shop?'#008f4b':home?'#ef5544':'#009ee8')+'" stroke="white" stroke-width="2"/><circle cx="18" cy="18" r="6" fill="white"/></svg>';
     content.innerHTML='<span class="delivery-pin-shape">'+pinShape+'</span><span class="delivery-location-pill"></span>';
     content.querySelector('.delivery-location-pill').textContent=label||(home?'Your delivery':'Your rider');
-    return new maplibregl.Marker({element:content,anchor:home||shop?'bottom':'center'}).setLngLat([position.lng,position.lat]).addTo(map);
+    return new maplibregl.Marker({element:content,anchor:home||shop?'bottom':'center',offset:home||shop?[0,2.8]:[0,0]}).setLngLat([position.lng,position.lat]).addTo(map);
   }
   function sizeScooter(content) {
     const width=Math.max(32.4,Math.min(68.4,47.88*Math.pow(2,(map.getZoom()-14)/4)));
