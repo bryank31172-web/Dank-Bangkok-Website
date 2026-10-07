@@ -35,3 +35,7 @@ test('completion during Google loading cannot restore customer address or rider 
 test('Google Maps loading failure leaves delivery controls with the existing map fallback',async()=>{
  const f=fixture();f.context.loadRiderGoogleMaps=async()=>{throw Error('blocked browser key')};assert.equal(await f.controller.update(f.data),false);assert.equal(f.el('fallback').classList.hidden,false);
 });
+
+test('a rejected Google referrer immediately clears the broken map and does not retry the same key',async()=>{
+ const f=fixture();await f.controller.update(f.data);f.context.gm_authFailure();assert.equal(f.el('google').classList.hidden,true);assert.equal(f.el('fallback').classList.hidden,false);assert.ok(f.markers.every(m=>!m.map));assert.equal(await f.controller.update(f.data),false);assert.equal(f.maps.length,1);
+});

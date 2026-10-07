@@ -1,6 +1,10 @@
 // The browser key is already public and referrer restricted. Never use the server key.
 let riderGoogleLoading;
+let riderGoogleAuthFailed=false;
+const riderGoogleFailures=new Set();
+window.gm_authFailure=()=>{riderGoogleAuthFailed=true;riderGoogleFailures.forEach(fn=>fn());};
 async function loadRiderGoogleMaps() {
+  if(riderGoogleAuthFailed)throw Error('Google Maps does not allow this website');
   if (window.google?.maps?.Map) return;
   if (riderGoogleLoading) return riderGoogleLoading;
   riderGoogleLoading = (async()=>{
@@ -24,6 +28,7 @@ async function loadRiderGoogleMaps() {
 function createRiderGoogleMap(ids) {
   const node=document.getElementById(ids.google), fallback=document.getElementById(ids.fallback);
   let map,rider,destination,traffic,lines=[],last,version=0,following=true,encoded='',points=[],progress=0;
+  riderGoogleFailures.add(()=>{const data=last;clear();if(data)ids.onFallback?.(data);});
   function removeLines(){lines.forEach(line=>line.setMap(null));lines=[];}
   function clear(){version++;last=null;removeLines();rider?.setMap(null);destination?.setMap(null);rider=destination=null;traffic?.setMap(null);encoded='';points=[];progress=0;node.classList.add('hidden');fallback.classList.remove('hidden');}
   function fit(){following=true;if(map&&last?.location){map.panTo(last.location);map.setZoom(16);}}
