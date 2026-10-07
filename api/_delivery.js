@@ -80,14 +80,14 @@ export async function routeFor(location, destination) {
       headers: { 'Content-Type': 'application/json', 'X-Goog-Api-Key': process.env.GOOGLE_MAPS_API_KEY,
         'X-Goog-FieldMask': 'routes.duration,routes.distanceMeters,routes.polyline.encodedPolyline,routes.travelAdvisory.speedReadingIntervals' },
       body: JSON.stringify({ origin: waypoint(location), destination: waypoint(destination),
-        travelMode: process.env.DELIVERY_MODE === 'TWO_WHEELER' ? 'TWO_WHEELER' : 'DRIVE',
+        travelMode: 'TWO_WHEELER',
         routingPreference: 'TRAFFIC_AWARE_OPTIMAL', extraComputations: ['TRAFFIC_ON_POLYLINE'], computeAlternativeRoutes: false })
     });
     if (!r.ok) return null;
     const route = (await r.json()).routes?.[0];
     const seconds = /^\d+(?:\.\d+)?s$/.test(route?.duration || '') ? parseFloat(route.duration) : NaN;
     return route?.polyline?.encodedPolyline && Number.isFinite(seconds) && seconds >= 0
-      ? { polyline: route.polyline.encodedPolyline, traffic: Array.isArray(route.travelAdvisory?.speedReadingIntervals) ? route.travelAdvisory.speedReadingIntervals.filter(i => Number.isInteger(i.startPolylinePointIndex ?? 0) && (i.startPolylinePointIndex ?? 0) >= 0 && Number.isInteger(i.endPolylinePointIndex) && i.endPolylinePointIndex > (i.startPolylinePointIndex ?? 0) && ['NORMAL','SLOW','TRAFFIC_JAM'].includes(i.speed)).map(i => ({start: i.startPolylinePointIndex ?? 0, end: i.endPolylinePointIndex, speed: i.speed})) : [], minutes: Math.max(1, Math.ceil(seconds / 60)),
+      ? { mode: 'TWO_WHEELER', polyline: route.polyline.encodedPolyline, traffic: Array.isArray(route.travelAdvisory?.speedReadingIntervals) ? route.travelAdvisory.speedReadingIntervals.filter(i => Number.isInteger(i.startPolylinePointIndex ?? 0) && (i.startPolylinePointIndex ?? 0) >= 0 && Number.isInteger(i.endPolylinePointIndex) && i.endPolylinePointIndex > (i.startPolylinePointIndex ?? 0) && ['NORMAL','SLOW','TRAFFIC_JAM'].includes(i.speed)).map(i => ({start: i.startPolylinePointIndex ?? 0, end: i.endPolylinePointIndex, speed: i.speed})) : [], minutes: Math.max(1, Math.ceil(seconds / 60)),
           ...(Number.isFinite(route.distanceMeters) && route.distanceMeters >= 0 ? {km: Math.round(route.distanceMeters / 100) / 10} : {}), at: Date.now() } : null;
   } catch { return null; }
 }

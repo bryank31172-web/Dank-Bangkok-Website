@@ -112,7 +112,7 @@ export function createHandler(deps = {}) {
           const result = await createProofCompleter(d)(id, record, b.photo, ended);
           return res.status(result.code || 200).json(result);
         }
-        if (!['start', 'location', 'pause'].includes(b.action)) return res.status(400).json({ error: 'Unknown action' });
+        if (!['start', 'location', 'pause', 'preview-route'].includes(b.action)) return res.status(400).json({ error: 'Unknown action' });
         const lk = d.locationKey(id, record.driver.token);
         if (b.action === 'pause') { await d.write(d.pausedKey(id, record.driver.token), { at: Date.now() }); await d.write(lk, null, 1); return res.status(200).json({ ok: true }); }
         const p = d.point(b.location), capturedAt = b.location?.capturedAt;
@@ -120,6 +120,15 @@ export function createHandler(deps = {}) {
             Math.abs(Date.now() - capturedAt) > 120000 || !Number.isFinite(b.location?.accuracy) ||
             b.location.accuracy < 0 || b.location.accuracy > 500)
           return res.status(400).json({ error: 'A fresh, accurate GPS location is required. Please try again outdoors.' });
+        if (b.action === 'preview-route') {
+          if (await d.get(d.startedKey(id, record.driver.token))) return res.status(409).json({error:'Delivery already started'});
+          if (!(await d.rate(req, res, 'delivery-preview:'+id, 1, 90))) return;
+          const route = await d.routeFor(p, record.destination);
+          const latest = await d.get(d.key(id));
+          if (!safeEq(latest?.driver?.token, record.driver.token) || await d.get(d.terminalKey(id)) || await d.get(d.startedKey(id, record.driver.token))) return res.status(409).json({error:'Assignment changed or delivery ended'});
+          // Preview is private to the rider; never persist or start location sharing.
+          return res.status(200).json({location:{...p, accuracy:b.location.accuracy, capturedAt, route}});
+        }
         const started = await d.get(d.startedKey(id, record.driver.token));
         if (!started && b.action === 'start' && record.departurePhotoRequired && !(await d.get(d.departureKey(id, record.driver.token))))
           return res.status(409).json({error:'Upload your departure photo before starting delivery'});
@@ -158,9 +167,9 @@ export function createHandler(deps = {}) {
         items: (order.items || []).map(i => ({ name: String(i.name || ''), qty: i.qty })), total: order.total ?? order.subtotal,
         mapsKey: process.env.GOOGLE_MAPS_BROWSER_KEY || '', mapId: process.env.GOOGLE_MAPS_MAP_ID || 'DEMO_MAP_ID' };
       if (driver || staff) {
-        result.address = ended ? '' : [order.delivery?.zone, order.delivery?.address].filter(Boolean).join(', ');
+        result.address = [order.delivery?.zone, order.delivery?.address].filter(Boolean).join(', ');
         const phone=String(order.customer?.phone || order.customer?.contact || '').trim().replace(/[\s()-]/g,'');
-        result.customer = ended ? null : {name:String(order.customer?.name || 'Customer').slice(0,80),phone:/^\+?\d{7,15}$/.test(phone)?phone:''};
+        result.customer = {name:String(order.customer?.name || 'Customer').slice(0,80),phone:/^\+?\d{7,15}$/.test(phone)?phone:''};
       }
       if (staff) {
         result.customerUrl = '/delivery.html#' + new URLSearchParams({ id, token: record.customerToken });

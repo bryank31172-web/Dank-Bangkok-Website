@@ -62,3 +62,7 @@ test('Google scooter eases between fixes, faces movement and clips passed road d
  f.frame(1200);assert.equal(f.lines.filter(l=>l.map).length,2);assert.equal(f.lines.at(-1).strokeColor,'#e84d43');
  await f.controller.update({...f.data,location:{...f.data.location,lng:100.002}});assert.equal(f.frames.size,1);f.controller.clear();assert.equal(f.frames.size,0);f.frame(2400);assert.ok(f.children.every(e=>e.removed));assert.ok(f.lines.every(l=>!l.map));
 });
+
+test('rider-only prestart preview shows traffic route and blue GPS pin then replaces it with scooter on start',async()=>{
+ const f=fixture({overlays:true});assert.equal(await f.controller.update({...f.data,status:'preparing',preview:true}),true);assert.equal(f.lines.filter(l=>l.map).length,4);const pin=f.children.find(e=>e.className==='delivery-rider-pin');assert.ok(pin);assert.match(pin.innerHTML,/#009ee8/);assert.equal(f.children.some(e=>e.className==='delivery-moving-rider'),false);await f.controller.update(f.data);assert.equal(pin.removed,true);assert.ok(f.children.some(e=>e.className==='delivery-moving-rider'));
+});

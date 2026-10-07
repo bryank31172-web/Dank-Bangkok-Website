@@ -28,7 +28,7 @@ async function loadRiderGoogleMaps() {
 // Google overlays use the same anchored pin, label and scooter artwork as the customer map.
 function createRiderGoogleMap(ids) {
   const node=document.getElementById(ids.google), fallback=document.getElementById(ids.fallback);
-  let map,rider,destination,traffic,shops=[],lines=[],last,version=0,following=true,encoded='',points=[],progress=0,position,movementFrame;
+  let map,rider,riderKind,destination,traffic,shops=[],lines=[],last,version=0,following=true,encoded='',points=[],progress=0,position,movementFrame;
   function scooterWidth(){return Math.max(32.4,Math.min(68.4,47.88*Math.pow(2,((map.getZoom?.()||16)-14)/4)));}
   function overlay(point,{scooter=false,home=false,shop=false,label=''}={}) {
     const color=shop?'#008f4b':home?'#ef5544':'#009ee8';
@@ -40,7 +40,7 @@ function createRiderGoogleMap(ids) {
       marker.heading=()=>{};return marker;
     }
     const marker=new google.maps.OverlayView(),element=document.createElement('div');let current=point,width=scooter?scooterWidth():35.2;
-    element.className=scooter?'delivery-moving-rider':shop?'delivery-origin-pin':'delivery-destination-pin';
+    element.className=scooter?'delivery-moving-rider':shop?'delivery-origin-pin':home?'delivery-destination-pin':'delivery-rider-pin';
     element.style.position='absolute';element.style.pointerEvents='none';element.style.zIndex=scooter?'30':home?'20':'10';
     element.setAttribute('aria-label',scooter?'Delivery rider on scooter':shop?'Shop origin: '+label:'Delivery destination: '+label);
     element.innerHTML=scooter?'<img src="/assets/delivery-rider.svg" alt="" draggable="false">':'<span class="delivery-pin-shape">'+pin+'</span><span class="delivery-location-pill"></span>';
@@ -75,14 +75,15 @@ function createRiderGoogleMap(ids) {
     movementFrame=requestAnimationFrame(frame);
   }
   async function update(data){
-    if(data.status!=='on_the_way'||!data.location||data.stale){clear();return false;}
+    if((data.status!=='on_the_way'&&!(data.status==='preparing'&&data.preview))||!data.location||data.stale){clear();return false;}
     const current=++version;last=data;
     try{
       await loadRiderGoogleMaps();if(riderGoogleAuthFailed||current!==version||last!==data)return false;
       if(!map){map=new google.maps.Map(node,{center:data.location,zoom:16,mapTypeControl:false,streetViewControl:false,fullscreenControl:false,gestureHandling:'greedy'});traffic=new google.maps.TrafficLayer();map.addListener('dragstart',()=>{following=false;});map.addListener('zoom_changed',()=>rider?.resize());}
       node.classList.remove('hidden');fallback.classList.add('hidden');traffic.setMap(map);
       if(!shops.length)shops=DELIVERY_SHOPS.map(shop=>overlay(shop,{shop:true,label:shop.name}));
-      if(!rider)rider=overlay(data.location,{scooter:true});
+      const kind=data.status==='on_the_way'?'scooter':'pin';
+      if(!rider||riderKind!==kind){stopMovement();rider?.setMap(null);position=null;riderKind=kind;rider=overlay(data.location,{scooter:kind==='scooter',label:'Your location'});}
       if(data.destination){if(!destination)destination=overlay(data.destination,{home:true,label:data.destinationLabel||data.address||'Delivery destination'});else destination.setPosition(data.destination);}else{destination?.setMap(null);destination=null;}
       const route=data.location.route;
       if(route?.polyline){if(encoded!==route.polyline){encoded=route.polyline;points=decodeDeliveryRoute(encoded);progress=0;}}else{encoded='';points=[];progress=0;}

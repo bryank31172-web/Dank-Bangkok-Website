@@ -116,12 +116,12 @@ test('departure upload rejects malformed and oversized images and reassignment r
  assert.equal((await f.call({role:'driver',action:'departure-photo',token:f.driverToken,body:{photo}})).code,403);
 });
 
-test('customer contact is available only to the assigned rider and disappears after delivery ends',async()=>{
+test('customer contact and receipt remain private to the assigned rider after completion',async()=>{
  const f=fixture();const order=f.db.get('order:'+f.id);order.customer={name:'Customer One',phone:'+66 (81) 234-5678'};
  const customer=await f.call();assert.equal(customer.data.customer,undefined);assert.equal(customer.data.address,undefined);
  const rider=await f.call({role:'driver',token:f.driverToken});assert.deepEqual(rider.data.customer,{name:'Customer One',phone:'+66812345678'});
  order.customer.phone='javascript:alert(1)';assert.equal((await f.call({role:'driver',token:f.driverToken})).data.customer.phone,'');
- await f.call({role:'staff',staff:true,action:'complete'});const ended=await f.call({role:'driver',token:f.driverToken});assert.equal(ended.data.customer,null);assert.equal(ended.data.address,'');
+ await f.call({role:'staff',staff:true,action:'complete'});const ended=await f.call({role:'driver',token:f.driverToken});assert.deepEqual(ended.data.customer,{name:'Customer One',phone:''});assert.equal(ended.data.address,'Bangkok, Lobby');assert.equal((await f.call()).data.customer,undefined);assert.equal((await f.call()).data.address,undefined);
 });
 
 test('90-second cadence stays fresh across one delayed refresh but stale GPS is hidden after 210 seconds',async()=>{
@@ -130,3 +130,15 @@ test('90-second cadence stays fresh across one delayed refresh but stale GPS is 
  f.db.set(locationKey(f.id,f.driverToken),{lat:13.7,lng:100.5,capturedAt:Date.now()-211000});assert.equal((await f.call()).data.stale,true);
 });
 
+
+test('rider route preview validates GPS and never starts sharing or writes device location',async()=>{
+ const f=fixture();const before=structuredClone([...f.db]);
+ assert.equal((await f.call({action:'preview-route',body:gps()})).code,403);
+ assert.equal((await f.call({role:'driver',token:f.driverToken,action:'preview-route',body:{location:{...gps().location,capturedAt:Date.now()-130000}}})).code,400);
+ const r=await f.call({role:'driver',token:f.driverToken,action:'preview-route',body:gps()});assert.equal(r.code,200);assert.equal(r.data.location.route.minutes,4);assert.deepEqual([...f.db],before);assert.equal((await f.call()).data.location,null);
+ await f.call({role:'driver',token:f.driverToken,action:'start',body:gps()});assert.equal((await f.call({role:'driver',token:f.driverToken,action:'preview-route',body:gps()})).code,409);
+});
+test('completion during route preview cannot return rider GPS',async()=>{
+ let f;f=fixture({routeFor:async()=>{f.db.set(terminalKey(f.id),{status:'completed'});return {minutes:4}}});
+ const r=await f.call({role:'driver',token:f.driverToken,action:'preview-route',body:gps()});assert.equal(r.code,409);assert.equal(r.data.location,undefined);
+});
