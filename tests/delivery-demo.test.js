@@ -18,13 +18,13 @@ function browser(search) {
     click() {if (!this.disabled) this.events.click?.();}
     querySelector(selector) {return elements.get(selector);}
   }
-  const elements = new Map(), requests = [], intervals = new Map(); let counter = 0;
+  const elements = new Map(), requests = [], intervals = new Map(), timeouts = new Map(); let counter = 0;
   const get = key => {if (!elements.has(key)) elements.set(key, new Element()); return elements.get(key);};
   for (const action of ['start', 'next', 'complete', 'reset']) get('[data-demo="' + action + '"]');
   get('#demoProgress');
   const document = {hidden: false, head: new Element(), createElement: () => new Element(), getElementById: get, querySelector: get, addEventListener() {}};
   const context = vm.createContext({document, location: {search, hash: '#id=FAKE-ORDER&token=FAKE-TOKEN'}, URLSearchParams, AbortSignal, Date, console, Image: Element,
-    setInterval(fn, delay) {const id = ++counter; intervals.set(id, {fn, delay}); return id;}, clearInterval(id) {intervals.delete(id);},
+    setInterval(fn, delay) {const id = ++counter; intervals.set(id, {fn, delay}); return id;}, clearInterval(id) {intervals.delete(id);},setTimeout(fn,delay){const id=++counter;timeouts.set(id,{fn,delay});return id;},clearTimeout(id){timeouts.delete(id);},
     fetch: async (url, options) => {requests.push({url, options}); return {ok: true, json: async () => url === '/api/maps-config' ? {key: 'test-browser-key', mapId: 'test-map'} : url === '/api/delivery?action=demo-route' ? {destination:{lat:43.252,lng:-126.453},destinationLabel:'Sample destination',route:{polyline:'_p~iF~ps|U_ulLnnqC_mqNvxq`@',minutes:10,km:5}} : {orderId: 'FAKE-ORDER', status: 'preparing', items: [], total: 0}};}});
   context.window = context;
   const html = readFileSync(new URL('../delivery.html', import.meta.url), 'utf8');
@@ -32,7 +32,7 @@ function browser(search) {
   vm.runInContext(readFileSync(new URL('../delivery-map.js', import.meta.url), 'utf8'), context);
   vm.runInContext(script, context);
   vm.runInContext(readFileSync(new URL('../delivery-demo.js', import.meta.url), 'utf8'), context);
-  return {context, elements, requests, intervals, get, html};
+  return {context, elements, requests, intervals, timeouts, get, html};
 }
 
 test('demo walks through all 20 positions and completion without live order or GPS access', async () => {
@@ -95,4 +95,4 @@ test('customer toolbar shows route ETA, hides removed pills, and never keeps a s
  vm.runInContext('last.location=null;updateAge()',b.context);assert.equal(b.get('arrivalTime').textContent,'Waiting for rider');assert.equal(b.get('arrivalRefresh').textContent,'No GPS update yet');
 });
 
- test('accelerated replay reaches the address and keeps its arrival display fresh',async()=>{const b=browser('?demo=1&replay=1');vm.runInContext('startDeliveryDemo()',b.context);await new Promise(resolve=>setImmediate(resolve));const move=[...b.intervals.values()].find(x=>x.delay===2000);assert.ok(move);for(let i=0;i<19;i++)move.fn();assert.equal(b.get('arrivalTime').textContent,'Rider is here');assert.ok([...b.intervals.values()].some(x=>x.delay===90000));});
+ test('accelerated replay shows arrival then completes after five seconds',async()=>{const b=browser('?demo=1&replay=1');vm.runInContext('startDeliveryDemo()',b.context);await new Promise(resolve=>setImmediate(resolve));const move=[...b.intervals.values()].find(x=>x.delay===2000);assert.ok(move);for(let i=0;i<19;i++)move.fn();assert.equal(b.get('arrivalTime').textContent,'Rider is here');assert.equal(vm.runInContext('last.status',b.context),'on_the_way');const finish=[...b.timeouts.values()].find(x=>x.delay===5000);assert.ok(finish);finish.fn();assert.equal(vm.runInContext('last.status',b.context),'completed');assert.equal(b.get('completed').hidden.has('hidden'),false);});

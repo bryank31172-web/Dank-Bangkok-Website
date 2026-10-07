@@ -12,7 +12,7 @@ function startDeliveryDemo() {
   const buttons = Object.fromEntries(['start', 'next', 'complete', 'reset'].map(action => [action, panel.querySelector('[data-demo="' + action + '"]')]));
   let path = Array.from({length: 20}, (_, i) => ({lat: 13.7463 - i * 0.0001, lng: 100.5346 + i * 0.0001}));
   let roadRoute = null, fullPath = [], destination = path[19], destinationLabel = 'Delivery destination';
-  let index = 0, movement;
+  let index = 0, movement, finishTimer;
   const movementInterval = replay ? 2000 : 90000;
   let state = 'preparing';
   function display() {
@@ -30,11 +30,11 @@ function startDeliveryDemo() {
     buttons.complete.disabled = !moving;
     panel.querySelector('#demoProgress').textContent = state === 'preparing' ? 'Step 1: order confirmed and preparing.' : state === 'completed' ? 'Step 3: completed. No review prompt. Restart to try again.' : 'Step 2: on the way · sample location ' + (index + 1) + ' of 20.';
   }
-  function next() {if (state !== 'on_the_way') return; index = Math.min(19, index + 1); display(); if (index === 19) {clearInterval(movement);if(replay)movement=setInterval(display,90000);}}
+  function next() {if (state !== 'on_the_way') return; index = Math.min(19, index + 1); display(); if (index === 19) {clearInterval(movement);if(replay){clearTimeout(finishTimer);finishTimer=setTimeout(()=>{if(state==='on_the_way'&&index===19){state='completed';display();}},5000);}}}
   buttons.start.addEventListener('click', () => {state = 'on_the_way'; display(); movement = setInterval(next, movementInterval);});
   buttons.next.addEventListener('click', next);
-  buttons.complete.addEventListener('click', () => {clearInterval(movement); state = 'completed'; display();});
-  buttons.reset.addEventListener('click', () => {clearInterval(movement); state = 'preparing'; index = 0; display();});
+  buttons.complete.addEventListener('click', () => {clearInterval(movement);clearTimeout(finishTimer); state = 'completed'; display();});
+  buttons.reset.addEventListener('click', () => {clearInterval(movement);clearTimeout(finishTimer); state = 'preparing'; index = 0; display();});
   display();
   fetch('/api/delivery?action=demo-route', {cache: 'default', signal: AbortSignal.timeout(10000)})
     .then(response => {if (!response.ok) throw new Error('Demo route unavailable'); return response.json();})
