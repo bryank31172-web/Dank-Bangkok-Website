@@ -79,7 +79,7 @@ function createDeliveryMap(ids) {
       removeLines();const route=data.location?.route;
       if(!data.stale&&route?.polyline){routePath=decodeDeliveryRoute(route.polyline);drawRoute();el('badge').textContent=(data.demo?'Demo route · ':'Best route · ')+route.minutes+' min'+(Number.isFinite(route.km)?' · '+route.km+' km':'');el('badge').classList.remove('hidden');}
       if(!fitted&&data.location){fit();fitted=true;}else if(!fitted&&data.destination)map.setCenter([data.destination.lng,data.destination.lat]);
-    } catch(error){if(current===version){errorText=error.message;el('note').textContent=error.message;el('badge').classList.add('hidden');}}
+    } catch(error){if(current===version){errorText=/webgl/i.test(error.message||'')?'This browser cannot display the map. Rider details and photos still work.':'Map unavailable. Check your connection. Rider details and photos still work.';el('note').textContent=errorText;el('badge').classList.add('hidden');}}
   }
   return {update,clear,stale,fit,error:()=>errorText};
 }

@@ -48,3 +48,5 @@ test('Google route distance is included, invalid durations fail without an inven
     for(const duration of ['-20s','120oops','invalid']){globalThis.fetch=async()=>({ok:true,json:async()=>({routes:[{duration,polyline:{encodedPolyline:encoded}}]})});assert.equal(await routeFor({lat:13.7,lng:100.5},{lat:13.8,lng:100.6}),null);}
   }finally{globalThis.fetch=oldFetch;if(previous===undefined)delete process.env.GOOGLE_MAPS_API_KEY;else process.env.GOOGLE_MAPS_API_KEY=previous;}
 });
+
+test('unavailable WebGL shows a readable fallback rather than renderer internals',async()=>{const f=browser();f.context.maplibregl.Map=class{constructor(){throw new Error('WebGL renderer error {private internals}')}};await f.map.update(f.data());assert.match(f.map.error(),/This browser cannot display the map/);assert.doesNotMatch(f.map.error(),/internals/);});
