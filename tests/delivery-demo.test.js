@@ -57,7 +57,7 @@ test('demo walks through all 20 positions and completion without live order or G
   assert.equal(vm.runInContext('last.status', b.context), 'preparing');
   // Visibility changes and explicit refreshes must never request live delivery data.
   await vm.runInContext('poll()', b.context);
-  assert.deepEqual(b.requests.map(r => r.url), ['/api/maps-config', '/api/delivery?action=demo-route']);
+  assert.deepEqual(b.requests.map(r => r.url), ['/api/delivery?action=demo-route']);
   assert.equal(b.requests[0].options.method, undefined);
 });
 

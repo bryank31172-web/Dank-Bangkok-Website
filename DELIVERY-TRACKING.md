@@ -13,7 +13,7 @@ five minutes and rate limited to ten requests per five minutes. This previews
 the customer stages and Google map; positions and ETA are simulated.
 
 Checkout opens a private link: Preparing -> On the way -> Completed.
-On the way uses a 70/30 desktop split: Google map and driver information, with
+On the way uses a 70/30 desktop split: Wayfinder map and driver information, with
 profile photo, name and phone. Call now dials the DANK BKK shop at
 084 162 0610. Mobile puts the map above the driver
 card. The page polls every 45 seconds without reloading Google Maps. Routes and
@@ -137,3 +137,21 @@ coordinates to Siam Paragon. Its rider moves through twenty simulated points
 on that geometry, shortening the displayed route. It never requests phone GPS,
 creates an order, or sends LINE messages. Production route geometry and distance
 come from Google Routes; failure never invents a road route.
+
+## Delivery setup and Wayfinder
+
+Staff portal → Orders → Delivery setup runs manager-only checks for durable
+storage write/read, eligible products, Google Routes, LINE bot token and
+registered on-shift riders. It sends no notifications. LINE webhook delivery,
+group membership and friendship still require a real dispatch test. The panel
+includes a two-phone checklist. Configuration checks never mark that physical
+test completed.
+
+Customer and driver basemaps now use MapLibre GL JS 4.7.1 and PMTiles 4.3.0
+from pinned CDN URLs. ELEMNT Wayfinder light/dark styles are selected with
+the map toggle. PMTiles is registered before map creation. OpenStreetMap and
+Protomaps attribution stays at bottom right, with Powered by ELEMNT at bottom
+left. Basemap rendering does not require GOOGLE_MAPS_BROWSER_KEY or a map ID.
+Google Places checkout and server-side Google Routes retain their existing
+configuration. Style changes restore the latest route without reviving paused
+or completed locations. Guide: https://carto.elemnt.earth/USE.md.

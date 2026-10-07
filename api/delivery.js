@@ -2,6 +2,7 @@ import { getJSON } from './_store.js';
 import { requirePermission, safeEq } from './_auth.js';
 import { requireRate } from './_ratelimit.js';
 import * as delivery from './_delivery.js';
+import {createSetupHandler} from './_delivery-setup.js';
 import {createRidersHandler} from './_delivery-line.js';
 
 // Dependency injection keeps lifecycle/security tests isolated from real orders.
@@ -26,6 +27,7 @@ export function createHandler(deps = {}) {
       }
       return res.status(200).json({origin, destination, destinationLabel: 'Siam Paragon', route: demoRouteCache.route});
     }
+    if (b.action === 'setup') return createSetupHandler(deps)(req, res);
     if (b.action === 'riders') return createRidersHandler(deps)(req, res);
     const id = String(b.id || '');
     if (!/^[A-Za-z0-9_-]{3,80}$/.test(id)) return res.status(400).json({ error: 'Invalid order reference' });
