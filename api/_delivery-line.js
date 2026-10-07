@@ -45,8 +45,8 @@ export function createRidersHandler(deps = {}) {
   };
 }
 
-// Only invoked after the webhook verifies LINE's signature. No private controls
-// are included in group messages. A durable atomic claim prevents double assignment.
+// Only invoked after the webhook verifies LINE's signature. Rider controls are
+// shared with the configured staff group and assigned rider. An atomic claim prevents double assignment.
 export function createDeliveryLineHandler(deps = {}) {
   const d = {get: getJSON, accounts: listAccounts, claim: bump, send: lineMessages, group: () => process.env.LINE_TO || '', uuid: () => crypto.randomUUID(), ...delivery, ...deps};
   return async ev => {
@@ -105,8 +105,11 @@ export function createDeliveryLineHandler(deps = {}) {
       const latest = await d.get(d.key(id));
       if (latest?.driver?.token !== record.driver.token) throw new Error('Rider assignment changed. Use the staff portal.');
       const url = ORIGIN + '/driver-delivery.html#' + new URLSearchParams({id, token: record.driver.token});
-      const sent = await d.send(rider.lineUserId, [{type: 'text', text: `Delivery ${id}\n${order.delivery?.address || ''}\nOpen your private rider controls:\n${url}\nShare departure photo → Start delivery → Pause sharing → Complete delivery. Open in Safari/Chrome, allow GPS and keep the page open.`}], {retryKey: record.driver.retryKey});
-      await reply(sent.ok ? `Assigned ${id} to ${rider.name}. The private delivery link was sent directly to their LINE.` : `Assigned ${id} to ${rider.name}, but LINE could not accept the message. Ask the rider to add the shop LINE Official Account as a friend, then tap their rider selection again to retry, or copy the link from the staff portal.`);
+      const sent = await d.send(rider.lineUserId, [{type: 'text', text: `Delivery ${id}\n${order.delivery?.address || ''}\nOpen your rider controls:\n${url}\nTake a picture to start delivery, then tap Delivered when complete. Open in Safari/Chrome, allow GPS and keep the page open and phone awake.`}], {retryKey: record.driver.retryKey});
+      const confirmation = sent.ok
+        ? `Assigned ${id} to ${rider.name}. LINE accepted the direct message to their personal chat.`
+        : `Assigned ${id} to ${rider.name}, but LINE could not accept the direct message. Ask the rider to add the shop LINE Official Account as a friend, then tap their rider selection again to retry.`;
+      await reply(`${confirmation}\nRider delivery link:\n${url}`);
       return true;
     } catch (e) {await reply(e.message || 'Delivery assignment unavailable. Use the staff portal.'); return true;}
   };
