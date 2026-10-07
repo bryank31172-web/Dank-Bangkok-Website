@@ -86,7 +86,7 @@ test('normal private tracking retains live lookup and does not initialize demo',
 });
 
  test('customer opens departure image and completion closes and clears it', async()=>{
- const b=browser('?demo=1');vm.runInContext('startDeliveryDemo()',b.context);await new Promise(resolve=>setImmediate(resolve));b.get('[data-demo="start"]').click();assert.equal(b.get('photoButton').disabled,false);b.get('viewDeparture').click();assert.equal(b.get('photoDialog').open,true);assert.match(b.get('departureFull').src,/delivery-demo-photo/);b.get('[data-demo="complete"]').click();assert.equal(b.get('photoDialog').open,false);assert.equal(b.get('viewDeparture').disabled,true);
+ const b=browser('?demo=1');vm.runInContext('startDeliveryDemo()',b.context);await new Promise(resolve=>setImmediate(resolve));b.get('[data-demo="start"]').click();assert.equal(b.get('photoButton').disabled,false);b.get('photoButton').click();assert.equal(b.get('photoDialog').open,true);assert.match(b.get('departureFull').src,/delivery-demo-photo/);b.get('[data-demo="complete"]').click();assert.equal(b.get('photoDialog').open,false);assert.equal(b.get('photoButton').disabled,true);
  });
 
 test('customer toolbar shows route ETA, hides removed pills, and never keeps a stale ETA',async()=>{
