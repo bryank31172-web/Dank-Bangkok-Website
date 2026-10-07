@@ -4,6 +4,7 @@ import { requireRate } from './_ratelimit.js';
 import * as delivery from './_delivery.js';
 import {createSetupHandler} from './_delivery-setup.js';
 import {createRidersHandler} from './_delivery-line.js';
+import {createProofCompleter, proofKey, jpegPhoto} from './_delivery-proof.js';
 
 // Dependency injection keeps lifecycle/security tests isolated from real orders.
 export function createHandler(deps = {}) {
@@ -15,6 +16,21 @@ export function createHandler(deps = {}) {
     if (!['GET', 'POST'].includes(req.method)) return res.status(405).json({ error: 'Method not allowed' });
     if (!(await d.rate(req, res, 'delivery', 120, 300))) return;
     const b = req.method === 'GET' ? req.query || {} : req.body || {};
+    if (b.action === 'proof-image') {
+      if (req.method !== 'GET') return res.status(405).json({error:'GET only'});
+      if (!/^[a-f0-9]{64}$/.test(b.photo || '')) return res.status(404).json({error:'Photo unavailable'});
+      try {
+        if (!d.ready()) throw Error('Storage unavailable');
+        const proof = await d.get(proofKey(b.photo));
+        if (!d.ready()) throw Error('Storage unavailable');
+        const bytes = proof?.expiresAt > Date.now() && jpegPhoto(proof.photo);
+        if (!bytes) return res.status(404).json({error:'Photo unavailable or expired'});
+        res.setHeader('Content-Type','image/jpeg');
+        res.setHeader('X-Content-Type-Options','nosniff');
+        res.setHeader('X-Robots-Tag','noindex, nofollow');
+        return res.status(200).send(bytes);
+      } catch {return res.status(503).json({error:'Photo temporarily unavailable'});}
+    }
     if (b.action === 'demo-route') {
       if (req.method !== 'GET') return res.status(405).json({error: 'GET only'});
       if (!(await d.rate(req, res, 'delivery-demo-route', 10, 300))) return;
@@ -49,7 +65,12 @@ export function createHandler(deps = {}) {
       if (!ended && ['done', 'cancelled', 'canceled'].includes(order.status))
         ended = { status: order.status === 'done' ? 'completed' : 'cancelled', at: order.completedBy?.at || Date.now() };
       if (req.method === 'POST') {
-        if (ended) return res.status(409).json({ error: 'This delivery has ended', status: ended.status });
+        if (ended && !((driver && b.action === 'complete' || staff && b.action === 'resend-proof') && ended.status === 'completed')) return res.status(409).json({ error: 'This delivery has ended', status: ended.status });
+        if (staff && b.action === 'resend-proof') {
+          if (ended?.status !== 'completed' || !record.driver) return res.status(409).json({error:'Complete delivery with a photo first'});
+          const result = await createProofCompleter(d)(id, record, undefined, ended);
+          return res.status(result.code || 200).json(result);
+        }
         if (staff && b.action === 'assign') {
           const name = String(b.name || '').trim(), phone = String(b.phone || '').trim().replace(/[\s()-]/g, '');
           const photo = String(b.photo || '').trim(), destination = d.point(b.destination) || record.destination;
@@ -88,8 +109,8 @@ export function createHandler(deps = {}) {
         if (b.action === 'complete') {
           const started = await d.get(d.startedKey(id, record.driver.token));
           if (!started) return res.status(409).json({ error: 'Start delivery first' });
-          await d.endDelivery(id, 'completed');
-          return res.status(200).json({ ok: true });
+          const result = await createProofCompleter(d)(id, record, b.photo, ended);
+          return res.status(result.code || 200).json(result);
         }
         if (!['start', 'location', 'pause'].includes(b.action)) return res.status(400).json({ error: 'Unknown action' });
         const lk = d.locationKey(id, record.driver.token);

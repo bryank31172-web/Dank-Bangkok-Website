@@ -31,7 +31,7 @@ export function createDemoHandler(deps={}) {
         else if(b.action==='start'){if(!s.photo)return res.status(400).json({error:'Share sample departure photo first'});s.status='on_the_way';s.paused=false;}
         else if(b.action==='move'){if(s.status!=='on_the_way'||s.paused)return res.status(409).json({error:'Start demo first'});s.index=Math.min(19,s.index+1);}
         else if(b.action==='pause'){s.paused=true;}
-        else if(b.action==='complete'){if(s.status!=='on_the_way')return res.status(409).json({error:'Start demo first'});s.status='completed';s.photo=false;await d.write(k+':ended',{at:Date.now()},3600);}
+        else if(b.action==='complete'){if(b.deliveryPhoto!==true)return res.status(400).json({error:'Choose a delivery photo first'});if(s.status!=='on_the_way')return res.status(409).json({error:'Start demo first'});s.status='completed';s.photo=false;await d.write(k+':ended',{at:Date.now()},3600);}
         else return res.status(400).json({error:'Unknown demo action'});
         s.updatedAt=Date.now();await d.write(k,s,Math.max(1,Math.ceil((s.expiresAt-Date.now())/1000)));
       }
@@ -41,3 +41,4 @@ export function createDemoHandler(deps={}) {
   };
 }
 export default createDemoHandler();
+

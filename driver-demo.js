@@ -1,5 +1,5 @@
 // Only sample state is shared. Real GPS and uploaded photos never leave this page.
-async function demoCall(session,role,action){const r=await fetch('/api/delivery-demo'+(action?'':'?id='+session.id+'&role='+role),{method:action?'POST':'GET',headers:{'Content-Type':'application/json','X-Demo-Token':session.token},body:action?JSON.stringify({id:session.id,role,action}):undefined,cache:'no-store',signal:AbortSignal.timeout(10000)});const j=await r.json();if(!r.ok)throw Error(j.error||'Demo unavailable');return j;}
+async function demoCall(session,role,action,deliveryPhoto=false){const r=await fetch('/api/delivery-demo'+(action?'':'?id='+session.id+'&role='+role),{method:action?'POST':'GET',headers:{'Content-Type':'application/json','X-Demo-Token':session.token},body:action?JSON.stringify({id:session.id,role,action,deliveryPhoto}):undefined,cache:'no-store',signal:AbortSignal.timeout(10000)});const j=await r.json();if(!r.ok)throw Error(j.error||'Demo unavailable');return j;}
 function demoView(state,data){
  const full=data.route?.polyline?decodeDeliveryRoute(data.route.polyline):[],index=state.index||0,destination=data.destination||{lat:13.7463,lng:100.5346};
  const offset=index*(full.length-1)/19,a=Math.max(0,Math.floor(offset)),b=Math.min(full.length-1,a+1),t=offset-a;
@@ -16,7 +16,7 @@ function createRiderDemo(){
    }
    try{const r=await fetch('/api/delivery?action=demo-route',{signal:AbortSignal.timeout(10000)});if(r.ok)data=await r.json();}catch{}
  })();ready.catch(()=>{});
- return {next(){return demoView(state,data).location||{lat:13.7108,lng:100.5375,accuracy:5,capturedAt:Date.now()};},async request(action){await ready;const mapped={'departure-photo':'photo',location:'move'};state=await demoCall(session,'rider',mapped[action]||action);return action?{ok:true}:demoView(state,data);}};
+ return {next(){return demoView(state,data).location||{lat:13.7108,lng:100.5375,accuracy:5,capturedAt:Date.now()};},async request(action,location,photo){await ready;const mapped={'departure-photo':'photo',location:'move'};state=await demoCall(session,'rider',mapped[action]||action,action==='complete'&&Boolean(photo));return action?{ok:true}:demoView(state,data);}};
 }
 async function startLinkedDeliveryDemo(){
  const h=new URLSearchParams(location.hash.slice(1)),session={id:h.get('session'),token:h.get('token')};let data={},poll;
@@ -25,3 +25,4 @@ async function startLinkedDeliveryDemo(){
  async function refresh(){try{const state=await demoCall(session,'customer');el('error').classList.add('hidden');render(demoView(state,data));if(state.status==='completed')clearInterval(poll);}catch(e){showError(e.message);}}
  poll=setInterval(refresh,5000);await refresh();
 }
+

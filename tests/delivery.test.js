@@ -9,7 +9,7 @@ function fixture(overrides={}){
   db.set('order:'+id,{orderId:id,status:'new',total:100,items:[{name:'Sandwich',qty:1}],delivery:{zone:'Bangkok',address:'Lobby'},customer:{phone:'private'}});
   let generation=0,storage=true;
   const get=async k=>structuredClone(db.get(k)||null),write=async(k,v)=>{db.set(k,structuredClone(v))};
-  const handler=createHandler({get,write,writeLocation:async(k,v)=>{const old=db.get(k);if(old?.capturedAt>=v.capturedAt)return false;await write(k,v);return true},ready:()=>storage,rate:async()=>true,permission:(req,res)=>{if(req.headers.authorization==='staff')return true;res.status(401).json({error:'bad key'});return false},token:()=>String(++generation).repeat(64),routeFor:async()=>({polyline:'abc',minutes:4,at:Date.now()}),endDelivery:async(id,status)=>{await write(terminalKey(id),{status,at:Date.now()})},...overrides});
+  const handler=createHandler({get,write,claim:async()=>1,send:async()=>({ok:true}),group:()=>'C'+'c'.repeat(32),writeLocation:async(k,v)=>{const old=db.get(k);if(old?.capturedAt>=v.capturedAt)return false;await write(k,v);return true},ready:()=>storage,rate:async()=>true,permission:(req,res)=>{if(req.headers.authorization==='staff')return true;res.status(401).json({error:'bad key'});return false},token:()=>String(++generation).repeat(64),routeFor:async()=>({polyline:'abc',minutes:4,at:Date.now()}),endDelivery:async(id,status)=>{await write(terminalKey(id),{status,at:Date.now()})},...overrides});
   async function call({role='',action,token=customerToken,body={},method,staff=false}={}){
     const req={method:method||(action?'POST':'GET'),headers:{'x-delivery-token':token,...(staff?{authorization:'staff'}:{})},query:{id,role},body:{id,role,action,...body}};
     const res={code:200,headers:{},setHeader(k,v){this.headers[k]=v},status(c){this.code=c;return this},json(j){this.data=j;return this}};
@@ -74,8 +74,8 @@ test('expired link and persistent storage failure fail closed',async()=>{
  f.db.get(key(f.id)).expiresAt=Date.now()-1;assert.equal((await f.call()).code,404);
 });
 test('only an authenticated assigned driver can complete a started delivery',async()=>{
- const f=fixture();assert.equal((await f.call({role:'driver',action:'complete',token:f.driverToken})).code,409);
- await f.call({role:'driver',action:'start',token:f.driverToken,body:gps()});assert.equal((await f.call({role:'driver',action:'complete',token:f.driverToken})).code,200);
+ const f=fixture();assert.equal((await f.call({role:'driver',action:'complete',token:f.driverToken,body:{photo:'data:image/jpeg;base64,/9j/2Q=='}})).code,409);
+ await f.call({role:'driver',action:'start',token:f.driverToken,body:gps()});assert.equal((await f.call({role:'driver',action:'complete',token:f.driverToken,body:{photo:'data:image/jpeg;base64,/9j/2Q=='}})).code,200);
  assert.equal((await f.call()).data.status,'completed');
 });
 
@@ -102,7 +102,7 @@ test('new deliveries require an assigned rider departure photo before start; cus
  assert.equal((await f.call({role:'driver',action:'departure-photo',token:f.driverToken,body:{photo}})).code,200);
  assert.equal((await f.call()).data.departurePhoto,photo);
  assert.equal((await f.call({role:'driver',action:'start',token:f.driverToken,body:gps()})).code,200);
- await f.call({role:'driver',action:'complete',token:f.driverToken});
+ await f.call({role:'driver',action:'complete',token:f.driverToken,body:{photo:'data:image/jpeg;base64,/9j/2Q=='}});
  assert.equal((await f.call()).data.departurePhoto,null);
  assert.equal((await f.call({role:'driver',action:'departure-photo',token:f.driverToken,body:{photo}})).code,409);
 });
@@ -129,3 +129,4 @@ test('90-second cadence stays fresh across one delayed refresh but stale GPS is 
  f.db.set(locationKey(f.id,f.driverToken),{lat:13.7,lng:100.5,capturedAt:Date.now()-100000});assert.equal((await f.call()).data.stale,false);
  f.db.set(locationKey(f.id,f.driverToken),{lat:13.7,lng:100.5,capturedAt:Date.now()-211000});assert.equal((await f.call()).data.stale,true);
 });
+
