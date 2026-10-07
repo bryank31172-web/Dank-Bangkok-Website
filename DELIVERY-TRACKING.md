@@ -16,9 +16,9 @@ Checkout opens a private link: Preparing -> On the way -> Completed.
 On the way uses a Wayfinder map with a rounded rider information panel, with
 profile photo, name and phone. Call now dials the DANK BKK shop at
 084 162 0610. Mobile puts the map above the driver
-card. The page polls every 45 seconds without reloading Google Maps. Routes and
+card. The page polls every 90 seconds without reloading Google Maps. Routes and
 ETA come from Google Routes; unavailable routing never creates a fake ETA or
-straight-line driving route. Location older than 90 seconds is clearly marked.
+straight-line driving route. Location older than 210 seconds is clearly marked.
 Completion stops polling and removes driver details and location. The
 completion screen shows the order summary and Back to shop; no review is requested.
 
@@ -127,7 +127,7 @@ Customer and rider pages share the reference-style map: destination pill, red
 destination pin, motorcycle marker, outlined green road route and green time /
 distance badge. Desktop keeps the 70/30 map and rider-panel split; mobile uses a
 70svh map with a rounded white information panel. The actual remaining route is
-computed from each accepted rider GPS update every 45 seconds. Stale GPS hides
+computed from each accepted rider GPS update every 90 seconds. Stale GPS hides
 the route and estimate, and pause/completion removes the rider route. The driver
 page refreshes its route after sending GPS and keeps the existing Start / Pause /
 Complete and Open navigation controls. Map failures do not disable those controls.
@@ -182,7 +182,7 @@ Google Routes now requests `TRAFFIC_ON_POLYLINE` and returns normalized speed in
 
 Passed geometry is clipped at the nearest route projection within 100 metres. Progress only advances on the same polyline to avoid GPS jitter restoring passed sections. New Google route geometry resets that projection. The scooter animation updates clipping between received fixes, and stale, paused or terminal deliveries remove the route.
 
-After Start delivery, the rider page loads Google Maps JavaScript using the existing public `GOOGLE_MAPS_BROWSER_KEY` from `/api/maps-config`. Maps JavaScript API must be enabled and the browser key must allow the production and preview referrers. The server Routes key is never exposed. The rider map shows Google live traffic, destination, scooter and remaining route; dragging stops following until Recenter. Location sharing still runs every 45 seconds with the page open and phone awake. Pause/completion clears overlays. A Google loading failure retains Wayfinder and the external navigation button.
+After Start delivery, the rider page loads Google Maps JavaScript using the existing public `GOOGLE_MAPS_BROWSER_KEY` from `/api/maps-config`. Maps JavaScript API must be enabled and the browser key must allow the production and preview referrers. The server Routes key is never exposed. The rider map shows Google live traffic, destination, scooter and remaining route; dragging stops following until Recenter. Location sharing still runs every 90 seconds with the page open and phone awake. Pause/completion clears overlays. A Google loading failure retains Wayfinder and the external navigation button.
 
 This is an in-page map and route viewer. Spoken turn-by-turn navigation uses the Google Maps app button. Paired demos use the same fixed public road route and provider traffic snapshot with simulated rider progress; no real GPS, orders or LINE messages are sent.
 
@@ -191,7 +191,7 @@ This is an in-page map and route viewer. Spoken turn-by-turn navigation uses the
 
 The rider sheet fills the bottom of the screen and can be dragged by its handle or expanded/collapsed by tapping it. Starting delivery collapses it to 200px. It shows the customer name and a circular call action using the authenticated order contact. Customer contact is exposed only to the assigned rider/staff, validates telephone characters, and is cleared on completion/cancellation. Demo customer call is disabled because no real customer number is used.
 
-As of 7 October 2026, traffic-on-polyline requests trigger Compute Routes Enterprise ($15/1,000 requests; 1,000 free/month). Dynamic Maps is $7/1,000 loads with 10,000 free/month. Link creation and customer polling do not themselves invoke Google. One 30-minute trip at 45-second route updates is about 41 requests plus one rider map load ($0.622 before any applicable free allowance). At a hypothetical 90-second interval it is about 21 requests plus one map load ($0.322). This is an estimate excluding checkout Places, taxes, repeated page loads, retries and other account usage. No interval change was made when answering the conditional pricing question.
+As of 7 October 2026, traffic-on-polyline requests trigger Compute Routes Enterprise ($15/1,000 requests; 1,000 free/month). Dynamic Maps is $7/1,000 loads with 10,000 free/month. Link creation and customer polling do not themselves invoke Google. One 30-minute trip at 45-second route updates is about 41 requests plus one rider map load ($0.622 before any applicable free allowance). At a hypothetical 90-second interval it is about 21 requests plus one map load ($0.322). This is an estimate excluding checkout Places, taxes, repeated page loads, retries and other account usage. The user subsequently selected 90-second live updates. Live customer polling and rider GPS/route publishing now run every 90 seconds, with immediate Start, Pause and Complete actions. Stale threshold is 210 seconds (two intervals plus a network grace period). Paired demo customer polling remains 5 seconds to see manual test actions promptly; automatic demo movement is 90 seconds.
 
 Official pricing: https://developers.google.com/maps/billing-and-pricing/pricing
 Enterprise traffic trigger: https://developers.google.com/maps/billing-and-pricing/sku-details#routes-compute-routes-enterprise

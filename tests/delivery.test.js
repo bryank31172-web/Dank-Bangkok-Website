@@ -47,7 +47,7 @@ test('fresh GPS starts delivery, stale/inaccurate GPS is rejected',async()=>{
  assert.equal((await f.call({role:'driver',action:'start',token:f.driverToken,body:{location:{...gps().location,accuracy:600}}})).code,400);
  assert.equal((await f.call({role:'driver',action:'start',token:f.driverToken,body:gps()})).code,200);
  const r=await f.call();assert.equal(r.data.status,'on_the_way');assert.equal(r.data.stale,false);assert.equal(r.data.location.route.minutes,4);
- const loc=f.db.get(locationKey(f.id,f.driverToken));loc.capturedAt=Date.now()-100000;
+ const loc=f.db.get(locationKey(f.id,f.driverToken));loc.capturedAt=Date.now()-211000;
  assert.equal((await f.call()).data.stale,true);
 });
 test('pause removes visible coordinates but keeps on-the-way stage',async()=>{
@@ -122,4 +122,10 @@ test('customer contact is available only to the assigned rider and disappears af
  const rider=await f.call({role:'driver',token:f.driverToken});assert.deepEqual(rider.data.customer,{name:'Customer One',phone:'+66812345678'});
  order.customer.phone='javascript:alert(1)';assert.equal((await f.call({role:'driver',token:f.driverToken})).data.customer.phone,'');
  await f.call({role:'staff',staff:true,action:'complete'});const ended=await f.call({role:'driver',token:f.driverToken});assert.equal(ended.data.customer,null);assert.equal(ended.data.address,'');
+});
+
+test('90-second cadence stays fresh across one delayed refresh but stale GPS is hidden after 210 seconds',async()=>{
+ const f=fixture();f.db.set(startedKey(f.id,f.driverToken),{at:Date.now()-100000});
+ f.db.set(locationKey(f.id,f.driverToken),{lat:13.7,lng:100.5,capturedAt:Date.now()-100000});assert.equal((await f.call()).data.stale,false);
+ f.db.set(locationKey(f.id,f.driverToken),{lat:13.7,lng:100.5,capturedAt:Date.now()-211000});assert.equal((await f.call()).data.stale,true);
 });

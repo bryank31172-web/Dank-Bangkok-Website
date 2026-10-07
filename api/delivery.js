@@ -131,7 +131,7 @@ export function createHandler(deps = {}) {
       if (!d.ready()) throw new Error('Storage unavailable');
       const result = { departurePhoto: departure?.photo || null, departureAt: departure?.at || null, departurePhotoRequired: Boolean(record.departurePhotoRequired), orderId: id, status, completedAt: ended?.at || null,
         destination: ended ? null : record.destination, location: loc || null,
-        stale: !loc || Date.now() - loc.capturedAt > 90000,
+        stale: !loc || Date.now() - loc.capturedAt > 210000,
         driver: !ended && record.driver ? { name: record.driver.name, phone: record.driver.phone, photo: record.driver.photo } : null,
         reviewUrl: '', // Delivery ends without a review prompt.
         items: (order.items || []).map(i => ({ name: String(i.name || ''), qty: i.qty })), total: order.total ?? order.subtotal,

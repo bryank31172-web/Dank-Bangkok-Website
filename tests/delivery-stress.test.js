@@ -34,9 +34,9 @@ async function burst(f,action='start',location=i=>f.gps(i)){
 const codes=(results,code)=>results.forEach(r=>assert.equal(r.code,code));
 function gate(){const pending=[];return {pending,routeFor:async()=>new Promise(resolve=>pending.push(resolve)),async wait(){for(let i=0;i<100&&pending.length<N;i++)await new Promise(r=>setImmediate(r));assert.equal(pending.length,N)},release(reverse=false){for(const resolve of reverse?pending.slice().reverse():pending)resolve(null)}}}
 
-test('stress 01: 20 locations at 45-second cadence follow the latest GPS',async()=>{
+test('stress 01: 20 locations at 90-second cadence follow the latest GPS',async()=>{
  const original=Date.now;let now=original();Date.now=()=>now;
- try{const f=fixture();for(const i of indices){now+=45000;assert.equal((await f.call(i?'location':'start',{body:{location:f.gps(i)}})).code,200);assert.equal((await f.view()).data.location.lat,f.gps(i).lat)}assert.equal(f.routeCalls(),N)}finally{Date.now=original}
+ try{const f=fixture();for(const i of indices){now+=90000;assert.equal((await f.call(i?'location':'start',{body:{location:f.gps(i)}})).code,200);assert.equal((await f.view()).data.location.lat,f.gps(i).lat)}assert.equal(f.routeCalls(),N)}finally{Date.now=original}
 });
 test('stress 02: 20 rapid updates are throttled without moving GPS backward',async()=>{
  const f=fixture();await f.call('start',{body:{location:f.gps()}});codes(await burst(f,'location',i=>f.gps(i,Date.now()+i+1)),200);assert.equal(f.routeCalls(),1);

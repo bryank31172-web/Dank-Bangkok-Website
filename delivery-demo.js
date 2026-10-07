@@ -6,7 +6,7 @@ function startDeliveryDemo() {
   const panel = document.createElement('section');
   panel.className = 'error demo-panel';
   panel.setAttribute('aria-label', 'Delivery demo controls');
-  panel.innerHTML = '<b>Delivery test · simulated rider</b><p>No purchase or real rider needed. Start delivery, move through 20 sample locations, then complete. Positions and arrival times are simulated; the Wayfinder map is real. Automatic movement runs every 45 seconds.</p><div style="display:flex;flex-wrap:wrap;gap:8px;margin:14px 0"><button class="btn" data-demo="start">Start delivery</button><button class="btn" data-demo="next">Next location</button><button class="btn" data-demo="complete">Complete delivery</button><button class="btn secondary" data-demo="reset">Restart test</button></div><p role="status" id="demoProgress"></p>';
+  panel.innerHTML = '<b>Delivery test · simulated rider</b><p>No purchase or real rider needed. Start delivery, move through 20 sample locations, then complete. Positions and arrival times are simulated; the Wayfinder map is real. Automatic movement runs every 90 seconds.</p><div style="display:flex;flex-wrap:wrap;gap:8px;margin:14px 0"><button class="btn" data-demo="start">Start delivery</button><button class="btn" data-demo="next">Next location</button><button class="btn" data-demo="complete">Complete delivery</button><button class="btn secondary" data-demo="reset">Restart test</button></div><p role="status" id="demoProgress"></p>';
   document.querySelector('main').prepend(panel);
   const buttons = Object.fromEntries(['start', 'next', 'complete', 'reset'].map(action => [action, panel.querySelector('[data-demo="' + action + '"]')]));
   let path = Array.from({length: 20}, (_, i) => ({lat: 13.7463 - i * 0.0001, lng: 100.5346 + i * 0.0001}));
@@ -29,7 +29,7 @@ function startDeliveryDemo() {
     panel.querySelector('#demoProgress').textContent = state === 'preparing' ? 'Step 1: order confirmed and preparing.' : state === 'completed' ? 'Step 3: completed. No review prompt. Restart to try again.' : 'Step 2: on the way · sample location ' + (index + 1) + ' of 20.';
   }
   function next() {if (state !== 'on_the_way') return; index = Math.min(19, index + 1); display(); if (index === 19) clearInterval(movement);}
-  buttons.start.addEventListener('click', () => {state = 'on_the_way'; display(); movement = setInterval(next, 45000);});
+  buttons.start.addEventListener('click', () => {state = 'on_the_way'; display(); movement = setInterval(next, 90000);});
   buttons.next.addEventListener('click', next);
   buttons.complete.addEventListener('click', () => {clearInterval(movement); state = 'completed'; display();});
   buttons.reset.addEventListener('click', () => {clearInterval(movement); state = 'preparing'; index = 0; display();});

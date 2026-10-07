@@ -64,15 +64,15 @@ test('demo walks through all 20 positions and completion without live order or G
   assert.equal(b.requests[0].options.method, undefined);
 });
 
-test('demo moves every 45 seconds and stops movement when completed', async () => {
+test('demo moves every 90 seconds and stops movement when completed', async () => {
   const b = browser('?demo=1'); vm.runInContext('startDeliveryDemo()', b.context);
   await new Promise(resolve => setImmediate(resolve));
   b.get('[data-demo="start"]').click();
-  const movement = [...b.intervals.values()].find(x => x.delay === 45000);
+  const movement = [...b.intervals.values()].find(x => x.delay === 90000);
   assert.ok(movement); movement.fn();
   assert.match(b.get('#demoProgress').textContent, /2 of 20/);
   b.get('[data-demo="complete"]').click();
-  assert.equal([...b.intervals.values()].some(x => x.delay === 45000), false);
+  assert.equal([...b.intervals.values()].some(x => x.delay === 90000), false);
   movement.fn(); assert.equal(vm.runInContext('last.status', b.context), 'completed');
 });
 
