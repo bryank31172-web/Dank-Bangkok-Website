@@ -49,11 +49,12 @@ let deliveryProtocolRegistered = false;
 function createDeliveryMap(ids) {
   const el = name => document.getElementById(ids[name]);
   let map, pending, version = 0, last, fitted = false, rider, destination, routePath = [], errorText = '', mode = 'light', riderKind = '', riderPosition, riderHeading = 0, movementFrame;
-  let shops=[], routeTraffic=[], routeProgress=0, routeEncoded='';
+  let shops=[], routeTraffic=[], routeProgress=0, routeEncoded='', styleReady=false;
   window.addEventListener?.('rider-sheet-resize',()=>map?.resize());
   const empty = () => ({type:'FeatureCollection',features:[]});
   function drawRoute() {
-    if (!map?.isStyleLoaded()) return;
+    // isStyleLoaded becomes false while GeoJSON/tiles refresh. That must not suppress route writes.
+    if (!map || !styleReady) return;
     const geometry = deliveryRouteFeatures(routePath,routeTraffic,routeProgress);
     if (!map.getSource('delivery-route')) {
       map.addSource('delivery-route',{type:'geojson',data:geometry});
@@ -86,11 +87,11 @@ function createDeliveryMap(ids) {
       map.addControl(new maplibregl.AttributionControl({compact:false,customAttribution:'<a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap ODbL</a> · <a href="https://protomaps.com" target="_blank" rel="noopener">Protomaps BSD</a>'}),'bottom-right');
       map.addControl(new maplibregl.NavigationControl({showCompass:false}),'top-right');
       map.addControl({onAdd(){const a=document.createElement('a');a.className='maplibregl-ctrl elemnt-credit';a.href='https://elemnt.earth';a.target='_blank';a.rel='noopener noreferrer';a.textContent='Powered by ELEMNT';this.node=a;return a;},onRemove(){this.node.remove();}},'bottom-left');
-      map.addControl({onAdd(){const b=document.createElement('button');b.type='button';b.className='maplibregl-ctrl delivery-theme';b.textContent='Dark map';b.setAttribute('aria-label','Switch to dark map');b.setAttribute('aria-pressed','false');b.addEventListener('click',()=>{mode=mode==='light'?'dark':'light';b.textContent=mode==='light'?'Dark map':'Light map';b.setAttribute('aria-label','Switch to '+(mode==='light'?'dark':'light')+' map');b.setAttribute('aria-pressed',String(mode==='dark'));map.setStyle(DELIVERY_STYLES[mode]);});this.node=b;return b;},onRemove(){this.node.remove();}},'top-left');
+      map.addControl({onAdd(){const b=document.createElement('button');b.type='button';b.className='maplibregl-ctrl delivery-theme';b.textContent='Dark map';b.setAttribute('aria-label','Switch to dark map');b.setAttribute('aria-pressed','false');b.addEventListener('click',()=>{mode=mode==='light'?'dark':'light';b.textContent=mode==='light'?'Dark map':'Light map';b.setAttribute('aria-label','Switch to '+(mode==='light'?'dark':'light')+' map');b.setAttribute('aria-pressed',String(mode==='dark'));styleReady=false;map.setStyle(DELIVERY_STYLES[mode]);});this.node=b;return b;},onRemove(){this.node.remove();}},'top-left');
       map.on('zoom',resizeScooter);
-      map.on('style.load',()=>{drawRoute();map.resize();});
+      map.on('style.load',()=>{styleReady=true;drawRoute();map.resize();});
       map.on('error',()=>{errorText='Map tiles unavailable. Check your connection. Delivery controls still work.';el('note').textContent=errorText;});
-      map.once('load',()=>{errorText='';resolve();});
+      map.once('load',()=>{styleReady=true;errorText='';drawRoute();resolve();});
     }).catch(error=>{pending=null;throw error;});
     return pending;
   }
@@ -154,10 +155,11 @@ function createDeliveryMap(ids) {
         moveRider(data.location,kind==='scooter'&&!data.stale);
       }else{stopMovement();rider?.remove();rider=null;riderPosition=null;riderKind='';}
       const route=data.location?.route;
-      if(!data.stale&&route?.polyline){if(routeEncoded!==route.polyline){routePath=decodeDeliveryRoute(route.polyline);routeProgress=0;routeEncoded=route.polyline;}routeTraffic=Array.isArray(route.traffic)?route.traffic:[];trimRoute();drawRoute();if(el('badge')){el('badge').textContent=(data.demo?'Demo route · ':'Best route · ')+route.minutes+' min'+(Number.isFinite(route.km)?' · '+route.km+' km':'');el('badge').classList.remove('hidden');}}
+      if(!data.stale&&route?.polyline){if(routeEncoded!==route.polyline){routePath=decodeDeliveryRoute(route.polyline);routeProgress=0;routeEncoded=route.polyline;}routeTraffic=Array.isArray(route.traffic)?route.traffic:[];trimRoute();drawRoute();if(el('badge')){el('badge').textContent='Best route · '+route.minutes+' min'+(Number.isFinite(route.km)?' · '+route.km+' km':'');el('badge').classList.remove('hidden');}}
       else removeLines();
       if(!fitted&&data.location){fit();fitted=true;}else if(!fitted&&data.destination)map.setCenter([data.destination.lng,data.destination.lat]);
     } catch(error){if(current===version){errorText=/webgl/i.test(error.message||'')?'This browser cannot display the map. Rider details and photos still work.':'Map unavailable. Check your connection. Rider details and photos still work.';el('note').textContent=errorText;el('badge')?.classList.add('hidden');}}
   }
   return {update,clear,stale,fit,error:()=>errorText};
 }
+

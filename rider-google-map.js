@@ -78,7 +78,7 @@ function createRiderGoogleMap(ids) {
     if(data.status!=='on_the_way'||!data.location||data.stale){clear();return false;}
     const current=++version;last=data;
     try{
-      await loadRiderGoogleMaps();if(current!==version||last!==data)return false;
+      await loadRiderGoogleMaps();if(riderGoogleAuthFailed||current!==version||last!==data)return false;
       if(!map){map=new google.maps.Map(node,{center:data.location,zoom:16,mapTypeControl:false,streetViewControl:false,fullscreenControl:false,gestureHandling:'greedy'});traffic=new google.maps.TrafficLayer();map.addListener('dragstart',()=>{following=false;});map.addListener('zoom_changed',()=>rider?.resize());}
       node.classList.remove('hidden');fallback.classList.add('hidden');traffic.setMap(map);
       if(!shops.length)shops=DELIVERY_SHOPS.map(shop=>overlay(shop,{shop:true,label:shop.name}));

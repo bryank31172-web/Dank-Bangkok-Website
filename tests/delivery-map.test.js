@@ -24,6 +24,16 @@ test('MapLibre registers PMTiles, draws road geometry and keeps visible credits'
 test('theme changes restore current route and paused maps stay empty',async()=>{
  const f=browser();await f.map.update(f.data());const toggle=f.controls.find(c=>c.node?.className.includes('delivery-theme')).node;toggle.click();assert.match(f.maps[0].style,/style.dark.json$/);assert.equal(f.maps[0].getSource('delivery-route').data.features.length,2);f.map.clear();toggle.click();assert.equal(f.maps[0].getSource('delivery-route').data.features.length,0);assert.ok(f.markers.every(m=>m.map===null));
 });
+test('route remains visible while basemap tiles and GeoJSON workers are loading',async()=>{
+ const f=browser();await f.map.update(f.data());const m=f.maps[0];
+ m.isStyleLoaded=()=>false;
+ const next={...f.data(),location:{...f.data().location,route:{polyline:encoded,minutes:8,traffic:[{start:0,end:1,speed:'SLOW'},{start:1,end:2,speed:'TRAFFIC_JAM'}]}}};
+ await f.map.update(next);
+ assert.deepEqual(Array.from(m.getSource('delivery-route').data.features,f=>f.properties.color),['#efad23','#e84d43']);
+ const toggle=f.controls.find(c=>c.node?.className.includes('delivery-theme')).node;toggle.click();
+ assert.equal(m.layers.length,2);assert.equal(m.getSource('delivery-route').data.features.length,2);
+ f.map.clear();assert.equal(m.getSource('delivery-route').data.features.length,0);
+});
 test('stale updates remove route and badge',async()=>{
  const f=browser();await f.map.update(f.data());f.map.stale();assert.equal(f.maps[0].getSource('delivery-route').data.features.length,0);assert.equal(f.el('badge').hidden,true);
 });
@@ -97,7 +107,7 @@ test('off-route position does not erase distant road sections and a replacement 
 });
 test('route API requests traffic and normalizes omitted zero index while rejecting malformed intervals',async()=>{
  const previous=process.env.GOOGLE_MAPS_API_KEY,oldFetch=globalThis.fetch;process.env.GOOGLE_MAPS_API_KEY='test';
- try{globalThis.fetch=async(url,o)=>{const body=JSON.parse(o.body);assert.deepEqual(body.extraComputations,['TRAFFIC_ON_POLYLINE']);assert.match(o.headers['X-Goog-FieldMask'],/speedReadingIntervals/);return {ok:true,json:async()=>({routes:[{duration:'120s',polyline:{encodedPolyline:encoded},travelAdvisory:{speedReadingIntervals:[{endPolylinePointIndex:1,speed:'NORMAL'},{startPolylinePointIndex:1,endPolylinePointIndex:2,speed:'SLOW'},{startPolylinePointIndex:-1,endPolylinePointIndex:2,speed:'TRAFFIC_JAM'},{endPolylinePointIndex:2,speed:'FAKE'}]}}]})};};const route=await routeFor({lat:13,lng:100},{lat:14,lng:100});assert.deepEqual(route.traffic,[{start:0,end:1,speed:'NORMAL'},{start:1,end:2,speed:'SLOW'}]);}finally{globalThis.fetch=oldFetch;if(previous===undefined)delete process.env.GOOGLE_MAPS_API_KEY;else process.env.GOOGLE_MAPS_API_KEY=previous;}
+ try{globalThis.fetch=async(url,o)=>{const body=JSON.parse(o.body);assert.equal(body.routingPreference,'TRAFFIC_AWARE_OPTIMAL');assert.equal(body.computeAlternativeRoutes,false);assert.deepEqual(body.extraComputations,['TRAFFIC_ON_POLYLINE']);assert.match(o.headers['X-Goog-FieldMask'],/speedReadingIntervals/);return {ok:true,json:async()=>({routes:[{duration:'120s',polyline:{encodedPolyline:encoded},travelAdvisory:{speedReadingIntervals:[{endPolylinePointIndex:1,speed:'NORMAL'},{startPolylinePointIndex:1,endPolylinePointIndex:2,speed:'SLOW'},{startPolylinePointIndex:-1,endPolylinePointIndex:2,speed:'TRAFFIC_JAM'},{endPolylinePointIndex:2,speed:'FAKE'}]}}]})};};const route=await routeFor({lat:13,lng:100},{lat:14,lng:100});assert.deepEqual(route.traffic,[{start:0,end:1,speed:'NORMAL'},{start:1,end:2,speed:'SLOW'}]);}finally{globalThis.fetch=oldFetch;if(previous===undefined)delete process.env.GOOGLE_MAPS_API_KEY;else process.env.GOOGLE_MAPS_API_KEY=previous;}
 });
 
 test('address pins use geographic bottom anchors through zoom and absolute map positioning',async()=>{const f=browser();await f.map.update(f.data());const pin=f.markers.find(m=>m.options.element.className==='delivery-destination-pin');assert.equal(pin.options.anchor,'bottom');assert.equal(pin.options.offset[1],2.8);const before=JSON.stringify(pin.position);for(const zoom of [10,18,12,20]){f.maps[0].zoom=zoom;f.maps[0].events.zoom();assert.equal(JSON.stringify(pin.position),before);}const css=readFileSync(new URL('../delivery-map.css',import.meta.url),'utf8');assert.match(css,/\.delivery-rider-pin,\.delivery-destination-pin,\.delivery-origin-pin\{position:absolute/);});

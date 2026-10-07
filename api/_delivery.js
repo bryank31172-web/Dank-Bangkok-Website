@@ -81,7 +81,7 @@ export async function routeFor(location, destination) {
         'X-Goog-FieldMask': 'routes.duration,routes.distanceMeters,routes.polyline.encodedPolyline,routes.travelAdvisory.speedReadingIntervals' },
       body: JSON.stringify({ origin: waypoint(location), destination: waypoint(destination),
         travelMode: process.env.DELIVERY_MODE === 'TWO_WHEELER' ? 'TWO_WHEELER' : 'DRIVE',
-        routingPreference: 'TRAFFIC_AWARE', extraComputations: ['TRAFFIC_ON_POLYLINE'], computeAlternativeRoutes: false })
+        routingPreference: 'TRAFFIC_AWARE_OPTIMAL', extraComputations: ['TRAFFIC_ON_POLYLINE'], computeAlternativeRoutes: false })
     });
     if (!r.ok) return null;
     const route = (await r.json()).routes?.[0];
@@ -91,3 +91,4 @@ export async function routeFor(location, destination) {
           ...(Number.isFinite(route.distanceMeters) && route.distanceMeters >= 0 ? {km: Math.round(route.distanceMeters / 100) / 10} : {}), at: Date.now() } : null;
   } catch { return null; }
 }
+
