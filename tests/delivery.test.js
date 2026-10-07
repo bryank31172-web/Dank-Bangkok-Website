@@ -93,3 +93,25 @@ test('overlapping route requests preserve the newest GPS update',async()=>{
  await f.call({role:'driver',action:'start',token:f.driverToken,body:fresh});releaseOld();await first;
  assert.equal(f.db.get(locationKey(f.id,f.driverToken)).capturedAt,now);
 });
+
+test('new deliveries require an assigned rider departure photo before start; customer can view it privately',async()=>{
+ const f=fixture(),record=f.db.get(key(f.id));record.departurePhotoRequired=true;
+ assert.equal((await f.call({role:'driver',action:'start',token:f.driverToken,body:gps()})).code,409);
+ const photo='data:image/jpeg;base64,/9j/2Q==';
+ assert.equal((await f.call({action:'departure-photo',body:{photo}})).code,403);
+ assert.equal((await f.call({role:'driver',action:'departure-photo',token:f.driverToken,body:{photo}})).code,200);
+ assert.equal((await f.call()).data.departurePhoto,photo);
+ assert.equal((await f.call({role:'driver',action:'start',token:f.driverToken,body:gps()})).code,200);
+ await f.call({role:'driver',action:'complete',token:f.driverToken});
+ assert.equal((await f.call()).data.departurePhoto,null);
+ assert.equal((await f.call({role:'driver',action:'departure-photo',token:f.driverToken,body:{photo}})).code,409);
+});
+test('departure upload rejects malformed and oversized images and reassignment removes access to the old photo',async()=>{
+ const f=fixture(),photo='data:image/jpeg;base64,/9j/2Q==';
+ for(const photo of ['data:image/svg+xml;base64,PHN2Zz4=','data:image/jpeg;base64,YWJjZA==','data:image/jpeg;base64,'+'A'.repeat(160001)])
+ assert.equal((await f.call({role:'driver',action:'departure-photo',token:f.driverToken,body:{photo}})).code,400);
+ await f.call({role:'driver',action:'departure-photo',token:f.driverToken,body:{photo}});
+ await f.call({role:'staff',staff:true,action:'assign',body:{name:'New rider',phone:'0812345678',destination:{lat:13.8,lng:100.6}}});
+ assert.equal((await f.call()).data.departurePhoto,null);
+ assert.equal((await f.call({role:'driver',action:'departure-photo',token:f.driverToken,body:{photo}})).code,403);
+});

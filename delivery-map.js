@@ -58,11 +58,13 @@ function createDeliveryMap(ids) {
     }).catch(error=>{pending=null;throw error;});
     return pending;
   }
-  function pin(position,home) {
+  function pin(position,home,label) {
     const content=document.createElement('div');
     content.className=home?'delivery-destination-pin':'delivery-rider-pin';
     content.setAttribute('aria-label',home?'Delivery destination':'Delivery rider');
-    content.innerHTML=home?'<svg viewBox="0 0 36 48" aria-hidden="true"><path d="M18 2C8 2 2 9 2 18c0 12 16 27 16 27s16-15 16-27C34 9 28 2 18 2Z" fill="#ef6152" stroke="white" stroke-width="3"/><circle cx="18" cy="18" r="6" fill="white"/></svg>':'<svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2.3" aria-hidden="true"><circle cx="7" cy="24" r="4"/><circle cx="25" cy="24" r="4"/><path d="M7 24h12l6-12h-5M18 11l-3 7H9l-2 6m12 0 3-8M6 15h8M22 8h4l2 4"/><circle cx="16" cy="5" r="2.5"/><path d="m15 10-4 4 7 4"/></svg>';
+    const pinShape = '<svg viewBox="0 0 36 48" aria-hidden="true"><path d="M18 2C8 2 2 9 2 18c0 12 16 27 16 27s16-15 16-27C34 9 28 2 18 2Z" fill="'+(home?'#ef5544':'#009ee8')+'" stroke="white" stroke-width="2"/><circle cx="18" cy="18" r="6" fill="white"/></svg>';
+    content.innerHTML='<span class="delivery-pin-shape">'+pinShape+'</span><span class="delivery-location-pill"></span>';
+    content.querySelector('.delivery-location-pill').textContent=label||(home?'Your delivery':'Your rider');
     return new maplibregl.Marker({element:content,anchor:home?'bottom':'center'}).setLngLat([position.lng,position.lat]).addTo(map);
   }
   async function update(data) {
@@ -72,10 +74,10 @@ function createDeliveryMap(ids) {
     try {
       await load(data);if(current!==version||last!==data)return;
       errorText='';map.resize();
-      if(data.destination){if(!destination)destination=pin(data.destination,true);else destination.setLngLat([data.destination.lng,data.destination.lat]);}
+      if(data.destination){if(!destination)destination=pin(data.destination,true,data.destinationLabel);else destination.setLngLat([data.destination.lng,data.destination.lat]);}
       if(data.location){if(!rider)rider=pin(data.location,false);else rider.setLngLat([data.location.lng,data.location.lat]);}else{rider?.remove();rider=null;}
       removeLines();const route=data.location?.route;
-      if(!data.stale&&route?.polyline){routePath=decodeDeliveryRoute(route.polyline);drawRoute();el('badge').textContent=(data.demo?'Demo route · ':'On the way · ')+route.minutes+' min'+(Number.isFinite(route.km)?' · '+route.km+' km':'');el('badge').classList.remove('hidden');}
+      if(!data.stale&&route?.polyline){routePath=decodeDeliveryRoute(route.polyline);drawRoute();el('badge').textContent=(data.demo?'Demo route · ':'Best route · ')+route.minutes+' min'+(Number.isFinite(route.km)?' · '+route.km+' km':'');el('badge').classList.remove('hidden');}
       if(!fitted&&data.location){fit();fitted=true;}else if(!fitted&&data.destination)map.setCenter([data.destination.lng,data.destination.lat]);
     } catch(error){if(current===version){errorText=error.message;el('note').textContent=error.message;el('badge').classList.add('hidden');}}
   }

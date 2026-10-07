@@ -13,7 +13,7 @@ five minutes and rate limited to ten requests per five minutes. This previews
 the customer stages and Google map; positions and ETA are simulated.
 
 Checkout opens a private link: Preparing -> On the way -> Completed.
-On the way uses a 70/30 desktop split: Wayfinder map and driver information, with
+On the way uses a Wayfinder map with a rounded rider information panel, with
 profile photo, name and phone. Call now dials the DANK BKK shop at
 084 162 0610. Mobile puts the map above the driver
 card. The page polls every 45 seconds without reloading Google Maps. Routes and
@@ -155,3 +155,22 @@ left. Basemap rendering does not require GOOGLE_MAPS_BROWSER_KEY or a map ID.
 Google Places checkout and server-side Google Routes retain their existing
 configuration. Style changes restore the latest route without reviving paused
 or completed locations. Guide: https://carto.elemnt.earth/USE.md.
+
+## Reference delivery panel and departure photo
+
+The customer journey now uses a full map with floating back/delivery/You pills,
+blue rider and red destination pins with white location labels, a green road
+route and ETA badge. On phones the rounded rider panel sits below the map.
+On desktop it floats over the lower-left map corner. It shows rider profile,
+arrival estimate, departure photo preview, shop call icon and order details;
+there is no vehicle selection, cash/offer selector or booking action.
+
+Before starting a new tracked order, the assigned rider uploads a departure
+photo on their private page. The phone resizes and exports a JPEG through canvas
+without EXIF metadata. The server limits the encoded size, rate limits uploads,
+checks driver credentials and stores it separately per assignment. The customer
+can open the full photo only through the private tracking API. Reassignment
+clears the old photo, completion/cancellation removes customer access, and
+storage expires no later than the tracking record. Existing legacy orders may
+start without the new requirement. The demo uses a labeled illustration rather
+than a real rider photo.

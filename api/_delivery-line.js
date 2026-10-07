@@ -105,7 +105,7 @@ export function createDeliveryLineHandler(deps = {}) {
       const latest = await d.get(d.key(id));
       if (latest?.driver?.token !== record.driver.token) throw new Error('Rider assignment changed. Use the staff portal.');
       const url = ORIGIN + '/driver-delivery.html#' + new URLSearchParams({id, token: record.driver.token});
-      const sent = await d.send(rider.lineUserId, [{type: 'text', text: `Delivery ${id}\n${order.delivery?.address || ''}\nOpen your private rider controls:\n${url}\nStart delivery → Pause sharing → Complete delivery. Open in Safari/Chrome, allow GPS and keep the page open.`}], {retryKey: record.driver.retryKey});
+      const sent = await d.send(rider.lineUserId, [{type: 'text', text: `Delivery ${id}\n${order.delivery?.address || ''}\nOpen your private rider controls:\n${url}\nShare departure photo → Start delivery → Pause sharing → Complete delivery. Open in Safari/Chrome, allow GPS and keep the page open.`}], {retryKey: record.driver.retryKey});
       await reply(sent.ok ? `Assigned ${id} to ${rider.name}. The private delivery link was sent directly to their LINE.` : `Assigned ${id} to ${rider.name}, but LINE could not accept the message. Ask the rider to add the shop LINE Official Account as a friend, then tap their rider selection again to retry, or copy the link from the staff portal.`);
       return true;
     } catch (e) {await reply(e.message || 'Delivery assignment unavailable. Use the staff portal.'); return true;}

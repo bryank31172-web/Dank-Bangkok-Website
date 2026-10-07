@@ -19,6 +19,7 @@ function startDeliveryDemo() {
       destination: state === 'completed' ? null : destination,
       location: moving ? {...path[index], capturedAt: Date.now(), route: remaining} : null,
       stale: !moving, driver: state === 'completed' ? null : {name: 'Simulated rider', phone: '', photo: ''},
+      departurePhoto: state === 'completed' ? null : '/assets/delivery-demo-photo.svg', departureAt: Date.now(),
       items: [{name: 'Sample sandwich (test only)', qty: 1}], total: 100, reviewUrl: '',
       mapProvider: 'wayfinder'});
     buttons.start.disabled = state !== 'preparing';

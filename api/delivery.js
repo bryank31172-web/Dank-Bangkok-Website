@@ -62,7 +62,7 @@ export function createHandler(deps = {}) {
           record.driver = { name, phone, photo, token: d.token(), assignedAt: Date.now() };
           record.destination = destination;
           await d.write(d.key(id), record);
-          if (previous) await d.write(d.locationKey(id, previous.token), null, 1);
+          if (previous) {await d.write(d.locationKey(id, previous.token), null, 1);await d.write(d.departureKey(id, previous.token), null, 1);}
           return res.status(200).json({ ok: true, driverUrl: '/driver-delivery.html#' + new URLSearchParams({ id, token: record.driver.token }) });
         }
         if (staff && ['complete', 'cancel'].includes(b.action)) {
@@ -70,6 +70,21 @@ export function createHandler(deps = {}) {
           return res.status(200).json({ ok: true });
         }
         if (!driver) return res.status(403).json({ error: 'Driver access required' });
+        if (b.action === 'departure-photo') {
+          if (!(await d.rate(req, res, 'delivery-photo', 12, 300))) return;
+          const photo = String(b.photo || '');
+          // The phone exports a resized JPEG without EXIF or embedded scripts.
+          if (photo.length > 160000 || !/^data:image\/jpeg;base64,[A-Za-z0-9+/]+={0,2}$/.test(photo))
+            return res.status(400).json({error:'Choose a JPEG photo smaller than 120 KB'});
+          const bytes = Buffer.from(photo.slice(photo.indexOf(',') + 1), 'base64');
+          if (bytes.length < 4 || bytes[0] !== 255 || bytes[1] !== 216 || bytes[bytes.length-2] !== 255 || bytes[bytes.length-1] !== 217)
+            return res.status(400).json({error:'The departure photo must be a valid JPEG'});
+          const latest = await d.get(d.key(id));
+          if (!safeEq(latest?.driver?.token, record.driver.token) || await d.get(d.terminalKey(id)))
+            return res.status(409).json({error:'Assignment changed or delivery ended'});
+          await d.write(d.departureKey(id, record.driver.token), {photo, at:Date.now()}, Math.max(1, Math.ceil((record.expiresAt-Date.now())/1000)));
+          return res.status(200).json({ok:true});
+        }
         if (b.action === 'complete') {
           const started = await d.get(d.startedKey(id, record.driver.token));
           if (!started) return res.status(409).json({ error: 'Start delivery first' });
@@ -85,6 +100,8 @@ export function createHandler(deps = {}) {
             b.location.accuracy < 0 || b.location.accuracy > 500)
           return res.status(400).json({ error: 'A fresh, accurate GPS location is required. Please try again outdoors.' });
         const started = await d.get(d.startedKey(id, record.driver.token));
+        if (!started && b.action === 'start' && record.departurePhotoRequired && !(await d.get(d.departureKey(id, record.driver.token))))
+          return res.status(409).json({error:'Upload your departure photo before starting delivery'});
         if (!started && b.action !== 'start') return res.status(409).json({ error: 'Start delivery first' });
         const paused = await d.get(d.pausedKey(id, record.driver.token));
         if (paused && b.action !== 'start') return res.status(409).json({ error: 'Sharing paused. Tap Start delivery to resume.' });
@@ -110,7 +127,9 @@ export function createHandler(deps = {}) {
       const loc = !ended && !paused && started && await d.get(d.locationKey(id, record.driver.token));
       if (!d.ready()) throw new Error('Storage unavailable');
       const status = ended?.status || (started ? 'on_the_way' : 'preparing');
-      const result = { orderId: id, status, completedAt: ended?.at || null,
+      const departure = !ended && record.driver ? await d.get(d.departureKey(id, record.driver.token)) : null;
+      if (!d.ready()) throw new Error('Storage unavailable');
+      const result = { departurePhoto: departure?.photo || null, departureAt: departure?.at || null, departurePhotoRequired: Boolean(record.departurePhotoRequired), orderId: id, status, completedAt: ended?.at || null,
         destination: ended ? null : record.destination, location: loc || null,
         stale: !loc || Date.now() - loc.capturedAt > 90000,
         driver: !ended && record.driver ? { name: record.driver.name, phone: record.driver.phone, photo: record.driver.photo } : null,

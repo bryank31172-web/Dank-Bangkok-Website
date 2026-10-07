@@ -8,6 +8,9 @@ function browser(search) {
     constructor() {this.textContent = ''; this.attrs = {}; this.events = {}; this.hidden = new Set(); this.disabled = false; this.classList = {add: x => this.hidden.add(x), remove: x => this.hidden.delete(x), toggle: (x, v) => v ? this.hidden.add(x) : this.hidden.delete(x)};}
     setAttribute(k, v) {this.attrs[k] = v;}
     removeAttribute(k) {delete this.attrs[k];}
+    focus() {}
+    showModal() {this.open=true;}
+    close() {this.open=false;this.events.close?.();}
     replaceChildren() {}
     appendChild() {}
     prepend() {}
@@ -81,3 +84,7 @@ test('normal private tracking retains live lookup and does not initialize demo',
   assert.equal(b.requests[0].options.headers['X-Delivery-Token'], 'FAKE-TOKEN');
   assert.equal(b.context.document.title, undefined);
 });
+
+ test('customer opens departure image and completion closes and clears it', async()=>{
+ const b=browser('?demo=1');vm.runInContext('startDeliveryDemo()',b.context);await new Promise(resolve=>setImmediate(resolve));b.get('[data-demo="start"]').click();assert.equal(b.get('photoButton').disabled,false);b.get('viewDeparture').click();assert.equal(b.get('photoDialog').open,true);assert.match(b.get('departureFull').src,/delivery-demo-photo/);b.get('[data-demo="complete"]').click();assert.equal(b.get('photoDialog').open,false);assert.equal(b.get('viewDeparture').disabled,true);
+ });

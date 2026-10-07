@@ -8,6 +8,7 @@ export const token = () => crypto.randomBytes(32).toString('hex');
 export const key = id => 'delivery:' + id;
 export const terminalKey = id => 'delivery-ended:' + id;
 export const locationKey = (id, generation) => `delivery-location:${id}:${generation}`;
+export const departureKey = (id, generation) => `delivery-departure:${id}:${generation}`;
 export const pausedKey = (id, generation) => `delivery-paused:${id}:${generation}`;
 export const startedKey = (id, generation) => `delivery-started:${id}:${generation}`;
 export function point(p) {
@@ -60,7 +61,7 @@ export async function createDelivery(order) {
   const [menu, config] = await Promise.all([getMenu(), getJSON(PRODUCTS_CONFIG_KEY)]);
   if (!ready() || !LIVE_MENU_SOURCES.has(menu.source) || !eligible(order, menu.data, configuredProductIds(config))) return null;
   const record = { orderId: order.orderId, customerToken: token(), createdAt: Date.now(),
-    expiresAt: Date.now() + TTL * 1000, destination: point(order.delivery?.coordinates), driver: null };
+    expiresAt: Date.now() + TTL * 1000, destination: point(order.delivery?.coordinates), departurePhotoRequired: true, driver: null };
   await write(key(order.orderId), record);
   return '/delivery.html#' + new URLSearchParams({ id: order.orderId, token: record.customerToken });
 }
@@ -68,7 +69,7 @@ export async function endDelivery(id, status = 'completed') {
   const d = await getJSON(key(id));
   if (!d || d.expiresAt <= Date.now()) return;
   await write(terminalKey(id), { status, at: Date.now() }, 14 * 86400);
-  if (d.driver) await write(locationKey(id, d.driver.token), null, 1);
+  if (d.driver) {await write(locationKey(id, d.driver.token), null, 1);await write(departureKey(id, d.driver.token), null, 1);}
 }
 export async function routeFor(location, destination) {
   if (!location || !destination || !process.env.GOOGLE_MAPS_API_KEY) return null;
