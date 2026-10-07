@@ -88,3 +88,9 @@ test('normal private tracking retains live lookup and does not initialize demo',
  test('customer opens departure image and completion closes and clears it', async()=>{
  const b=browser('?demo=1');vm.runInContext('startDeliveryDemo()',b.context);await new Promise(resolve=>setImmediate(resolve));b.get('[data-demo="start"]').click();assert.equal(b.get('photoButton').disabled,false);b.get('viewDeparture').click();assert.equal(b.get('photoDialog').open,true);assert.match(b.get('departureFull').src,/delivery-demo-photo/);b.get('[data-demo="complete"]').click();assert.equal(b.get('photoDialog').open,false);assert.equal(b.get('viewDeparture').disabled,true);
  });
+
+test('customer toolbar shows route ETA, hides removed pills, and never keeps a stale ETA',async()=>{
+ const b=browser('?demo=1');vm.runInContext('startDeliveryDemo()',b.context);await new Promise(resolve=>setImmediate(resolve));b.get('[data-demo="start"]').click();assert.match(b.get('arrivalTime').textContent,/\d+ min away/);assert.doesNotMatch(b.html,/class="you-pill"|id="routeBadge"|<span>DANK Delivery<\/span>/);
+ vm.runInContext('last.location.capturedAt=Date.now()-91000;updateAge()',b.context);assert.equal(b.get('arrivalTime').textContent,'ETA unavailable');
+ vm.runInContext('last.location=null;updateAge()',b.context);assert.equal(b.get('arrivalTime').textContent,'Waiting for rider');
+});

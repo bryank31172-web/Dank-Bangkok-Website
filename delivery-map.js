@@ -29,7 +29,7 @@ function createDeliveryMap(ids) {
       map.addLayer({id:'delivery-route-line',type:'line',source:'delivery-route',layout:{'line-cap':'round','line-join':'round'},paint:{'line-color':'#00b65b','line-width':7}});
     } else map.getSource('delivery-route').setData(geometry);
   }
-  function removeLines() {routePath = []; drawRoute(); el('badge').classList.add('hidden');}
+  function removeLines() {routePath = []; drawRoute(); el('badge')?.classList.add('hidden');}
   function stopMovement() {if(movementFrame!==undefined)cancelAnimationFrame(movementFrame);movementFrame=undefined;}
   function clear() {stopMovement();riderPosition=null;riderKind='';riderHeading=0;version++; last = null; errorText = ''; removeLines(); rider?.remove(); destination?.remove(); rider = destination = null; fitted = false;}
   function stale() {stopMovement();if(rider&&last?.location){riderPosition=[last.location.lng,last.location.lat];rider.setLngLat(riderPosition);}removeLines();}
@@ -53,6 +53,7 @@ function createDeliveryMap(ids) {
       map.addControl(new maplibregl.NavigationControl({showCompass:false}),'top-right');
       map.addControl({onAdd(){const a=document.createElement('a');a.className='maplibregl-ctrl elemnt-credit';a.href='https://elemnt.earth';a.target='_blank';a.rel='noopener noreferrer';a.textContent='Powered by ELEMNT';this.node=a;return a;},onRemove(){this.node.remove();}},'bottom-left');
       map.addControl({onAdd(){const b=document.createElement('button');b.type='button';b.className='maplibregl-ctrl delivery-theme';b.textContent='Dark map';b.setAttribute('aria-label','Switch to dark map');b.setAttribute('aria-pressed','false');b.addEventListener('click',()=>{mode=mode==='light'?'dark':'light';b.textContent=mode==='light'?'Dark map':'Light map';b.setAttribute('aria-label','Switch to '+(mode==='light'?'dark':'light')+' map');b.setAttribute('aria-pressed',String(mode==='dark'));map.setStyle(DELIVERY_STYLES[mode]);});this.node=b;return b;},onRemove(){this.node.remove();}},'top-left');
+      map.on('zoom',resizeScooter);
       map.on('style.load',()=>{drawRoute();map.resize();});
       map.on('error',()=>{errorText='Map tiles unavailable. Check your connection. Delivery controls still work.';el('note').textContent=errorText;});
       map.once('load',()=>{errorText='';resolve();});
@@ -68,9 +69,15 @@ function createDeliveryMap(ids) {
     content.querySelector('.delivery-location-pill').textContent=label||(home?'Your delivery':'Your rider');
     return new maplibregl.Marker({element:content,anchor:home?'bottom':'center'}).setLngLat([position.lng,position.lat]).addTo(map);
   }
+  function sizeScooter(content) {
+    const width=Math.max(36,Math.min(76,53.2*Math.pow(2,(map.getZoom()-14)/4)));
+    content.style.width=width+'px';content.style.height=(width*88/76)+'px';
+  }
+  function resizeScooter() {if(riderKind==='scooter'&&rider)sizeScooter(rider.getElement());}
   function movingRider(position) {
     const content=document.createElement('div');
     content.className='delivery-moving-rider';
+    sizeScooter(content);
     content.setAttribute('aria-label','Delivery rider on scooter');
     content.innerHTML='<img src="/assets/delivery-rider.svg" width="76" height="88" alt="" draggable="false">';
     return new maplibregl.Marker({element:content,anchor:'center',rotationAlignment:'map'}).setLngLat([position.lng,position.lat]).addTo(map);
@@ -112,9 +119,9 @@ function createDeliveryMap(ids) {
         moveRider(data.location,kind==='scooter'&&!data.stale);
       }else{stopMovement();rider?.remove();rider=null;riderPosition=null;riderKind='';}
       removeLines();const route=data.location?.route;
-      if(!data.stale&&route?.polyline){routePath=decodeDeliveryRoute(route.polyline);drawRoute();el('badge').textContent=(data.demo?'Demo route · ':'Best route · ')+route.minutes+' min'+(Number.isFinite(route.km)?' · '+route.km+' km':'');el('badge').classList.remove('hidden');}
+      if(!data.stale&&route?.polyline){routePath=decodeDeliveryRoute(route.polyline);drawRoute();if(el('badge')){el('badge').textContent=(data.demo?'Demo route · ':'Best route · ')+route.minutes+' min'+(Number.isFinite(route.km)?' · '+route.km+' km':'');el('badge').classList.remove('hidden');}}
       if(!fitted&&data.location){fit();fitted=true;}else if(!fitted&&data.destination)map.setCenter([data.destination.lng,data.destination.lat]);
-    } catch(error){if(current===version){errorText=/webgl/i.test(error.message||'')?'This browser cannot display the map. Rider details and photos still work.':'Map unavailable. Check your connection. Rider details and photos still work.';el('note').textContent=errorText;el('badge').classList.add('hidden');}}
+    } catch(error){if(current===version){errorText=/webgl/i.test(error.message||'')?'This browser cannot display the map. Rider details and photos still work.':'Map unavailable. Check your connection. Rider details and photos still work.';el('note').textContent=errorText;el('badge')?.classList.add('hidden');}}
   }
   return {update,clear,stale,fit,error:()=>errorText};
 }
