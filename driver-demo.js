@@ -12,7 +12,7 @@ function createRiderDemo(){
  const hash=new URLSearchParams(location.hash.slice(1));let session={id:hash.get('session'),token:hash.get('token')},data={},state={index:0,status:'preparing',photo:false,updatedAt:Date.now()};
  const ready=(async()=>{
    if(!session.id){const r=await fetch('/api/delivery-demo',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'create'}),signal:AbortSignal.timeout(10000)});const j=await r.json();if(!r.ok)throw Error(j.error||'Could not create demo');session={id:j.id,token:j.riderToken};history.replaceState(null,'','?demo=1#'+new URLSearchParams({session:j.id,token:j.riderToken}));
-     const link=document.createElement('a');link.className='btn secondary';link.href='/delivery.html?demo=1#'+new URLSearchParams({session:j.id,token:j.customerToken});link.target='_blank';link.rel='noopener noreferrer';link.textContent='Open linked customer demo';document.querySelector('.driver-controls').prepend(link);
+     const link=document.createElement('a');link.className='btn secondary';link.href='/delivery.html?demo=1#'+new URLSearchParams({session:j.id,token:j.customerToken});link.target='_blank';link.rel='noopener noreferrer';link.textContent='Open linked customer demo';document.querySelector('.rider-sheet-body').prepend(link);
    }
    try{const r=await fetch('/api/delivery?action=demo-route',{signal:AbortSignal.timeout(10000)});if(r.ok)data=await r.json();}catch{}
  })();ready.catch(()=>{});
