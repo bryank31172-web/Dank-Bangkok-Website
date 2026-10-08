@@ -27,6 +27,7 @@ function browser(search) {
   const html = readFileSync(new URL('../delivery.html', import.meta.url), 'utf8');
   const script = html.match(/<script>([\s\S]*?)<\/script>/)[1];
   vm.runInContext(readFileSync(new URL('../delivery-map.js', import.meta.url), 'utf8'), context);
+  context.createDeliveryMap = () => ({update:async()=>{},clear(){},fit(){},stale(){},error:()=>''});
   vm.runInContext(script, context);
   vm.runInContext(readFileSync(new URL('../delivery-demo.js', import.meta.url), 'utf8'), context);
   return {context, elements, requests, intervals, get, html};
@@ -37,7 +38,7 @@ test('demo walks through all 20 positions and completion without live order or G
   vm.runInContext('startDeliveryDemo()', b.context);
   await new Promise(resolve => setImmediate(resolve));
   assert.equal(vm.runInContext('last.status', b.context), 'preparing');
-  b.get('[data-demo="start"]').click();
+  b.get('[data-demo="start"]').click(); await new Promise(resolve => setImmediate(resolve));
   assert.equal(vm.runInContext('last.status', b.context), 'on_the_way');
   const positions = [vm.runInContext('last.location.lng', b.context)];
   for (let i = 1; i < 20; i++) {b.get('[data-demo="next"]').click(); positions.push(vm.runInContext('last.location.lng', b.context));}
@@ -64,7 +65,7 @@ test('demo walks through all 20 positions and completion without live order or G
 test('accelerated demo advances continuously and stops movement when completed', async () => {
   const b = browser('?demo=1'); vm.runInContext('startDeliveryDemo()', b.context);
   await new Promise(resolve => setImmediate(resolve));
-  b.get('[data-demo="start"]').click();
+  b.get('[data-demo="start"]').click(); await new Promise(resolve => setImmediate(resolve));
   const movement = [...b.intervals.values()].find(x => x.delay === 2500);
   assert.ok(movement); movement.fn();
   assert.match(b.get('#demoProgress').textContent, /2 of 20/);
