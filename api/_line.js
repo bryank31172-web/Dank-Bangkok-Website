@@ -1,6 +1,6 @@
 /* Shared LINE Messaging API helper for the DANK website.
    Used for (1) staff alerts pushed to LINE and (2) the LINE Official Account
-   AI channel (api/line-webhook.js).
+   dispatch and support channel (api/line-webhook.js).
 
    Env:
      LINE_CHANNEL_ACCESS_TOKEN  — Messaging API channel access token

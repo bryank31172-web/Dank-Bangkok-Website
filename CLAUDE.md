@@ -252,15 +252,12 @@ As of 14 Aug 2026, `/api/health` reports every wired flag true and an empty
    order notifications is switched on. If Shopify's schema ever refuses one of
    the decorative fields (`sourceName`, discount, shipping line, address), the
    helper retries once with a plain order rather than losing the sale.
-6. Not set, so their features are dark: an AI key (AI chat and the LINE
-   budtender — `api/_ai.js` accepts `GEMINI_API_KEY`, `GROQ_API_KEY`,
-   `OPENROUTER_API_KEY`, `DEEPSEEK_API_KEY`, `OPENAI_API_KEY` or
-   `XAI_API_KEY`, first one found wins, free tiers first; `/api/health` →
-   `ai.provider` names the one actually live),
+6. External AI chatbot calls, LINE AI replies, group logging and summaries
+   have been removed. Built-in website replies and staff handoff remain.
+   Optional integrations include
    `TELEGRAM_BOT_TOKEN`/`TELEGRAM_CHAT_ID` and `RESEND_API_KEY` (order
    notifications), `OMISE_*`/`TWOC2P_*`/`GBP_SECRET_KEY` (card payments).
-   The storefront answers ~55 common questions on its own with no key at
-   all, so a key only buys the long, unusual sentences.
+   The storefront answers common questions locally with no AI key.
 
 Things for Bryan to fix in the POS rather than in code:
 
@@ -318,7 +315,7 @@ Done, kept here so nobody redoes them:
   nothing on the way in rounded it. `api/pos-feed.js`, `api/_menu.js` and
   `food.html` all round money to the baht at the boundary now. Stock is
   deliberately not rounded: flower stock is legitimately fractional grams.
-- **`ai` block in `api/health.js`** — plus a `wired` block (booleans for every
+- **Health diagnostics in `api/health.js`** — a `wired` block (booleans for every
   key the site needs) and a `warnings` list that says out loud when Upstash is
   missing, since nothing else about the site looks broken when it is.
 - **Four SKUs sharing two photographs** — stale as of Aug 2026: `ztupid`,

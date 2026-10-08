@@ -2102,7 +2102,6 @@ const CONFIG = {
   // they fail gracefully and the built-in menu/engine takes over.
   apiUrl:"/api/products",      // live menu from StoreHub (via api/products.js)
   orderWebhook:"/api/order",   // orders → email/POS forward (api/order.js)
-  aiEndpoint:"/api/chat",      // Grok brain for DANK AI (api/chat.js)
   handoffUrl:"/api/handoff",   // chat transfer → staff notification (api/handoff.js)
   threadUrl:"/api/thread",     // live customer↔staff chat threads (api/thread.js)
   aiName:"น้องแดงค์",
@@ -5171,20 +5170,11 @@ function escapeHtml(s){ return esc(s); }
 
 async function respond(q){
   aiQuickOwned=false;
-  // If a real AI endpoint is configured, use it for the freeform brain; else built-in.
-  let handled=builtinRespond(q);
+  // Built-in replies and staff handoff; no external AI requests.
+  const handled=builtinRespond(q);
   aiTyping(false);
   if(handled){ failStreak=0; avatarReply(); afterRespond(); return; }
-  if(CONFIG.aiEndpoint && location.protocol!=="file:"){
-    aiTyping(true);
-    try{
-      const hist=aiHistory.slice(-8).map(m=>({role:m.role,text:String(m&&m.html||"").replace(/<[^>]*>/g,"")}));
-      const r=await fetch(CONFIG.aiEndpoint,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({message:q,context:aiContext(),history:hist})});
-      const j=await r.json(); aiTyping(false);
-      const reply=escapeHtml(j.reply||"").replace(/\n/g,"<br>");
-      if(reply){ failStreak=0; aiPush("ai",reply); avatarReply(); } else { aiMiss(q); }
-    }catch(e){ aiTyping(false); aiMiss(q); }
-  }else{ aiMiss(q); }
+  aiMiss(q);
   afterRespond();
 }
 function aiMiss(q){
@@ -5217,10 +5207,6 @@ function afterRespond(){
 }
 function defaultQuick(){ const th=(document.documentElement.lang||"").slice(0,2)==="th"; return cart.length?(th?["สั่งเลย","ดูอย่างอื่น","เรื่องจัดส่ง","คุยกับทีมงาน"]:["Checkout now","Something else","Delivery info","Talk to a human"]):(th?["ช่วยให้นอนหลับ","ตื่นตัวมีพลัง","ตัวแรงสุด","ถูกที่สุด","ส่งไหม"]:["Something for sleep","For energy","Most potent","Cheapest","Do you deliver?"]); }
 
-function aiContext(){
-  const menu=shopData().map(p=>`${p.name} | ${p.category} | ${p.type} | THC ${p.thcLabel||p.thc} | ${money(listPrice(p))}${!isFlower(p)&&p.member?` (member ${money(p.member)})`:''} | ${(p.effects||[]).join(", ")}`).join("\n");
-  return `You are DANK AI, a friendly cannabis budtender for ${CONFIG.brand} in Bangkok. Help customers pick products and place an order (delivery or pickup). Hours: ${CONFIG.hours}. Branches: ${CONFIG.branches.filter(b=>b!=='All branches').join(", ")}. Delivery: ${CONFIG.deliveryNote}. Payments: ${CONFIG.payments.join(", ")}. Reply in the customer's language. MENU:\n${menu}`;
-}
 function fallbackText(q){
   const th=TH(q);
   return th
@@ -5229,8 +5215,7 @@ function fallbackText(q){
 }
 
 /* ---- Built-in intent engine ----
-   This is what answers the shopper when no AI key is configured, and it is
-   also the first pass when one is, because "what should I get?" deserves a
+   This answers shoppers locally using the live menu, because "what should I get?" deserves a
    product card with a price and an Add button, not a paragraph.
 
    It used to be a cascade of plain substring tests, and a substring is the
@@ -5593,7 +5578,7 @@ function aiCards(list,intro,br,th){
 }
 
 /* The recommendation path, reachable both from an intent match and as the
-   last resort when the freeform brain has nothing. Returns false when the
+   a fallback for built-in replies. Returns false when the
    sentence gave us nothing to go on, so the caller can keep looking. */
 function aiSuggest(q,force){
   const br=aiBrief(q), th=TH(q);
@@ -5782,7 +5767,7 @@ function builtinRespond(q){
     }
   }
 
-  return false; // let the freeform brain (or the last-resort suggestion) take it
+  return false; // show the fallback reply and offer staff handoff
 }
 
 /* Pull the thing out of "do you have X?" - but only when X could plausibly

@@ -1,21 +1,8 @@
-/* POST /api/line-webhook — your LINE Official Account, powered by the website.
-   Does three jobs from one endpoint:
-     1) 1:1 chats  → น้องแดงค์ AI budtender answers from your live menu + handoff.
-     2) Groups     → logs every message (Bryan AI monitor) for the daily summary.
-     3) "สรุป"      → typed in any chat/group, replies an instant Thai summary.
-
-   Set this URL in LINE Developers Console → Messaging API → Webhook URL:
-     https://www.dankbangkok.com/api/line-webhook
-   Incoming events are accepted only when the LINE signature is valid.
-
-   Env: LINE_CHANNEL_ACCESS_TOKEN, LINE_CHANNEL_SECRET, LINE_TO (staff),
-        an AI key (see _ai.js), MONITORED_GROUP_IDS (optional). */
+/* POST /api/line-webhook — verified LINE dispatch, delivery ETA and staff handoff.
+   No external AI replies, group message logging or summaries.
+   Env: LINE_CHANNEL_ACCESS_TOKEN, LINE_CHANNEL_SECRET, LINE_TO. */
 import { lineReply, notifyStaffLine, getLineProfile, verifyLineSignature } from "./_line.js";
-import { getJSON, setJSON } from "./_store.js";
-import { getMenu } from "./_menu.js";
-import { logMessage, isMonitored, getMessagesSince, summarize } from "./_linelog.js";
 import { computeEta, etaText, routeConfigured } from "./_route.js";
-import { aiChat, aiOn } from "./_ai.js";
 import {createDeliveryLineHandler} from "./_delivery-line.js";
 const deliveryLine = createDeliveryLineHandler();
 
@@ -32,47 +19,6 @@ function readRaw(req) {
     req.on("end", () => resolve(d));
     req.on("error", () => resolve(""));
   });
-}
-
-async function menuContext() {
-  try {
-    const m = await getMenu();
-    const items = (m.data || []).slice(0, 40).map((p) => {
-      const price = p.price ?? p.priceTiers?.[0]?.price;
-      return `- ${p.name}${p.type ? " (" + p.type + ")" : ""}${p.thcLabel ? " THC " + p.thcLabel : ""}${price ? " · from ฿" + price : ""}`;
-    });
-    return `You are น้องแดงค์ (Nong Dank), the friendly AI budtender for DANK Cannabis Club, Bangkok.\nMENU (live):\n${items.join("\n")}`;
-  } catch {
-    return "You are น้องแดงค์ (Nong Dank), the friendly AI budtender for DANK Cannabis Club, Bangkok.";
-  }
-}
-
-async function grokReply(userId, message) {
-  if (!aiOn()) return "";
-  const histKey = "linehist:" + userId;
-  const history = (await getJSON(histKey)) || [];
-  const context = await menuContext();
-  const system = `${context}
-
-Rules:
-- Warm, concise (2-4 sentences), salesy-but-honest. Help them choose and order.
-- Reply in the customer's language (Thai or English).
-- Only recommend items from the MENU; quote real ฿ prices.
-- No medical claims; 20+ only. To buy: send them to https://www.dankbangkok.com or say staff will help.`;
-  const messages = [
-    { role: "system", content: system },
-    ...history.slice(-8),
-    { role: "user", content: String(message).slice(0, 1000) },
-  ];
-  try {
-    const reply = await aiChat(messages, { maxTokens: 300, temperature: 0.6 });
-    if (reply) {
-      history.push({ role: "user", content: String(message).slice(0, 500) });
-      history.push({ role: "assistant", content: reply.slice(0, 500) });
-      await setJSON(histKey, history.slice(-16), 60 * 60 * 24);
-    }
-    return reply;
-  } catch (e) { console.error("LINE AI fail:", e.message); return ""; }
 }
 
 export default async function handler(req, res) {
@@ -92,8 +38,7 @@ export default async function handler(req, res) {
     if (await deliveryLine(ev)) handledDeliveryEvents.add(ev);
   }
 
-  // Existing chat and monitoring flow.
-  res.status(200).json({ ok: true });
+  // Finish retained customer support before acknowledging the webhook.
 
   for (const ev of body.events || []) {
     try {
@@ -104,19 +49,9 @@ export default async function handler(req, res) {
       const sourceId = src.groupId || src.roomId || src.userId;
       if (!sourceId) continue;
 
-      if (!isMonitored(sourceType, sourceId)) continue;
-
       const uid = src.userId || null;
       let displayName = null;
       if (uid) { const prof = await getLineProfile(uid); displayName = prof?.displayName || null; }
-
-      // 1) log every message (for the daily summary / monitor)
-      await logMessage({
-        sourceType, sourceId, userId: uid, displayName,
-        type: ev.message.type,
-        text: ev.message.type === "text" ? ev.message.text : null,
-        at: ev.timestamp,
-      });
 
       // 1b) LOCATION pin in a 1:1 chat → reply an estimated delivery time
       if (ev.message.type === "location" && sourceType === "user") {
@@ -133,16 +68,7 @@ export default async function handler(req, res) {
       if (ev.message.type !== "text") continue;
       const text = ev.message.text.trim();
 
-      // 2) "สรุป" (optionally "สรุป 6") → instant summary, replied in that chat
-      if (/^สรุป(\s+\d+)?$/.test(text)) {
-        const hrs = text.match(/\d+/) ? parseInt(text.match(/\d+/)[0], 10) : 24;
-        const msgs = await getMessagesSince(sourceId, Date.now() - hrs * 3600 * 1000);
-        const summary = await summarize(msgs, { sourceLabel: sourceType === "group" ? "กลุ่มนี้" : "แชทนี้" });
-        await lineReply(ev.replyToken, `📋 สรุปย้อนหลัง ${hrs} ชม.\n\n${summary}`);
-        continue;
-      }
-
-      // 3) In groups/rooms we only monitor — don't AI-reply to every message.
+      // Non-dispatch group messages need no automated response.
       if (sourceType === "group" || sourceType === "room") continue;
 
       // 3b) Delivery-time question → ask them to share their location pin
@@ -151,7 +77,7 @@ export default async function handler(req, res) {
         continue;
       }
 
-      // 4) 1:1 chat = customer support. Handoff on request, else น้องแดงค์ AI.
+      // Private customer chats retain staff handoff and a fixed menu reply.
       if (HANDOFF_RE.test(text)) {
         await lineReply(ev.replyToken, "รับทราบค่ะ 🙏 กำลังเรียกทีมงานให้มาช่วยดูแลนะคะ เดี๋ยวมีคนตอบเร็ว ๆ นี้ค่ะ\n(Connecting you to our team — someone will reply shortly.)");
         await notifyStaffLine(`🙋 LINE handoff — customer needs staff\nFrom: ${displayName || sourceId}\nThey said: "${text}"\nReply to them in your LINE OA chat.`);
@@ -166,12 +92,11 @@ export default async function handler(req, res) {
         continue;
       }
 
-      const reply = await grokReply(sourceId, text);
       await lineReply(
         ev.replyToken,
-        reply ||
-          "สวัสดีค่ะ 🌿 หนูน้องแดงค์เองค่ะ! ดูเมนูและสั่งได้ที่ www.dankbangkok.com หรือพิมพ์ \"ติดต่อคน\" เพื่อคุยกับทีมงานค่ะ\n(Browse & order at www.dankbangkok.com, or type \"staff\" to reach our team.)"
+        "สวัสดีค่ะ 🌿 หนูน้องแดงค์เองค่ะ! ดูเมนูและสั่งได้ที่ www.dankbangkok.com หรือพิมพ์ \"ติดต่อคน\" เพื่อคุยกับทีมงานค่ะ\n(Browse & order at www.dankbangkok.com, or type \"staff\" to reach our team.)"
       );
     } catch (e) { console.error("LINE event error:", e.message); }
   }
+  return res.status(200).json({ ok: true });
 }
