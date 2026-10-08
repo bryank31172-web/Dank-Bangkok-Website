@@ -1,0 +1,11 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>Mobile delivery preview · DANK BKK</title>
+<style>*{box-sizing:border-box}body{margin:0;background:#e9efeb;color:#14251c;font:14px/1.4 system-ui,sans-serif}.preview{width:430px;max-width:100%;margin:0 auto;padding:12px 20px}h1{font-size:18px;margin:0 0 4px}.description{font-size:12px;margin:0 0 10px}.controls{display:flex;gap:8px;margin-bottom:12px}button{border:0;border-radius:20px;background:#008f4b;color:white;padding:9px 16px;font-weight:700;cursor:pointer}button:disabled{opacity:.45;cursor:default}.phone{width:390px;max-width:100%;height:780px;background:white;border:1px solid #cad7cd;border-radius:24px;overflow:hidden;box-shadow:0 8px 30px #16372720}iframe{width:100%;height:100%;border:0;display:block}</style></head>
+<body><main class="preview"><h1>Mobile delivery tracking</h1><p class="description">Accelerated simulated rider · real Google Maps · 15.1 km route</p><div class="controls"><button id="start" disabled>Start animation</button><button id="reset" disabled>Restart</button></div><div class="phone"><iframe id="phone" title="Mobile customer delivery map" src="/delivery.html?demo=1&route=pattanakarn"></iframe></div></main>
+<script>
+const phone=document.getElementById('phone'),start=document.getElementById('start'),reset=document.getElementById('reset');
+phone.addEventListener('load',()=>{const doc=phone.contentDocument;const style=doc.createElement('style');style.textContent='.demo-panel{display:none!important}.demo-panel ~ .layout{height:auto}';doc.head.appendChild(style);});
+function button(action){return phone.contentDocument?.querySelector('[data-demo="'+action+'"]')}
+start.addEventListener('click',()=>button('start')?.click());reset.addEventListener('click',()=>button('reset')?.click());
+setInterval(()=>{const b=button('start');start.disabled=!b||b.disabled;reset.disabled=!button('reset')},250);
+</script></body></html>
