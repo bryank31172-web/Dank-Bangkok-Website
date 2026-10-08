@@ -110,21 +110,31 @@ function createDeliveryMap(ids) {
   }
   function pin(point, home) {
     class DeliveryPin extends google.maps.OverlayView {
-      constructor() {super();this.position = point;this.content = document.createElement('div');
-        this.content.className = home ? 'delivery-destination-pin' : 'delivery-rider-pin';
+      constructor() {super();this.position = point;this.headingOrigin = point;this.heading = 0;this.content = document.createElement('div');
+        this.content.className = home ? 'delivery-destination-pin' : 'delivery-moving-rider';
         this.content.style.position = 'absolute';this.content.style.pointerEvents = 'none';
         this.content.style.transform = home ? 'translate(-50%,-100%)' : 'translate(-50%,-50%)';
         this.content.setAttribute('aria-label', home ? 'Delivery destination' : 'Delivery rider');
         this.content.innerHTML = home
           ? '<svg viewBox="0 0 36 48" aria-hidden="true"><path d="M18 2C8 2 2 9 2 18c0 12 16 27 16 27s16-15 16-27C34 9 28 2 18 2Z" fill="#ef6152" stroke="white" stroke-width="3"/><circle cx="18" cy="18" r="6" fill="white"/></svg>'
-          : '<svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2.3" aria-hidden="true"><circle cx="7" cy="24" r="4"/><circle cx="25" cy="24" r="4"/><path d="M7 24h12l6-12h-5M18 11l-3 7H9l-2 6m12 0 3-8M6 15h8M22 8h4l2 4"/><circle cx="16" cy="5" r="2.5"/><path d="m15 10-4 4 7 4"/></svg>';
+          : '<img src="/assets/delivery-rider.svg" width="76" height="88" alt="" draggable="false">';
         this.setMap(map);
       }
       onAdd() {this.getPanes().overlayMouseTarget.appendChild(this.content);}
       draw() {const pixel = this.getProjection()?.fromLatLngToDivPixel(new google.maps.LatLng(this.position));
+        if (!home) {const width = Math.max(32.4, Math.min(68.4, 47.88 * Math.pow(2, (map.getZoom() - 14) / 4)));
+          this.content.style.width = width + 'px';this.content.style.height = (width * 88 / 76) + 'px';
+          this.content.style.transform = 'translate(-50%,-50%) rotate(' + this.heading + 'deg)';}
         if (pixel) {this.content.style.left = pixel.x + 'px';this.content.style.top = pixel.y + 'px';}}
       onRemove() {this.content.remove();}
-      setPosition(position) {this.position = position;this.draw();}
+      setPosition(position) {
+        if (!home && deliveryDistance(this.headingOrigin, position) > 3) {
+          const dx = (position.lng - this.headingOrigin.lng) * Math.cos(this.headingOrigin.lat * Math.PI / 180);
+          this.heading = Math.atan2(dx, position.lat - this.headingOrigin.lat) * 180 / Math.PI;
+          this.headingOrigin = position;
+        }
+        this.position = position;this.draw();
+      }
     }
     return new DeliveryPin();
   }

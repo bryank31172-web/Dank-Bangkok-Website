@@ -38,7 +38,7 @@ test('Google raster map draws road geometry and uses the configured map ID',asyn
   for(const file of ['delivery.html','driver-delivery.html'])assert.doesNotMatch(readFileSync(new URL('../'+file,import.meta.url),'utf8'),/maplibre|pmtiles|unpkg/);
 });
 test('rider moves continuously around route bends and repeated polling does not interrupt motion',async()=>{
-  const f=browser();await f.map.update(f.data());const rider=f.pins.find(p=>p.content.className==='delivery-rider-pin');
+  const f=browser();await f.map.update(f.data());const rider=f.pins.find(p=>p.content.className==='delivery-moving-rider');
   await f.map.update({...f.data(),location:{...f.data().location,...f.path.at(-1),capturedAt:46000}});
   assert.equal(f.frames.size,1);f.tick(4000);assert.ok(rider.position.lat>13.73&&rider.position.lat<13.735);assert.ok(Math.abs(rider.position.lng-100.605)<0.00001);
   await f.map.update({...f.data(),location:{...f.data().location,...f.path.at(-1),capturedAt:46000}});assert.equal(f.frames.size,1);
@@ -47,14 +47,14 @@ test('rider moves continuously around route bends and repeated polling does not 
 test('stale and paused updates cancel animation and remove visible route/location',async()=>{
   const f=browser();await f.map.update(f.data());await f.map.update({...f.data(),location:{...f.data().location,...f.path.at(-1),capturedAt:46000}});f.map.stale();
   assert.equal(f.frames.size,0);assert.ok(f.lines.every(p=>p.map===null));assert.equal(f.el('badge').hidden,true);
-  await f.map.update({...f.data(),location:null,stale:true});assert.ok(f.pins.filter(p=>p.content.className==='delivery-rider-pin').every(p=>p.map===null));
+  await f.map.update({...f.data(),location:null,stale:true});assert.ok(f.pins.filter(p=>p.content.className==='delivery-moving-rider').every(p=>p.map===null));
 });
 test('completion during Google loading cannot restore private coordinates',async()=>{
   const f=browser(true),p=f.map.update(f.data());f.map.clear();await f.finish();await p;assert.equal(f.pins.length,0);assert.equal(f.el('badge').hidden,true);
 });
 test('overlapping updates display only the newest position',async()=>{
   const f=browser(true),p=f.map.update(f.data()),q=f.map.update({...f.data(),location:{...f.data().location,lat:13.74}});await f.finish();await Promise.all([p,q]);
-  assert.equal(f.pins.find(p=>p.content.className==='delivery-rider-pin').position.lat,13.74);
+  assert.equal(f.pins.find(p=>p.content.className==='delivery-moving-rider').position.lat,13.74);
 });
 test('completion stops every animation frame and removes both pins',async()=>{
   const f=browser();await f.map.update(f.data());await f.map.update({...f.data(),location:{...f.data().location,...f.path.at(-1),capturedAt:46000}});await f.map.update({status:'completed'});f.tick(4000);
