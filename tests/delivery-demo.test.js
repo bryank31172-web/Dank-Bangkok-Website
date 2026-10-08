@@ -22,8 +22,8 @@ function browser(search) {
   const document = {hidden: false, head: new Element(), createElement: () => new Element(), getElementById: get, querySelector: get, addEventListener() {}};
   const context = vm.createContext({document, location: {search, hash: '#id=FAKE-ORDER&token=FAKE-TOKEN'}, URLSearchParams, AbortSignal, Date, console, Image: Element,
     setInterval(fn, delay) {const id = ++counter; intervals.set(id, {fn, delay}); return id;}, clearInterval(id) {intervals.delete(id);},
-    fetch: async (url, options) => {requests.push({url, options}); return {ok: true, json: async () => url === '/api/maps-config' ? {key: 'test-browser-key', mapId: 'test-map'} : url === '/api/delivery?action=demo-route' ? {destination:{lat:43.252,lng:-126.453},destinationLabel:'Sample destination',route:{polyline:'_p~iF~ps|U_ulLnnqC_mqNvxq`@',minutes:10,km:5}} : {orderId: 'FAKE-ORDER', status: 'preparing', items: [], total: 0}};}});
-  context.window = context;
+    fetch: async (url, options) => {requests.push({url, options}); return {ok: true, json: async () => url === '/api/maps-config' ? {key: 'test-browser-key', mapId: 'test-map'} : url.startsWith('/api/delivery?action=demo-route') ? {destination:{lat:43.252,lng:-126.453},destinationLabel:'Sample destination',route:{polyline:'_p~iF~ps|U_ulLnnqC_mqNvxq`@',minutes:10,km:5}} : {orderId: 'FAKE-ORDER', status: 'preparing', items: [], total: 0}};}});
+  context.google = {maps:{Map:class{},RenderingType:{RASTER:'RASTER'},ControlPosition:{RIGHT_CENTER:0}}}; context.window = context; context.addEventListener = () => {}; context.setTimeout = setTimeout; context.clearTimeout = clearTimeout;
   const html = readFileSync(new URL('../delivery.html', import.meta.url), 'utf8');
   const script = html.match(/<script>([\s\S]*?)<\/script>/)[1];
   vm.runInContext(readFileSync(new URL('../delivery-map.js', import.meta.url), 'utf8'), context);
@@ -57,19 +57,19 @@ test('demo walks through all 20 positions and completion without live order or G
   assert.equal(vm.runInContext('last.status', b.context), 'preparing');
   // Visibility changes and explicit refreshes must never request live delivery data.
   await vm.runInContext('poll()', b.context);
-  assert.deepEqual(b.requests.map(r => r.url), ['/api/delivery?action=demo-route']);
+  assert.deepEqual(b.requests.filter(r => r.url.startsWith('/api/delivery')).map(r => r.url), ['/api/delivery?action=demo-route&route=siam']);
   assert.equal(b.requests[0].options.method, undefined);
 });
 
-test('demo moves every 45 seconds and stops movement when completed', async () => {
+test('accelerated demo advances continuously and stops movement when completed', async () => {
   const b = browser('?demo=1'); vm.runInContext('startDeliveryDemo()', b.context);
   await new Promise(resolve => setImmediate(resolve));
   b.get('[data-demo="start"]').click();
-  const movement = [...b.intervals.values()].find(x => x.delay === 45000);
+  const movement = [...b.intervals.values()].find(x => x.delay === 2500);
   assert.ok(movement); movement.fn();
   assert.match(b.get('#demoProgress').textContent, /2 of 20/);
   b.get('[data-demo="complete"]').click();
-  assert.equal([...b.intervals.values()].some(x => x.delay === 45000), false);
+  assert.equal([...b.intervals.values()].some(x => x.delay === 2500), false);
   movement.fn(); assert.equal(vm.runInContext('last.status', b.context), 'completed');
 });
 

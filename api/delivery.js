@@ -8,7 +8,7 @@ import {createRidersHandler} from './_delivery-line.js';
 // Dependency injection keeps lifecycle/security tests isolated from real orders.
 export function createHandler(deps = {}) {
   const d = { ...delivery, get: getJSON, permission: requirePermission, rate: requireRate, ...deps };
-  let demoRouteCache, demoRouteFlight;
+  const demoRoutes = new Map(), demoFlights = new Map();
   return async function handler(req, res) {
     res.setHeader('Cache-Control', 'private, no-store');
     res.setHeader('Referrer-Policy', 'no-referrer');
@@ -19,13 +19,22 @@ export function createHandler(deps = {}) {
       if (req.method !== 'GET') return res.status(405).json({error: 'GET only'});
       if (!(await d.rate(req, res, 'delivery-demo-route', 10, 300))) return;
       res.setHeader('Cache-Control', 'public, max-age=300, s-maxage=300');
-      // Fixed public locations only; no order, private driver token or device GPS.
-      const origin = {lat: 13.7108, lng: 100.5375}, destination = {lat: 13.7463, lng: 100.5346};
-      if (!demoRouteCache || Date.now() - demoRouteCache.at > (demoRouteCache.route ? 300000 : 30000)) {
-        if (!demoRouteFlight) demoRouteFlight = d.routeFor(origin, destination).then(route => (demoRouteCache = {route, at: Date.now()})).catch(() => (demoRouteCache = {route: null, at: Date.now()})).finally(() => {demoRouteFlight = null;});
-        await demoRouteFlight;
+      // Only these fixed public routes are allowed; never read orders or device GPS.
+      const preset = b.route || 'siam';
+      if (!['siam', 'pattanakarn'].includes(preset)) return res.status(400).json({error: 'Unknown demo route'});
+      const origin = preset === 'pattanakarn' ? {lat: 13.739853, lng: 100.603437} : {lat: 13.7108, lng: 100.5375};
+      const destination = preset === 'pattanakarn' ? {lat: 13.7216546, lng: 100.7152376} : {lat: 13.7463, lng: 100.5346};
+      let cached = demoRoutes.get(preset);
+      if (!cached || Date.now() - cached.at > (cached.route ? 300000 : 30000)) {
+        if (!demoFlights.has(preset)) demoFlights.set(preset, d.routeFor(origin, destination)
+          .then(route => demoRoutes.set(preset, {route, at: Date.now()}))
+          .catch(() => demoRoutes.set(preset, {route: null, at: Date.now()}))
+          .finally(() => demoFlights.delete(preset)));
+        await demoFlights.get(preset);cached = demoRoutes.get(preset);
       }
-      return res.status(200).json({origin, destination, destinationLabel: 'Siam Paragon', route: demoRouteCache.route});
+      return res.status(200).json({origin, destination,
+        ...(preset === 'pattanakarn' ? {originLabel: 'DANK Pattanakarn · 223 Phatthanakan Rd, Suan Luang, Bangkok 10250'} : {}),
+        destinationLabel: preset === 'pattanakarn' ? 'Lumpini Ville On Nut–Latkrabang' : 'Siam Paragon', route: cached.route});
     }
     if (b.action === 'setup') return createSetupHandler(deps)(req, res);
     if (b.action === 'riders') return createRidersHandler(deps)(req, res);

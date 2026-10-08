@@ -79,7 +79,7 @@ export async function routeFor(location, destination) {
       headers: { 'Content-Type': 'application/json', 'X-Goog-Api-Key': process.env.GOOGLE_MAPS_API_KEY,
         'X-Goog-FieldMask': 'routes.duration,routes.distanceMeters,routes.polyline.encodedPolyline' },
       body: JSON.stringify({ origin: waypoint(location), destination: waypoint(destination),
-        travelMode: process.env.DELIVERY_MODE === 'TWO_WHEELER' ? 'TWO_WHEELER' : 'DRIVE',
+        travelMode: 'TWO_WHEELER',
         routingPreference: 'TRAFFIC_AWARE', computeAlternativeRoutes: false })
     });
     if (!r.ok) return null;
