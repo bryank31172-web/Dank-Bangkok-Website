@@ -14,7 +14,7 @@ function startDeliveryDemo() {
   let state = 'preparing';
   function display() {
     const moving = state === 'on_the_way';
-    const remaining = roadRoute ? {...roadRoute, polyline: encodeDeliveryRoute([path[index], ...fullPath.slice(Math.floor(index * (fullPath.length - 1) / 19) + 1)]), minutes: Math.max(1, Math.round(roadRoute.minutes * (1 - index / 20))), km: Math.round(roadRoute.km * (1 - index / 20) * 10) / 10} : null;
+    const remaining = roadRoute ? {...roadRoute, polyline: encodeDeliveryRoute([path[index], ...fullPath.slice(Math.floor(index * (fullPath.length - 1) / 19) + 1)]), minutes: Math.max(0, Math.round(roadRoute.minutes * (1 - index / 19))), km: Math.round(roadRoute.km * (1 - index / 19) * 10) / 10} : null;
     render({orderId: 'DEMO-ONLY', status: state, demo: true, destinationLabel, completedAt: state === 'completed' ? Date.now() : null,
       destination: state === 'completed' ? null : destination,
       location: moving ? {...path[index], capturedAt: Date.now(), route: remaining} : null,
