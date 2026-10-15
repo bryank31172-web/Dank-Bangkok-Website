@@ -57,9 +57,9 @@ h2{font-size:18px;margin:26px 0 4px}
 
 <section id="loginView" class="card login" hidden>
   <h1>เข้าสู่ระบบ</h1>
-  <p class="hint">ใช้อีเมลและรหัสผ่าน Owner เดียวกับหน้าร้าน</p>
+  <p class="hint">ใช้ชื่อผู้ใช้ของ Blog editor (หรืออีเมล Owner ของหน้าร้าน)</p>
   <form id="loginForm">
-    <label for="email">อีเมล</label><input id="email" type="email" autocomplete="username" required>
+    <label for="email">ชื่อผู้ใช้</label><input id="email" type="text" autocomplete="username" autocapitalize="none" spellcheck="false" required>
     <label for="password">รหัสผ่าน</label><input id="password" type="password" autocomplete="current-password" required>
     <div class="err" id="loginErr"></div>
     <button class="btn btn-primary" style="width:100%;margin-top:8px" type="submit">เข้าสู่ระบบ</button>
@@ -124,7 +124,7 @@ h2{font-size:18px;margin:26px 0 4px}
 
 <script>
 (function(){
-  const TOKEN_KEY = "dank_admintok";
+  const TOKEN_KEY = "dank_blogtok";
   const $ = (id) => document.getElementById(id);
   let token = "";
   try { token = localStorage.getItem(TOKEN_KEY) || ""; } catch (e) {}
@@ -133,7 +133,7 @@ h2{font-size:18px;margin:26px 0 4px}
   async function api(body) {
     const r = await fetch("/api/admin", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ token, ...body }) });
     const data = await r.json().catch(() => ({}));
-    if (r.status === 401 && body.action !== "login") { showLogin("หมดเวลาเข้าสู่ระบบ — กรุณาเข้าใหม่"); throw new Error("401"); }
+    if (r.status === 401 && !/login$/.test(body.action)) { showLogin("หมดเวลาเข้าสู่ระบบ — กรุณาเข้าใหม่"); throw new Error("401"); }
     if (!r.ok) throw new Error(data.error || ("HTTP " + r.status));
     return data;
   }
@@ -301,10 +301,11 @@ h2{font-size:18px;margin:26px 0 4px}
   $("loginForm").addEventListener("submit", async (e) => {
     e.preventDefault(); $("loginErr").textContent = "";
     try {
-      const data = await api({ action: "login", email: $("email").value, password: $("password").value });
+      const id = $("email").value.trim();
+      const data = await api(id.includes("@") ? { action: "login", email: id, password: $("password").value } : { action: "blog-login", username: id, password: $("password").value });
       token = data.token; try { localStorage.setItem(TOKEN_KEY, token); } catch (x) {}
       $("password").value = ""; await loadList();
-    } catch (x) { $("loginErr").textContent = x.message === "wrong email or password" ? "อีเมลหรือรหัสผ่านไม่ถูกต้อง" : "เข้าสู่ระบบไม่สำเร็จ: " + x.message; }
+    } catch (x) { $("loginErr").textContent = /^wrong (email|username)/.test(x.message) ? "อีเมลหรือรหัสผ่านไม่ถูกต้อง" : "เข้าสู่ระบบไม่สำเร็จ: " + x.message; }
   });
 
   if (token) loadList().catch(() => {}); else showLogin();
