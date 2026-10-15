@@ -18,7 +18,7 @@ const PRECACHE = [
 ];
 
 const NEVER_CACHE = [
-  /^\/(?:delivery|driver-delivery)(?:\.html|\/|$)/,
+  /^\/(?:delivery|driver-delivery|delivery-create)(?:\.html|\/|$)/,
   /^\/api\//,
   /^\/checkout(?:\/|$)/,
   /^\/staff(?:\.html|\/|$)/,

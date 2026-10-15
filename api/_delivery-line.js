@@ -4,6 +4,7 @@ import {listAccounts} from './_staff-accounts.js';
 import {hasPermission, requirePermission} from './_auth.js';
 import {lineMessages} from './_line.js';
 import * as delivery from './_delivery.js';
+import {liffUrl} from './_liff.js';
 
 export const RIDERS_KEY = 'delivery:line-riders:v1';
 const ORIGIN = 'https://www.dankbangkok.com';
@@ -19,9 +20,25 @@ export function deliveryOrderCard(order, customerUrl) {
     ]}, footer: {type: 'box', layout: 'vertical', spacing: 'sm', contents: [
       {type: 'button', style: 'primary', color: '#008F4B', action: {type: 'uri', label: 'Check your delivery', uri: ORIGIN + customerUrl}},
       {type: 'button', action: {type: 'postback', label: 'Choose rider', data: postback('choose', order.orderId)}},
+      ...(liffUrl(order.orderId) ? [{type: 'button', action: {type: 'uri', label: 'Set destination & rider', uri: liffUrl(order.orderId)}}] : []),
     ]}}};
 }
 
+// Staff who can be picked as the rider for a delivery: active, orders permission and a
+// valid phone. On-shift riders sort first; a registered LINE ID lets us DM their link.
+export function riderOptions(accounts, rows) {
+  const saved = new Map((rows || []).map(r => [r.accountId, r]));
+  return (accounts || []).flatMap(a => {
+    const phone = String(a.phone || '').replace(/[\s()-]/g, '');
+    if (a.active === false || !hasPermission(a, 'orders') || !/^\+?\d{7,15}$/.test(phone)) return [];
+    const r = saved.get(a.id) || {};
+    return [{id: a.id, name: String(a.name || ''), phone, onShift: Boolean(r.onShift), lineUserId: uid(r.lineUserId) ? r.lineUserId : ''}];
+  }).sort((a, b) => Number(b.onShift) - Number(a.onShift) || a.name.localeCompare(b.name));
+}
+export function riderLinkMessage(id, address, url) {
+  return `Delivery ${id}\n${address || ''}\nOpen your rider controls:\n${url}\nTake a picture to start delivery, then tap Delivered when complete. Open in Safari/Chrome, allow GPS and keep the page open and phone awake.`;
+}
+export const RIDER_LINK_ORIGIN = ORIGIN;
 export function createRidersHandler(deps = {}) {
   const d = {get: getJSON, accounts: listAccounts, permission: requirePermission, ...delivery, ...deps};
   return async (req, res) => {
@@ -45,13 +62,22 @@ export function createRidersHandler(deps = {}) {
   };
 }
 
-// Only invoked after the webhook verifies LINE's signature. No private controls
-// are included in group messages. A durable atomic claim prevents double assignment.
+// Only invoked after the webhook verifies LINE's signature. Rider controls are
+// shared with the configured staff group and assigned rider. An atomic claim prevents double assignment.
 export function createDeliveryLineHandler(deps = {}) {
   const d = {get: getJSON, accounts: listAccounts, claim: bump, send: lineMessages, group: () => process.env.LINE_TO || '', uuid: () => crypto.randomUUID(), ...delivery, ...deps};
   return async ev => {
     if (ev.type === 'message' && ev.source?.type === 'user' && /^rider id$/i.test(ev.message?.text?.trim() || '')) {
       await d.send(ev.replyToken, [{type: 'text', text: 'Your LINE user ID: ' + ev.source.userId + '\nGive this to the shop manager for LINE riders setup.'}], {reply: true});
+      return true;
+    }
+    // "delivery" in the staff group → button that opens the Create delivery link form in LINE.
+    if (ev.type === 'message' && ev.message?.type === 'text' && /^(delivery|delivery link|create delivery|ส่งของ|จัดส่ง)$/i.test(ev.message.text.trim())) {
+      if (ev.source?.type !== 'group' || !d.group() || ev.source.groupId !== d.group() || !liffUrl()) return false;
+      await d.send(ev.replyToken, [{type: 'flex', altText: 'Create delivery link', contents: {type: 'bubble', body: {type: 'box', layout: 'vertical', spacing: 'md', contents: [
+        {type: 'text', text: 'Create delivery link', weight: 'bold', size: 'lg'},
+        {type: 'text', text: 'Pick the order, set the destination and choose a rider.', wrap: true, size: 'sm', color: '#64756C'}]},
+        footer: {type: 'box', layout: 'vertical', contents: [{type: 'button', style: 'primary', color: '#008F4B', action: {type: 'uri', label: 'Open form', uri: liffUrl()}}]}}}], {reply: true});
       return true;
     }
     if (ev.type !== 'postback') return false;
@@ -105,8 +131,11 @@ export function createDeliveryLineHandler(deps = {}) {
       const latest = await d.get(d.key(id));
       if (latest?.driver?.token !== record.driver.token) throw new Error('Rider assignment changed. Use the staff portal.');
       const url = ORIGIN + '/driver-delivery.html#' + new URLSearchParams({id, token: record.driver.token});
-      const sent = await d.send(rider.lineUserId, [{type: 'text', text: `Delivery ${id}\n${order.delivery?.address || ''}\nOpen your private rider controls:\n${url}\nStart delivery → Pause sharing → Complete delivery. Open in Safari/Chrome, allow GPS and keep the page open.`}], {retryKey: record.driver.retryKey});
-      await reply(sent.ok ? `Assigned ${id} to ${rider.name}. The private delivery link was sent directly to their LINE.` : `Assigned ${id} to ${rider.name}, but LINE could not accept the message. Ask the rider to add the shop LINE Official Account as a friend, then tap their rider selection again to retry, or copy the link from the staff portal.`);
+      const sent = await d.send(rider.lineUserId, [{type: 'text', text: riderLinkMessage(id, record.place || order.delivery?.address, url)}], {retryKey: record.driver.retryKey});
+      const confirmation = sent.ok
+        ? `Assigned ${id} to ${rider.name}. LINE accepted the direct message to their personal chat.`
+        : `Assigned ${id} to ${rider.name}, but LINE could not accept the direct message. Ask the rider to add the shop LINE Official Account as a friend, then tap their rider selection again to retry.`;
+      await reply(`${confirmation}\nRider delivery link:\n${url}`);
       return true;
     } catch (e) {await reply(e.message || 'Delivery assignment unavailable. Use the staff portal.'); return true;}
   };

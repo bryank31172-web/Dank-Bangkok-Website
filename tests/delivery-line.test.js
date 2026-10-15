@@ -25,14 +25,16 @@ test('order card has customer tracking and group rider selection, no driver cred
   assert.equal(buttons[1].action.type,'postback');
   assert.doesNotMatch(JSON.stringify(card),/driver-delivery|driver-token/);
 });
-test('group selection shows only on-shift registered riders and pushes private controls directly',async()=>{
+test('group selection assigns an on-shift rider and shares the same link privately and in the staff group',async()=>{
   const f=fixture();await f.handle(f.ev());const picker=f.messages[0];assert.equal(picker.content[0].quickReply.items.length,1);
   assert.equal(picker.content[0].quickReply.items[0].action.label,'Rider');
   await f.handle(f.ev('assign'));const push=f.messages.find(m=>m.to===riderId);
   assert.match(push.content[0].text,/driver-delivery.html#id=DR-TEST&token=driver-token/);
   assert.equal(push.options.retryKey,f.db.get(key('DR-TEST')).driver.retryKey);
   assert.equal(f.db.get(key('DR-TEST')).driver.accountId,'rider');
-  assert.ok(f.messages.filter(m=>m.options.reply).every(m=>!JSON.stringify(m.content).includes('driver-token')));
+  assert.doesNotMatch(JSON.stringify(picker.content),/driver-token/);
+  assert.match(f.messages.at(-1).content[0].text,/Rider delivery link:\nhttps:\/\/www.dankbangkok.com\/driver-delivery.html#id=DR-TEST&token=driver-token/);
+  assert.match(f.messages.at(-1).content[0].text,/LINE accepted/);
 });
 test('unknown actor, wrong group and private-chat postbacks cannot assign',async()=>{
   for(const source of [{type:'group',groupId:group,userId:'unknown'},{type:'group',groupId:'wrong',userId:managerId},{type:'user',userId:managerId}]){
@@ -49,6 +51,7 @@ test('twenty simultaneous selections create just one assignment',async()=>{
 });
 test('failed direct push can retry with the same token and LINE retry key',async()=>{
   const f=fixture();f.setPush(false);await f.handle(f.ev('assign'));assert.match(f.messages.at(-1).content[0].text,/could not accept/);
+  assert.match(f.messages.at(-1).content[0].text,/Rider delivery link:/);
   const first=f.messages.find(m=>m.to===riderId);f.setPush(true);await f.handle(f.ev('assign'));
   const pushes=f.messages.filter(m=>m.to===riderId);assert.equal(pushes[1].options.retryKey,first.options.retryKey);assert.equal(pushes[1].content[0].text,first.content[0].text);
 });
@@ -66,4 +69,19 @@ test('only staff managers can save validated unique LINE rider configuration',as
   assert.equal((await call([{accountId:'rider',lineUserId:riderId,onShift:true}])).code,200);
   for(const rows of [[{accountId:'invented',lineUserId:riderId,onShift:true}],[{accountId:'rider',lineUserId:'my-line-name',onShift:true}],[{accountId:'rider',lineUserId:riderId,onShift:'yes'}],[{accountId:'rider',lineUserId:riderId,onShift:true},{accountId:'manager',lineUserId:riderId,onShift:false}]])assert.equal((await call(rows)).code,400);
   assert.equal((await call([],'rider')).code,403);
+});
+test('LINE form: "delivery" in the staff group opens the form; card gets a form button only when configured',async()=>{
+  const f=fixture(),msg=(text,source={type:'group',groupId:group,userId:managerId})=>({type:'message',replyToken:'r',source,message:{type:'text',text}});
+  assert.equal(await f.handle(msg('delivery')),false);
+  const plain=deliveryOrderCard({orderId:'DR-TEST',items:[]},'/delivery.html#x');assert.equal(plain.contents.footer.contents.length,2);
+  process.env.LINE_LIFF_ID='1234567890-AbCdEfGh';
+  try{
+    assert.equal(await f.handle(msg('Delivery')),true);
+    assert.equal(f.messages[0].content[0].contents.footer.contents[0].action.uri,'https://liff.line.me/1234567890-AbCdEfGh');
+    assert.equal(await f.handle(msg('delivery',{type:'group',groupId:'C'+'z'.repeat(32),userId:managerId})),false);
+    assert.equal(await f.handle(msg('delivery',{type:'user',userId:managerId})),false);
+    const card=deliveryOrderCard({orderId:'DR-TEST',items:[]},'/delivery.html#x');
+    assert.equal(card.contents.footer.contents[2].action.uri,'https://liff.line.me/1234567890-AbCdEfGh?order=DR-TEST');
+    assert.doesNotMatch(JSON.stringify(card),/driver-delivery/);
+  }finally{delete process.env.LINE_LIFF_ID}
 });

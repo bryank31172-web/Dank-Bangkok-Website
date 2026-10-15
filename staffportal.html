@@ -1111,6 +1111,95 @@ async function openDeliveryProducts(){
   }catch(e){alert(e.message||'Could not open delivery products')}
 }
 
+/* Create delivery link: staff confirm the destination (Google autocomplete, or the
+   pin the customer chose at checkout) and pick a rider, then one request creates the
+   customer link and the rider's private link. The server applies the same product
+   eligibility as checkout. A rider with a registered LINE ID also gets their link in LINE. */
+let STAFF_PLACES=null;
+function loadStaffPlaces(){
+  if(STAFF_PLACES)return STAFF_PLACES;
+  STAFF_PLACES=(async()=>{
+    const r=await fetch('/api/maps-config'),{key}=await r.json();if(!key)throw new Error('no key');
+    if(!window.google?.maps?.importLibrary)await new Promise((ok,fail)=>{const s=document.createElement('script');s.src='https://maps.googleapis.com/maps/api/js?key='+encodeURIComponent(key)+'&loading=async&libraries=places&callback=__staffPlacesReady';window.__staffPlacesReady=ok;s.async=true;s.onerror=fail;document.head.appendChild(s)});
+    return google.maps.importLibrary('places');
+  })();
+  STAFF_PLACES.catch(()=>{STAFF_PLACES=null});
+  return STAFF_PLACES;
+}
+async function createDeliveryLink(button){
+  const id=button.dataset.id,order=ORDERS.find(o=>String(o.orderId)===String(id))||{};
+  const start=order.delivery?.coordinates&&Number.isFinite(order.delivery.coordinates.lat)?{lat:order.delivery.coordinates.lat,lng:order.delivery.coordinates.lng}:null;
+  let dest=start,riders=[];
+  document.getElementById('deliveryCreate')?.remove();
+  const ov=document.createElement('div');ov.id='deliveryCreate';ov.className='recent-order-modal';ov.setAttribute('role','dialog');ov.setAttribute('aria-modal','true');ov.setAttribute('aria-labelledby','deliveryCreateTitle');
+  const field='width:100%;padding:12px;margin:8px 0;border:1px solid var(--line);border-radius:10px;font:inherit';
+  ov.innerHTML=`<section class="recent-order-card"><header class="recent-order-head"><div><div class="recent-order-kicker">Create delivery link</div><h3 id="deliveryCreateTitle">${esc(id)}</h3><div class="dash-muted">${esc(order.customer?.name||'')}</div></div><button type="button" class="ghost" data-create-close>Close</button></header><div class="recent-order-body">
+    <form id="deliveryCreateForm" autocomplete="off">
+      <label for="dcPlace"><b>1. Destination</b></label>
+      <div style="position:relative"><input id="dcPlace" type="text" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="dcOptions" placeholder="Search condo, hotel or address" value="${esc(order.delivery?.address||'')}" maxlength="200" style="${field}">
+      <div id="dcOptions" role="listbox" hidden style="position:absolute;left:0;right:0;top:100%;z-index:5;background:#fff;border:1px solid var(--line);border-radius:10px;box-shadow:0 8px 24px #0002;max-height:240px;overflow:auto"></div></div>
+      <p id="dcPlaceStatus" class="dash-muted" role="status" style="margin:0 0 6px;font-size:13px">${start?'📍 Using the pin the customer chose at checkout. Search to change it.':'Type the place, then pick a suggestion to set the map pin.'}</p>
+      <div id="dcManual" hidden style="display:grid;grid-template-columns:1fr 1fr;gap:10px"><label>Latitude<input id="dcLat" type="number" step="any" min="-90" max="90" style="${field}"></label><label>Longitude<input id="dcLng" type="number" step="any" min="-180" max="180" style="${field}"></label></div>
+      <label for="dcRider" style="display:block;margin-top:14px"><b>2. Rider</b></label>
+      <select id="dcRider" required style="${field}"><option value="">Loading riders…</option></select>
+      <p id="dcRiderNote" class="dash-muted" style="margin:0;font-size:13px"></p>
+      <p id="dcMessage" role="status" style="color:#b42318;min-height:1.2em;margin:12px 0 0"></p>
+      <button class="btn" type="submit" style="width:100%;margin-top:8px">Create link &amp; assign rider</button>
+    </form>
+    <div id="dcDone" hidden></div>
+  </div></section>`;
+  document.body.appendChild(ov);
+  const $c=sel=>ov.querySelector(sel),msg=t=>$c('#dcMessage').textContent=t;
+  const manual=on=>{$c('#dcManual').hidden=!on;$c('#dcManual').style.display=on?'grid':'none'};manual(false);
+  ov.addEventListener('click',e=>{if(e.target===ov||e.target.closest('[data-create-close]'))ov.remove()});
+  // Riders: on-shift first. Anyone with orders access and a phone can be chosen.
+  authGet('/api/delivery?action=rider-options').then(r=>r.json().then(j=>{if(!r.ok)throw new Error(j.error);return j})).then(j=>{
+    riders=j.riders||[];const sel=$c('#dcRider');
+    sel.innerHTML=riders.length?'<option value="">Choose a rider</option>'+riders.map(r=>`<option value="${esc(r.id)}">${esc(r.name)} · ${esc(r.phone)}${r.onShift?' · on shift':''}</option>`).join(''):'<option value="">No riders yet</option>';
+    $c('#dcRiderNote').textContent=riders.length?'':'Add staff with a phone number in Staff management first.';
+  }).catch(e=>{$c('#dcRider').innerHTML='<option value="">Rider list unavailable</option>';$c('#dcRiderNote').textContent=e.message});
+  $c('#dcRider').addEventListener('change',()=>{const r=riders.find(x=>x.id===$c('#dcRider').value);$c('#dcRiderNote').textContent=!r?'':r.line?'Their link is also sent to them on LINE.':'No LINE ID registered — copy their link after creating.'});
+  // Google autocomplete. If Maps isn't configured, staff enter the pin by hand.
+  const input=$c('#dcPlace'),list=$c('#dcOptions'),status=$c('#dcPlaceStatus');
+  let token=null,preds=[],rev=0,timer;
+  const close=()=>{list.hidden=true;input.setAttribute('aria-expanded','false')};
+  const fallback=()=>{status.textContent='Location search unavailable. Enter the pin coordinates below.';manual(true);if(dest){$c('#dcLat').value=dest.lat;$c('#dcLng').value=dest.lng}};
+  loadStaffPlaces().then(({AutocompleteSuggestion,AutocompleteSessionToken})=>{
+    input.addEventListener('input',()=>{clearTimeout(timer);const my=++rev;dest=null;status.textContent='Pick a suggestion to set the map pin.';const q=input.value.trim();if(q.length<2){close();return}
+      timer=setTimeout(async()=>{try{token||=new AutocompleteSessionToken();const {suggestions}=await AutocompleteSuggestion.fetchAutocompleteSuggestions({input:q,includedRegionCodes:['th'],sessionToken:token});if(my!==rev)return;
+        preds=suggestions.map(x=>x.placePrediction).filter(Boolean);list.replaceChildren(...preds.map((p,i)=>{const o=document.createElement('div');o.setAttribute('role','option');o.style.cssText='padding:11px 12px;cursor:pointer;border-bottom:1px solid var(--line)';o.textContent=p.text.toString();o.addEventListener('mousedown',e=>e.preventDefault());o.addEventListener('click',()=>pick(i));return o}));
+        list.hidden=!preds.length;input.setAttribute('aria-expanded',String(preds.length>0));if(!preds.length)status.textContent='No match. Try the building or street name.'}catch{fallback()}},300)});
+    input.addEventListener('blur',()=>setTimeout(close,150));
+    async function pick(i){const p=preds[i];if(!p)return;close();const my=++rev;status.textContent='Finding location…';
+      try{const place=p.toPlace();await place.fetchFields({fields:['displayName','formattedAddress','location']});if(my!==rev)return;
+        dest={lat:place.location.lat(),lng:place.location.lng()};token=null;
+        const label=[place.displayName,place.formattedAddress].filter(Boolean);input.value=label[0]&&label[1]&&!label[1].startsWith(label[0])?label[0]+', '+label[1]:(label[1]||label[0]||p.text.toString());
+        status.textContent='📍 Pin set: '+dest.lat.toFixed(5)+', '+dest.lng.toFixed(5)}catch{fallback()}}
+  }).catch(fallback);
+  $c('#deliveryCreateForm').addEventListener('submit',async e=>{
+    e.preventDefault();msg('');
+    if(!$c('#dcManual').hidden){const lat=Number($c('#dcLat').value),lng=Number($c('#dcLng').value);dest=$c('#dcLat').value&&$c('#dcLng').value&&Number.isFinite(lat)&&Number.isFinite(lng)?{lat,lng}:null}
+    if(!dest){msg('Choose the destination from the suggestions so the map pin is right.');input.focus();return}
+    const riderId=$c('#dcRider').value;if(!riderId){msg('Choose a rider.');$c('#dcRider').focus();return}
+    const submit=$c('button[type=submit]');submit.disabled=true;submit.textContent='Creating…';
+    try{
+      const r=await authPost('/api/delivery',{role:'staff',id,action:'create',destination:dest,place:input.value.trim(),riderId}),j=await r.json().catch(()=>({}));
+      if(!r.ok)throw new Error(j.error||'Could not create the delivery link');
+      if(order)order.deliveryTrackingAvailable=true;
+      button.outerHTML=`<button type="button" class="btn" data-act="delivery-manage" data-id="${esc(id)}">Manage delivery tracking</button>`;
+      const full=u=>location.origin+u,line=j.lineSent?'✅ Sent to '+esc(j.rider.name)+' on LINE.':j.lineRegistered?'⚠️ LINE could not deliver it — copy the rider link below.':'Copy the rider link and send it to '+esc(j.rider.name)+'.';
+      $c('#deliveryCreateForm').hidden=true;const done=$c('#dcDone');done.hidden=false;
+      done.innerHTML=`<p style="margin:0 0 4px"><b>Delivery link created</b></p><p class="dash-muted" style="margin:0 0 14px">${esc(input.value.trim())} · Rider ${esc(j.rider.name)}</p><p style="margin:0 0 14px">${line}</p>
+        <label>Customer tracking link<input readonly data-link="customer" style="${field}"></label><button class="btn" type="button" data-copy="customer" style="width:100%">Copy customer link</button>
+        <label style="display:block;margin-top:14px">Rider link (private)<input readonly data-link="rider" style="${field}"></label><button class="ghost" type="button" data-copy="rider" style="width:100%">Copy rider link</button>
+        <p id="dcCopied" role="status" class="dash-muted" style="min-height:1.2em"></p><button class="ghost" type="button" data-manage style="width:100%">Open delivery manager</button>`;
+      done.querySelector('[data-link=customer]').value=full(j.customerUrl);done.querySelector('[data-link=rider]').value=full(j.driverUrl);
+      done.addEventListener('click',async ev=>{const c=ev.target.closest('[data-copy]');if(c){const v=done.querySelector('[data-link='+c.dataset.copy+']').value;try{await navigator.clipboard.writeText(v);done.querySelector('#dcCopied').textContent='Copied.'}catch{done.querySelector('[data-link='+c.dataset.copy+']').select();done.querySelector('#dcCopied').textContent='Press copy on the selected link.'}}
+        if(ev.target.closest('[data-manage]')){ov.remove();openDeliveryManager(id)}});
+    }catch(err){msg(err.message);submit.disabled=false;submit.textContent='Create link & assign rider'}
+  });
+  setTimeout(()=>input.focus(),50);
+}
 async function openDeliveryManager(id){
   try{
     const r=await authGet('/api/delivery?role=staff&id='+encodeURIComponent(id)),data=await r.json();
@@ -1171,7 +1260,7 @@ function openRecentOrder(id){
   }).join('');
   const ov=document.createElement('div');
   ov.id='recentOrderOv';ov.className='recent-order-modal';ov.setAttribute('role','dialog');ov.setAttribute('aria-modal','true');ov.setAttribute('aria-labelledby','recentOrderTitle');
-  ov.innerHTML=`<section class="recent-order-card"><header class="recent-order-head"><div><div class="recent-order-kicker">Recent order</div><h3 id="recentOrderTitle">${esc(order.orderId||'New order')}</h3><div class="dash-muted">${order.at?esc(ago(order.at)):'Just received'}</div></div><button type="button" class="recent-order-close" data-recent-close aria-label="Close order details"><i class="ri-close-line"></i></button></header><div class="recent-order-body"><div class="recent-customer"><div class="recent-info"><span>Name</span><b>${esc(order.customer?.name||'Not supplied')}</b></div><div class="recent-info"><span>Phone</span><b>${esc(order.customer?.phone||'Not supplied')}</b></div><div class="recent-info"><span>Order type</span><b>${esc(order.fulfilment||'Order')}</b></div><div class="recent-info"><span>Total</span><b>${esc(dashMoney(order.total??order.subtotal))}</b></div>${order.status==='done'?`<div class="recent-info"><span>Completed by</span><b>${esc(order.completedBy?.name||order.flowerWeights?.recordedBy||'Staff')}</b></div>`:''}</div>${order.deliveryTrackingAvailable?`<button type="button" class="btn" data-act="delivery-manage" data-id="${esc(order.orderId)}">Manage delivery tracking</button>`:''}<div>${lines||'<div class="empty-dash">No item details supplied.</div>'}</div><div class="recent-order-error">Enter every flower weight with exactly 2 decimal places, for example 0.58.</div><div class="recent-order-note">Ordered grams are taken directly from the customer’s order and cannot be edited. Enter the actual measured weight before completing the order.</div></div><footer class="recent-order-actions">${isDone?'<span class="badge closed" style="margin-right:auto">'+(isCancelled?'Cancelled':'Completed')+'</span>':''}<button type="button" class="ghost" data-recent-close>${isDone?'Close':'Cancel'}</button>${isDone?'':`<button type="button" class="recent-order-complete" data-recent-complete data-id="${esc(order.orderId||'')}" ${orderFlowerLines(order).length?'disabled':''}>Complete order</button>`}</footer></section>`;
+  ov.innerHTML=`<section class="recent-order-card"><header class="recent-order-head"><div><div class="recent-order-kicker">Recent order</div><h3 id="recentOrderTitle">${esc(order.orderId||'New order')}</h3><div class="dash-muted">${order.at?esc(ago(order.at)):'Just received'}</div></div><button type="button" class="recent-order-close" data-recent-close aria-label="Close order details"><i class="ri-close-line"></i></button></header><div class="recent-order-body"><div class="recent-customer"><div class="recent-info"><span>Name</span><b>${esc(order.customer?.name||'Not supplied')}</b></div><div class="recent-info"><span>Phone</span><b>${esc(order.customer?.phone||'Not supplied')}</b></div><div class="recent-info"><span>Order type</span><b>${esc(order.fulfilment||'Order')}</b></div><div class="recent-info"><span>Total</span><b>${esc(dashMoney(order.total??order.subtotal))}</b></div>${order.status==='done'?`<div class="recent-info"><span>Completed by</span><b>${esc(order.completedBy?.name||order.flowerWeights?.recordedBy||'Staff')}</b></div>`:''}</div>${order.deliveryTrackingAvailable?`<button type="button" class="btn" data-act="delivery-manage" data-id="${esc(order.orderId)}">Manage delivery tracking</button>`:(order.fulfilment==='delivery'&&!isDone?`<button type="button" class="btn" data-act="delivery-create" data-id="${esc(order.orderId)}">🛵 Create delivery tracking link</button>`:'')}<div>${lines||'<div class="empty-dash">No item details supplied.</div>'}</div><div class="recent-order-error">Enter every flower weight with exactly 2 decimal places, for example 0.58.</div><div class="recent-order-note">Ordered grams are taken directly from the customer’s order and cannot be edited. Enter the actual measured weight before completing the order.</div></div><footer class="recent-order-actions">${isDone?'<span class="badge closed" style="margin-right:auto">'+(isCancelled?'Cancelled':'Completed')+'</span>':''}<button type="button" class="ghost" data-recent-close>${isDone?'Close':'Cancel'}</button>${isDone?'':`<button type="button" class="recent-order-complete" data-recent-complete data-id="${esc(order.orderId||'')}" ${orderFlowerLines(order).length?'disabled':''}>Complete order</button>`}</footer></section>`;
   ov.addEventListener('click',event=>{
     if(event.target===ov||event.target.closest('[data-recent-close]')){closeRecentOrder();return}
     const done=event.target.closest('[data-recent-complete]');if(done)completeRecentOrder(done.dataset.id,ov);
@@ -2268,6 +2357,8 @@ function salesCSV(){
 document.addEventListener('click',event=>{
   const manage=event.target.closest('[data-act="delivery-manage"]');
   if(manage){event.preventDefault();event.stopPropagation();openDeliveryManager(manage.dataset.id);return}
+  const create=event.target.closest('[data-act="delivery-create"]');
+  if(create){event.preventDefault();event.stopPropagation();createDeliveryLink(create);return}
   const trigger=event.target.closest('[data-act="recent-order"]');
   if(!trigger)return;
   event.preventDefault();
