@@ -67,6 +67,25 @@ export async function notifyStaffLine(text) {
   return linePush(STAFF_TO, text);
 }
 
+/* Is this LINE user a member of the staff group (LINE_TO)? Uses the Messaging API
+   "group member profile" lookup: 200 means a member, 404 means not. Results are
+   cached for 10 minutes so the form doesn't ask LINE on every request. */
+const memberCache = new Map();
+export async function isStaffGroupMember(userId) {
+  if (!TOKEN || !/^C[0-9a-f]{32}$/.test(STAFF_TO) || !/^U[0-9a-f]{32}$/.test(userId || "")) return false;
+  const hit = memberCache.get(userId);
+  if (hit && hit.until > Date.now()) return hit.member;
+  try {
+    const r = await fetch(`https://api.line.me/v2/bot/group/${STAFF_TO}/member/${userId}`, {
+      headers: { Authorization: `Bearer ${TOKEN}` }, signal: AbortSignal.timeout(5000) });
+    if (r.status !== 200 && r.status !== 404) return false; // don't cache LINE outages
+    const member = r.status === 200;
+    if (memberCache.size > 500) memberCache.clear();
+    memberCache.set(userId, { member, until: Date.now() + 10 * 60000 });
+    return member;
+  } catch { return false; }
+}
+
 export async function getLineProfile(userId) {
   if (!TOKEN || !userId) return null;
   try {

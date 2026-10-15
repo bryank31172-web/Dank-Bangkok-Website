@@ -240,11 +240,13 @@ choose a rider, then **Create link & assign rider**. The rider gets their privat
 in LINE (when their LINE ID is registered); **Send customer link** shares the
 tracking link to the customer's chat; the group gets a one-line summary.
 
-Who can use it: anyone whose LINE ID is saved against an active staff account with
-orders access in Staff portal → Orders → LINE riders. Everyone else is refused. The
-LINE sign-in only unlocks this form (order list, rider list, create link); every other
-staff action still needs the staff key. Works for any delivery order. Delivery orders
-without tracking also get a Create delivery link button in the staff group.
+Who can use it: anyone who is a member of the staff LINE group (LINE_TO), plus
+anyone whose LINE ID is saved against an active staff account in LINE riders. No
+registration is needed for group members. Everyone else is refused. The LINE
+sign-in only unlocks this form (order list, rider list, create link); every other
+staff action still needs the staff key. LINE gives each person a different ID per
+Provider, so the LINE Login channel holding this LIFF app must be under the same
+Provider as the DANK bot's Messaging API channel, or nobody will be recognised.
 
 One-time setup in LINE Developers (same provider as the shop Official Account):
 

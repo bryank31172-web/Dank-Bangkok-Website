@@ -182,10 +182,10 @@ test('create link with destination and chosen rider assigns, DMs on LINE and rej
  const drv=await f.call({role:'driver',token:f.db.get(key(f.id)).driver.token});assert.equal(drv.data.note,'Gate 3, call on arrival');assert.match(sent[0][1],/https:\/\/www\.dankbangkok\.com\/driver-delivery\.html#/);
  const s=await f.call({role:'staff',staff:true});assert.equal(s.data.address,'Siam Paragon');assert.equal(r.data.driverUrl,s.data.driverUrl);
 });
-test('LINE form: staff sign in with a registered LINE ID; others refused; staff key paths unchanged',async()=>{
+test('LINE form: staff-group members and registered LINE IDs can sign in; others refused; staff key paths unchanged',async()=>{
  const U='U'+'b'.repeat(32),acct={id:'s1',name:'Mai',phone:'0812345678',role:'parttime',active:true};
  let f;f=fixture({accounts:async()=>[acct,{id:'s2',name:'Old',phone:'0811111111',role:'parttime',active:false}],
-  verifyLine:async t=>({good:U,old:'U'+'c'.repeat(32),stranger:'U'+'d'.repeat(32)})[t]||null,orderIds:async()=>[f.id,'NOPE'],send:async()=>({ok:true}),
+  verifyLine:async t=>({good:U,old:'U'+'c'.repeat(32),stranger:'U'+'d'.repeat(32),groupie:'U'+'e'.repeat(32)})[t]||null,groupMember:async u=>u==='U'+'e'.repeat(32),orderIds:async()=>[f.id,'NOPE'],send:async()=>({ok:true}),
   createDelivery:async o=>{f.db.set(key(o.orderId),{orderId:o.orderId,customerToken:'n'.repeat(64),expiresAt:Date.now()+86400000,destination:o.delivery?.coordinates||null,driver:null});return '/x'}});
  f.db.set('delivery:line-riders:v1',[{accountId:'s1',lineUserId:U,onShift:true},{accountId:'s2',lineUserId:'U'+'c'.repeat(32),onShift:true}]);
  f.db.delete(key(f.id));Object.assign(f.db.get('order:'+f.id),{fulfilment:'delivery',customer:{name:'Ann'},items:[{name:'Sandwich',qty:1,shId:'food'}]});
@@ -195,6 +195,9 @@ test('LINE form: staff sign in with a registered LINE ID; others refused; staff 
  assert.equal((await run('old',{action:'pending'})).code,403);
  const p=await run('good',{action:'pending'});assert.equal(p.code,200);assert.deepEqual(p.data.orders.map(o=>[o.orderId,o.customer,o.tracking]),[[f.id,'Ann',false]]);
  assert.equal((await run('good',{action:'rider-options'})).code,200);
+ // Anyone in the staff LINE group can use the form without registering.
+ assert.equal((await run('groupie',{action:'pending'})).code,200);assert.equal((await run('groupie',{action:'rider-options'})).code,200);
+ assert.equal((await run('groupie',{role:'staff',id:f.id,action:'cancel'})).code,401);
  const c=await run('good',{role:'staff',id:f.id,action:'create',riderId:'s1',destination:{lat:13.74,lng:100.53},place:'Siam'});
  assert.equal(c.code,200);assert.equal(c.data.rider.name,'Mai');
  // A LINE token never unlocks other staff actions.
