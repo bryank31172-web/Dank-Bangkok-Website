@@ -1,4 +1,4 @@
-import { publishedPosts } from "./_blog.js";
+import { publishedPosts, refreshPosts } from "./_blog.js";
 import { getMenu } from "./_menu.js";
 import {
   renderBlogPost,
@@ -19,6 +19,8 @@ function queryValue(value) {
 export default async function handler(req, res) {
   const view = queryValue(req.query?.view);
   const sitemapType = queryValue(req.query?.sitemap);
+
+  if (view === "blog" || view === "post" || sitemapType === "blog" || sitemapType === "pages") await refreshPosts();
 
   if (sitemapType) {
     let menu = [];

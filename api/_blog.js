@@ -1,172 +1,121 @@
 // Blog articles for /blog/.
 //
-// To add an article: copy an existing one below, give it a new `slug` (lowercase,
-// hyphens, no spaces — it becomes the URL /blog/<slug>/), write the body in
-// Markdown, and set `draft: false` when it is ready to go live. Drafts never
-// appear on the site or in the sitemap.
+// Two sources, merged by slug:
+//   1. SEED_POSTS in _blog-posts.js — shipped with the code.
+//   2. The "blog:posts" record in the site database — written by the blog
+//      editor at /blog-admin (owner login). An edit there replaces the seed
+//      post with the same slug; `deleted` hides a seed post.
 //
-// Markdown supported in `body`: ## and ### headings, paragraphs, - lists,
+// A post is public when draft is false and its date has arrived in Bangkok.
+// Future dates are how the 5th / 15th / 25th publishing schedule works:
+// nothing has to be pressed on the day.
+//
+// Markdown supported in `body`: ## to #### headings, paragraphs, - lists,
 // 1. lists, > quotes, **bold**, *italic*, [link](https://…), ![alt](/assets/…).
 
-export const POSTS = [
-  {
-    slug: "weed-dispensary-pattanakarn-bangkok",
-    title: "Weed dispensary in Pattanakarn, Bangkok — DANK Cannabis Club",
-    description: "Address, phone, opening hours and directions for DANK Cannabis Club on Phatthanakan Road, Bangkok. Adults 20+.",
-    date: "2026-10-16",
-    updated: "",
-    image: "/assets/promo-all-shops.jpg",
-    lang: "en",
-    draft: false,
-    body: `
-DANK Cannabis Club on Phatthanakan Road is the original DANK BKK shop, in the Pattanakarn area of eastern Bangkok. It is a walk-in weed dispensary for adults aged 20 and over.
+import { getJSON, setJSON } from "./_store.js";
+import { SEED_POSTS } from "./_blog-posts.js";
 
-## Address and contact
+export const BLOG_KEY = "blog:posts";
+const BLOG_TTL = 60 * 60 * 24 * 365 * 10;
+const CACHE_MS = 30 * 1000;
 
-- **Address:** 223 Phatthanakan Rd, Bangkok 10250, Thailand
-- **Phone:** [084-162-0610](tel:+66841620610) — you can call 24/7
-- **Hours:** open daily
-- **Directions:** [open in Google Maps](https://maps.app.goo.gl/zivxFn4nf6RpBysC6?g_st=ic)
+let stored = { posts: {}, deleted: [] };
+let loadedAt = 0;
 
-## What customers say
+function normaliseStore(value) {
+  const posts = value && typeof value.posts === "object" && value.posts ? value.posts : {};
+  const deleted = Array.isArray(value?.deleted) ? value.deleted.map(String) : [];
+  return { posts, deleted };
+}
 
-The shop holds a 5.0 rating on Google from more than 1,174 reviews. You can [read the reviews on Google Maps](https://maps.app.goo.gl/Q8KQq5noTHABf4HN6?g_st=ic).
+/* Pull the editor's posts from the database. Called by the page handler before
+   rendering; a failing database leaves the seed posts showing, never an error. */
+export async function refreshPosts({ force = false } = {}) {
+  if (!force && Date.now() - loadedAt < CACHE_MS) return;
+  try { stored = normaliseStore(await getJSON(BLOG_KEY)); } catch (e) {}
+  loadedAt = Date.now();
+}
 
-## Before you visit
+export async function readStore() {
+  return normaliseStore(await getJSON(BLOG_KEY));
+}
 
-- Bring valid ID. Customers must be 20 or older and may be asked to show identification.
-- The full menu, with current prices and stock, is in the [online shop](/shop).
-- Not near Pattanakarn? DANK BKK also has a [Sathorn (Rama 3) shop](/blog/weed-dispensary-sathorn-rama-3/) and [delivery in Bangkok](/blog/cannabis-delivery-bangkok/).
+export async function writeStore(value) {
+  const clean = normaliseStore(value);
+  await setJSON(BLOG_KEY, clean, BLOG_TTL);
+  stored = clean;
+  loadedAt = Date.now();
+}
 
-## Next door: 224 LIVEHOUSE
+export function bangkokToday(now = Date.now()) {
+  return new Date(now + 7 * 3600 * 1000).toISOString().slice(0, 10);
+}
 
-[224 LIVEHOUSE](/224-livehouse.html) is DANK's live music bar in Phatthanakan 1 Alley, a short walk away.
-
-> Please consume responsibly. Keep products away from children and pets, and do not drive while impaired.
-`,
-  },
-  {
-    slug: "weed-dispensary-sathorn-rama-3",
-    title: "Weed dispensary in Sathorn (Rama 3) with a co-working space",
-    description: "DANK Cannabis Club Sathorn: address on Nang Linchi Road, phone, hours and directions. A dispensary with a co-working space. Adults 20+.",
-    date: "2026-10-16",
-    updated: "",
-    image: "/assets/promo-all-shops.jpg",
-    lang: "en",
-    draft: false,
-    body: `
-DANK Cannabis Club in Sathorn, near Rama 3, is a weed dispensary with a co-working space, on Nang Linchi Road in central Bangkok. It serves adults aged 20 and over.
-
-## Address and contact
-
-- **Address:** 76/10 Nang Linchi Rd, Bangkok 10120, Thailand
-- **Phone:** [094-224-0702](tel:+66942240702) — you can call 24/7
-- **Hours:** open daily
-- **Directions:** [open in Google Maps](https://maps.app.goo.gl/X2j67wBR3q4ueNEU8?g_st=ic)
-
-## Shop, then sit down and work
-
-As well as the dispensary counter, the Sathorn shop has a co-working space, so it suits people who live or work around Sathorn, Silom and Rama 3.
-
-## Before you visit
-
-- Bring valid ID. Customers must be 20 or older and may be asked to show identification.
-- Check current prices and stock in the [online shop](/shop) before you come.
-- Pickup is available at this branch and at [Pattanakarn](/blog/weed-dispensary-pattanakarn-bangkok/).
-
-> Please consume responsibly. Keep products away from children and pets, and do not drive while impaired.
-`,
-  },
-  {
-    slug: "cannabis-delivery-bangkok",
-    title: "Cannabis delivery in Bangkok: how ordering from DANK BKK works",
-    description: "How to order weed delivery in Bangkok from DANK BKK: choose products, confirm your address, get a time estimate and pay on delivery.",
-    date: "2026-10-16",
-    updated: "",
-    image: "/promo-first.jpg",
-    lang: "en",
-    draft: false,
-    body: `
-DANK BKK delivers to supported areas of Bangkok from its own shops. Here is how an order works, step by step.
-
-## How to order
-
-1. **Choose your products.** Add items to your cart in the [online shop](/shop). Only products currently in stock can be ordered.
-2. **Confirm your exact address.** Allow location access, or type your delivery details at checkout. You can check your address first on the [Instant Delivery page](/instant-delivery).
-3. **Receive the current estimate.** The team confirms timing after your order arrives, based on distance, traffic and product availability.
-4. **Pay on delivery.** Cash on Delivery is available at checkout.
-
-## Who can order
-
-Delivery is for adults aged 20 and over. The rider may ask to see valid identification.
-
-## Prefer to pick up?
-
-You can collect from the [Pattanakarn shop](/blog/weed-dispensary-pattanakarn-bangkok/) or the [Sathorn shop](/blog/weed-dispensary-sathorn-rama-3/). Both are open daily, and you can call 24/7.
-
-## Questions about an order
-
-Call [084-162-0610](tel:+66841620610) with your order details. More answers are on the [FAQ page](/faqs).
-`,
-  },
-  {
-    slug: "dank-bkk-shops-delivery-th",
-    title: "ร้านกัญชา DANK BKK สาขาพัฒนาการ สาทร และบริการส่งในกรุงเทพ",
-    description: "ที่อยู่ เบอร์โทร และแผนที่ร้านกัญชา DANK BKK สาขาพัฒนาการ สาทร (พระราม 3) และหล่มสัก พร้อมวิธีสั่งเดลิเวอรี่ในกรุงเทพ สำหรับผู้มีอายุ 20 ปีขึ้นไป",
-    date: "2026-10-16",
-    updated: "",
-    image: "/assets/promo-all-shops.jpg",
-    lang: "th",
-    draft: false,
-    body: `
-DANK BKK เป็นร้านกัญชาในกรุงเทพ มีหน้าร้านที่พัฒนาการและสาทร (พระราม 3) และสาขาที่หล่มสัก เพชรบูรณ์ พร้อมบริการส่งถึงบ้านในพื้นที่กรุงเทพ สำหรับลูกค้าที่มีอายุ 20 ปีขึ้นไป
-
-## สาขาพัฒนาการ
-
-- **ที่อยู่:** 223 ถนนพัฒนาการ กรุงเทพฯ 10250
-- **โทร:** [084-162-0610](tel:+66841620610) โทรได้ตลอด 24 ชั่วโมง
-- **เปิด:** ทุกวัน
-- **แผนที่:** [เปิดใน Google Maps](https://maps.app.goo.gl/zivxFn4nf6RpBysC6?g_st=ic)
-- คะแนน 5.0 บน Google จากรีวิวกว่า 1,174 รีวิว
-
-## สาขาสาทร (พระราม 3)
-
-ร้านกัญชาพร้อมพื้นที่ co-working
-
-- **ที่อยู่:** 76/10 ถนนนางลิ้นจี่ กรุงเทพฯ 10120
-- **โทร:** [094-224-0702](tel:+66942240702) โทรได้ตลอด 24 ชั่วโมง
-- **เปิด:** ทุกวัน
-- **แผนที่:** [เปิดใน Google Maps](https://maps.app.goo.gl/X2j67wBR3q4ueNEU8?g_st=ic)
-
-## สาขาหล่มสัก เพชรบูรณ์
-
-- **ที่อยู่:** 56/2 ถนนคชเสนีย์ เพชรบูรณ์ 67110
-- **โทร:** [084-162-0610](tel:+66841620610) กรุณาโทรเช็กเวลาเปิดก่อนเดินทาง
-- **แผนที่:** [เปิดใน Google Maps](https://maps.app.goo.gl/ZxrDoRr3iUxJmUWFA?g_st=ic)
-
-## สั่งกัญชาเดลิเวอรี่ในกรุงเทพ
-
-1. เลือกสินค้าใส่ตะกร้าใน[ร้านออนไลน์](/shop)
-2. ยืนยันที่อยู่จัดส่ง โดยแชร์ตำแหน่งหรือกรอกตอนชำระเงิน เช็กที่อยู่ก่อนได้ที่[หน้า Instant Delivery](/instant-delivery)
-3. ทีมงานแจ้งเวลาส่งโดยประมาณ ตามระยะทาง สภาพจราจร และสินค้าที่มี
-4. ชำระเงินปลายทาง (Cash on Delivery)
-
-## ก่อนสั่งหรือมาที่ร้าน
-
-- ต้องมีอายุ 20 ปีขึ้นไป และอาจถูกขอดูบัตรประจำตัว
-- ใช้อย่างมีความรับผิดชอบ เก็บให้พ้นมือเด็กและสัตว์เลี้ยง และไม่ขับขี่ขณะมึนเมา
-`,
-  },
-];
-
-export function publishedPosts({ includeDrafts = false } = {}) {
-  return POSTS
-    .filter((post) => post.slug && post.title && (includeDrafts || !post.draft))
+/* Every post, drafts and scheduled ones included, with where it came from. */
+export function allPosts(source = stored) {
+  const bySlug = new Map();
+  for (const post of SEED_POSTS) bySlug.set(post.slug, { ...post, source: "code" });
+  for (const slug of source.deleted) bySlug.delete(slug);
+  for (const [slug, post] of Object.entries(source.posts)) {
+    if (post && typeof post === "object") bySlug.set(slug, { ...post, slug, source: "editor" });
+  }
+  return [...bySlug.values()]
+    .filter((post) => post.slug && post.title)
     .sort((a, b) => String(b.date).localeCompare(String(a.date)));
+}
+
+export function isLive(post, today = bangkokToday()) {
+  return !post.draft && String(post.date || "") <= today;
+}
+
+export function publishedPosts({ includeDrafts = false, today } = {}) {
+  const day = today || bangkokToday();
+  return allPosts().filter((post) => includeDrafts || isLive(post, day));
 }
 
 export function findPost(slug, options) {
   return publishedPosts(options).find((post) => post.slug === slug) || null;
+}
+
+const SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+const DATE = /^\d{4}-\d{2}-\d{2}$/;
+const text = (value, max) => String(value ?? "").trim().slice(0, max);
+
+/* The only shape the editor may store. Anything else in the request is dropped. */
+export function cleanPost(input) {
+  const post = {
+    slug: text(input?.slug, 120).toLowerCase(),
+    title: text(input?.title, 200),
+    metaTitle: text(input?.metaTitle, 120),
+    description: text(input?.description, 320),
+    keyword: text(input?.keyword, 120),
+    date: text(input?.date, 10),
+    updated: text(input?.updated, 10),
+    image: text(input?.image, 500),
+    imageAlt: text(input?.imageAlt, 200),
+    lang: input?.lang === "th" ? "th" : "en",
+    draft: input?.draft !== false,
+    body: String(input?.body ?? "").slice(0, 60000),
+    faqs: (Array.isArray(input?.faqs) ? input.faqs : []).slice(0, 12)
+      .map((faq) => ({ q: text(faq?.q, 300), a: text(faq?.a, 1500) }))
+      .filter((faq) => faq.q && faq.a),
+    images: (Array.isArray(input?.images) ? input.images : []).slice(0, 8)
+      .map((img) => ({
+        placement: text(img?.placement, 200),
+        src: text(img?.src, 500),
+        prompt: text(img?.prompt, 1500),
+        alt: text(img?.alt, 200),
+        title: text(img?.title, 120),
+        description: text(img?.description, 300),
+      })),
+  };
+  const errors = [];
+  if (!SLUG.test(post.slug)) errors.push("slug: lowercase letters, numbers and hyphens only");
+  if (!post.title) errors.push("title is required");
+  if (!DATE.test(post.date)) errors.push("date must be YYYY-MM-DD");
+  if (post.updated && !DATE.test(post.updated)) errors.push("updated must be YYYY-MM-DD");
+  return { post, errors };
 }
 
 function escapeHtml(value) {
@@ -200,8 +149,9 @@ export function markdownToHtml(markdown) {
   return blocks.map((block) => {
     const lines = block.split("\n").map((line) => line.trim()).filter(Boolean);
     if (!lines.length) return "";
-    const heading = lines[0].match(/^(#{2,3})\s+(.+)$/);
+    const heading = lines[0].match(/^(#{2,4})\s+(.+)$/);
     if (heading && lines.length === 1) return `<h${heading[1].length}>${inline(heading[2])}</h${heading[1].length}>`;
+    if (heading) return `<h${heading[1].length}>${inline(heading[2])}</h${heading[1].length}>\n${markdownToHtml(lines.slice(1).join("\n"))}`;
     if (lines.every((line) => /^[-*]\s+/.test(line))) return `<ul>${lines.map((line) => `<li>${inline(line.replace(/^[-*]\s+/, ""))}</li>`).join("")}</ul>`;
     if (lines.every((line) => /^\d+[.)]\s+/.test(line))) return `<ol>${lines.map((line) => `<li>${inline(line.replace(/^\d+[.)]\s+/, ""))}</li>`).join("")}</ol>`;
     if (lines.every((line) => line.startsWith(">"))) return `<blockquote>${inline(lines.map((line) => line.replace(/^>\s?/, "")).join(" "))}</blockquote>`;

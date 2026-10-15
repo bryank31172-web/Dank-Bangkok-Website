@@ -15,6 +15,7 @@ Disallow: /photo-audit.html
 Disallow: /status.html
 Disallow: /analytics.html
 Disallow: /follow-qr.html
+Disallow: /blog-admin
 Disallow: /api/
 
 Sitemap: https://www.dankbangkok.com/sitemap.xml

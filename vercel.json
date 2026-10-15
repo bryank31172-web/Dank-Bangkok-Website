@@ -172,6 +172,10 @@
       "destination": "/api/seo?view=blog"
     },
     {
+      "source": "/blog-admin",
+      "destination": "/blog-admin.html"
+    },
+    {
       "source": "/blog/:post/",
       "destination": "/api/seo?view=post&post=:post"
     },

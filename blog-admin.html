@@ -1,0 +1,314 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Blog editor | DANK BKK</title>
+<link rel="icon" href="/favicon.svg">
+<style>
+:root{--bg:#060a07;--bg2:#0b120d;--panel:#101a12;--panel2:#16241a;--line:#1f3325;--line2:#294634;--txt:#e8f5ec;--muted:#8fae9a;--green:#3ddc84;--deep:#1db960;--gold:#d9b25b;--danger:#ff6b6b;--radius:18px;--font:'Segoe UI',system-ui,-apple-system,Roboto,Helvetica,Arial,sans-serif}
+*{box-sizing:border-box}html,body{margin:0}body{background:var(--bg);color:var(--txt);font:15px/1.5 var(--font);-webkit-font-smoothing:antialiased}
+a{color:var(--green)}button,input,select,textarea{font:inherit;color:inherit}
+.wrap{max-width:1200px;margin:0 auto;padding:0 16px}
+header{position:sticky;top:0;z-index:10;background:rgba(6,10,7,.92);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+header .wrap{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:64px}
+.brand{display:flex;align-items:center;gap:9px;font-weight:800;font-size:20px;letter-spacing:.5px;text-decoration:none;color:var(--txt)}.brand img{width:40px;height:40px}
+.brand small{color:var(--muted);font-weight:600;font-size:13px}
+main{padding:24px 0 80px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:10px 16px;border-radius:12px;font-weight:700;border:1px solid transparent;cursor:pointer;background:none;text-decoration:none}
+.btn-primary{background:linear-gradient(135deg,var(--green),var(--deep));color:#04180d}
+.btn-ghost{border-color:var(--line2);color:var(--muted)}.btn-ghost:hover{color:var(--txt)}
+.btn-danger{border-color:#5a2a2a;color:var(--danger)}
+.btn:disabled{opacity:.5;cursor:default}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:18px}
+.login{max-width:380px;margin:60px auto}.login h1{margin:0 0 6px;font-size:24px}
+label{display:block;font-size:13px;color:var(--muted);margin:14px 0 6px}
+input,select,textarea{width:100%;background:var(--bg2);border:1px solid var(--line2);border-radius:10px;padding:10px 12px}
+textarea{resize:vertical;min-height:90px}textarea.body{min-height:460px;font-family:ui-monospace,Menlo,monospace;font-size:13.5px;line-height:1.6}
+input:focus,select:focus,textarea:focus{outline:2px solid var(--green);outline-offset:-1px}
+.err{color:var(--danger);font-size:14px;min-height:20px;margin-top:10px}
+.toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:16px}
+.toolbar input{max-width:280px}
+.list{display:grid;gap:10px}
+.row{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px 16px;cursor:pointer}
+.row:hover{border-color:var(--green)}
+.row h3{margin:0 0 4px;font-size:16px}.row .meta{color:var(--muted);font-size:13px}
+.badge{display:inline-block;padding:3px 9px;border-radius:999px;font-size:12px;font-weight:700;white-space:nowrap}
+.b-live{background:rgba(61,220,132,.16);color:var(--green)}.b-sched{background:rgba(217,178,91,.16);color:var(--gold)}.b-draft{background:var(--panel2);color:var(--muted)}
+.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 16px}
+.count{float:right;font-variant-numeric:tabular-nums}.count.over{color:var(--danger)}.count.ok{color:var(--green)}
+.stats{display:flex;gap:16px;flex-wrap:wrap;color:var(--muted);font-size:13px;margin-top:8px}.stats b{color:var(--txt)}
+.faq-row,.img-row{border:1px solid var(--line);border-radius:12px;padding:12px;margin-top:10px;background:var(--bg2)}
+.img-row img{max-width:200px;border-radius:8px;margin-top:8px}
+h2{font-size:18px;margin:26px 0 4px}
+.sticky-actions{position:sticky;bottom:0;background:rgba(6,10,7,.95);border-top:1px solid var(--line);padding:12px 0;margin-top:24px;display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--panel2);border:1px solid var(--line2);padding:10px 16px;border-radius:12px;display:none}
+.preview{position:fixed;inset:0;background:rgba(0,0,0,.7);display:none;z-index:50;padding:20px}
+.preview iframe{width:100%;height:calc(100% - 50px);border:0;border-radius:14px;background:var(--bg)}
+.hint{color:var(--muted);font-size:13px;margin:4px 0 0}
+[hidden]{display:none!important}
+@media(max-width:760px){.grid2{grid-template-columns:1fr}.row{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header><div class="wrap"><a class="brand" href="/blog/"><img src="/assets/dank-mascot.png" alt="">DANK BKK <small>Blog editor</small></a><div><button class="btn btn-ghost" data-act="logout" id="logoutBtn" hidden>ออกจากระบบ</button></div></div></header>
+<main><div class="wrap">
+
+<section id="loginView" class="card login" hidden>
+  <h1>เข้าสู่ระบบ</h1>
+  <p class="hint">ใช้อีเมลและรหัสผ่าน Owner เดียวกับหน้าร้าน</p>
+  <form id="loginForm">
+    <label for="email">อีเมล</label><input id="email" type="email" autocomplete="username" required>
+    <label for="password">รหัสผ่าน</label><input id="password" type="password" autocomplete="current-password" required>
+    <div class="err" id="loginErr"></div>
+    <button class="btn btn-primary" style="width:100%;margin-top:8px" type="submit">เข้าสู่ระบบ</button>
+  </form>
+</section>
+
+<section id="listView" hidden>
+  <div class="toolbar">
+    <button class="btn btn-primary" data-act="new">+ บทความใหม่</button>
+    <input id="search" type="search" placeholder="ค้นหาชื่อ / keyword">
+    <select id="filter" style="max-width:180px"><option value="">ทั้งหมด</option><option value="live">เผยแพร่แล้ว</option><option value="sched">ตั้งเวลาไว้</option><option value="draft">ฉบับร่าง</option></select>
+    <span class="hint" id="listInfo"></span>
+  </div>
+  <div class="list" id="list"></div>
+</section>
+
+<section id="editView" hidden>
+  <div class="toolbar"><button class="btn btn-ghost" data-act="back">← กลับไปรายการ</button><span id="editStatus"></span></div>
+  <form id="editForm" autocomplete="off">
+    <label for="f-title">ชื่อบทความ (H1) <span class="count" id="c-title"></span></label><input id="f-title" required>
+    <div class="grid2">
+      <div><label for="f-slug">Slug (URL) — /blog/<b id="slugPreview">…</b>/</label><input id="f-slug" pattern="[a-z0-9]+(-[a-z0-9]+)*" required></div>
+      <div><label for="f-keyword">Keyword หลัก</label><input id="f-keyword"></div>
+    </div>
+    <label for="f-metaTitle">Meta title <span class="count" id="c-metaTitle"></span></label><input id="f-metaTitle" placeholder="ถ้าว่างจะใช้ ชื่อบทความ | DANK BKK">
+    <label for="f-description">Meta description <span class="count" id="c-description"></span></label><textarea id="f-description" rows="2"></textarea>
+    <div class="grid2">
+      <div><label for="f-date">วันที่เผยแพร่ (ตั้งล่วงหน้าได้)</label><div style="display:flex;gap:8px"><input id="f-date" type="date" required><button class="btn btn-ghost" type="button" data-act="nextSlot" title="วันที่ 5 / 15 / 25 ถัดไปที่ยังว่าง">รอบถัดไป</button></div></div>
+      <div><label for="f-updated">วันที่อัปเดต (ถ้ามี)</label><input id="f-updated" type="date"></div>
+      <div><label for="f-lang">ภาษา</label><select id="f-lang"><option value="th">ไทย</option><option value="en">English</option></select></div>
+      <div><label for="f-draft">สถานะ</label><select id="f-draft"><option value="false">เผยแพร่ (ตามวันที่)</option><option value="true">ฉบับร่าง</option></select></div>
+      <div><label for="f-image">รูปหน้าปก (URL)</label><input id="f-image" placeholder="/assets/blog/…jpg"></div>
+      <div><label for="f-imageAlt">Alt ของรูปหน้าปก</label><input id="f-imageAlt"></div>
+    </div>
+
+    <h2>เนื้อหา</h2>
+    <p class="hint">Markdown: <code>## หัวข้อ H2</code> · <code>### H3</code> · <code>- รายการ</code> · <code>**ตัวหนา**</code> · <code>[ข้อความ](/blog/slug/)</code> · <code>![alt](/assets/blog/รูป.jpg)</code></p>
+    <textarea id="f-body" class="body"></textarea>
+    <div class="stats" id="bodyStats"></div>
+
+    <h2>FAQ <button class="btn btn-ghost" type="button" data-act="addFaq" style="margin-left:8px">+ เพิ่มคำถาม</button></h2>
+    <p class="hint">แสดงท้ายบทความ และสร้าง FAQ Schema (JSON-LD) ให้อัตโนมัติ</p>
+    <div id="faqs"></div>
+
+    <h2>รูปประกอบ <button class="btn btn-ghost" type="button" data-act="addImg" style="margin-left:8px">+ เพิ่มรูป</button></h2>
+    <p class="hint">ตำแหน่ง prompt สำหรับเจนรูป alt / title / description — ใส่ URL เมื่อมีรูปแล้ว แล้ววาง <code>![alt](URL)</code> ในเนื้อหาตรงตำแหน่งนั้น</p>
+    <div id="imgs"></div>
+
+    <div class="sticky-actions">
+      <button class="btn btn-primary" type="submit" id="saveBtn">บันทึก</button>
+      <button class="btn btn-ghost" type="button" data-act="preview">ดูตัวอย่าง</button>
+      <a class="btn btn-ghost" id="liveLink" target="_blank" rel="noopener" hidden>เปิดหน้าจริง ↗</a>
+      <span style="flex:1"></span>
+      <button class="btn btn-danger" type="button" data-act="delete" id="deleteBtn">ลบ</button>
+    </div>
+  </form>
+</section>
+
+</div></main>
+<div class="preview" id="preview"><div style="display:flex;justify-content:flex-end;margin-bottom:10px"><button class="btn btn-primary" data-act="closePreview">ปิดตัวอย่าง</button></div><iframe id="previewFrame" title="Preview" sandbox="allow-same-origin"></iframe></div>
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+  const TOKEN_KEY = "dank_admintok";
+  const $ = (id) => document.getElementById(id);
+  let token = "";
+  try { token = localStorage.getItem(TOKEN_KEY) || ""; } catch (e) {}
+  let posts = [], today = "", current = null, originalSlug = "";
+
+  async function api(body) {
+    const r = await fetch("/api/admin", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ token, ...body }) });
+    const data = await r.json().catch(() => ({}));
+    if (r.status === 401 && body.action !== "login") { showLogin("หมดเวลาเข้าสู่ระบบ — กรุณาเข้าใหม่"); throw new Error("401"); }
+    if (!r.ok) throw new Error(data.error || ("HTTP " + r.status));
+    return data;
+  }
+  function toast(msg) { const t = $("toast"); t.textContent = msg; t.style.display = "block"; clearTimeout(toast.t); toast.t = setTimeout(() => t.style.display = "none", 2600); }
+  function show(view) { for (const v of ["loginView", "listView", "editView"]) $(v).hidden = v !== view; $("logoutBtn").hidden = view === "loginView"; window.scrollTo(0, 0); }
+  function showLogin(msg) { token = ""; try { localStorage.removeItem(TOKEN_KEY); } catch (e) {} $("loginErr").textContent = msg || ""; show("loginView"); }
+
+  function status(p) {
+    if (p.draft) return ["draft", "ฉบับร่าง", "b-draft"];
+    if (String(p.date) > today) return ["sched", "ตั้งเวลา " + p.date, "b-sched"];
+    return ["live", "เผยแพร่แล้ว", "b-live"];
+  }
+
+  function renderList() {
+    const q = $("search").value.trim().toLowerCase(), f = $("filter").value;
+    const list = $("list"); list.textContent = "";
+    const shown = posts.filter((p) => (!f || status(p)[0] === f) && (!q || (p.title + " " + (p.keyword || "") + " " + p.slug).toLowerCase().includes(q)));
+    const counts = posts.reduce((a, p) => (a[status(p)[0]]++, a), { live: 0, sched: 0, draft: 0 });
+    $("listInfo").textContent = `เผยแพร่ ${counts.live} · ตั้งเวลา ${counts.sched} · ร่าง ${counts.draft}`;
+    for (const p of shown) {
+      const [, label, cls] = status(p);
+      const row = document.createElement("div"); row.className = "row"; row.dataset.act = "edit"; row.dataset.slug = p.slug;
+      const left = document.createElement("div");
+      const h = document.createElement("h3"); h.textContent = p.title;
+      const m = document.createElement("div"); m.className = "meta"; m.textContent = `${p.date} · ${p.lang === "th" ? "ไทย" : "EN"} · /blog/${p.slug}/${p.keyword ? " · " + p.keyword : ""}`;
+      left.append(h, m);
+      const b = document.createElement("span"); b.className = "badge " + cls; b.textContent = label;
+      row.append(left, b); list.append(row);
+    }
+    if (!shown.length) { const e = document.createElement("p"); e.className = "hint"; e.textContent = "ไม่มีบทความ"; list.append(e); }
+  }
+
+  async function loadList() {
+    const data = await api({ action: "blog-list" });
+    posts = data.posts || []; today = data.today || "";
+    renderList(); show("listView");
+  }
+
+  function nextSlot() {
+    const taken = new Set(posts.filter((p) => p.slug !== originalSlug).map((p) => p.date));
+    const d = new Date(today + "T00:00:00Z");
+    for (let i = 0; i < 800; i++) {
+      const iso = d.toISOString().slice(0, 10), day = d.getUTCDate();
+      if (iso > today && [5, 15, 25].includes(day) && !taken.has(iso)) return iso;
+      d.setUTCDate(d.getUTCDate() + 1);
+    }
+    return today;
+  }
+
+  const FIELDS = ["title", "slug", "keyword", "metaTitle", "description", "date", "updated", "lang", "image", "imageAlt", "body"];
+  function fill(p) {
+    current = p; originalSlug = p.slug || "";
+    for (const f of FIELDS) $("f-" + f).value = p[f] || "";
+    $("f-lang").value = p.lang || "th";
+    $("f-draft").value = String(p.draft !== false);
+    $("faqs").textContent = ""; (p.faqs || []).forEach(addFaq);
+    $("imgs").textContent = ""; (p.images || []).forEach(addImg);
+    $("deleteBtn").hidden = !originalSlug;
+    const st = originalSlug ? status(p) : null;
+    $("editStatus").textContent = st ? st[1] + (p.source === "code" ? " · มาจากโค้ด" : "") : "บทความใหม่";
+    const live = st && st[0] === "live";
+    $("liveLink").hidden = !live; if (live) $("liveLink").href = "/blog/" + p.slug + "/";
+    counters(); show("editView");
+  }
+
+  function field(wrap, labelText, name, value, multiline) {
+    const l = document.createElement("label"); l.textContent = labelText;
+    const i = document.createElement(multiline ? "textarea" : "input"); i.dataset.k = name; i.value = value || ""; if (multiline) i.rows = 3;
+    wrap.append(l, i); return i;
+  }
+  function addFaq(faq) {
+    const box = document.createElement("div"); box.className = "faq-row";
+    field(box, "คำถาม (H3)", "q", faq && faq.q);
+    field(box, "คำตอบ", "a", faq && faq.a, true);
+    const rm = document.createElement("button"); rm.type = "button"; rm.className = "btn btn-ghost"; rm.style.marginTop = "8px"; rm.dataset.act = "removeRow"; rm.textContent = "ลบคำถามนี้";
+    box.append(rm); $("faqs").append(box);
+  }
+  function addImg(img) {
+    const box = document.createElement("div"); box.className = "img-row";
+    const g = document.createElement("div"); g.className = "grid2";
+    const a = document.createElement("div"), b = document.createElement("div");
+    field(a, "ตำแหน่งในบทความ", "placement", img && img.placement);
+    field(b, "URL รูป (เมื่อมีแล้ว)", "src", img && img.src);
+    field(a, "Alt", "alt", img && img.alt);
+    field(b, "Title", "title", img && img.title);
+    g.append(a, b); box.append(g);
+    field(box, "Description", "description", img && img.description, true);
+    field(box, "Prompt สำหรับเจนรูป", "prompt", img && img.prompt, true);
+    if (img && img.src) { const pic = document.createElement("img"); pic.src = img.src; pic.alt = img.alt || ""; box.append(pic); }
+    const rm = document.createElement("button"); rm.type = "button"; rm.className = "btn btn-ghost"; rm.style.marginTop = "8px"; rm.dataset.act = "removeRow"; rm.textContent = "ลบรูปนี้";
+    box.append(rm); $("imgs").append(box);
+  }
+  function rows(id) { return [...$(id).children].map((box) => Object.fromEntries([...box.querySelectorAll("[data-k]")].map((i) => [i.dataset.k, i.value.trim()]))); }
+
+  function collect() {
+    const p = {};
+    for (const f of FIELDS) p[f] = $("f-" + f).value;
+    p.slug = p.slug.trim().toLowerCase();
+    p.draft = $("f-draft").value === "true";
+    p.faqs = rows("faqs").filter((f) => f.q && f.a);
+    p.images = rows("imgs");
+    return p;
+  }
+
+  function setCount(id, n, max) { const el = $(id); el.textContent = n + (max ? " / " + max : ""); el.className = "count" + (max ? (n > max ? " over" : n > 0 ? " ok" : "") : ""); }
+  function counters() {
+    setCount("c-title", $("f-title").value.length);
+    setCount("c-metaTitle", $("f-metaTitle").value.length, 60);
+    setCount("c-description", $("f-description").value.length, 155);
+    $("slugPreview").textContent = $("f-slug").value || "…";
+    const body = $("f-body").value, kw = $("f-keyword").value.trim().toLowerCase();
+    const plain = body.replace(/[#*>\[\]()!`-]/g, " ");
+    const latinWords = (plain.match(/[A-Za-z0-9]+/g) || []).length;
+    const thaiChars = (plain.match(/[฀-๿]/g) || []).length;
+    const words = latinWords + Math.round(thaiChars / 6);
+    const hits = kw ? body.toLowerCase().split(kw).length - 1 : 0;
+    const h2 = (body.match(/^##\s/gm) || []).length, h3 = (body.match(/^###\s/gm) || []).length;
+    const s = $("bodyStats"); s.textContent = "";
+    for (const [k, v] of [["คำ (ประมาณ)", words], ["Keyword หลัก", hits + (kw ? (hits >= 10 ? " ✓" : " (ควร ≥10)") : "")], ["H2", h2], ["H3", h3], ["FAQ", $("faqs").children.length]]) {
+      const span = document.createElement("span"); span.append(k + ": "); const bold = document.createElement("b"); bold.textContent = v; span.append(bold); s.append(span);
+    }
+  }
+
+  document.addEventListener("input", (e) => { if (e.target.closest("#editForm")) counters(); if (e.target.id === "search") renderList(); });
+  $("filter").addEventListener("change", renderList);
+  $("f-title").addEventListener("blur", () => {
+    if (!$("f-slug").value && /[a-z]/i.test($("f-title").value)) $("f-slug").value = $("f-title").value.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 80);
+    counters();
+  });
+
+  document.addEventListener("click", async (e) => {
+    const el = e.target.closest("[data-act]"); if (!el) return;
+    const act = el.dataset.act;
+    try {
+      if (act === "logout") { try { await api({ action: "logout" }); } catch (x) {} showLogin(); }
+      else if (act === "new") fill({ lang: "th", draft: true, date: nextSlot(), faqs: [], images: [] });
+      else if (act === "edit") fill(posts.find((p) => p.slug === el.dataset.slug));
+      else if (act === "back") { renderList(); show("listView"); }
+      else if (act === "nextSlot") $("f-date").value = nextSlot();
+      else if (act === "addFaq") { addFaq(); counters(); }
+      else if (act === "addImg") addImg();
+      else if (act === "removeRow") { el.parentElement.remove(); counters(); }
+      else if (act === "closePreview") $("preview").style.display = "none";
+      else if (act === "preview") {
+        const data = await api({ action: "blog-preview", post: collect() });
+        $("previewFrame").srcdoc = data.html; $("preview").style.display = "block";
+      } else if (act === "delete") {
+        if (!confirm("ลบบทความ “" + $("f-title").value + "” ? ลบแล้วกู้คืนไม่ได้")) return;
+        const data = await api({ action: "blog-delete", slug: originalSlug });
+        posts = data.posts; toast("ลบแล้ว"); renderList(); show("listView");
+      }
+    } catch (x) { if (x.message !== "401") toast("ผิดพลาด: " + x.message); }
+  });
+
+  $("editForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const btn = $("saveBtn"); btn.disabled = true;
+    try {
+      const data = await api({ action: "blog-save", post: collect(), originalSlug });
+      posts = data.posts; toast("บันทึกแล้ว"); fill(posts.find((p) => p.slug === data.post.slug));
+    } catch (x) { if (x.message !== "401") toast("บันทึกไม่สำเร็จ: " + x.message); }
+    btn.disabled = false;
+  });
+
+  $("loginForm").addEventListener("submit", async (e) => {
+    e.preventDefault(); $("loginErr").textContent = "";
+    try {
+      const data = await api({ action: "login", email: $("email").value, password: $("password").value });
+      token = data.token; try { localStorage.setItem(TOKEN_KEY, token); } catch (x) {}
+      $("password").value = ""; await loadList();
+    } catch (x) { $("loginErr").textContent = x.message === "wrong email or password" ? "อีเมลหรือรหัสผ่านไม่ถูกต้อง" : "เข้าสู่ระบบไม่สำเร็จ: " + x.message; }
+  });
+
+  if (token) loadList().catch(() => {}); else showLogin();
+})();
+</script>
+</body>
+</html>

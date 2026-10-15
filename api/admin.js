@@ -49,6 +49,9 @@ import { getJSON, setJSON } from "./_store.js";
 import { bustMenu } from "./_menu.js";
 import { requireEnv, staffIdentity } from "./_auth.js";
 import { requireRate } from "./_ratelimit.js";
+import { allPosts, cleanPost, readStore, writeStore, bangkokToday } from "./_blog.js";
+import { SEED_POSTS } from "./_blog-posts.js";
+import { renderBlogArticle } from "./_seo.js";
 
 const sha256 = (s) => crypto.createHash("sha256").update(String(s)).digest("hex");
 
@@ -162,6 +165,45 @@ export default async function handler(req, res) {
      against a dead session was lost the moment Save was pressed. Reaching this
      line at all means verifyToken() passed. */
   if (b.action === "verify") return res.status(200).json({ ok: true, valid: true, scope: sess.s });
+
+  /* Blog editor (/blog-admin). Owner and manager sessions only — a PIN
+     session is for promotions and nothing else. Stored posts override the
+     ones shipped in api/_blog-posts.js by slug; deleting a shipped post
+     records its slug in `deleted` so it stays gone. */
+  if (String(b.action || "").startsWith("blog-")) {
+    if (sess.s === "promo") return res.status(403).json({ error: "the promotions PIN cannot edit the blog" });
+    const store = await readStore();
+    const seedSlugs = new Set(SEED_POSTS.map((post) => post.slug));
+    if (b.action === "blog-list") return res.status(200).json({ ok: true, today: bangkokToday(), posts: allPosts(store) });
+    if (b.action === "blog-preview") {
+      const { post } = cleanPost(b.post || {});
+      return res.status(200).json({ ok: true, html: renderBlogArticle(post, { preview: true }) });
+    }
+    if (b.action === "blog-save") {
+      const { post, errors } = cleanPost(b.post || {});
+      if (errors.length) return res.status(400).json({ error: errors.join("; ") });
+      const original = String(b.originalSlug || "");
+      if (original && original !== post.slug) {
+        delete store.posts[original];
+        if (seedSlugs.has(original) && !store.deleted.includes(original)) store.deleted.push(original);
+      }
+      if (!original && (store.posts[post.slug] || seedSlugs.has(post.slug)) && !store.deleted.includes(post.slug)) {
+        return res.status(409).json({ error: "an article with this slug already exists" });
+      }
+      store.posts[post.slug] = post;
+      store.deleted = store.deleted.filter((slug) => slug !== post.slug);
+      await writeStore(store);
+      return res.status(200).json({ ok: true, post, posts: allPosts(store) });
+    }
+    if (b.action === "blog-delete") {
+      const slug = String(b.slug || "");
+      delete store.posts[slug];
+      if (seedSlugs.has(slug) && !store.deleted.includes(slug)) store.deleted.push(slug);
+      await writeStore(store);
+      return res.status(200).json({ ok: true, posts: allPosts(store) });
+    }
+    return res.status(400).json({ error: "unknown action" });
+  }
 
   if (b.action === "save") {
     const ov = b.overrides || {};
