@@ -1,7 +1,7 @@
 import { getJSON, indexList } from './_store.js';
 import { liffId, verifyLineIdToken } from './_liff.js';
 import { listAccounts } from './_staff-accounts.js';
-import { lineMessages } from './_line.js';
+import { lineMessages, isStaffGroupMember } from './_line.js';
 import { requirePermission, safeEq, hasPermission } from './_auth.js';
 import { requireRate } from './_ratelimit.js';
 import * as delivery from './_delivery.js';
@@ -11,7 +11,7 @@ import {createProofCompleter, proofKey, jpegPhoto} from './_delivery-proof.js';
 
 // Dependency injection keeps lifecycle/security tests isolated from real orders.
 export function createHandler(deps = {}) {
-  const d = { ...delivery, get: getJSON, accounts: listAccounts, send: lineMessages, verifyLine: verifyLineIdToken, orderIds: () => indexList('orders:index'), permission: requirePermission, rate: requireRate, ...deps };
+  const d = { ...delivery, get: getJSON, accounts: listAccounts, send: lineMessages, verifyLine: verifyLineIdToken, groupMember: isStaffGroupMember, orderIds: () => indexList('orders:index'), permission: requirePermission, rate: requireRate, ...deps };
   const demoRoutes = new Map(), demoFlights = new Map();
   return async function handler(req, res) {
     res.setHeader('Cache-Control', 'private, no-store');
@@ -27,10 +27,13 @@ export function createHandler(deps = {}) {
       if (!lineToken) return d.permission(req, res, 'orders');
       const sub = await d.verifyLine(lineToken);
       if (!sub) { res.status(401).json({ error: 'LINE sign-in expired. Close and reopen the form.' }); return false; }
+      // Anyone in the staff LINE group may use the form; registered LINE riders too.
+      if (await d.groupMember(sub)) return true;
       const row = (await d.get(RIDERS_KEY) || []).find(r => r.lineUserId === sub);
       const account = row && (await d.accounts()).find(a => a.id === row.accountId && a.active !== false && hasPermission(a, 'orders'));
-      if (!account) { res.status(403).json({ error: 'Your LINE account is not registered as staff. Ask a manager to add your LINE ID in Staff portal → Orders → LINE riders.' }); return false; }
-      return true;
+      if (account) return true;
+      res.status(403).json({ error: 'Only members of the DANK staff LINE group can use this form. If you are in the group, ask the manager to check that the form and the DANK bot are under the same LINE Provider.' });
+      return false;
     };
     if (b.action === 'liff-config') return res.status(200).json({ liffId: liffId() });
     if (b.action === 'proof-image') {
