@@ -281,7 +281,7 @@ ${jsonLd(entities)}
 </style>
 </head>
 <body>
-<header><div class="wrap"><a class="brand" href="/">DANK <b>BKK</b></a><nav class="main" aria-label="Main navigation"><a href="/products/">Products</a><a href="/locations/">Locations</a><a href="/about/">About</a><a href="/faq/">FAQ</a><a href="/contact/">Contact</a></nav></div></header>
+<header><div class="wrap"><a class="brand" href="/">DANK <b>BKK</b></a><nav class="main" aria-label="Main navigation"><a href="/products/">Products</a><a href="/locations/">Locations</a><a href="/about/">About</a><a href="/faq/">FAQ</a><a href="/blog/">Blog</a><a href="/contact/">Contact</a></nav></div></header>
 <main><div class="wrap">${body}</div></main>
 <footer><div class="wrap">DANK BKK · For adults 20+ · Please consume responsibly.</div></footer>
 </body></html>`;
