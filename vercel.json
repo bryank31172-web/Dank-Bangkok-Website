@@ -99,6 +99,11 @@
       "source": "/blog",
       "destination": "/blog/",
       "permanent": true
+    },
+    {
+      "source": "/blog/:post",
+      "destination": "/blog/:post/",
+      "permanent": true
     }
   ],
   "rewrites": [
@@ -165,6 +170,10 @@
     {
       "source": "/blog/",
       "destination": "/api/seo?view=blog"
+    },
+    {
+      "source": "/blog/:post/",
+      "destination": "/api/seo?view=post&post=:post"
     },
     {
       "source": "/sitemap-pages.xml",
