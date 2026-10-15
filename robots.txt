@@ -17,4 +17,4 @@ Disallow: /analytics.html
 Disallow: /follow-qr.html
 Disallow: /api/
 
-Sitemap: https://dankbangkok.com/sitemap.xml
+Sitemap: https://www.dankbangkok.com/sitemap.xml

@@ -5,7 +5,7 @@
 
 import { findPost, markdownToHtml, publishedPosts } from "./_blog.js";
 
-export const SITE_URL = "https://dankbangkok.com";
+export const SITE_URL = "https://www.dankbangkok.com";
 
 export const LOCATIONS = [
   {
@@ -454,14 +454,14 @@ export function renderStaticPage(page) {
   return null;
 }
 
-function formatDate(value) {
+function formatDate(value, lang = "en") {
   const date = new Date(`${value}T00:00:00Z`);
-  return Number.isNaN(date.getTime()) ? "" : date.toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" });
+  return Number.isNaN(date.getTime()) ? "" : date.toLocaleDateString(lang === "th" ? "th-TH" : "en-GB", { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" });
 }
 
 function postCard(post) {
   const image = absoluteUrl(post.image);
-  return `<a class="card post-card" href="/blog/${escapeHtml(post.slug)}/">${image ? `<img src="${escapeHtml(image)}" alt="" loading="lazy">` : ""}<div class="post-body"><div class="post-date">${escapeHtml(formatDate(post.date))}</div><h2>${escapeHtml(post.title)}</h2><div class="meta">${escapeHtml(post.description)}</div></div></a>`;
+  return `<a class="card post-card" href="/blog/${escapeHtml(post.slug)}/">${image ? `<img src="${escapeHtml(image)}" alt="" loading="lazy">` : ""}<div class="post-body"><div class="post-date">${escapeHtml(formatDate(post.date, post.lang))}</div><h2>${escapeHtml(post.title)}</h2><div class="meta">${escapeHtml(post.description)}</div></div></a>`;
 }
 
 export function renderBlogIndex() {
@@ -511,7 +511,7 @@ export function renderBlogPost(slug) {
     lang: post.lang || "en",
     head,
     entities: [breadcrumbEntity(items, url), article],
-    body: `${breadcrumbs(items)}<article class="article"><div class="post-date">${escapeHtml(formatDate(post.date))}${post.updated ? ` · Updated ${escapeHtml(formatDate(post.updated))}` : ""}</div><h1>${escapeHtml(post.title)}</h1>${image ? `<img class="hero" src="${escapeHtml(image)}" alt="">` : ""}<div class="article-body">${markdownToHtml(post.body)}</div><div class="actions"><a class="button" href="/shop">Visit the shop</a><a class="button secondary" href="/blog/">More articles</a></div></article>`,
+    body: `${breadcrumbs(items)}<article class="article"><div class="post-date">${escapeHtml(formatDate(post.date, post.lang))}${post.updated ? ` · ${post.lang === "th" ? "อัปเดต" : "Updated"} ${escapeHtml(formatDate(post.updated, post.lang))}` : ""}</div><h1>${escapeHtml(post.title)}</h1>${image ? `<img class="hero" src="${escapeHtml(image)}" alt="">` : ""}<div class="article-body">${markdownToHtml(post.body)}</div><div class="actions"><a class="button" href="/shop">Visit the shop</a><a class="button secondary" href="/blog/">More articles</a></div></article>`,
   });
 }
 

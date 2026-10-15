@@ -28,7 +28,7 @@ test('published post renders with article schema, lang and escaping',()=>withPos
  assert.match(html,/<h2>Heading<\/h2>/);
  assert.match(renderBlogIndex(),/href="\/blog\/test-post\/"/);
  assert.doesNotMatch(renderBlogIndex(),/noindex/);
- assert.match(renderSitemap('blog'),/<loc>https:\/\/dankbangkok\.com\/blog\/test-post\/<\/loc><lastmod>2026-10-01<\/lastmod>/);
+ assert.match(renderSitemap('blog'),/<loc>https:\/\/www\.dankbangkok\.com\/blog\/test-post\/<\/loc><lastmod>2026-10-01<\/lastmod>/);
 }));
 test('markdown escapes HTML and refuses javascript: links',()=>{
  const html=markdownToHtml('<script>x</script> [a](javascript:alert(1))');
