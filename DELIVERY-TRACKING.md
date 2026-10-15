@@ -1,6 +1,8 @@
 # Delivery tracking
 
-This feature is for explicitly approved food and ordinary merchandise orders.
+Checkout opens tracking automatically for orders whose products are selected in
+Delivery products (or for every delivery order when Track every product is on).
+Staff can create a link for any delivery order from the staff portal or LINE form.
 New orders containing any other products keep the existing checkout flow.
 
 ## What customers see
@@ -24,9 +26,10 @@ completion screen shows the order summary and Back to shop; no review is request
 
 ## Enable in Vercel
 
-1. Staff portal -> Orders -> Delivery products: select eligible food/ordinary
-   merchandise from the existing live POS/database catalog and press Save products.
-   Selections persist in the connected database. Mixed orders are excluded.
+1. Staff portal -> Orders -> Delivery products: turn on **Track every product**, or
+   select products from the live POS/database catalog (Select all shown helps), and
+   press Save products. Selections persist in the connected database. Without Track
+   every product, an order is tracked at checkout only if every item is selected.
    An empty saved selection disables new tracking. The legacy
    DELIVERY_ALLOWED_PRODUCT_IDS environment variable is only a fallback before
    the first database selection is saved. Bundled/demo catalogs cannot enable tracking.
@@ -87,8 +90,9 @@ were approved afterwards), open it and press Create delivery tracking link. Sear
 the destination (Google autocomplete sets the map pin; without a Maps key, enter the
 coordinates), choose a rider (staff with orders access and a phone, on-shift first),
 then Create link & assign rider. Riders with a registered LINE ID get their link in
-LINE; otherwise copy it from the dialog. The same
-eligibility rules as checkout apply; ineligible orders are refused with a reason.
+LINE; otherwise copy it from the dialog. Staff-created links work for any delivery
+order, whatever its products. An optional Note for rider (gate code, floor, call on
+arrival) shows on the rider's page and in their LINE message, never to the customer.
 Pressing it again returns the existing link instead of creating a second one.
 
 Staff portal -> Orders -> open an eligible order -> Manage delivery tracking.
@@ -239,7 +243,8 @@ tracking link to the customer's chat; the group gets a one-line summary.
 Who can use it: anyone whose LINE ID is saved against an active staff account with
 orders access in Staff portal → Orders → LINE riders. Everyone else is refused. The
 LINE sign-in only unlocks this form (order list, rider list, create link); every other
-staff action still needs the staff key. Product eligibility is the same as checkout.
+staff action still needs the staff key. Works for any delivery order. Delivery orders
+without tracking also get a Create delivery link button in the staff group.
 
 One-time setup in LINE Developers (same provider as the shop Official Account):
 

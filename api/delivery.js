@@ -119,6 +119,7 @@ export function createHandler(deps = {}) {
         if (['done', 'cancelled', 'canceled'].includes(order.status) || await d.get(d.terminalKey(id)))
           return res.status(409).json({ error: 'This order has already ended' });
         const place = String(b.place || '').trim().slice(0, 200);
+        const note = String(b.note || '').replace(/\s+/g, ' ').trim().slice(0, 300);
         if (b.destination != null && !d.point(b.destination)) return res.status(400).json({ error: 'Choose the destination from the suggestions' });
         let rider = null;
         if (b.riderId) {
@@ -128,8 +129,8 @@ export function createHandler(deps = {}) {
         let record = await d.get(d.key(id)), created = false;
         if (!record || record.expiresAt <= Date.now()) {
           const destination = d.point(b.destination) || d.point(order.delivery?.coordinates);
-          const url = await d.createDelivery({ ...order, orderId: id, delivery: { ...order.delivery, coordinates: destination } });
-          if (!url) return res.status(409).json({ error: 'This order can\'t be tracked. Every item must be on the Delivery products list, and the live POS menu must be connected.' });
+          const url = await d.createDelivery({ ...order, orderId: id, delivery: { ...order.delivery, coordinates: destination } }, { byStaff: true });
+          if (!url) return res.status(503).json({ error: 'Could not create the tracking link. Please retry.' });
           record = await d.get(d.key(id)); created = true;
           if (!record) throw new Error('Storage unavailable');
         }
@@ -140,6 +141,7 @@ export function createHandler(deps = {}) {
         const previous = record.driver;
         record.destination = destination;
         if (place) record.place = place;
+        if (note || b.note === '') record.note = note;
         record.driver = { name: rider.name, phone: rider.phone, photo: '', token: d.token(), assignedAt: Date.now(), accountId: rider.id, assignedVia: 'staff' };
         await d.write(d.key(id), record);
         if (previous) { await d.write(d.locationKey(id, previous.token), null, 1); if (d.departureKey) await d.write(d.departureKey(id, previous.token), null, 1); }
@@ -147,7 +149,7 @@ export function createHandler(deps = {}) {
         // Best effort: the link is also shown to staff to copy, so a failed LINE send loses nothing.
         let lineSent = false;
         if (rider.lineUserId) {
-          try { lineSent = Boolean((await d.send(rider.lineUserId, [{ type: 'text', text: riderLinkMessage(id, record.place || order.delivery?.address, RIDER_LINK_ORIGIN + driverUrl) }])).ok); } catch {}
+          try { lineSent = Boolean((await d.send(rider.lineUserId, [{ type: 'text', text: riderLinkMessage(id, record.place || order.delivery?.address, RIDER_LINK_ORIGIN + driverUrl, record.note) }])).ok); } catch {}
         }
         return res.status(200).json({ ok: true, created, customerUrl, driverUrl, rider: { name: rider.name, phone: rider.phone }, lineSent, lineRegistered: Boolean(rider.lineUserId) });
       }
@@ -268,6 +270,7 @@ export function createHandler(deps = {}) {
         mapsKey: process.env.GOOGLE_MAPS_BROWSER_KEY || '', mapId: process.env.GOOGLE_MAPS_MAP_ID || 'DEMO_MAP_ID' };
       if (driver || staff) {
         result.address = record.place || [order.delivery?.zone, order.delivery?.address].filter(Boolean).join(', ');
+        if (record.note) result.note = record.note;
         const phone=String(order.customer?.phone || order.customer?.contact || '').trim().replace(/[\s()-]/g,'');
         result.customer = {name:String(order.customer?.name || 'Customer').slice(0,80),phone:/^\+?\d{7,15}$/.test(phone)?phone:''};
       }

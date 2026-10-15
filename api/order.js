@@ -20,7 +20,7 @@ import { getBalance } from "./_wallet.js";
 import { boxesInOrder, issueGifts, giftAlertLines, getGiftConfig } from "./_boxgifts.js";
 import { getMenu } from "./_menu.js";
 import { notifyStaffLine, lineMessages } from "./_line.js";
-import { deliveryOrderCard } from "./_delivery-line.js";
+import { deliveryOrderCard, createLinkCard } from "./_delivery-line.js";
 import { notifyStaffWhatsApp } from "./_whatsapp.js";
 import { pushShopifyOrder } from "./_shopify.js";
 import { requireRate } from "./_ratelimit.js";
@@ -276,8 +276,10 @@ export default async function handler(req, res) {
 
   if (saved) {
     try {
-      const r = deliveryUrl
-        ? await lineMessages(process.env.LINE_TO, [{type: 'text', text: staffAlert.slice(0,4900)}, deliveryOrderCard({...o, orderId}, deliveryUrl)])
+      const card = deliveryUrl ? deliveryOrderCard({...o, orderId}, deliveryUrl)
+        : o.fulfilment === 'delivery' ? createLinkCard({...o, orderId}) : null;
+      const r = card
+        ? await lineMessages(process.env.LINE_TO, [{type: 'text', text: staffAlert.slice(0,4900)}, card])
         : await notifyStaffLine(staffAlert);
       if (!r.skipped) {
         results.push(Boolean(r.ok));

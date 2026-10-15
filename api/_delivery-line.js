@@ -10,6 +10,18 @@ export const RIDERS_KEY = 'delivery:line-riders:v1';
 const ORIGIN = 'https://www.dankbangkok.com';
 const uid = value => /^U[0-9a-f]{32}$/.test(value || '');
 const postback = (action, id, rider = '', page = 0) => new URLSearchParams({delivery: action, id, rider, page}).toString();
+// Delivery order without tracking yet: one button that opens the LINE form for it.
+export function createLinkCard(order) {
+  const url = liffUrl(order.orderId);
+  return url ? {type: 'flex', altText: `Delivery ${order.orderId}: create delivery link`, contents: {
+    type: 'bubble', body: {type: 'box', layout: 'vertical', spacing: 'md', contents: [
+      {type: 'text', text: 'DELIVERY ORDER', weight: 'bold', color: '#008F4B'},
+      {type: 'text', text: String(order.orderId), weight: 'bold', size: 'xl'},
+      {type: 'text', text: 'Set the destination and choose a rider to create the tracking link.', wrap: true, size: 'sm'},
+    ]}, footer: {type: 'box', layout: 'vertical', contents: [
+      {type: 'button', style: 'primary', color: '#008F4B', action: {type: 'uri', label: 'Create delivery link', uri: url}},
+    ]}}} : null;
+}
 export function deliveryOrderCard(order, customerUrl) {
   return {type: 'flex', altText: `Delivery ${order.orderId}: track delivery or choose rider`, contents: {
     type: 'bubble', body: {type: 'box', layout: 'vertical', spacing: 'md', contents: [
@@ -35,8 +47,8 @@ export function riderOptions(accounts, rows) {
     return [{id: a.id, name: String(a.name || ''), phone, onShift: Boolean(r.onShift), lineUserId: uid(r.lineUserId) ? r.lineUserId : ''}];
   }).sort((a, b) => Number(b.onShift) - Number(a.onShift) || a.name.localeCompare(b.name));
 }
-export function riderLinkMessage(id, address, url) {
-  return `Delivery ${id}\n${address || ''}\nOpen your rider controls:\n${url}\nTake a picture to start delivery, then tap Delivered when complete. Open in Safari/Chrome, allow GPS and keep the page open and phone awake.`;
+export function riderLinkMessage(id, address, url, note = '') {
+  return `Delivery ${id}\n${address || ''}${note ? '\nNote: ' + note : ''}\nOpen your rider controls:\n${url}\nTake a picture to start delivery, then tap Delivered when complete. Open in Safari/Chrome, allow GPS and keep the page open and phone awake.`;
 }
 export const RIDER_LINK_ORIGIN = ORIGIN;
 export function createRidersHandler(deps = {}) {
@@ -131,7 +143,7 @@ export function createDeliveryLineHandler(deps = {}) {
       const latest = await d.get(d.key(id));
       if (latest?.driver?.token !== record.driver.token) throw new Error('Rider assignment changed. Use the staff portal.');
       const url = ORIGIN + '/driver-delivery.html#' + new URLSearchParams({id, token: record.driver.token});
-      const sent = await d.send(rider.lineUserId, [{type: 'text', text: riderLinkMessage(id, record.place || order.delivery?.address, url)}], {retryKey: record.driver.retryKey});
+      const sent = await d.send(rider.lineUserId, [{type: 'text', text: riderLinkMessage(id, record.place || order.delivery?.address, url, record.note)}], {retryKey: record.driver.retryKey});
       const confirmation = sent.ok
         ? `Assigned ${id} to ${rider.name}. LINE accepted the direct message to their personal chat.`
         : `Assigned ${id} to ${rider.name}, but LINE could not accept the direct message. Ask the rider to add the shop LINE Official Account as a friend, then tap their rider selection again to retry.`;

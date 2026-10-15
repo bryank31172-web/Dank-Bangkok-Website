@@ -19,14 +19,16 @@ function fixture(overrides={}){
 }
 const gps=()=>({location:{lat:13.71,lng:100.51,accuracy:8,capturedAt:Date.now()}});
 
-test('eligibility is authoritative, opt-in and rejects mixed/restricted carts',()=>{
- const menu=[{shId:'food',name:'Sandwich',category:'Food'},{shId:'restricted',name:'THC brownie',category:'Edibles'}];
+test('eligibility follows the saved selection, or every delivery order when Track every product is on',()=>{
+ const menu=[{shId:'food',name:'Sandwich',category:'Food'},{shId:'flower',name:'Blue Zangria',category:'Exotics'}];
  const order={fulfilment:'delivery',items:[{shId:'food'}]};
  assert.equal(eligible(order,menu,'food'),true);
  assert.equal(eligible(order,menu,''),false);
- assert.equal(eligible({...order,items:[{shId:'food'},{shId:'restricted',name:'Sandwich',category:'Food'}]},menu,'food,restricted'),false);
+ assert.equal(eligible({...order,items:[{shId:'food'},{shId:'flower'}]},menu,'food'),false);
+ assert.equal(eligible({...order,items:[{shId:'food'},{shId:'flower'}]},menu,'food,flower'),true);
  assert.equal(eligible({...order,items:[{shId:'invented'}]},menu,'invented'),false);
  assert.equal(eligible({...order,fulfilment:'table'},menu,'food'),false);
+ assert.equal(eligible({...order,items:[{shId:'flower'}]},menu,'',true),true);
  assert.equal(point({lat:'13',lng:100}),null);assert.equal(point({lat:91,lng:100}),null);
 });
 test('private customer lookup contains no credential or customer address',async()=>{
@@ -144,15 +146,17 @@ test('completion during route preview cannot return rider GPS',async()=>{
 });
 test('staff can create a missing tracking link; same eligibility, idempotent, staff only',async()=>{
  let made=0;
- let f;f=fixture({createDelivery:async o=>{if(!o.items.every(i=>i.shId==='food'))return null;made++;f.db.set(key(o.orderId),{orderId:o.orderId,customerToken:'n'.repeat(64),expiresAt:Date.now()+86400000,destination:o.delivery?.coordinates||null,departurePhotoRequired:true,driver:null});return '/delivery.html#x'}});
+ let f;f=fixture({createDelivery:async(o,opt)=>{assert.equal(opt?.byStaff,true);made++;f.db.set(key(o.orderId),{orderId:o.orderId,customerToken:'n'.repeat(64),expiresAt:Date.now()+86400000,destination:o.delivery?.coordinates||null,departurePhotoRequired:true,driver:null});return '/delivery.html#x'}});
  f.db.delete(key(f.id));f.db.get('order:'+f.id).fulfilment='delivery';f.db.get('order:'+f.id).items=[{name:'Sandwich',qty:1,shId:'food'}];
  assert.equal((await f.call({role:'staff',action:'create'})).code,401);
  assert.equal((await f.call({action:'create'})).code,403);
  const r=await f.call({role:'staff',staff:true,action:'create'});assert.equal(r.code,200);assert.equal(r.data.created,true);assert.match(r.data.customerUrl,/^\/delivery\.html#/);
  f.db.set(key(f.id),{orderId:f.id,customerToken:'c'.repeat(64),expiresAt:Date.now()+1000,destination:null,driver:null});
  const again=await f.call({role:'staff',staff:true,action:'create'});assert.equal(again.data.created,false);assert.equal(made,1);assert.match(again.data.customerUrl,/token=c{64}/);
- f.db.delete(key(f.id));f.db.get('order:'+f.id).items=[{name:'THC brownie',qty:1,shId:'restricted'}];
- assert.equal((await f.call({role:'staff',staff:true,action:'create'})).code,409);
+ // Staff links work for any delivery order, whatever the items.
+ f.db.delete(key(f.id));f.db.get('order:'+f.id).items=[{name:'Pre-roll',qty:1,shId:'preroll'}];
+ assert.equal((await f.call({role:'staff',staff:true,action:'create'})).code,200);assert.equal(made,2);
+ f.db.delete(key(f.id));
  f.db.get('order:'+f.id).fulfilment='pickup';assert.equal((await f.call({role:'staff',staff:true,action:'create'})).code,409);
  f.db.get('order:'+f.id).fulfilment='delivery';f.db.get('order:'+f.id).status='done';assert.equal((await f.call({role:'staff',staff:true,action:'create'})).code,409);
 });
@@ -170,10 +174,12 @@ test('create link with destination and chosen rider assigns, DMs on LINE and rej
  assert.equal((await f.call({role:'staff',staff:true,action:'create',body:{riderId:'a2',destination:{lat:13.7,lng:100.5}}})).code,400);
  assert.equal((await f.call({role:'staff',staff:true,action:'create',body:{riderId:'a3',destination:{lat:13.7,lng:100.5}}})).code,400);
  assert.equal((await f.call({role:'staff',staff:true,action:'create',body:{destination:{lat:'x',lng:1}}})).code,400);
- const r=await f.call({role:'staff',staff:true,action:'create',body:{riderId:'a1',place:'Siam Paragon',destination:{lat:13.7463,lng:100.5346}}});
+ const r=await f.call({role:'staff',staff:true,action:'create',body:{riderId:'a1',place:'Siam Paragon',note:'  Gate 3,\n call on arrival ',destination:{lat:13.7463,lng:100.5346}}});
  assert.equal(r.code,200);assert.equal(r.data.created,true);assert.match(r.data.driverUrl,/^\/driver-delivery\.html#/);assert.equal(r.data.lineSent,true);
  const rec=f.db.get(key(f.id));assert.deepEqual(rec.destination,{lat:13.7463,lng:100.5346});assert.equal(rec.place,'Siam Paragon');assert.equal(rec.driver.accountId,'a1');assert.equal(rec.driver.phone,'0812345678');
- assert.equal(sent.length,1);assert.match(sent[0][1],/Siam Paragon/);assert.match(sent[0][1],/https:\/\/www\.dankbangkok\.com\/driver-delivery\.html#/);
+ assert.equal(sent.length,1);assert.match(sent[0][1],/Siam Paragon/);assert.match(sent[0][1],/Note: Gate 3, call on arrival/);assert.equal(f.db.get(key(f.id)).note,'Gate 3, call on arrival');
+ const cust=await f.call({token:'n'.repeat(64)});assert.equal(cust.code,200);assert.equal(cust.data.note,undefined);
+ const drv=await f.call({role:'driver',token:f.db.get(key(f.id)).driver.token});assert.equal(drv.data.note,'Gate 3, call on arrival');assert.match(sent[0][1],/https:\/\/www\.dankbangkok\.com\/driver-delivery\.html#/);
  const s=await f.call({role:'staff',staff:true});assert.equal(s.data.address,'Siam Paragon');assert.equal(r.data.driverUrl,s.data.driverUrl);
 });
 test('LINE form: staff sign in with a registered LINE ID; others refused; staff key paths unchanged',async()=>{

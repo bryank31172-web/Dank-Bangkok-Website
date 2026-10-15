@@ -9,14 +9,14 @@ function fixture(){
  async function call(method='GET',ids,credential='manager'){const res={code:200,setHeader(){},status(c){this.code=c;return this},json(j){this.data=j;return this}};await handler({method,headers:{authorization:credential},body:{ids}},res);return res}
  return{call,writes,setSource:s=>source=s,setReady:v=>ready=v};
 }
-test('live database catalog provides product names and SKU tiers, excludes unsupported products',async()=>{
- const f=fixture(),r=await f.call();assert.equal(r.code,200);assert.deepEqual(r.data.products.map(p=>p.id).sort(),['food','shirt-m']);assert.equal(r.data.source,'pos');assert.equal(r.data.products.find(p=>p.id==='shirt-m').option,'M');
+test('live database catalog lists every product with names and SKU tiers',async()=>{
+ const f=fixture(),r=await f.call();assert.equal(r.code,200);assert.deepEqual(r.data.products.map(p=>p.id).sort(),['food','restricted','shirt-m']);assert.equal(r.data.all,false);assert.equal(r.data.source,'pos');assert.equal(r.data.products.find(p=>p.id==='shirt-m').option,'M');
 });
 test('selection persists in database and controls checkout eligibility',async()=>{
  const f=fixture();assert.equal((await f.call('POST',['food','food'])).code,200);assert.deepEqual(f.writes,[PRODUCTS_CONFIG_KEY]);const r=await f.call();assert.deepEqual(r.data.ids,['food']);assert.equal(eligible({fulfilment:'delivery',items:[{shId:'food'}]},menu,r.data.ids),true);assert.equal(eligible({fulfilment:'delivery',items:[{shId:'shirt-m'}]},menu,r.data.ids),false);
 });
-test('unknown, removed and restricted IDs cannot be saved; orders permission alone cannot configure',async()=>{
- const f=fixture();for(const ids of [['unknown'],['restricted'],'food'])assert.equal((await f.call('POST',ids)).code,400);assert.equal((await f.call('POST',['food'],'driver')).code,403);assert.deepEqual(f.writes,[]);
+test('unknown and removed IDs cannot be saved; orders permission alone cannot configure',async()=>{
+ const f=fixture();for(const ids of [['unknown'],'food'])assert.equal((await f.call('POST',ids)).code,400);assert.equal((await f.call('POST',['food'],'driver')).code,403);assert.deepEqual(f.writes,[]);
 });
 test('bundled fallback and database outage fail closed',async()=>{
  const f=fixture();f.setSource('bundled');assert.equal((await f.call()).code,503);assert.equal((await f.call('POST',['food'])).code,503);f.setSource('pos');f.setReady(false);assert.equal((await f.call()).code,503);assert.deepEqual(f.writes,[]);
@@ -25,5 +25,14 @@ test('saved empty selection overrides legacy env configuration',async()=>{
  assert.deepEqual(configuredProductIds(null,'food'),['food']);assert.deepEqual(configuredProductIds({ids:[]},'food'),[]);assert.deepEqual(configuredProductIds({ids:['shirt-m']},'food'),['shirt-m']);assert.deepEqual(configuredProductIds({ids:'food'},'food'),[]);
 });
 test('a changed live product or removed SKU no longer qualifies',()=>{
- const order={fulfilment:'delivery',items:[{shId:'food'}]};assert.equal(eligible(order,[],['food']),false);assert.equal(eligible(order,[{shId:'food',name:'THC sandwich',category:'Food'}],['food']),false);assert.deepEqual(catalogProducts([{shId:'unknown',name:'Unclassified',category:'Other'}]),[]);
+ const order={fulfilment:'delivery',items:[{shId:'food'}]};assert.equal(eligible(order,[],['food']),false);assert.deepEqual(catalogProducts([{shId:'hidden',name:'Hidden',category:'Other',_hidden:true}]),[]);
+});
+
+test('Track every product: saved switch makes every delivery order eligible, including new POS products',async()=>{
+ const f=fixture();const res={code:200,setHeader(){},status(c){this.code=c;return this},json(j){this.data=j;return this}};
+ const h=createCatalogHandler({ready:()=>true,menu:async()=>({source:'pos',data:menu}),get:async()=>null,write:async()=>{},permission:()=>true});
+ await h({method:'POST',headers:{},body:{ids:[],all:true}},res);assert.equal(res.code,200);assert.equal(res.data.all,true);
+ const order={fulfilment:'delivery',items:[{shId:'added-later'}]};
+ assert.equal(eligible(order,menu,[],true),true);assert.equal(eligible(order,menu,[],false),false);
+ assert.equal(eligible({...order,fulfilment:'pickup'},menu,[],true),false);assert.equal(eligible({fulfilment:'delivery',items:[]},menu,[],true),false);
 });
