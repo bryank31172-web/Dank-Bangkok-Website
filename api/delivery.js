@@ -51,6 +51,24 @@ export function createHandler(deps = {}) {
       if (!d.ready()) return res.status(503).json({ error: 'Tracking temporarily unavailable. Please retry.' });
       const staff = b.role === 'staff';
       if (staff && !d.permission(req, res, 'orders')) return;
+      if (b.action === 'create') {
+        // Staff can create tracking for an order that has none (e.g. setup failed at
+        // checkout, or its products were approved afterwards). The same eligibility
+        // rules as checkout apply; this never widens which orders can be tracked.
+        if (!staff) return res.status(403).json({ error: 'Staff access required' });
+        if (req.method !== 'POST') return res.status(405).json({ error: 'POST only' });
+        const order = await d.get('order:' + id);
+        if (!order) return res.status(404).json({ error: 'Order not found' });
+        if (order.fulfilment !== 'delivery') return res.status(409).json({ error: 'Tracking links are only for delivery orders' });
+        if (['done', 'cancelled', 'canceled'].includes(order.status) || await d.get(d.terminalKey(id)))
+          return res.status(409).json({ error: 'This order has already ended' });
+        const existing = await d.get(d.key(id));
+        if (existing && existing.expiresAt > Date.now())
+          return res.status(200).json({ ok: true, created: false, customerUrl: '/delivery.html#' + new URLSearchParams({ id, token: existing.customerToken }) });
+        const customerUrl = await d.createDelivery({ ...order, orderId: id });
+        if (!customerUrl) return res.status(409).json({ error: 'This order can\'t be tracked. Every item must be on the Delivery products list, and the live POS menu must be connected.' });
+        return res.status(200).json({ ok: true, created: true, customerUrl });
+      }
       const record = await d.get(d.key(id));
       if (!d.ready()) throw new Error('Storage unavailable');
       if (!record || record.expiresAt <= Date.now()) return res.status(404).json({ error: 'Tracking link unavailable or expired' });

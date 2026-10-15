@@ -142,3 +142,17 @@ test('completion during route preview cannot return rider GPS',async()=>{
  let f;f=fixture({routeFor:async()=>{f.db.set(terminalKey(f.id),{status:'completed'});return {minutes:4}}});
  const r=await f.call({role:'driver',token:f.driverToken,action:'preview-route',body:gps()});assert.equal(r.code,409);assert.equal(r.data.location,undefined);
 });
+test('staff can create a missing tracking link; same eligibility, idempotent, staff only',async()=>{
+ let made=0;
+ const f=fixture({createDelivery:async o=>o.items.every(i=>i.shId==='food')?(made++,'/delivery.html#id='+o.orderId+'&token=new'):null});
+ f.db.delete(key(f.id));f.db.get('order:'+f.id).fulfilment='delivery';f.db.get('order:'+f.id).items=[{name:'Sandwich',qty:1,shId:'food'}];
+ assert.equal((await f.call({role:'staff',action:'create'})).code,401);
+ assert.equal((await f.call({action:'create'})).code,403);
+ const r=await f.call({role:'staff',staff:true,action:'create'});assert.equal(r.code,200);assert.equal(r.data.created,true);assert.match(r.data.customerUrl,/^\/delivery\.html#/);
+ f.db.set(key(f.id),{orderId:f.id,customerToken:'c'.repeat(64),expiresAt:Date.now()+1000,destination:null,driver:null});
+ const again=await f.call({role:'staff',staff:true,action:'create'});assert.equal(again.data.created,false);assert.equal(made,1);assert.match(again.data.customerUrl,/token=c{64}/);
+ f.db.delete(key(f.id));f.db.get('order:'+f.id).items=[{name:'THC brownie',qty:1,shId:'restricted'}];
+ assert.equal((await f.call({role:'staff',staff:true,action:'create'})).code,409);
+ f.db.get('order:'+f.id).fulfilment='pickup';assert.equal((await f.call({role:'staff',staff:true,action:'create'})).code,409);
+ f.db.get('order:'+f.id).fulfilment='delivery';f.db.get('order:'+f.id).status='done';assert.equal((await f.call({role:'staff',staff:true,action:'create'})).code,409);
+});

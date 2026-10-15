@@ -82,6 +82,11 @@ The browser demo previews tracking only; it does not send LINE messages. Live
 dispatch requires the above account and group setup and a configured eligible
 order. Automated tests use simulated LINE requests and do not contact real staff.
 
+If a delivery order has no tracking yet (setup failed at checkout, or its products
+were approved afterwards), open it and press Create delivery tracking link. The same
+eligibility rules as checkout apply; ineligible orders are refused with a reason.
+Pressing it again returns the existing link instead of creating a second one.
+
 Staff portal -> Orders -> open an eligible order -> Manage delivery tracking.
 Enter driver name/phone, upload profile photo and confirm destination coordinates.
 The checkout captures coordinates when the customer selects a Google Places
