@@ -1,7 +1,8 @@
-import { getJSON } from './_store.js';
+import { getJSON, indexList } from './_store.js';
+import { liffId, verifyLineIdToken } from './_liff.js';
 import { listAccounts } from './_staff-accounts.js';
 import { lineMessages } from './_line.js';
-import { requirePermission, safeEq } from './_auth.js';
+import { requirePermission, safeEq, hasPermission } from './_auth.js';
 import { requireRate } from './_ratelimit.js';
 import * as delivery from './_delivery.js';
 import {createSetupHandler} from './_delivery-setup.js';
@@ -10,7 +11,7 @@ import {createProofCompleter, proofKey, jpegPhoto} from './_delivery-proof.js';
 
 // Dependency injection keeps lifecycle/security tests isolated from real orders.
 export function createHandler(deps = {}) {
-  const d = { ...delivery, get: getJSON, accounts: listAccounts, send: lineMessages, permission: requirePermission, rate: requireRate, ...deps };
+  const d = { ...delivery, get: getJSON, accounts: listAccounts, send: lineMessages, verifyLine: verifyLineIdToken, orderIds: () => indexList('orders:index'), permission: requirePermission, rate: requireRate, ...deps };
   let demoRouteCache, demoRouteFlight;
   return async function handler(req, res) {
     res.setHeader('Cache-Control', 'private, no-store');
@@ -18,6 +19,20 @@ export function createHandler(deps = {}) {
     if (!['GET', 'POST'].includes(req.method)) return res.status(405).json({ error: 'Method not allowed' });
     if (!(await d.rate(req, res, 'delivery', 120, 300))) return;
     const b = req.method === 'GET' ? req.query || {} : req.body || {};
+    // Staff access for the Create delivery link form. Inside LINE (LIFF) the form sends
+    // a LINE ID token instead of a staff key; it is accepted only for creating links,
+    // and only from a LINE user registered against an active staff account with orders access.
+    const ordersAccess = async () => {
+      const lineToken = String(req.headers?.['x-line-id-token'] || '');
+      if (!lineToken) return d.permission(req, res, 'orders');
+      const sub = await d.verifyLine(lineToken);
+      if (!sub) { res.status(401).json({ error: 'LINE sign-in expired. Close and reopen the form.' }); return false; }
+      const row = (await d.get(RIDERS_KEY) || []).find(r => r.lineUserId === sub);
+      const account = row && (await d.accounts()).find(a => a.id === row.accountId && a.active !== false && hasPermission(a, 'orders'));
+      if (!account) { res.status(403).json({ error: 'Your LINE account is not registered as staff. Ask a manager to add your LINE ID in Staff portal → Orders → LINE riders.' }); return false; }
+      return true;
+    };
+    if (b.action === 'liff-config') return res.status(200).json({ liffId: liffId() });
     if (b.action === 'proof-image') {
       if (req.method !== 'GET') return res.status(405).json({error:'GET only'});
       if (!/^[a-f0-9]{64}$/.test(b.photo || '')) return res.status(404).json({error:'Photo unavailable'});
@@ -49,19 +64,39 @@ export function createHandler(deps = {}) {
     if (b.action === 'riders') return createRidersHandler(deps)(req, res);
     if (b.action === 'rider-options') {
       // Rider picker for Create delivery link. Orders permission, like assigning.
-      if (!d.permission(req, res, 'orders')) return;
+      if (!(await ordersAccess())) return;
       try {
         if (!d.ready()) throw new Error('Storage unavailable');
         const riders = riderOptions(await d.accounts(), await d.get(RIDERS_KEY));
         return res.status(200).json({ riders: riders.map(({lineUserId, ...r}) => ({...r, line: Boolean(lineUserId)})) });
       } catch { return res.status(503).json({ error: 'Rider list unavailable. Please retry.' }); }
     }
+    if (b.action === 'pending') {
+      // Recent delivery orders still open, for the Create delivery link form.
+      if (!(await ordersAccess())) return;
+      try {
+        if (!d.ready()) throw new Error('Storage unavailable');
+        const want = /^[A-Za-z0-9_-]{3,80}$/.test(String(b.id || '')) ? String(b.id) : '';
+        const ids = [...new Set([want, ...(await d.orderIds() || []).slice(0, 60)].filter(Boolean))];
+        const orders = [];
+        for (const oid of ids) {
+          const o = await d.get('order:' + oid);
+          if (!o || o.fulfilment !== 'delivery' || ['done', 'cancelled', 'canceled'].includes(o.status) || await d.get(d.terminalKey(oid))) continue;
+          const t = await d.get(d.key(oid));
+          orders.push({ orderId: oid, at: o.at || null, customer: String(o.customer?.name || ''), address: [o.delivery?.zone, o.delivery?.address].filter(Boolean).join(', '),
+            coordinates: d.point(o.delivery?.coordinates), items: (o.items || []).map(i => ({ name: String(i.name || ''), qty: i.qty })), total: o.total ?? o.subtotal ?? 0,
+            tracking: Boolean(t && t.expiresAt > Date.now()), rider: t && t.expiresAt > Date.now() && t.driver ? t.driver.name : '' });
+          if (orders.length >= 20) break;
+        }
+        return res.status(200).json({ orders });
+      } catch { return res.status(503).json({ error: 'Orders unavailable. Please retry.' }); }
+    }
     const id = String(b.id || '');
     if (!/^[A-Za-z0-9_-]{3,80}$/.test(id)) return res.status(400).json({ error: 'Invalid order reference' });
     try {
       if (!d.ready()) return res.status(503).json({ error: 'Tracking temporarily unavailable. Please retry.' });
       const staff = b.role === 'staff';
-      if (staff && !d.permission(req, res, 'orders')) return;
+      if (staff && !(b.action === 'create' && req.method === 'POST' ? await ordersAccess() : d.permission(req, res, 'orders'))) return;
       if (b.action === 'create') {
         // Staff create tracking for an order that has none (setup failed at checkout,
         // or its products were approved afterwards), optionally with a confirmed

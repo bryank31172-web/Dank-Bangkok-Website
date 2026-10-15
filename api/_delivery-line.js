@@ -4,6 +4,7 @@ import {listAccounts} from './_staff-accounts.js';
 import {hasPermission, requirePermission} from './_auth.js';
 import {lineMessages} from './_line.js';
 import * as delivery from './_delivery.js';
+import {liffUrl} from './_liff.js';
 
 export const RIDERS_KEY = 'delivery:line-riders:v1';
 const ORIGIN = 'https://www.dankbangkok.com';
@@ -19,6 +20,7 @@ export function deliveryOrderCard(order, customerUrl) {
     ]}, footer: {type: 'box', layout: 'vertical', spacing: 'sm', contents: [
       {type: 'button', style: 'primary', color: '#008F4B', action: {type: 'uri', label: 'Check your delivery', uri: ORIGIN + customerUrl}},
       {type: 'button', action: {type: 'postback', label: 'Choose rider', data: postback('choose', order.orderId)}},
+      ...(liffUrl(order.orderId) ? [{type: 'button', action: {type: 'uri', label: 'Set destination & rider', uri: liffUrl(order.orderId)}}] : []),
     ]}}};
 }
 
@@ -67,6 +69,15 @@ export function createDeliveryLineHandler(deps = {}) {
   return async ev => {
     if (ev.type === 'message' && ev.source?.type === 'user' && /^rider id$/i.test(ev.message?.text?.trim() || '')) {
       await d.send(ev.replyToken, [{type: 'text', text: 'Your LINE user ID: ' + ev.source.userId + '\nGive this to the shop manager for LINE riders setup.'}], {reply: true});
+      return true;
+    }
+    // "delivery" in the staff group → button that opens the Create delivery link form in LINE.
+    if (ev.type === 'message' && ev.message?.type === 'text' && /^(delivery|delivery link|create delivery|ส่งของ|จัดส่ง)$/i.test(ev.message.text.trim())) {
+      if (ev.source?.type !== 'group' || !d.group() || ev.source.groupId !== d.group() || !liffUrl()) return false;
+      await d.send(ev.replyToken, [{type: 'flex', altText: 'Create delivery link', contents: {type: 'bubble', body: {type: 'box', layout: 'vertical', spacing: 'md', contents: [
+        {type: 'text', text: 'Create delivery link', weight: 'bold', size: 'lg'},
+        {type: 'text', text: 'Pick the order, set the destination and choose a rider.', wrap: true, size: 'sm', color: '#64756C'}]},
+        footer: {type: 'box', layout: 'vertical', contents: [{type: 'button', style: 'primary', color: '#008F4B', action: {type: 'uri', label: 'Open form', uri: liffUrl()}}]}}}], {reply: true});
       return true;
     }
     if (ev.type !== 'postback') return false;

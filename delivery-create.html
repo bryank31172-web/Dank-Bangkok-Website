@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="robots" content="noindex,nofollow"><meta name="referrer" content="no-referrer">
+<title>Create delivery link · DANK BKK</title>
+<style>
+:root{--green:#008f4b;--ink:#14251c;--muted:#64756c;--line:#dfebe3;--soft:#f2f8f4;--warn:#b42318}
+*{box-sizing:border-box}html,body{margin:0}body{font:16px/1.45 system-ui,-apple-system,"Segoe UI",sans-serif;background:#f6f9f7;color:var(--ink);padding-bottom:env(safe-area-inset-bottom)}
+header{position:sticky;top:0;z-index:3;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 16px;background:#fff;border-bottom:1px solid var(--line)}
+header b{letter-spacing:.06em}header small{display:block;color:var(--muted);font-size:12px;letter-spacing:0}
+main{max-width:560px;margin:0 auto;padding:16px}
+.card{background:#fff;border:1px solid var(--line);border-radius:18px;padding:16px;margin-bottom:14px}
+h2{font-size:15px;margin:0 0 10px;display:flex;align-items:center;gap:8px}h2 .n{display:inline-grid;place-items:center;width:24px;height:24px;border-radius:50%;background:var(--green);color:#fff;font-size:13px}
+.muted{color:var(--muted);font-size:13px;margin:6px 0 0}.warn{color:var(--warn);font-size:14px;min-height:1.2em;margin:10px 0 0}
+input,select{width:100%;padding:13px 14px;border:1px solid var(--line);border-radius:12px;font:inherit;background:#fff;color:inherit}input:focus,select:focus{outline:2px solid var(--green);outline-offset:1px}
+.btn{display:block;width:100%;border:0;border-radius:14px;padding:15px 18px;font:inherit;font-weight:750;background:var(--green);color:#fff;cursor:pointer;text-align:center}
+.btn.secondary{background:var(--soft);color:var(--green)}.btn:disabled{opacity:.5}.btn+.btn{margin-top:10px}
+.ghost{border:0;background:none;color:var(--green);font:inherit;font-weight:650;padding:6px 0;cursor:pointer}
+.orders{display:grid;gap:10px}.order{border:1px solid var(--line);border-radius:14px;padding:12px 14px;text-align:left;background:#fff;font:inherit;color:inherit;cursor:pointer;width:100%}
+.order b{display:block}.order span{display:block;color:var(--muted);font-size:13px}.order em{font-style:normal;font-size:12px;color:var(--green);font-weight:700}
+.picked{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}.picked b{display:block}.picked .muted{display:block;margin-top:2px}.picked ul{margin:6px 0 0;padding-left:18px;color:var(--muted);font-size:13px}
+.ac{position:relative}.opts{position:absolute;left:0;right:0;top:calc(100% + 4px);z-index:4;background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:0 10px 30px #0002;max-height:260px;overflow:auto}
+.opts div{padding:12px 14px;border-bottom:1px solid var(--line);cursor:pointer;font-size:14px}.opts div:last-child{border-bottom:0}.opts div[aria-selected=true]{background:var(--soft)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
+.done{text-align:center}.tick{width:70px;height:70px;border-radius:50%;background:#e7f5eb;color:var(--green);display:grid;place-items:center;margin:4px auto 12px;font-size:34px}
+.done h1{font-size:22px;margin:0 0 4px}.link{display:flex;gap:8px;margin:8px 0 4px}.link input{font-size:13px;color:var(--muted)}
+.hidden{display:none!important}.center{text-align:center;padding:40px 16px;color:var(--muted)}
+</style></head><body>
+<header><div><b>DANK BKK</b><small>Create delivery link</small></div><button class="ghost" id="closeBtn" type="button">Close</button></header>
+<main>
+  <div id="loading" class="center" role="status">Signing in with LINE…</div>
+  <div id="fatal" class="card hidden" role="alert"></div>
+
+  <form id="form" class="hidden" autocomplete="off" novalidate>
+    <section class="card">
+      <h2><span class="n">1</span>Order</h2>
+      <div id="orderPicked" class="hidden"></div>
+      <div id="orderList" class="orders"></div>
+    </section>
+    <section class="card">
+      <h2><span class="n">2</span>Destination</h2>
+      <div class="ac"><input id="place" type="text" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="placeOpts" aria-label="Destination" placeholder="Search condo, hotel or address" maxlength="200"><div id="placeOpts" class="opts hidden" role="listbox"></div></div>
+      <p id="placeStatus" class="muted" role="status">Type the place, then pick a suggestion to set the map pin.</p>
+      <div id="manual" class="grid2 hidden"><input id="lat" type="number" step="any" inputmode="decimal" placeholder="Latitude" aria-label="Latitude"><input id="lng" type="number" step="any" inputmode="decimal" placeholder="Longitude" aria-label="Longitude"></div>
+    </section>
+    <section class="card">
+      <h2><span class="n">3</span>Rider</h2>
+      <select id="rider" aria-label="Rider"><option value="">Loading riders…</option></select>
+      <p id="riderNote" class="muted"></p>
+    </section>
+    <p id="msg" class="warn" role="alert"></p>
+    <button id="submit" class="btn" type="submit">Create link &amp; assign rider</button>
+  </form>
+
+  <section id="done" class="card done hidden" aria-live="polite">
+    <div class="tick" aria-hidden="true">✓</div>
+    <h1>Delivery link created</h1>
+    <p id="doneInfo" class="muted"></p>
+    <p id="doneLine" style="margin:12px 0"></p>
+    <div style="text-align:left">
+      <label class="muted" for="custLink">Customer tracking link</label>
+      <div class="link"><input id="custLink" readonly></div>
+      <button class="btn" type="button" id="shareCust">Send customer link</button>
+      <button class="btn secondary" type="button" id="copyCust">Copy customer link</button>
+      <label class="muted" for="riderLink" style="display:block;margin-top:16px">Rider link (private)</label>
+      <div class="link"><input id="riderLink" readonly></div>
+      <button class="btn secondary" type="button" id="copyRider">Copy rider link</button>
+      <p id="copied" class="muted" role="status"></p>
+      <button class="btn secondary" type="button" id="another">Create another</button>
+    </div>
+  </section>
+</main>
+<script src="https://static.line-scdn.net/liff/edge/2/sdk.js" charset="utf-8"></script>
+<script>
+const el=id=>document.getElementById(id);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+let idToken='',orders=[],riders=[],picked=null,dest=null;
+function fatal(t){el('loading').classList.add('hidden');el('form').classList.add('hidden');el('fatal').textContent=t;el('fatal').classList.remove('hidden')}
+async function api(method,params){
+  const url='/api/delivery'+(method==='GET'?'?'+new URLSearchParams(params):'');
+  const r=await fetch(url,{method,cache:'no-store',headers:{'X-Line-Id-Token':idToken,...(method==='POST'?{'Content-Type':'application/json'}:{})},body:method==='POST'?JSON.stringify(params):undefined});
+  const j=await r.json().catch(()=>({}));if(!r.ok)throw new Error(j.error||'Request failed ('+r.status+')');return j;
+}
+el('closeBtn').addEventListener('click',()=>{try{if(window.liff?.isInClient?.())return liff.closeWindow()}catch{}history.length>1?history.back():window.close()});
+
+function renderOrders(){
+  const list=el('orderList'),box=el('orderPicked');
+  if(picked){
+    list.classList.add('hidden');box.classList.remove('hidden');
+    box.innerHTML=`<div class="picked"><div><b>${esc(picked.orderId)}</b><span class="muted">${esc(picked.customer||'Customer')}${picked.address?' · '+esc(picked.address):''}</span><ul>${picked.items.map(i=>`<li>${esc(i.name)} × ${esc(i.qty)}</li>`).join('')}</ul>${picked.tracking?`<p class="muted">Tracking already exists${picked.rider?' · rider '+esc(picked.rider):''}. Continuing will ${picked.rider?'replace the rider':'assign a rider'}.</p>`:''}</div><button class="ghost" type="button" id="changeOrder">Change</button></div>`;
+    el('changeOrder').addEventListener('click',()=>{picked=null;renderOrders()});
+    return;
+  }
+  box.classList.add('hidden');list.classList.remove('hidden');
+  list.innerHTML=orders.length?orders.map((o,i)=>`<button type="button" class="order" data-i="${i}"><b>${esc(o.orderId)}</b><span>${esc(o.customer||'Customer')}${o.address?' · '+esc(o.address):''}</span>${o.tracking?`<em>${o.rider?'Rider: '+esc(o.rider):'Tracking ready · no rider'}</em>`:''}</button>`).join(''):'<p class="muted">No open delivery orders right now.</p>';
+}
+el('orderList').addEventListener('click',e=>{const b=e.target.closest('[data-i]');if(!b)return;pickOrder(orders[Number(b.dataset.i)])});
+function pickOrder(o){
+  picked=o;renderOrders();
+  el('place').value=o.address||'';dest=o.coordinates||null;
+  el('placeStatus').textContent=dest?'📍 Using the pin the customer chose at checkout. Search to change it.':'Type the place, then pick a suggestion to set the map pin.';
+  if(!el('manual').classList.contains('hidden')){el('lat').value=dest?.lat??'';el('lng').value=dest?.lng??''}
+}
+
+function manualPin(){el('placeStatus').textContent='Location search unavailable. Enter the pin coordinates.';el('manual').classList.remove('hidden');if(dest){el('lat').value=dest.lat;el('lng').value=dest.lng}}
+async function initPlaces(){
+  try{
+    const r=await fetch('/api/maps-config'),{key}=await r.json();if(!key)return manualPin();
+    if(!window.google?.maps?.importLibrary)await new Promise((ok,fail)=>{window.__placesReady=ok;const s=document.createElement('script');s.src='https://maps.googleapis.com/maps/api/js?key='+encodeURIComponent(key)+'&loading=async&libraries=places&callback=__placesReady';s.async=true;s.onerror=fail;document.head.appendChild(s)});
+    const {AutocompleteSuggestion,AutocompleteSessionToken}=await google.maps.importLibrary('places');
+    const input=el('place'),opts=el('placeOpts');let token=null,preds=[],rev=0,timer,active=-1;
+    const close=()=>{opts.classList.add('hidden');input.setAttribute('aria-expanded','false');active=-1};
+    async function pick(i){const p=preds[i];if(!p)return;close();const my=++rev;el('placeStatus').textContent='Finding location…';
+      try{const place=p.toPlace();await place.fetchFields({fields:['displayName','formattedAddress','location']});if(my!==rev)return;
+        dest={lat:place.location.lat(),lng:place.location.lng()};token=null;
+        const n=place.displayName||'',a=place.formattedAddress||'';input.value=n&&a&&!a.startsWith(n)?n+', '+a:(a||n||p.text.toString());
+        el('placeStatus').textContent='📍 Pin set: '+dest.lat.toFixed(5)+', '+dest.lng.toFixed(5)}catch{manualPin()}}
+    input.addEventListener('input',()=>{clearTimeout(timer);const my=++rev;dest=null;el('placeStatus').textContent='Pick a suggestion to set the map pin.';const q=input.value.trim();if(q.length<2)return close();
+      timer=setTimeout(async()=>{try{token||=new AutocompleteSessionToken();const {suggestions}=await AutocompleteSuggestion.fetchAutocompleteSuggestions({input:q,includedRegionCodes:['th'],sessionToken:token});if(my!==rev)return;
+        preds=suggestions.map(s=>s.placePrediction).filter(Boolean);
+        opts.replaceChildren(...preds.map((p,i)=>{const o=document.createElement('div');o.id='po'+i;o.setAttribute('role','option');o.setAttribute('aria-selected','false');o.textContent=p.text.toString();o.addEventListener('mousedown',e=>e.preventDefault());o.addEventListener('click',()=>pick(i));return o}));
+        opts.classList.toggle('hidden',!preds.length);input.setAttribute('aria-expanded',String(preds.length>0));if(!preds.length)el('placeStatus').textContent='No match. Try the building or street name.'}catch{manualPin()}},300)});
+    input.addEventListener('keydown',e=>{if(opts.classList.contains('hidden'))return;if(e.key==='Escape')return close();
+      if(e.key==='ArrowDown'||e.key==='ArrowUp'){e.preventDefault();active=(active+(e.key==='ArrowDown'?1:preds.length-1)+preds.length)%preds.length;[...opts.children].forEach((c,i)=>c.setAttribute('aria-selected',String(i===active)));input.setAttribute('aria-activedescendant','po'+active)}
+      else if(e.key==='Enter'&&active>=0){e.preventDefault();pick(active)}});
+    input.addEventListener('blur',()=>setTimeout(close,150));
+  }catch{manualPin()}
+}
+
+async function loadRiders(){
+  try{riders=(await api('GET',{action:'rider-options'})).riders||[]}catch(e){el('rider').innerHTML='<option value="">Rider list unavailable</option>';el('riderNote').textContent=e.message;return}
+  el('rider').innerHTML=riders.length?'<option value="">Choose a rider</option>'+riders.map(r=>`<option value="${esc(r.id)}">${esc(r.name)} · ${esc(r.phone)}${r.onShift?' · on shift':''}</option>`).join(''):'<option value="">No riders yet</option>';
+  el('riderNote').textContent=riders.length?'':'Add staff with a phone number in the staff portal first.';
+}
+el('rider').addEventListener('change',()=>{const r=riders.find(x=>x.id===el('rider').value);el('riderNote').textContent=!r?'':r.line?'Their link is also sent to them on LINE.':'No LINE ID registered — copy their link after creating.'});
+
+el('form').addEventListener('submit',async e=>{
+  e.preventDefault();el('msg').textContent='';
+  if(!picked)return el('msg').textContent='Choose the order first.';
+  if(!el('manual').classList.contains('hidden')){const lat=Number(el('lat').value),lng=Number(el('lng').value);dest=el('lat').value&&el('lng').value&&Math.abs(lat)<=90&&Math.abs(lng)<=180?{lat,lng}:null}
+  if(!dest){el('msg').textContent='Choose the destination from the suggestions so the map pin is right.';return el('place').focus()}
+  const riderId=el('rider').value;if(!riderId){el('msg').textContent='Choose a rider.';return el('rider').focus()}
+  const btn=el('submit');btn.disabled=true;btn.textContent='Creating…';
+  try{
+    const j=await api('POST',{role:'staff',action:'create',id:picked.orderId,destination:dest,place:el('place').value.trim(),riderId});
+    showDone(j);
+  }catch(err){el('msg').textContent=err.message}finally{btn.disabled=false;btn.textContent='Create link & assign rider'}
+});
+let lastDone=null;
+function showDone(j){
+  lastDone=j;const full=u=>location.origin+u;
+  el('form').classList.add('hidden');el('done').classList.remove('hidden');window.scrollTo(0,0);
+  el('doneInfo').textContent=picked.orderId+' · '+el('place').value.trim()+' · Rider '+j.rider.name;
+  el('doneLine').textContent=j.lineSent?'✅ Rider link sent to '+j.rider.name+' on LINE.':j.lineRegistered?'⚠️ LINE could not deliver the rider link. Copy it below.':'Copy the rider link below and send it to '+j.rider.name+'.';
+  el('custLink').value=full(j.customerUrl);el('riderLink').value=full(j.driverUrl);
+  const canShare=(()=>{try{return liff.isApiAvailable('shareTargetPicker')}catch{return false}})();
+  el('shareCust').classList.toggle('hidden',!canShare);
+  // Let the staff group see what happened, when the form was opened from a chat.
+  try{if(liff.isInClient()&&['group','room','utou'].includes(liff.getContext()?.type))liff.sendMessages([{type:'text',text:`🛵 ${picked.orderId} → ${j.rider.name}\n📍 ${el('place').value.trim()}\nTracking link ready.`}]).catch(()=>{})}catch{}
+}
+async function copy(id){const v=el(id).value;try{await navigator.clipboard.writeText(v);el('copied').textContent='Copied.'}catch{el(id).select();el('copied').textContent='Long-press the link to copy.'}}
+el('copyCust').addEventListener('click',()=>copy('custLink'));el('copyRider').addEventListener('click',()=>copy('riderLink'));
+el('shareCust').addEventListener('click',async()=>{try{await liff.shareTargetPicker([{type:'text',text:`Your DANK BKK delivery is on its way soon 🛵\nTrack your rider here:\n${el('custLink').value}`}])}catch{copy('custLink')}});
+el('another').addEventListener('click',async()=>{picked=null;dest=null;el('place').value='';el('rider').value='';el('done').classList.add('hidden');el('form').classList.remove('hidden');await loadOrders();renderOrders()});
+
+async function loadOrders(want){orders=(await api('GET',{action:'pending',...(want?{id:want}:{})})).orders||[]}
+(async()=>{
+  try{
+    const {liffId}=await (await fetch('/api/delivery?action=liff-config',{cache:'no-store'})).json();
+    if(!liffId||!window.liff)return fatal('The LINE form is not set up yet. Ask the manager to add LINE_LIFF_ID, or use the staff portal.');
+    await liff.init({liffId});
+    if(!liff.isLoggedIn()){liff.login({redirectUri:location.href});return}
+    idToken=liff.getIDToken()||'';if(!idToken)return fatal('LINE did not share your sign-in. Close and reopen the form.');
+    const want=new URLSearchParams(location.search).get('order')||'';
+    await loadOrders(want);
+    el('loading').classList.add('hidden');el('form').classList.remove('hidden');
+    const pre=orders.find(o=>o.orderId===want);if(pre)pickOrder(pre);else renderOrders();
+    loadRiders();initPlaces();
+  }catch(e){fatal(e.message||'Could not open the form. Close and try again.')}
+})();
+</script>
+</body></html>

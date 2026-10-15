@@ -226,3 +226,28 @@ After starting, **Delivered** opens the same native image picker as **Take a pic
 The staff LINE group receives a Flex card with a `#00B65B` green header, white **Delivery confirmed** text, customer name, address, phone, products, total price and delivery photo. The photo uses a separate unguessable HTTPS image capability, expires after seven days and grants no access to the order or rider controls. Retries keep the original photo and LINE retry key. Authenticated orders staff can retry a failed notification with `POST /api/delivery`, `role: staff`, `action: resend-proof`, and the order ID. A LINE API success means accepted, not proof that a person's device displayed it.
 
 Paired demos use the same picker flow but never store the uploaded image or send LINE messages. Live receipt testing requires a registered rider, a test order and staff authentication.
+
+## Create delivery link inside LINE
+
+Staff can create the link without the staff portal. In the staff LINE group, type
+`delivery` (or tap **Set destination & rider** on a new delivery order card). A form
+opens inside LINE: pick the order, search the destination with Google autocomplete,
+choose a rider, then **Create link & assign rider**. The rider gets their private link
+in LINE (when their LINE ID is registered); **Send customer link** shares the
+tracking link to the customer's chat; the group gets a one-line summary.
+
+Who can use it: anyone whose LINE ID is saved against an active staff account with
+orders access in Staff portal → Orders → LINE riders. Everyone else is refused. The
+LINE sign-in only unlocks this form (order list, rider list, create link); every other
+staff action still needs the staff key. Product eligibility is the same as checkout.
+
+One-time setup in LINE Developers (same provider as the shop Official Account):
+
+1. Create a **LINE Login** channel. Link it to the Official Account (Linked OA).
+2. In that channel, add a **LIFF app**: Size **Full**, Endpoint URL
+   `https://www.dankbangkok.com/delivery-create.html`, Scopes **openid**, **profile**
+   and **chat_message.write**. Turn on **Share target picker**.
+3. In Vercel, set `LINE_LIFF_ID` (the LIFF ID, like `1234567890-AbCdEfGh`) and
+   `LINE_LOGIN_CHANNEL_ID` (the LINE Login channel ID). Redeploy.
+4. The Google browser key's allowed websites must include `www.dankbangkok.com`
+   (already true for checkout). Without a Maps key the form asks for coordinates.

@@ -70,3 +70,18 @@ test('only staff managers can save validated unique LINE rider configuration',as
   for(const rows of [[{accountId:'invented',lineUserId:riderId,onShift:true}],[{accountId:'rider',lineUserId:'my-line-name',onShift:true}],[{accountId:'rider',lineUserId:riderId,onShift:'yes'}],[{accountId:'rider',lineUserId:riderId,onShift:true},{accountId:'manager',lineUserId:riderId,onShift:false}]])assert.equal((await call(rows)).code,400);
   assert.equal((await call([],'rider')).code,403);
 });
+test('LINE form: "delivery" in the staff group opens the form; card gets a form button only when configured',async()=>{
+  const f=fixture(),msg=(text,source={type:'group',groupId:group,userId:managerId})=>({type:'message',replyToken:'r',source,message:{type:'text',text}});
+  assert.equal(await f.handle(msg('delivery')),false);
+  const plain=deliveryOrderCard({orderId:'DR-TEST',items:[]},'/delivery.html#x');assert.equal(plain.contents.footer.contents.length,2);
+  process.env.LINE_LIFF_ID='1234567890-AbCdEfGh';
+  try{
+    assert.equal(await f.handle(msg('Delivery')),true);
+    assert.equal(f.messages[0].content[0].contents.footer.contents[0].action.uri,'https://liff.line.me/1234567890-AbCdEfGh');
+    assert.equal(await f.handle(msg('delivery',{type:'group',groupId:'C'+'z'.repeat(32),userId:managerId})),false);
+    assert.equal(await f.handle(msg('delivery',{type:'user',userId:managerId})),false);
+    const card=deliveryOrderCard({orderId:'DR-TEST',items:[]},'/delivery.html#x');
+    assert.equal(card.contents.footer.contents[2].action.uri,'https://liff.line.me/1234567890-AbCdEfGh?order=DR-TEST');
+    assert.doesNotMatch(JSON.stringify(card),/driver-delivery/);
+  }finally{delete process.env.LINE_LIFF_ID}
+});

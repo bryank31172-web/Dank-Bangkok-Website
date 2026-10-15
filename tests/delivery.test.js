@@ -9,13 +9,13 @@ function fixture(overrides={}){
   db.set('order:'+id,{orderId:id,status:'new',total:100,items:[{name:'Sandwich',qty:1}],delivery:{zone:'Bangkok',address:'Lobby'},customer:{phone:'private'}});
   let generation=0,storage=true;
   const get=async k=>structuredClone(db.get(k)||null),write=async(k,v)=>{db.set(k,structuredClone(v))};
-  const handler=createHandler({get,write,claim:async()=>1,send:async()=>({ok:true}),group:()=>'C'+'c'.repeat(32),writeLocation:async(k,v)=>{const old=db.get(k);if(old?.capturedAt>=v.capturedAt)return false;await write(k,v);return true},ready:()=>storage,rate:async()=>true,permission:(req,res)=>{if(req.headers.authorization==='staff')return true;res.status(401).json({error:'bad key'});return false},token:()=>String(++generation).repeat(64),routeFor:async()=>({polyline:'abc',minutes:4,at:Date.now()}),endDelivery:async(id,status)=>{await write(terminalKey(id),{status,at:Date.now()})},...overrides});
+  const deps={get,write,claim:async()=>1,send:async()=>({ok:true}),group:()=>'C'+'c'.repeat(32),writeLocation:async(k,v)=>{const old=db.get(k);if(old?.capturedAt>=v.capturedAt)return false;await write(k,v);return true},ready:()=>storage,rate:async()=>true,permission:(req,res)=>{if(req.headers.authorization==='staff')return true;res.status(401).json({error:'bad key'});return false},token:()=>String(++generation).repeat(64),routeFor:async()=>({polyline:'abc',minutes:4,at:Date.now()}),endDelivery:async(id,status)=>{await write(terminalKey(id),{status,at:Date.now()})},...overrides},handler=createHandler(deps);
   async function call({role='',action,token=customerToken,body={},method,staff=false}={}){
     const req={method:method||(action?'POST':'GET'),headers:{'x-delivery-token':token,...(staff?{authorization:'staff'}:{})},query:{id,role},body:{id,role,action,...body}};
     const res={code:200,headers:{},setHeader(k,v){this.headers[k]=v},status(c){this.code=c;return this},json(j){this.data=j;return this}};
     await handler(req,res);return res;
   }
-  return {db,id,customerToken,driverToken,call,setStorage:v=>storage=v};
+  return {db,id,customerToken,driverToken,call,deps,setStorage:v=>storage=v};
 }
 const gps=()=>({location:{lat:13.71,lng:100.51,accuracy:8,capturedAt:Date.now()}});
 
@@ -175,4 +175,23 @@ test('create link with destination and chosen rider assigns, DMs on LINE and rej
  const rec=f.db.get(key(f.id));assert.deepEqual(rec.destination,{lat:13.7463,lng:100.5346});assert.equal(rec.place,'Siam Paragon');assert.equal(rec.driver.accountId,'a1');assert.equal(rec.driver.phone,'0812345678');
  assert.equal(sent.length,1);assert.match(sent[0][1],/Siam Paragon/);assert.match(sent[0][1],/https:\/\/www\.dankbangkok\.com\/driver-delivery\.html#/);
  const s=await f.call({role:'staff',staff:true});assert.equal(s.data.address,'Siam Paragon');assert.equal(r.data.driverUrl,s.data.driverUrl);
+});
+test('LINE form: staff sign in with a registered LINE ID; others refused; staff key paths unchanged',async()=>{
+ const U='U'+'b'.repeat(32),acct={id:'s1',name:'Mai',phone:'0812345678',role:'parttime',active:true};
+ let f;f=fixture({accounts:async()=>[acct,{id:'s2',name:'Old',phone:'0811111111',role:'parttime',active:false}],
+  verifyLine:async t=>({good:U,old:'U'+'c'.repeat(32),stranger:'U'+'d'.repeat(32)})[t]||null,orderIds:async()=>[f.id,'NOPE'],send:async()=>({ok:true}),
+  createDelivery:async o=>{f.db.set(key(o.orderId),{orderId:o.orderId,customerToken:'n'.repeat(64),expiresAt:Date.now()+86400000,destination:o.delivery?.coordinates||null,driver:null});return '/x'}});
+ f.db.set('delivery:line-riders:v1',[{accountId:'s1',lineUserId:U,onShift:true},{accountId:'s2',lineUserId:'U'+'c'.repeat(32),onShift:true}]);
+ f.db.delete(key(f.id));Object.assign(f.db.get('order:'+f.id),{fulfilment:'delivery',customer:{name:'Ann'},items:[{name:'Sandwich',qty:1,shId:'food'}]});
+ const run=async(token,body)=>{const req={method:'POST',headers:token?{'x-line-id-token':token}:{},query:{},body};const res={setHeader(){},status(c){this.code=c;return this},json(j){this.data=j;return this}};await createHandler(f.deps)(req,res);return res};
+ assert.equal((await run('bad',{action:'pending'})).code,401);
+ assert.equal((await run('stranger',{action:'pending'})).code,403);
+ assert.equal((await run('old',{action:'pending'})).code,403);
+ const p=await run('good',{action:'pending'});assert.equal(p.code,200);assert.deepEqual(p.data.orders.map(o=>[o.orderId,o.customer,o.tracking]),[[f.id,'Ann',false]]);
+ assert.equal((await run('good',{action:'rider-options'})).code,200);
+ const c=await run('good',{role:'staff',id:f.id,action:'create',riderId:'s1',destination:{lat:13.74,lng:100.53},place:'Siam'});
+ assert.equal(c.code,200);assert.equal(c.data.rider.name,'Mai');
+ // A LINE token never unlocks other staff actions.
+ assert.equal((await run('good',{role:'staff',id:f.id,action:'cancel'})).code,401);
+ assert.equal((await run('',{action:'liff-config'})).code,200);
 });
