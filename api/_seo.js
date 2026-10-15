@@ -256,7 +256,38 @@ function breadcrumbs(items) {
   ).join("")}</nav>`;
 }
 
-function pageShell({ title, description, canonical, body, entities = [], noindex = false, image = "", ogType = "website", lang = "en", head = "" }) {
+/* Search snippet limits the shop works to: titles 30–65 characters,
+   descriptions 120–320. Hand-written strings already fit; this keeps the
+   generated ones (product, category and location names) inside too. */
+const TITLE_MIN = 30, TITLE_MAX = 65, DESC_MIN = 120, DESC_MAX = 320;
+const chars = (value) => [...String(value || "")].length;
+function cut(value, max) {
+  const list = [...String(value)];
+  if (list.length <= max) return String(value);
+  const head = list.slice(0, max - 1).join("");
+  const space = head.lastIndexOf(" ");
+  return (space > max * 0.6 ? head.slice(0, space) : head).replace(/[\s,;:|·—-]+$/, "") + "…";
+}
+export function fitTitle(title, lang = "en") {
+  let value = String(title || "").trim();
+  if (chars(value) > TITLE_MAX && value.endsWith(" | DANK BKK")) value = cut(value.slice(0, -11), TITLE_MAX - 11) + " | DANK BKK";
+  if (chars(value) > TITLE_MAX) value = cut(value, TITLE_MAX);
+  if (chars(value) < TITLE_MIN) value = value + (lang === "th" ? " | ร้านกัญชาในกรุงเทพ" : " — Bangkok Cannabis Shop");
+  return value;
+}
+export function fitDescription(description, lang = "en") {
+  let value = String(description || "").trim();
+  if (chars(value) < DESC_MIN) {
+    value = `${value}${value && !/[.!?。]$/.test(value) ? "." : ""} ${lang === "th"
+      ? "DANK BKK ร้านกัญชาที่ได้รับใบอนุญาตในกรุงเทพ สาขาพัฒนาการและสาทร แวะมาที่ร้านพร้อมบัตรประชาชนหรือพาสปอร์ต สำหรับผู้มีอายุ 20 ปีขึ้นไป"
+      : "DANK BKK is a licensed cannabis shop in Bangkok with branches in Pattanakarn and Sathorn. Visit in person with ID; adults 20+ only."}`.trim();
+  }
+  return chars(value) > DESC_MAX ? cut(value, DESC_MAX) : value;
+}
+
+function pageShell({ title: rawTitle, description: rawDescription, canonical, body, entities = [], noindex = false, image = "", ogType = "website", lang = "en", head = "" }) {
+  const title = fitTitle(rawTitle, lang);
+  const description = fitDescription(rawDescription, lang);
   const robots = noindex ? "noindex,follow" : "index,follow,max-image-preview:large";
   const canonicalUrl = SITE_URL + canonical;
   const imageUrl = absoluteUrl(image);
@@ -317,8 +348,8 @@ export function renderProductsPage(menu) {
     })),
   };
   return pageShell({
-    title: "Products | DANK BKK",
-    description: "Browse the current DANK BKK product catalogue by category.",
+    title: "DANK BKK Products — Current Catalogue by Category",
+    description: "Browse the current DANK BKK product catalogue by category, with stock read from the shop's own till. Visit a licensed DANK BKK shop in Bangkok in person to consult the on-site practitioner. Adults 20+.",
     canonical: path,
     entities: [breadcrumbEntity(items, SITE_URL + path), itemList],
     body: `${breadcrumbs(items)}<h1>Products</h1><p class="lede">Browse the current catalogue by category. Product availability and prices come from the shop's existing menu data.</p><div class="grid">${categories.map((category) => `<a class="card" href="${categoryUrl(category.name)}"><h2>${escapeHtml(category.name)}</h2><div class="meta">${category.products.length} product${category.products.length === 1 ? "" : "s"}</div></a>`).join("")}</div>`,
@@ -341,8 +372,8 @@ export function renderCategoryPage(menu, categorySlug) {
     })),
   };
   return pageShell({
-    title: `${category.name} | DANK BKK`,
-    description: `${category.name} products currently listed in the DANK BKK catalogue.`,
+    title: `${category.name} — DANK BKK Bangkok`,
+    description: `${category.name} currently listed in the DANK BKK catalogue, with stock read from the shop's own till. Visit a licensed DANK BKK shop in Bangkok in person; adults 20+ with ID.`,
     canonical: path,
     entities: [breadcrumbEntity(items, SITE_URL + path), itemList],
     body: `${breadcrumbs(items)}<h1>${escapeHtml(category.name)}</h1><p class="lede">Products currently listed in this category. Select a product for its dedicated details page.</p><div class="grid">${category.products.map(productCard).join("")}</div>`,
@@ -387,8 +418,8 @@ export function renderLocationsPage() {
   const path = "/locations/";
   const items = [{ name: "Home", path: "/" }, { name: "Locations" }];
   return pageShell({
-    title: "Locations | DANK BKK",
-    description: "Addresses, contact details and map links for DANK locations.",
+    title: "DANK BKK Locations — Pattanakarn, Sathorn & Lom Sak",
+    description: "Addresses, phone numbers and Google Maps directions for every DANK BKK location: the Pattanakarn flagship, Sathorn (Rama 3) with its co-working space, and Lom Sak in Phetchabun. Open daily; adults 20+ with ID.",
     canonical: path,
     entities: [breadcrumbEntity(items, SITE_URL + path)],
     body: `${breadcrumbs(items)}<h1>Locations</h1><p class="lede">Addresses and directions from the current DANK location list.</p><div class="grid">${LOCATIONS.map((location) => `<a class="card" href="/locations/${location.slug}/"><h2>${escapeHtml(location.name)}</h2><div class="meta">${escapeHtml(location.address)}${location.googleRating ? `<br>★★★★★ ${escapeHtml(Number(location.googleRating).toFixed(1))} on Google · ${escapeHtml(Number(location.googleReviewCount).toLocaleString("en-US"))}+ reviews` : ""}</div></a>`).join("")}</div>`,
@@ -419,7 +450,7 @@ export function renderLocationPage(slug) {
   });
   return pageShell({
     title: `${location.name} | DANK BKK`,
-    description: `${location.name}: address, contact information and directions.`,
+    description: `${location.name}: address, phone number, opening days and Google Maps directions. Visit DANK BKK in person with your ID card or passport; adults 20+ only.`,
     canonical: path,
     entities: [breadcrumbEntity(items, url), localBusiness],
     body: `${breadcrumbs(items)}<h1>${escapeHtml(location.name)}</h1><div class="facts"><div class="fact"><small>Address</small>${escapeHtml(location.address)}</div><div class="fact"><small>Hours</small>${escapeHtml(location.hours)}</div><div class="fact"><small>Phone</small><a href="tel:${escapeHtml(location.phone)}">084-162-0610</a></div></div>${location.googleReviewsUrl ? `<h2>Customer reviews</h2><a class="card" href="${escapeHtml(location.googleReviewsUrl)}" target="_blank" rel="noopener noreferrer"><h3>★★★★★ ${escapeHtml(Number(location.googleRating).toFixed(1))} on Google</h3><div class="meta">Based on ${escapeHtml(Number(location.googleReviewCount).toLocaleString("en-US"))}+ Google reviews · Read reviews on Google Maps ↗</div></a>` : ""}<div class="actions"><a class="button" href="${escapeHtml(location.map)}" target="_blank" rel="noopener noreferrer">Get directions</a>${location.venueUrl ? `<a class="button secondary" href="${escapeHtml(location.venueUrl)}">Open venue page</a>` : ""}</div>`,
@@ -437,18 +468,18 @@ export function renderStaticPage(page) {
   if (page === "about") {
     const path = "/about/";
     const items = [{ name: "Home", path: "/" }, { name: "About" }];
-    return pageShell({ title: "About | DANK BKK", description: "Factual information about DANK BKK and its connected storefront.", canonical: path, entities: [breadcrumbEntity(items, SITE_URL + path)], body: `${breadcrumbs(items)}<h1>About DANK BKK</h1><p class="lede">DANK BKK operates locations in Bangkok and Phetchabun. The online storefront reads its current product catalogue, prices and stock from the shop's existing menu systems.</p><div class="actions"><a class="button" href="/locations/">View locations</a><a class="button secondary" href="/products/">Browse products</a></div>` });
+    return pageShell({ title: "About DANK BKK — Licensed Cannabis Shop in Bangkok", description: "DANK BKK runs licensed cannabis shops in Bangkok (Pattanakarn and Sathorn) and in Lom Sak, Phetchabun, each with a licensed practitioner on site. Learn who we are and how to visit a shop in person.", canonical: path, entities: [breadcrumbEntity(items, SITE_URL + path)], body: `${breadcrumbs(items)}<h1>About DANK BKK</h1><p class="lede">DANK BKK operates locations in Bangkok and Phetchabun. The online storefront reads its current product catalogue, prices and stock from the shop's existing menu systems.</p><div class="actions"><a class="button" href="/locations/">View locations</a><a class="button secondary" href="/products/">Browse products</a></div>` });
   }
   if (page === "contact") {
     const path = "/contact/";
     const items = [{ name: "Home", path: "/" }, { name: "Contact" }];
-    return pageShell({ title: "Contact | DANK BKK", description: "DANK BKK phone, LINE and location links.", canonical: path, entities: [breadcrumbEntity(items, SITE_URL + path)], body: `${breadcrumbs(items)}<h1>Contact</h1><div class="facts"><div class="fact"><small>Phone</small><a href="tel:+66841620610">084-162-0610</a></div><div class="fact"><small>LINE and social links</small><a href="https://linktr.ee/dankbkk" rel="noopener noreferrer">linktr.ee/dankbkk</a></div></div><div class="actions"><a class="button" href="/locations/">Addresses and directions</a></div>` });
+    return pageShell({ title: "Contact DANK BKK — Phone, LINE & Shop Directions", description: "Contact DANK BKK in Bangkok: call 084-162-0610 for Pattanakarn or 094-224-0702 for Sathorn (Rama 3), message us on LINE, or open Google Maps directions to visit a shop in person. Adults 20+.", canonical: path, entities: [breadcrumbEntity(items, SITE_URL + path)], body: `${breadcrumbs(items)}<h1>Contact</h1><div class="facts"><div class="fact"><small>Phone</small><a href="tel:+66841620610">084-162-0610</a></div><div class="fact"><small>LINE and social links</small><a href="https://linktr.ee/dankbkk" rel="noopener noreferrer">linktr.ee/dankbkk</a></div></div><div class="actions"><a class="button" href="/locations/">Addresses and directions</a></div>` });
   }
   if (page === "faq") {
     const path = "/faq/";
     const items = [{ name: "Home", path: "/" }, { name: "FAQ" }];
     const schema = { "@type": "FAQPage", "@id": `${SITE_URL + path}#faq`, mainEntity: FAQS.map(([question, answer]) => ({ "@type": "Question", name: question, acceptedAnswer: { "@type": "Answer", text: answer } })) };
-    return pageShell({ title: "FAQ | DANK BKK", description: "Answers to common questions using information stated by the DANK BKK storefront.", canonical: path, entities: [breadcrumbEntity(items, SITE_URL + path), schema], body: `${breadcrumbs(items)}<h1>Frequently asked questions</h1>${FAQS.map(([question, answer]) => `<section class="card" style="margin-bottom:12px"><h2>${escapeHtml(question)}</h2><p class="meta">${escapeHtml(answer)}</p></section>`).join("")}` });
+    return pageShell({ title: "DANK BKK FAQ — Visiting a Licensed Cannabis Shop", description: "Answers to common questions about DANK BKK: who may enter (adults 20+ with ID), where pickup is available, which payment methods are listed and how to get directions to the Pattanakarn and Sathorn shops.", canonical: path, entities: [breadcrumbEntity(items, SITE_URL + path), schema], body: `${breadcrumbs(items)}<h1>Frequently asked questions</h1>${FAQS.map(([question, answer]) => `<section class="card" style="margin-bottom:12px"><h2>${escapeHtml(question)}</h2><p class="meta">${escapeHtml(answer)}</p></section>`).join("")}` });
   }
   if (page === "blog") return renderBlogIndex();
   return null;
@@ -472,8 +503,8 @@ export function renderBlogIndex() {
     ? `<div class="post-grid">${posts.map(postCard).join("")}</div>`
     : `<div class="notice">No articles yet — check back soon.</div>`;
   return pageShell({
-    title: "Blog | DANK BKK",
-    description: "News, guides and updates from DANK BKK in Bangkok.",
+    title: "DANK BKK Blog — Cannabis Shop Guides for Bangkok",
+    description: "Guides from DANK BKK on visiting a licensed cannabis shop in Bangkok: Thai cannabis rules after 2025, what to bring, how the practitioner consultation works, and how to find our Pattanakarn and Sathorn shops.",
     canonical: path,
     noindex: !posts.length,
     entities: [breadcrumbEntity(items, SITE_URL + path)],

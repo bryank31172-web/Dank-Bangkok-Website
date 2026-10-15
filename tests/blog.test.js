@@ -4,7 +4,7 @@ import {SEED_POSTS} from '../api/_blog-posts.js';
 import {allPosts,publishedPosts,findPost,markdownToHtml,cleanPost,isLive,writeStore,refreshPosts} from '../api/_blog.js';
 import {renderBlogIndex,renderBlogPost,renderSitemap} from '../api/_seo.js';
 
-const live={slug:'test-post',title:'Test <post>',metaTitle:'Meta title',description:'A test.',keyword:'weed shop',date:'2026-10-01',image:'/promo-first.jpg',imageAlt:'Box',lang:'th',draft:false,body:'## Heading\n\nHello **world** [shop](/shop)\n\n- one\n- two',faqs:[{q:'Q1?',a:'A1.'}],images:[]};
+const live={slug:'test-post',title:'Test <post>',metaTitle:'Meta title for a test article | DANK',description:'A test.',keyword:'weed shop',date:'2026-10-01',image:'/promo-first.jpg',imageAlt:'Box',lang:'th',draft:false,body:'## Heading\n\nHello **world** [shop](/shop)\n\n- one\n- two',faqs:[{q:'Q1?',a:'A1.'}],images:[]};
 function withPost(post,fn){SEED_POSTS.push(post);try{fn()}finally{SEED_POSTS.pop()}}
 
 test('drafts and future-dated posts stay hidden',()=>{
@@ -25,7 +25,7 @@ test('every seed post has a unique, URL-safe slug and an ISO date',()=>{
 test('published post renders meta title, lang, FAQ schema, shop CTA and escaping',()=>withPost(live,()=>{
  const html=renderBlogPost('test-post');
  assert.match(html,/<html lang="th">/);
- assert.match(html,/<title>Meta title<\/title>/);
+ assert.match(html,/<title>Meta title for a test article \| DANK<\/title>/);
  assert.match(html,/"@type":"BlogPosting"/);
  assert.match(html,/"@type":"FAQPage"/);
  assert.match(html,/og:type" content="article"/);
@@ -59,4 +59,11 @@ test('markdown escapes HTML and refuses javascript: links',()=>{
  assert.equal(markdownToHtml('- a\n- b'),'<ul><li>a</li><li>b</li></ul>');
  assert.equal(markdownToHtml('1. a\n2. b'),'<ol><li>a</li><li>b</li></ol>');
  assert.equal(markdownToHtml('#### Small'),'<h4>Small</h4>');
+});
+test('every article title is 30–65 and description 120–320 characters',()=>{
+ for(const p of SEED_POSTS){
+  const t=[...(p.metaTitle||`${p.title} | DANK BKK`)].length,d=[...p.description].length;
+  assert.ok(t>=30&&t<=65,`${p.slug} title ${t}`);
+  assert.ok(d>=120&&d<=320,`${p.slug} description ${d}`);
+ }
 });
