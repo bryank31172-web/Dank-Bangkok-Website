@@ -132,9 +132,12 @@ function safeHref(url) {
   return /^(https?:\/\/|\/|#|mailto:|tel:)/i.test(value) ? value : "#";
 }
 
-function inline(text) {
+function inline(text, images = []) {
   return escapeHtml(text)
-    .replace(/!\[([^\]]*)\]\(([^)\s]+)\)/g, (_, alt, src) => `<img src="${safeHref(src)}" alt="${alt}" loading="lazy">`)
+    .replace(/!\[([^\]]*)\]\(([^)\s]+)\)/g, (_, alt, src) => {
+      const meta = images.find((img) => img.src && escapeHtml(img.src) === src);
+      return `<img src="${safeHref(src)}" alt="${alt}"${meta?.title ? ` title="${escapeHtml(meta.title)}"` : ""} loading="lazy">`;
+    })
     .replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, (_, label, href) => {
       const url = safeHref(href);
       const external = /^https?:\/\//i.test(url) && !/^https?:\/\/(www\.)?dankbangkok\.com/i.test(url);
@@ -144,18 +147,19 @@ function inline(text) {
     .replace(/\*([^*]+)\*/g, "<em>$1</em>");
 }
 
-export function markdownToHtml(markdown) {
+export function markdownToHtml(markdown, images = []) {
+  const md = (t) => inline(t, images);
   const blocks = String(markdown || "").replace(/\r\n/g, "\n").trim().split(/\n\s*\n/);
   return blocks.map((block) => {
     const lines = block.split("\n").map((line) => line.trim()).filter(Boolean);
     if (!lines.length) return "";
     const heading = lines[0].match(/^(#{2,4})\s+(.+)$/);
-    if (heading && lines.length === 1) return `<h${heading[1].length}>${inline(heading[2])}</h${heading[1].length}>`;
-    if (heading) return `<h${heading[1].length}>${inline(heading[2])}</h${heading[1].length}>\n${markdownToHtml(lines.slice(1).join("\n"))}`;
-    if (lines.every((line) => /^[-*]\s+/.test(line))) return `<ul>${lines.map((line) => `<li>${inline(line.replace(/^[-*]\s+/, ""))}</li>`).join("")}</ul>`;
-    if (lines.every((line) => /^\d+[.)]\s+/.test(line))) return `<ol>${lines.map((line) => `<li>${inline(line.replace(/^\d+[.)]\s+/, ""))}</li>`).join("")}</ol>`;
-    if (lines.every((line) => line.startsWith(">"))) return `<blockquote>${inline(lines.map((line) => line.replace(/^>\s?/, "")).join(" "))}</blockquote>`;
-    if (lines.length === 1 && /^!\[[^\]]*\]\([^)\s]+\)$/.test(lines[0])) return `<figure>${inline(lines[0])}</figure>`;
-    return `<p>${inline(lines.join(" "))}</p>`;
+    if (heading && lines.length === 1) return `<h${heading[1].length}>${md(heading[2])}</h${heading[1].length}>`;
+    if (heading) return `<h${heading[1].length}>${md(heading[2])}</h${heading[1].length}>\n${markdownToHtml(lines.slice(1).join("\n"), images)}`;
+    if (lines.every((line) => /^[-*]\s+/.test(line))) return `<ul>${lines.map((line) => `<li>${md(line.replace(/^[-*]\s+/, ""))}</li>`).join("")}</ul>`;
+    if (lines.every((line) => /^\d+[.)]\s+/.test(line))) return `<ol>${lines.map((line) => `<li>${md(line.replace(/^\d+[.)]\s+/, ""))}</li>`).join("")}</ol>`;
+    if (lines.every((line) => line.startsWith(">"))) return `<blockquote>${md(lines.map((line) => line.replace(/^>\s?/, "")).join(" "))}</blockquote>`;
+    if (lines.length === 1 && /^!\[[^\]]*\]\([^)\s]+\)$/.test(lines[0])) return `<figure>${md(lines[0])}</figure>`;
+    return `<p>${md(lines.join(" "))}</p>`;
   }).join("\n");
 }

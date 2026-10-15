@@ -508,7 +508,9 @@ export function renderBlogArticle(post, { preview = false } = {}) {
     description: post.description,
     datePublished: post.date,
     dateModified: post.updated || post.date,
-    image: image || undefined,
+    image: (post.images || []).filter((img) => img.src).length
+      ? post.images.filter((img) => img.src).map((img) => compact({ "@type": "ImageObject", url: absoluteUrl(img.src), name: img.title || undefined, description: img.description || undefined, caption: img.alt || undefined }))
+      : image || undefined,
     inLanguage: post.lang || "en",
     keywords: post.keyword || undefined,
     mainEntityOfPage: url,
@@ -531,7 +533,7 @@ export function renderBlogArticle(post, { preview = false } = {}) {
     noindex: preview,
     head,
     entities: [breadcrumbEntity(items, url), article, faq],
-    body: `${breadcrumbs(items)}<article class="article"><div class="post-date">${escapeHtml(formatDate(post.date, post.lang))}${post.updated ? ` · ${th ? "อัปเดต" : "Updated"} ${escapeHtml(formatDate(post.updated, post.lang))}` : ""}</div><h1>${escapeHtml(post.title)}</h1>${image ? `<img class="hero" src="${escapeHtml(image)}" alt="${escapeHtml(post.imageAlt || "")}">` : ""}<div class="article-body">${markdownToHtml(post.body)}${faqSection(post)}</div>${blogCta(post.lang)}<div class="actions"><a class="button secondary" href="/blog/">${th ? "อ่านบทความอื่น" : "More articles"}</a></div></article>`,
+    body: `${breadcrumbs(items)}<article class="article"><div class="post-date">${escapeHtml(formatDate(post.date, post.lang))}${post.updated ? ` · ${th ? "อัปเดต" : "Updated"} ${escapeHtml(formatDate(post.updated, post.lang))}` : ""}</div><h1>${escapeHtml(post.title)}</h1>${image ? `<img class="hero" src="${escapeHtml(image)}" alt="${escapeHtml(post.imageAlt || "")}">` : ""}<div class="article-body">${markdownToHtml(post.body, post.images || [])}${faqSection(post)}</div>${blogCta(post.lang)}<div class="actions"><a class="button secondary" href="/blog/">${th ? "อ่านบทความอื่น" : "More articles"}</a></div></article>`,
   });
 }
 
