@@ -3,6 +3,8 @@
    present in the menu or location configuration. The interactive storefront,
    cart and checkout remain in index.html. */
 
+import { findPost, markdownToHtml, publishedPosts } from "./_blog.js";
+
 export const SITE_URL = "https://dankbangkok.com";
 
 export const LOCATIONS = [
@@ -254,34 +256,34 @@ function breadcrumbs(items) {
   ).join("")}</nav>`;
 }
 
-function pageShell({ title, description, canonical, body, entities = [], noindex = false, image = "" }) {
+function pageShell({ title, description, canonical, body, entities = [], noindex = false, image = "", ogType = "website", lang = "en", head = "" }) {
   const robots = noindex ? "noindex,follow" : "index,follow,max-image-preview:large";
   const canonicalUrl = SITE_URL + canonical;
   const imageUrl = absoluteUrl(image);
   return `<!doctype html>
-<html lang="en">
+<html lang="${escapeHtml(lang)}">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="${robots}">
 <meta name="description" content="${escapeHtml(description)}">
 <link rel="canonical" href="${escapeHtml(canonicalUrl)}">
-<meta property="og:type" content="website">
+<meta property="og:type" content="${escapeHtml(ogType)}">
 <meta property="og:site_name" content="DANK BKK">
 <meta property="og:title" content="${escapeHtml(title)}">
 <meta property="og:description" content="${escapeHtml(description)}">
 <meta property="og:url" content="${escapeHtml(canonicalUrl)}">
 ${imageUrl ? `<meta property="og:image" content="${escapeHtml(imageUrl)}"><meta name="twitter:card" content="summary_large_image">` : "<meta name=\"twitter:card\" content=\"summary\">"}
 <title>${escapeHtml(title)}</title>
-${jsonLd(entities)}
+${head}${jsonLd(entities)}
 <style>
 :root{--bg:#060a07;--panel:#101a12;--panel2:#16241a;--line:#294634;--text:#e8f5ec;--muted:#9bb3a2;--green:#3ddc84;--gold:#d9b25b}
-*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:16px/1.55 system-ui,-apple-system,Segoe UI,sans-serif}a{color:inherit}.wrap{width:min(1120px,calc(100% - 32px));margin:auto}header{position:sticky;top:0;background:rgba(6,10,7,.94);border-bottom:1px solid var(--line);z-index:10}header .wrap{display:flex;align-items:center;justify-content:space-between;min-height:64px;gap:18px}.brand{font-weight:900;text-decoration:none;font-size:20px}.brand b{color:var(--green)}nav.main{display:flex;gap:16px;flex-wrap:wrap}nav.main a{color:var(--muted);font-size:14px;text-decoration:none}nav.main a:hover{color:var(--green)}main{padding:36px 0 72px}.breadcrumbs{display:flex;gap:9px;flex-wrap:wrap;color:var(--muted);font-size:13px;margin-bottom:24px}.breadcrumbs a{text-decoration:none}.breadcrumbs a:hover{color:var(--green)}h1{font-size:clamp(30px,5vw,58px);line-height:1.05;margin:0 0 16px}h2{font-size:24px;margin:38px 0 16px}.lede{color:var(--muted);max-width:760px;margin:0 0 28px}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:16px}.card{display:block;background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:18px;text-decoration:none}.card:hover{border-color:var(--green)}.card img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:12px;background:var(--panel2);margin-bottom:14px}.card h2,.card h3{margin:0 0 7px;font-size:18px}.meta{color:var(--muted);font-size:14px}.product{display:grid;grid-template-columns:minmax(0,1fr) minmax(300px,1fr);gap:30px;align-items:start}.product-media{background:var(--panel);border:1px solid var(--line);border-radius:22px;padding:16px}.product-media img{width:100%;aspect-ratio:1;object-fit:contain;border-radius:14px}.facts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.fact{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px}.fact small{display:block;color:var(--muted)}.tiers{width:100%;border-collapse:collapse;background:var(--panel);border-radius:14px;overflow:hidden}.tiers th,.tiers td{text-align:left;padding:11px;border-bottom:1px solid var(--line)}.actions{display:flex;gap:10px;flex-wrap:wrap;margin:24px 0}.button{display:inline-flex;padding:12px 18px;border-radius:12px;background:var(--green);color:#04180d;text-decoration:none;font-weight:800}.button.secondary{background:transparent;color:var(--text);border:1px solid var(--line)}.notice{padding:18px;border:1px solid var(--line);border-radius:14px;background:var(--panel);color:var(--muted)}footer{border-top:1px solid var(--line);color:var(--muted);padding:26px 0;font-size:13px}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:16px/1.55 'Segoe UI',system-ui,-apple-system,Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased}a{color:inherit}.wrap{width:min(1120px,calc(100% - 32px));margin:auto}header{position:sticky;top:0;background:rgba(6,10,7,.94);border-bottom:1px solid var(--line);z-index:10}header .wrap{display:flex;align-items:center;justify-content:space-between;min-height:64px;gap:18px}.brand{display:flex;align-items:center;gap:9px;font-weight:800;letter-spacing:.5px;text-decoration:none;font-size:20px;white-space:nowrap}.brand img{width:40px;height:40px;object-fit:contain}.brand b{color:var(--green)}nav.main{display:flex;gap:16px;flex-wrap:wrap}nav.main a{color:var(--muted);font-size:14px;text-decoration:none}nav.main a:hover{color:var(--green)}main{padding:36px 0 72px}.breadcrumbs{display:flex;gap:9px;flex-wrap:wrap;color:var(--muted);font-size:13px;margin-bottom:24px}.breadcrumbs a{text-decoration:none}.breadcrumbs a:hover{color:var(--green)}h1{font-size:clamp(30px,5vw,58px);line-height:1.05;margin:0 0 16px}h2{font-size:24px;margin:38px 0 16px}.lede{color:var(--muted);max-width:760px;margin:0 0 28px}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:16px}.card{display:block;background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:18px;text-decoration:none}.card:hover{border-color:var(--green)}.card img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:12px;background:var(--panel2);margin-bottom:14px}.card h2,.card h3{margin:0 0 7px;font-size:18px}.meta{color:var(--muted);font-size:14px}.product{display:grid;grid-template-columns:minmax(0,1fr) minmax(300px,1fr);gap:30px;align-items:start}.product-media{background:var(--panel);border:1px solid var(--line);border-radius:22px;padding:16px}.product-media img{width:100%;aspect-ratio:1;object-fit:contain;border-radius:14px}.facts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.fact{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px}.fact small{display:block;color:var(--muted)}.tiers{width:100%;border-collapse:collapse;background:var(--panel);border-radius:14px;overflow:hidden}.tiers th,.tiers td{text-align:left;padding:11px;border-bottom:1px solid var(--line)}.actions{display:flex;gap:10px;flex-wrap:wrap;margin:24px 0}.button{display:inline-flex;padding:12px 18px;border-radius:12px;background:linear-gradient(135deg,var(--green),#1db960);color:#04180d;text-decoration:none;font-weight:800}.button.secondary{background:transparent;color:var(--text);border:1px solid var(--line)}.notice{padding:18px;border:1px solid var(--line);border-radius:14px;background:var(--panel);color:var(--muted)}.post-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(300px,100%),1fr));gap:16px}.post-card{display:flex;flex-direction:column;padding:0;overflow:hidden}.post-card img{aspect-ratio:16/9;margin:0;border-radius:0}.post-card .post-body{padding:16px 18px 18px}.post-date{color:var(--gold);font-size:13px;font-weight:700;letter-spacing:.3px}.article{max-width:760px}.article .hero{width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:18px;border:1px solid var(--line);margin:8px 0 28px}.article-body{font-size:17px;line-height:1.75}.article-body h2{font-size:26px;margin:40px 0 12px}.article-body h3{font-size:20px;margin:28px 0 10px;color:var(--green)}.article-body a{color:var(--green)}.article-body img{max-width:100%;border-radius:14px}.article-body figure{margin:24px 0}.article-body blockquote{margin:24px 0;padding:14px 18px;border-left:3px solid var(--gold);background:var(--panel);border-radius:0 12px 12px 0;color:var(--muted)}.article-body li{margin:6px 0}footer{border-top:1px solid var(--line);color:var(--muted);padding:26px 0;font-size:13px}
 @media(max-width:760px){header .wrap{align-items:flex-start;padding-block:14px;flex-direction:column}nav.main{gap:11px}.product{grid-template-columns:1fr}main{padding-top:24px}}
 </style>
 </head>
 <body>
-<header><div class="wrap"><a class="brand" href="/">DANK <b>BKK</b></a><nav class="main" aria-label="Main navigation"><a href="/products/">Products</a><a href="/locations/">Locations</a><a href="/about/">About</a><a href="/faq/">FAQ</a><a href="/contact/">Contact</a></nav></div></header>
+<header><div class="wrap"><a class="brand" href="/" aria-label="DANK BKK home"><img src="/assets/dank-mascot.png" alt="" width="40" height="40">DANK BKK</a><nav class="main" aria-label="Main navigation"><a href="/products/">Products</a><a href="/locations/">Locations</a><a href="/about/">About</a><a href="/faq/">FAQ</a>${publishedPosts().length ? '<a href="/blog/">Blog</a>' : ""}<a href="/contact/">Contact</a></nav></div></header>
 <main><div class="wrap">${body}</div></main>
 <footer><div class="wrap">DANK BKK · For adults 20+ · Please consume responsibly.</div></footer>
 </body></html>`;
@@ -448,12 +450,69 @@ export function renderStaticPage(page) {
     const schema = { "@type": "FAQPage", "@id": `${SITE_URL + path}#faq`, mainEntity: FAQS.map(([question, answer]) => ({ "@type": "Question", name: question, acceptedAnswer: { "@type": "Answer", text: answer } })) };
     return pageShell({ title: "FAQ | DANK BKK", description: "Answers to common questions using information stated by the DANK BKK storefront.", canonical: path, entities: [breadcrumbEntity(items, SITE_URL + path), schema], body: `${breadcrumbs(items)}<h1>Frequently asked questions</h1>${FAQS.map(([question, answer]) => `<section class="card" style="margin-bottom:12px"><h2>${escapeHtml(question)}</h2><p class="meta">${escapeHtml(answer)}</p></section>`).join("")}` });
   }
-  if (page === "blog") {
-    const path = "/blog/";
-    const items = [{ name: "Home", path: "/" }, { name: "Blog" }];
-    return pageShell({ title: "Blog | DANK BKK", description: "DANK BKK article index.", canonical: path, noindex: true, entities: [breadcrumbEntity(items, SITE_URL + path)], body: `${breadcrumbs(items)}<h1>Blog</h1><div class="notice">No public articles are available yet. This page will remain out of search indexes until factual articles are published.</div>` });
-  }
+  if (page === "blog") return renderBlogIndex();
   return null;
+}
+
+function formatDate(value) {
+  const date = new Date(`${value}T00:00:00Z`);
+  return Number.isNaN(date.getTime()) ? "" : date.toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" });
+}
+
+function postCard(post) {
+  const image = absoluteUrl(post.image);
+  return `<a class="card post-card" href="/blog/${escapeHtml(post.slug)}/">${image ? `<img src="${escapeHtml(image)}" alt="" loading="lazy">` : ""}<div class="post-body"><div class="post-date">${escapeHtml(formatDate(post.date))}</div><h2>${escapeHtml(post.title)}</h2><div class="meta">${escapeHtml(post.description)}</div></div></a>`;
+}
+
+export function renderBlogIndex() {
+  const path = "/blog/";
+  const posts = publishedPosts();
+  const items = [{ name: "Home", path: "/" }, { name: "Blog" }];
+  const list = posts.length
+    ? `<div class="post-grid">${posts.map(postCard).join("")}</div>`
+    : `<div class="notice">No articles yet — check back soon.</div>`;
+  return pageShell({
+    title: "Blog | DANK BKK",
+    description: "News, guides and updates from DANK BKK in Bangkok.",
+    canonical: path,
+    noindex: !posts.length,
+    entities: [breadcrumbEntity(items, SITE_URL + path)],
+    body: `${breadcrumbs(items)}<h1>Blog</h1><p class="lede">News, guides and updates from DANK BKK.</p>${list}`,
+  });
+}
+
+export function renderBlogPost(slug) {
+  const post = findPost(slug);
+  if (!post) return null;
+  const path = `/blog/${post.slug}/`;
+  const url = SITE_URL + path;
+  const image = absoluteUrl(post.image);
+  const items = [{ name: "Home", path: "/" }, { name: "Blog", path: "/blog/" }, { name: post.title }];
+  const article = compact({
+    "@type": "BlogPosting",
+    "@id": `${url}#article`,
+    headline: post.title,
+    description: post.description,
+    datePublished: post.date,
+    dateModified: post.updated || post.date,
+    image: image || undefined,
+    inLanguage: post.lang || "en",
+    mainEntityOfPage: url,
+    author: { "@type": "Organization", name: "DANK BKK", url: SITE_URL },
+    publisher: { "@type": "Organization", name: "DANK BKK", url: SITE_URL, logo: { "@type": "ImageObject", url: `${SITE_URL}/assets/dank-mascot.png` } },
+  });
+  const head = `<meta property="article:published_time" content="${escapeHtml(post.date)}">${post.updated ? `<meta property="article:modified_time" content="${escapeHtml(post.updated)}">` : ""}`;
+  return pageShell({
+    title: `${post.title} | DANK BKK`,
+    description: post.description,
+    canonical: path,
+    image: post.image,
+    ogType: "article",
+    lang: post.lang || "en",
+    head,
+    entities: [breadcrumbEntity(items, url), article],
+    body: `${breadcrumbs(items)}<article class="article"><div class="post-date">${escapeHtml(formatDate(post.date))}${post.updated ? ` · Updated ${escapeHtml(formatDate(post.updated))}` : ""}</div><h1>${escapeHtml(post.title)}</h1>${image ? `<img class="hero" src="${escapeHtml(image)}" alt="">` : ""}<div class="article-body">${markdownToHtml(post.body)}</div><div class="actions"><a class="button" href="/shop">Visit the shop</a><a class="button secondary" href="/blog/">More articles</a></div></article>`,
+  });
 }
 
 export function renderNotFound() {
@@ -474,10 +533,13 @@ export function renderSitemap(type, menu = [], changedAt = 0) {
     return `<?xml version="1.0" encoding="UTF-8"?>\n<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${maps.map((name) => `  <sitemap><loc>${SITE_URL}/sitemap-${name}.xml</loc></sitemap>`).join("\n")}\n</sitemapindex>\n`;
   }
   const lastmod = Number(changedAt) > 0 ? new Date(Number(changedAt)).toISOString().slice(0, 10) : "";
-  if (type === "pages") return urlset(["/", "/about/", "/products/", "/locations/", "/faq/", "/contact/", "/224-livehouse.html", "/build-your-joint.html", "/food.html"]);
+  if (type === "pages") return urlset(["/", "/about/", "/products/", "/locations/", "/faq/", "/contact/", "/224-livehouse.html", "/build-your-joint.html", "/food.html", ...(publishedPosts().length ? ["/blog/"] : [])]);
   if (type === "products") return urlset(publicProducts(menu).map(productUrl), lastmod);
   if (type === "product-categories") return urlset(categoriesFrom(menu).map((category) => categoryUrl(category.name)), lastmod);
   if (type === "locations") return urlset(LOCATIONS.map((location) => `/locations/${location.slug}/`));
-  if (type === "blog") return urlset([]);
+  if (type === "blog") {
+    const posts = publishedPosts();
+    return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${posts.map((post) => `  <url><loc>${xmlEscape(`${SITE_URL}/blog/${post.slug}/`)}</loc><lastmod>${xmlEscape(post.updated || post.date)}</lastmod></url>`).join("\n")}\n</urlset>\n`;
+  }
   return null;
 }
