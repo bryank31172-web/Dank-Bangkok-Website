@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {createDeliveryLineHandler, createRidersHandler, deliveryOrderCard, RIDERS_KEY} from '../api/_delivery-line.js';
+import {createDeliveryLineHandler, createRidersHandler, deliveryOrderCard, createLinkCard, RIDERS_KEY} from '../api/_delivery-line.js';
 import {key, terminalKey} from '../api/_delivery.js';
 const managerId = 'U' + 'a'.repeat(32), riderId = 'U' + 'b'.repeat(32), group = 'C' + 'c'.repeat(32);
 function fixture() {
@@ -84,4 +84,11 @@ test('LINE form: "delivery" in the staff group opens the form; card gets a form 
     assert.equal(card.contents.footer.contents[2].action.uri,'https://liff.line.me/1234567890-AbCdEfGh?order=DR-TEST');
     assert.doesNotMatch(JSON.stringify(card),/driver-delivery/);
   }finally{delete process.env.LINE_LIFF_ID}
+});
+
+test('untracked delivery order card opens the LINE form for that order, only when the form is set up',()=>{
+  assert.equal(createLinkCard({orderId:'DR-TEST'}),null);
+  process.env.LINE_LIFF_ID='1234567890-AbCdEfGh';
+  try{const c=createLinkCard({orderId:'DR-TEST'});assert.equal(c.contents.footer.contents[0].action.uri,'https://liff.line.me/1234567890-AbCdEfGh?order=DR-TEST');}
+  finally{delete process.env.LINE_LIFF_ID}
 });

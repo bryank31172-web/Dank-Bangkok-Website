@@ -4,7 +4,7 @@ import {getMenu} from './_menu.js';
 import {listAccounts} from './_staff-accounts.js';
 import {requirePermission, hasPermission} from './_auth.js';
 import {RIDERS_KEY} from './_delivery-line.js';
-import {write, ready, routeFor, catalogProducts, configuredProductIds, PRODUCTS_CONFIG_KEY, LIVE_MENU_SOURCES} from './_delivery.js';
+import {write, ready, routeFor, catalogProducts, configuredProductIds, tracksEverything, PRODUCTS_CONFIG_KEY, LIVE_MENU_SOURCES} from './_delivery.js';
 
 export function createSetupHandler(deps={}) {
   const d={get:getJSON,menu:getMenu,accounts:listAccounts,permission:requirePermission,write,ready,routeFor,backend:storageBackend,env:process.env,fetch:globalThis.fetch,...deps};
@@ -25,7 +25,8 @@ export function createSetupHandler(deps={}) {
       const [menu,config]=await Promise.all([d.menu(),d.get(PRODUCTS_CONFIG_KEY)]);
       const live=new Set(catalogProducts(menu.data).map(p=>p.id));
       const count=configuredProductIds(config).filter(id=>live.has(id)).length;
-      add('Delivery products',d.ready()&&LIVE_MENU_SOURCES.has(menu.source)&&count>0,count+' eligible products selected. Use Orders → Delivery products to change the selection.');
+      if(tracksEverything(config))add('Delivery products',d.ready(),'Track every product is on: every delivery order gets a tracking link at checkout.');
+      else add('Delivery products',d.ready()&&LIVE_MENU_SOURCES.has(menu.source)&&count>0,count+' products selected. Use Orders → Delivery products to change the selection or turn on Track every product.');
     }catch{add('Delivery products',false,'Check the live product connection and saved delivery product selection.');}
     add('Wayfinder basemap',true,'Uses MapLibre + PMTiles without a map API key. Open the demo to verify tiles, credits and light/dark mode in your browser.');
     const route=await d.routeFor({lat:13.7108,lng:100.5375},{lat:13.7463,lng:100.5346});

@@ -1097,24 +1097,32 @@ async function openDeliveryProducts(){
     const r=await authGet('/api/delivery-products'),data=await r.json();if(!r.ok)throw new Error(data.error||'Could not load delivery products');
     document.getElementById('deliveryProducts')?.remove();
     const ov=document.createElement('div');ov.id='deliveryProducts';ov.className='recent-order-modal';ov.setAttribute('role','dialog');ov.setAttribute('aria-modal','true');ov.setAttribute('aria-labelledby','deliveryProductsTitle');
-    const selected=new Set(data.ids||[]),products=data.products||[];
-    ov.innerHTML=`<section class="recent-order-card"><header class="recent-order-head"><h3 id="deliveryProductsTitle">Delivery tracking products</h3><button type="button" class="ghost" data-products-close>Close</button></header><div class="recent-order-body"><p>Select food and ordinary merchandise that should open delivery tracking after checkout. Every item in an order must be selected.</p><p class="dash-muted">Connected catalog: ${esc(data.source)} · ${products.length} supported products</p><input id="deliveryProductSearch" type="search" placeholder="Search products" aria-label="Search delivery products" style="width:100%;padding:12px;margin:12px 0"><div id="deliveryProductRows"></div><p id="deliveryProductMessage" role="status"></p><button class="btn" type="button" data-products-save>Save products</button></div></section>`;
-    const message=text=>ov.querySelector('#deliveryProductMessage').textContent=text;
-    const render=()=>{const q=ov.querySelector('#deliveryProductSearch').value.trim().toLowerCase(),rows=products.filter(p=>[p.name,p.category,p.option,p.id].join(' ').toLowerCase().includes(q));ov.querySelector('#deliveryProductRows').innerHTML=rows.length?rows.map(p=>`<label style="display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--line)"><input type="checkbox" data-product-id="${esc(p.id)}" ${selected.has(p.id)?'checked':''}><span><b>${esc(p.name)}</b><small style="display:block">${esc(p.category)}${p.option?' · '+esc(p.option):''}${p.price!=null?' · ฿'+esc(p.price):''}</small></span></label>`).join(''):'<p>No supported products match this search.</p>'};
-    ov.addEventListener('change',event=>{const id=event.target.dataset.productId;if(id)event.target.checked?selected.add(id):selected.delete(id)});
+    const selected=new Set(data.ids||[]),products=data.products||[];let all=Boolean(data.all);
+    ov.innerHTML=`<section class="recent-order-card"><header class="recent-order-head"><h3 id="deliveryProductsTitle">Delivery tracking products</h3><button type="button" class="ghost" data-products-close>Close</button></header><div class="recent-order-body"><p>Choose which products open delivery tracking automatically after checkout. Staff can always create a link for any delivery order from the order or the LINE form.</p><p class="dash-muted">Connected catalog: ${esc(data.source)} · ${products.length} products</p>
+      <label style="display:flex;gap:12px;align-items:flex-start;padding:14px;margin:12px 0;border:1px solid var(--line);border-radius:12px;cursor:pointer"><input type="checkbox" id="deliveryAll" ${all?'checked':''} style="margin-top:3px"><span><b>Track every product</b><small class="dash-muted" style="display:block">Every delivery order gets a tracking link, including products added to the POS later.</small></span></label>
+      <div id="deliveryPick"><div style="display:flex;gap:10px;align-items:center"><input id="deliveryProductSearch" type="search" placeholder="Search products" aria-label="Search delivery products" style="flex:1;padding:12px;margin:0"><button class="ghost" type="button" data-products-all>Select all shown</button><button class="ghost" type="button" data-products-none>Clear</button></div><p id="deliveryCount" class="dash-muted" style="margin:8px 0 0"></p><div id="deliveryProductRows"></div></div>
+      <p id="deliveryProductMessage" role="status"></p><button class="btn" type="button" data-products-save>Save products</button></div></section>`;
+    const $p=sel=>ov.querySelector(sel),message=text=>$p('#deliveryProductMessage').textContent=text;
+    const shown=()=>{const q=$p('#deliveryProductSearch').value.trim().toLowerCase();return products.filter(p=>[p.name,p.category,p.option,p.id].join(' ').toLowerCase().includes(q))};
+    const render=()=>{const rows=shown();$p('#deliveryPick').style.opacity=all?'.45':'';$p('#deliveryPick').inert=all;
+      $p('#deliveryCount').textContent=all?'Every product is tracked.':selected.size+' of '+products.length+' selected';
+      $p('#deliveryProductRows').innerHTML=rows.length?rows.map(p=>`<label style="display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--line)"><input type="checkbox" data-product-id="${esc(p.id)}" ${selected.has(p.id)?'checked':''}><span><b>${esc(p.name)}</b><small style="display:block">${esc(p.category)}${p.option?' · '+esc(p.option):''}${p.price!=null?' · ฿'+esc(p.price):''}</small></span></label>`).join(''):'<p>No products match this search.</p>'};
+    ov.addEventListener('change',event=>{if(event.target.id==='deliveryAll'){all=event.target.checked;render();return}const id=event.target.dataset.productId;if(id){event.target.checked?selected.add(id):selected.delete(id);$p('#deliveryCount').textContent=selected.size+' of '+products.length+' selected'}});
     ov.addEventListener('click',async event=>{
       if(event.target===ov||event.target.closest('[data-products-close]')){ov.remove();return}
+      if(event.target.closest('[data-products-all]')){shown().forEach(p=>selected.add(p.id));render();return}
+      if(event.target.closest('[data-products-none]')){shown().forEach(p=>selected.delete(p.id));render();return}
       const save=event.target.closest('[data-products-save]');if(!save)return;save.disabled=true;
-      try{const r=await authPost('/api/delivery-products',{ids:[...selected]}),j=await r.json();if(!r.ok)throw new Error(j.error);message('Saved. Delivery tracking is enabled for '+j.ids.length+' selected products.');}catch(e){message(e.message)}finally{save.disabled=false}
+      try{const r=await authPost('/api/delivery-products',{ids:[...selected],all}),j=await r.json();if(!r.ok)throw new Error(j.error);message(j.all?'Saved. Every delivery order now gets tracking.':'Saved. Delivery tracking is on for '+j.ids.length+' selected products.');}catch(e){message(e.message)}finally{save.disabled=false}
     });
-    ov.querySelector('#deliveryProductSearch').addEventListener('input',render);document.body.appendChild(ov);render();ov.querySelector('#deliveryProductSearch').focus();
+    $p('#deliveryProductSearch').addEventListener('input',render);document.body.appendChild(ov);render();$p('#deliveryProductSearch').focus();
   }catch(e){alert(e.message||'Could not open delivery products')}
 }
 
 /* Create delivery link: staff confirm the destination (Google autocomplete, or the
    pin the customer chose at checkout) and pick a rider, then one request creates the
-   customer link and the rider's private link. The server applies the same product
-   eligibility as checkout. A rider with a registered LINE ID also gets their link in LINE. */
+   customer link and the rider's private link. Works for any delivery order. A rider
+   with a registered LINE ID also gets their link in LINE. */
 let STAFF_PLACES=null;
 function loadStaffPlaces(){
   if(STAFF_PLACES)return STAFF_PLACES;
@@ -1143,6 +1151,8 @@ async function createDeliveryLink(button){
       <label for="dcRider" style="display:block;margin-top:14px"><b>2. Rider</b></label>
       <select id="dcRider" required style="${field}"><option value="">Loading riders…</option></select>
       <p id="dcRiderNote" class="dash-muted" style="margin:0;font-size:13px"></p>
+      <label for="dcNote" style="display:block;margin-top:14px"><b>3. Note for rider</b> <span class="dash-muted">(optional)</span></label>
+      <textarea id="dcNote" rows="3" maxlength="300" placeholder="Gate code, floor, call on arrival…" style="${field};resize:vertical"></textarea>
       <p id="dcMessage" role="status" style="color:#b42318;min-height:1.2em;margin:12px 0 0"></p>
       <button class="btn" type="submit" style="width:100%;margin-top:8px">Create link &amp; assign rider</button>
     </form>
@@ -1183,7 +1193,7 @@ async function createDeliveryLink(button){
     const riderId=$c('#dcRider').value;if(!riderId){msg('Choose a rider.');$c('#dcRider').focus();return}
     const submit=$c('button[type=submit]');submit.disabled=true;submit.textContent='Creating…';
     try{
-      const r=await authPost('/api/delivery',{role:'staff',id,action:'create',destination:dest,place:input.value.trim(),riderId}),j=await r.json().catch(()=>({}));
+      const r=await authPost('/api/delivery',{role:'staff',id,action:'create',destination:dest,place:input.value.trim(),riderId,note:$c('#dcNote').value.trim()}),j=await r.json().catch(()=>({}));
       if(!r.ok)throw new Error(j.error||'Could not create the delivery link');
       if(order)order.deliveryTrackingAvailable=true;
       button.outerHTML=`<button type="button" class="btn" data-act="delivery-manage" data-id="${esc(id)}">Manage delivery tracking</button>`;

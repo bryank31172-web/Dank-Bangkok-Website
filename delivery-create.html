@@ -45,6 +45,8 @@ input,select{width:100%;padding:13px 14px;border:1px solid var(--line);border-ra
       <h2><span class="n">3</span>Rider</h2>
       <select id="rider" aria-label="Rider"><option value="">Loading riders…</option></select>
       <p id="riderNote" class="muted"></p>
+      <label for="note" style="display:block;margin-top:14px;font-weight:650;font-size:15px">Note for rider <span class="muted" style="font-weight:400">(optional)</span></label>
+      <textarea id="note" rows="3" maxlength="300" placeholder="Gate code, floor, call on arrival, what to collect…" style="width:100%;margin-top:8px;padding:13px 14px;border:1px solid var(--line);border-radius:12px;font:inherit;resize:vertical"></textarea>
     </section>
     <p id="msg" class="warn" role="alert"></p>
     <button id="submit" class="btn" type="submit">Create link &amp; assign rider</button>
@@ -140,7 +142,7 @@ el('form').addEventListener('submit',async e=>{
   const riderId=el('rider').value;if(!riderId){el('msg').textContent='Choose a rider.';return el('rider').focus()}
   const btn=el('submit');btn.disabled=true;btn.textContent='Creating…';
   try{
-    const j=await api('POST',{role:'staff',action:'create',id:picked.orderId,destination:dest,place:el('place').value.trim(),riderId});
+    const j=await api('POST',{role:'staff',action:'create',id:picked.orderId,destination:dest,place:el('place').value.trim(),riderId,note:el('note').value.trim()});
     showDone(j);
   }catch(err){el('msg').textContent=err.message}finally{btn.disabled=false;btn.textContent='Create link & assign rider'}
 });
@@ -159,7 +161,7 @@ function showDone(j){
 async function copy(id){const v=el(id).value;try{await navigator.clipboard.writeText(v);el('copied').textContent='Copied.'}catch{el(id).select();el('copied').textContent='Long-press the link to copy.'}}
 el('copyCust').addEventListener('click',()=>copy('custLink'));el('copyRider').addEventListener('click',()=>copy('riderLink'));
 el('shareCust').addEventListener('click',async()=>{try{await liff.shareTargetPicker([{type:'text',text:`Your DANK BKK delivery is on its way soon 🛵\nTrack your rider here:\n${el('custLink').value}`}])}catch{copy('custLink')}});
-el('another').addEventListener('click',async()=>{picked=null;dest=null;el('place').value='';el('rider').value='';el('done').classList.add('hidden');el('form').classList.remove('hidden');await loadOrders();renderOrders()});
+el('another').addEventListener('click',async()=>{picked=null;dest=null;el('place').value='';el('rider').value='';el('note').value='';el('done').classList.add('hidden');el('form').classList.remove('hidden');await loadOrders();renderOrders()});
 
 async function loadOrders(want){orders=(await api('GET',{action:'pending',...(want?{id:want}:{})})).orders||[]}
 (async()=>{
