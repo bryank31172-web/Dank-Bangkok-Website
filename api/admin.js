@@ -49,6 +49,9 @@ import { getJSON, setJSON } from "./_store.js";
 import { bustMenu } from "./_menu.js";
 import { requireEnv, staffIdentity } from "./_auth.js";
 import { requireRate } from "./_ratelimit.js";
+import { allPosts, cleanPost, readStore, writeStore, bangkokToday } from "./_blog.js";
+import { SEED_POSTS } from "./_blog-posts.js";
+import { renderBlogArticle } from "./_seo.js";
 
 const sha256 = (s) => crypto.createHash("sha256").update(String(s)).digest("hex");
 
@@ -57,6 +60,12 @@ const sha256 = (s) => crypto.createHash("sha256").update(String(s)).digest("hex"
 const EMAIL = () => String(process.env.ADMIN_EMAIL || "").trim().toLowerCase();
 const PASS_HASH = () => sha256(process.env.ADMIN_PASSWORD || "");
 const SECRET = () => process.env.ADMIN_SECRET || "";
+/* The blog editor's own login. It opens /blog-admin and nothing else: its
+   token is stamped s:"blog", and every action except the blog-* ones
+   refuses it. Both values live in the environment like every other secret
+   here — this repository is public. */
+const BLOG_USER = () => String(process.env.BLOG_ADMIN_USER || "").trim().toLowerCase();
+const BLOG_PASS_HASH = () => sha256(process.env.BLOG_ADMIN_PASSWORD || "");
 const PIN = () => String(process.env.MASTER_PIN || "").trim();
 const TTL_MS = 1000 * 60 * 60 * 24 * 7; // 7 days
 
@@ -77,9 +86,9 @@ const sign = (payload) => b64u(crypto.createHmac("sha256", SECRET()).update(payl
 const PIN_TTL_MS = 1000 * 60 * 60 * 12; // 12 hours
 
 function makeToken(scope) {
-  const s = scope === "promo" ? "promo" : scope === "manager" ? "manager" : "owner";
+  const s = scope === "promo" ? "promo" : scope === "manager" ? "manager" : scope === "blog" ? "blog" : "owner";
   const ttl = s === "promo" ? PIN_TTL_MS : TTL_MS;
-  const payload = b64u(JSON.stringify({ e: s === "promo" ? "pin" : EMAIL(), x: Date.now() + ttl, s }));
+  const payload = b64u(JSON.stringify({ e: s === "promo" ? "pin" : s === "blog" ? BLOG_USER() : EMAIL(), x: Date.now() + ttl, s }));
   return payload + "." + sign(payload);
 }
 /* Returns the decoded payload for a good token, or null. Callers that only
@@ -95,7 +104,7 @@ function readToken(tok) {
   try {
     const p = JSON.parse(b64uDecode(payload));
     if (!p.x || Date.now() >= p.x) return null;
-    return { e: p.e, x: p.x, s: p.s === "promo" ? "promo" : p.s === "manager" ? "manager" : "owner" };
+    return { e: p.e, x: p.x, s: p.s === "promo" ? "promo" : p.s === "manager" ? "manager" : p.s === "blog" ? "blog" : "owner" };
   } catch (e) { return null; }
 }
 
@@ -134,6 +143,15 @@ export default async function handler(req, res) {
     return res.status(200).json({ ok:true, token:makeToken(staff.role), scope:staff.role });
   }
 
+  if (b.action === "blog-login") {
+    if (!requireEnv(res, ["ADMIN_SECRET", "BLOG_ADMIN_USER", "BLOG_ADMIN_PASSWORD"])) return;
+    if (!(await requireRate(req, res, "bloglogin", 10, 900))) return;
+    const okUser = safeEq(String(b.username || "").trim().toLowerCase(), BLOG_USER());
+    const okPass = safeEq(sha256(b.password || ""), BLOG_PASS_HASH());
+    if (!okUser || !okPass) return res.status(401).json({ error: "wrong username or password" });
+    return res.status(200).json({ ok: true, token: makeToken("blog"), scope: "blog" });
+  }
+
   // Everything past the public GET needs a real, deployment-supplied login.
   if (!requireEnv(res, ["ADMIN_EMAIL", "ADMIN_PASSWORD", "ADMIN_SECRET"])) return;
 
@@ -162,6 +180,47 @@ export default async function handler(req, res) {
      against a dead session was lost the moment Save was pressed. Reaching this
      line at all means verifyToken() passed. */
   if (b.action === "verify") return res.status(200).json({ ok: true, valid: true, scope: sess.s });
+
+  if (sess.s === "blog" && !String(b.action || "").startsWith("blog-")) return res.status(403).json({ error: "this login can only edit the blog" });
+
+  /* Blog editor (/blog-admin). Owner and manager sessions only — a PIN
+     session is for promotions and nothing else. Stored posts override the
+     ones shipped in api/_blog-posts.js by slug; deleting a shipped post
+     records its slug in `deleted` so it stays gone. */
+  if (String(b.action || "").startsWith("blog-")) {
+    if (sess.s === "promo") return res.status(403).json({ error: "the promotions PIN cannot edit the blog" });
+    const store = await readStore();
+    const seedSlugs = new Set(SEED_POSTS.map((post) => post.slug));
+    if (b.action === "blog-list") return res.status(200).json({ ok: true, today: bangkokToday(), posts: allPosts(store) });
+    if (b.action === "blog-preview") {
+      const { post } = cleanPost(b.post || {});
+      return res.status(200).json({ ok: true, html: renderBlogArticle(post, { preview: true }) });
+    }
+    if (b.action === "blog-save") {
+      const { post, errors } = cleanPost(b.post || {});
+      if (errors.length) return res.status(400).json({ error: errors.join("; ") });
+      const original = String(b.originalSlug || "");
+      if (original && original !== post.slug) {
+        delete store.posts[original];
+        if (seedSlugs.has(original) && !store.deleted.includes(original)) store.deleted.push(original);
+      }
+      if (!original && (store.posts[post.slug] || seedSlugs.has(post.slug)) && !store.deleted.includes(post.slug)) {
+        return res.status(409).json({ error: "an article with this slug already exists" });
+      }
+      store.posts[post.slug] = post;
+      store.deleted = store.deleted.filter((slug) => slug !== post.slug);
+      await writeStore(store);
+      return res.status(200).json({ ok: true, post, posts: allPosts(store) });
+    }
+    if (b.action === "blog-delete") {
+      const slug = String(b.slug || "");
+      delete store.posts[slug];
+      if (seedSlugs.has(slug) && !store.deleted.includes(slug)) store.deleted.push(slug);
+      await writeStore(store);
+      return res.status(200).json({ ok: true, posts: allPosts(store) });
+    }
+    return res.status(400).json({ error: "unknown action" });
+  }
 
   if (b.action === "save") {
     const ov = b.overrides || {};

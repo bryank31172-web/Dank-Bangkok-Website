@@ -1,5 +1,7 @@
+import { publishedPosts, refreshPosts } from "./_blog.js";
 import { getMenu } from "./_menu.js";
 import {
+  renderBlogPost,
   renderCategoryPage,
   renderLocationPage,
   renderLocationsPage,
@@ -17,6 +19,8 @@ function queryValue(value) {
 export default async function handler(req, res) {
   const view = queryValue(req.query?.view);
   const sitemapType = queryValue(req.query?.sitemap);
+
+  if (view === "blog" || view === "post" || sitemapType === "blog" || sitemapType === "pages") await refreshPosts();
 
   if (sitemapType) {
     let menu = [];
@@ -47,6 +51,8 @@ export default async function handler(req, res) {
     html = renderLocationsPage();
   } else if (view === "location") {
     html = renderLocationPage(queryValue(req.query?.location));
+  } else if (view === "post") {
+    html = renderBlogPost(queryValue(req.query?.post));
   } else if (["about", "contact", "faq", "blog"].includes(view)) {
     html = renderStaticPage(view);
   }
@@ -57,6 +63,6 @@ export default async function handler(req, res) {
     res.setHeader("X-Robots-Tag", "noindex, follow");
     return res.status(404).send(renderNotFound());
   }
-  res.setHeader("X-Robots-Tag", view === "blog" ? "noindex, follow" : "index, follow, max-image-preview:large");
+  res.setHeader("X-Robots-Tag", view === "blog" && !publishedPosts().length ? "noindex, follow" : "index, follow, max-image-preview:large");
   return res.status(200).send(html);
 }

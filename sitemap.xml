@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <sitemap><loc>https://dankbangkok.com/sitemap-pages.xml</loc></sitemap>
-  <sitemap><loc>https://dankbangkok.com/sitemap-products.xml</loc></sitemap>
-  <sitemap><loc>https://dankbangkok.com/sitemap-product-categories.xml</loc></sitemap>
-  <sitemap><loc>https://dankbangkok.com/sitemap-blog.xml</loc></sitemap>
-  <sitemap><loc>https://dankbangkok.com/sitemap-locations.xml</loc></sitemap>
+  <sitemap><loc>https://www.dankbangkok.com/sitemap-pages.xml</loc></sitemap>
+  <sitemap><loc>https://www.dankbangkok.com/sitemap-products.xml</loc></sitemap>
+  <sitemap><loc>https://www.dankbangkok.com/sitemap-product-categories.xml</loc></sitemap>
+  <sitemap><loc>https://www.dankbangkok.com/sitemap-blog.xml</loc></sitemap>
+  <sitemap><loc>https://www.dankbangkok.com/sitemap-locations.xml</loc></sitemap>
 </sitemapindex>
