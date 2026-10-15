@@ -26,7 +26,7 @@ them private; rotate the token if it leaks.
    get committed to GitHub. Read them back any time from Vercel → Project →
    Settings → Environment Variables.
 
-   Then add the rest as you get them (Omise, xAI/Grok, Resend, Telegram, Upstash — table below).
+   Then add the rest as you get them (Omise, Resend, Telegram, Upstash — table below).
 4. **Deploy.** Open the preview URL; confirm the menu loads. Check
    `your-url/api/storehub-raw?key=YOUR_STAFF_KEY` to see the raw StoreHub data
    (send me that output and I'll fine-tune the product mapping to your catalogue).
@@ -47,8 +47,6 @@ them private; rotate the token if it leaks.
 |---|---|---|
 | `STOREHUB_STORE` | Your StoreHub subdomain (e.g. `dankbkk` from `dankbkk.storehubhq.com`) | You already have this |
 | `STOREHUB_TOKEN` | StoreHub API token → turns on the **live menu + photos + stock** | Ask StoreHub Care to enable API access for your account; they issue the token |
-| `XAI_API_KEY` | Grok key → DANK AI answers **any** open-ended question | console.x.ai → API keys |
-| `GROK_MODEL` | Optional, default `grok-4` | — |
 | `RESEND_API_KEY` | Emails each order to you | resend.com (free) → API key; verify your domain or use their test sender |
 | `ORDER_EMAIL_TO` | Where orders go. Default `dankclubbkk@gmail.com` | — |
 | `ORDER_FORWARD_URL` | Optional: also POST each order into BRYAN POS's own order-intake endpoint (Orders tab) | From your POS developer |
@@ -99,11 +97,9 @@ notify through: **Telegram** group ping with the full order + a console link
 and/or `ORDER_FORWARD_URL` into BRYAN POS. The storefront also keeps its
 LINE/WhatsApp path as backup so no sale is ever lost.
 
-**`/api/chat`** — DANK AI's open-ended brain. The built-in engine answers
-common questions instantly (price, effects, delivery, hours, Thai/English);
-anything else goes to Grok with your live menu injected as context, so answers
-quote real products and real ฿ prices. No `XAI_API_KEY` yet? It quietly falls
-back to the polite built-in reply.
+**Website chat** — Nong Dank uses built-in replies and the live menu.
+Unknown questions use the fallback response or transfer to staff. No external
+AI provider, API key, LINE summaries or summary cron job is used.
 
 **`/api/handoff`** — human takeover. DANK AI transfers the chat when the
 customer asks for staff (any phrasing, Thai or English, or the "Talk to a

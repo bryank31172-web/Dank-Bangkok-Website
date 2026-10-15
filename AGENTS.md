@@ -68,8 +68,9 @@ Roughly in the order that matters. `CLAUDE.md` has the detail on each.
    turn on the Shopify order push. The shop handle is `dankclubbkk`, so the
    store value is most likely `dankclubbkk.myshopify.com` — confirm it in
    Shopify → Settings → Domains rather than assuming; the public domain
-   dankbkk.com is not the API host and answers 404. `GEMINI_API_KEY` (free
-   tier) turns on the AI budtender. `/api/health` reports both.
+   dankbkk.com is not the API host and answers 404. `/api/health` reports Shopify.
+   External AI chatbot calls and LINE summaries have been removed; preserve
+   built-in website replies, staff handoff and LINE delivery dispatch.
 4. In the POS: seven bottles are filed under **Exotics with unit "g"**, so the
    site priced a tequila shot per gram. `[bar] Whiskey Sour` is under Edibles.
    Also `Gin tonic` and `vodka` have VAT applied twice, eight bar lines carry
