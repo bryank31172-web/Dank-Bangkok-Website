@@ -1,14 +1,16 @@
 import { getJSON } from './_store.js';
+import { listAccounts } from './_staff-accounts.js';
+import { lineMessages } from './_line.js';
 import { requirePermission, safeEq } from './_auth.js';
 import { requireRate } from './_ratelimit.js';
 import * as delivery from './_delivery.js';
 import {createSetupHandler} from './_delivery-setup.js';
-import {createRidersHandler} from './_delivery-line.js';
+import {createRidersHandler, riderOptions, riderLinkMessage, RIDERS_KEY, RIDER_LINK_ORIGIN} from './_delivery-line.js';
 import {createProofCompleter, proofKey, jpegPhoto} from './_delivery-proof.js';
 
 // Dependency injection keeps lifecycle/security tests isolated from real orders.
 export function createHandler(deps = {}) {
-  const d = { ...delivery, get: getJSON, permission: requirePermission, rate: requireRate, ...deps };
+  const d = { ...delivery, get: getJSON, accounts: listAccounts, send: lineMessages, permission: requirePermission, rate: requireRate, ...deps };
   let demoRouteCache, demoRouteFlight;
   return async function handler(req, res) {
     res.setHeader('Cache-Control', 'private, no-store');
@@ -45,6 +47,15 @@ export function createHandler(deps = {}) {
     }
     if (b.action === 'setup') return createSetupHandler(deps)(req, res);
     if (b.action === 'riders') return createRidersHandler(deps)(req, res);
+    if (b.action === 'rider-options') {
+      // Rider picker for Create delivery link. Orders permission, like assigning.
+      if (!d.permission(req, res, 'orders')) return;
+      try {
+        if (!d.ready()) throw new Error('Storage unavailable');
+        const riders = riderOptions(await d.accounts(), await d.get(RIDERS_KEY));
+        return res.status(200).json({ riders: riders.map(({lineUserId, ...r}) => ({...r, line: Boolean(lineUserId)})) });
+      } catch { return res.status(503).json({ error: 'Rider list unavailable. Please retry.' }); }
+    }
     const id = String(b.id || '');
     if (!/^[A-Za-z0-9_-]{3,80}$/.test(id)) return res.status(400).json({ error: 'Invalid order reference' });
     try {
@@ -52,9 +63,10 @@ export function createHandler(deps = {}) {
       const staff = b.role === 'staff';
       if (staff && !d.permission(req, res, 'orders')) return;
       if (b.action === 'create') {
-        // Staff can create tracking for an order that has none (e.g. setup failed at
-        // checkout, or its products were approved afterwards). The same eligibility
-        // rules as checkout apply; this never widens which orders can be tracked.
+        // Staff create tracking for an order that has none (setup failed at checkout,
+        // or its products were approved afterwards), optionally with a confirmed
+        // destination and a rider in the same step. The same eligibility rules as
+        // checkout apply; this never widens which orders can be tracked.
         if (!staff) return res.status(403).json({ error: 'Staff access required' });
         if (req.method !== 'POST') return res.status(405).json({ error: 'POST only' });
         const order = await d.get('order:' + id);
@@ -62,12 +74,38 @@ export function createHandler(deps = {}) {
         if (order.fulfilment !== 'delivery') return res.status(409).json({ error: 'Tracking links are only for delivery orders' });
         if (['done', 'cancelled', 'canceled'].includes(order.status) || await d.get(d.terminalKey(id)))
           return res.status(409).json({ error: 'This order has already ended' });
-        const existing = await d.get(d.key(id));
-        if (existing && existing.expiresAt > Date.now())
-          return res.status(200).json({ ok: true, created: false, customerUrl: '/delivery.html#' + new URLSearchParams({ id, token: existing.customerToken }) });
-        const customerUrl = await d.createDelivery({ ...order, orderId: id });
-        if (!customerUrl) return res.status(409).json({ error: 'This order can\'t be tracked. Every item must be on the Delivery products list, and the live POS menu must be connected.' });
-        return res.status(200).json({ ok: true, created: true, customerUrl });
+        const place = String(b.place || '').trim().slice(0, 200);
+        if (b.destination != null && !d.point(b.destination)) return res.status(400).json({ error: 'Choose the destination from the suggestions' });
+        let rider = null;
+        if (b.riderId) {
+          rider = riderOptions(await d.accounts(), await d.get(RIDERS_KEY)).find(r => r.id === String(b.riderId));
+          if (!rider) return res.status(400).json({ error: 'Choose a rider from the list. Riders need orders access and a phone number.' });
+        }
+        let record = await d.get(d.key(id)), created = false;
+        if (!record || record.expiresAt <= Date.now()) {
+          const destination = d.point(b.destination) || d.point(order.delivery?.coordinates);
+          const url = await d.createDelivery({ ...order, orderId: id, delivery: { ...order.delivery, coordinates: destination } });
+          if (!url) return res.status(409).json({ error: 'This order can\'t be tracked. Every item must be on the Delivery products list, and the live POS menu must be connected.' });
+          record = await d.get(d.key(id)); created = true;
+          if (!record) throw new Error('Storage unavailable');
+        }
+        const customerUrl = '/delivery.html#' + new URLSearchParams({ id, token: record.customerToken });
+        if (!rider) return res.status(200).json({ ok: true, created, customerUrl });
+        const destination = d.point(b.destination) || record.destination;
+        if (!destination) return res.status(400).json({ error: 'Choose the delivery destination before assigning a rider', created, customerUrl });
+        const previous = record.driver;
+        record.destination = destination;
+        if (place) record.place = place;
+        record.driver = { name: rider.name, phone: rider.phone, photo: '', token: d.token(), assignedAt: Date.now(), accountId: rider.id, assignedVia: 'staff' };
+        await d.write(d.key(id), record);
+        if (previous) { await d.write(d.locationKey(id, previous.token), null, 1); if (d.departureKey) await d.write(d.departureKey(id, previous.token), null, 1); }
+        const driverUrl = '/driver-delivery.html#' + new URLSearchParams({ id, token: record.driver.token });
+        // Best effort: the link is also shown to staff to copy, so a failed LINE send loses nothing.
+        let lineSent = false;
+        if (rider.lineUserId) {
+          try { lineSent = Boolean((await d.send(rider.lineUserId, [{ type: 'text', text: riderLinkMessage(id, record.place || order.delivery?.address, RIDER_LINK_ORIGIN + driverUrl) }])).ok); } catch {}
+        }
+        return res.status(200).json({ ok: true, created, customerUrl, driverUrl, rider: { name: rider.name, phone: rider.phone }, lineSent, lineRegistered: Boolean(rider.lineUserId) });
       }
       const record = await d.get(d.key(id));
       if (!d.ready()) throw new Error('Storage unavailable');
@@ -185,7 +223,7 @@ export function createHandler(deps = {}) {
         items: (order.items || []).map(i => ({ name: String(i.name || ''), qty: i.qty })), total: order.total ?? order.subtotal,
         mapsKey: process.env.GOOGLE_MAPS_BROWSER_KEY || '', mapId: process.env.GOOGLE_MAPS_MAP_ID || 'DEMO_MAP_ID' };
       if (driver || staff) {
-        result.address = [order.delivery?.zone, order.delivery?.address].filter(Boolean).join(', ');
+        result.address = record.place || [order.delivery?.zone, order.delivery?.address].filter(Boolean).join(', ');
         const phone=String(order.customer?.phone || order.customer?.contact || '').trim().replace(/[\s()-]/g,'');
         result.customer = {name:String(order.customer?.name || 'Customer').slice(0,80),phone:/^\+?\d{7,15}$/.test(phone)?phone:''};
       }

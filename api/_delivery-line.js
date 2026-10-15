@@ -22,6 +22,21 @@ export function deliveryOrderCard(order, customerUrl) {
     ]}}};
 }
 
+// Staff who can be picked as the rider for a delivery: active, orders permission and a
+// valid phone. On-shift riders sort first; a registered LINE ID lets us DM their link.
+export function riderOptions(accounts, rows) {
+  const saved = new Map((rows || []).map(r => [r.accountId, r]));
+  return (accounts || []).flatMap(a => {
+    const phone = String(a.phone || '').replace(/[\s()-]/g, '');
+    if (a.active === false || !hasPermission(a, 'orders') || !/^\+?\d{7,15}$/.test(phone)) return [];
+    const r = saved.get(a.id) || {};
+    return [{id: a.id, name: String(a.name || ''), phone, onShift: Boolean(r.onShift), lineUserId: uid(r.lineUserId) ? r.lineUserId : ''}];
+  }).sort((a, b) => Number(b.onShift) - Number(a.onShift) || a.name.localeCompare(b.name));
+}
+export function riderLinkMessage(id, address, url) {
+  return `Delivery ${id}\n${address || ''}\nOpen your rider controls:\n${url}\nTake a picture to start delivery, then tap Delivered when complete. Open in Safari/Chrome, allow GPS and keep the page open and phone awake.`;
+}
+export const RIDER_LINK_ORIGIN = ORIGIN;
 export function createRidersHandler(deps = {}) {
   const d = {get: getJSON, accounts: listAccounts, permission: requirePermission, ...delivery, ...deps};
   return async (req, res) => {
@@ -105,7 +120,7 @@ export function createDeliveryLineHandler(deps = {}) {
       const latest = await d.get(d.key(id));
       if (latest?.driver?.token !== record.driver.token) throw new Error('Rider assignment changed. Use the staff portal.');
       const url = ORIGIN + '/driver-delivery.html#' + new URLSearchParams({id, token: record.driver.token});
-      const sent = await d.send(rider.lineUserId, [{type: 'text', text: `Delivery ${id}\n${order.delivery?.address || ''}\nOpen your rider controls:\n${url}\nTake a picture to start delivery, then tap Delivered when complete. Open in Safari/Chrome, allow GPS and keep the page open and phone awake.`}], {retryKey: record.driver.retryKey});
+      const sent = await d.send(rider.lineUserId, [{type: 'text', text: riderLinkMessage(id, record.place || order.delivery?.address, url)}], {retryKey: record.driver.retryKey});
       const confirmation = sent.ok
         ? `Assigned ${id} to ${rider.name}. LINE accepted the direct message to their personal chat.`
         : `Assigned ${id} to ${rider.name}, but LINE could not accept the direct message. Ask the rider to add the shop LINE Official Account as a friend, then tap their rider selection again to retry.`;

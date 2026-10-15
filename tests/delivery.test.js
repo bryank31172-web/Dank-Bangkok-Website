@@ -144,7 +144,7 @@ test('completion during route preview cannot return rider GPS',async()=>{
 });
 test('staff can create a missing tracking link; same eligibility, idempotent, staff only',async()=>{
  let made=0;
- const f=fixture({createDelivery:async o=>o.items.every(i=>i.shId==='food')?(made++,'/delivery.html#id='+o.orderId+'&token=new'):null});
+ let f;f=fixture({createDelivery:async o=>{if(!o.items.every(i=>i.shId==='food'))return null;made++;f.db.set(key(o.orderId),{orderId:o.orderId,customerToken:'n'.repeat(64),expiresAt:Date.now()+86400000,destination:o.delivery?.coordinates||null,departurePhotoRequired:true,driver:null});return '/delivery.html#x'}});
  f.db.delete(key(f.id));f.db.get('order:'+f.id).fulfilment='delivery';f.db.get('order:'+f.id).items=[{name:'Sandwich',qty:1,shId:'food'}];
  assert.equal((await f.call({role:'staff',action:'create'})).code,401);
  assert.equal((await f.call({action:'create'})).code,403);
@@ -155,4 +155,24 @@ test('staff can create a missing tracking link; same eligibility, idempotent, st
  assert.equal((await f.call({role:'staff',staff:true,action:'create'})).code,409);
  f.db.get('order:'+f.id).fulfilment='pickup';assert.equal((await f.call({role:'staff',staff:true,action:'create'})).code,409);
  f.db.get('order:'+f.id).fulfilment='delivery';f.db.get('order:'+f.id).status='done';assert.equal((await f.call({role:'staff',staff:true,action:'create'})).code,409);
+});
+
+test('create link with destination and chosen rider assigns, DMs on LINE and rejects bad riders',async()=>{
+ const sent=[],staffAcct=(id,o={})=>({id,name:'Rider '+id,phone:'081-234-5678',role:'parttime',active:true,...o});
+ let f;f=fixture({accounts:async()=>[staffAcct('a1'),staffAcct('a2',{phone:''}),staffAcct('a3',{active:false})],
+  send:async(to,msgs)=>{sent.push([to,msgs[0].text]);return {ok:true}},
+  createDelivery:async o=>{f.db.set(key(o.orderId),{orderId:o.orderId,customerToken:'n'.repeat(64),expiresAt:Date.now()+86400000,destination:o.delivery?.coordinates||null,departurePhotoRequired:true,driver:null});return '/x'}});
+ f.db.set('delivery:line-riders:v1',[{accountId:'a1',lineUserId:'U'+'a'.repeat(32),onShift:true}]);
+ f.db.delete(key(f.id));Object.assign(f.db.get('order:'+f.id),{fulfilment:'delivery',items:[{name:'Sandwich',qty:1,shId:'food'}]});
+ const opts=await f.call({role:'staff',staff:true,action:'rider-options'});assert.equal(opts.code,200);
+ assert.deepEqual(opts.data.riders.map(r=>[r.id,r.onShift,r.line]),[['a1',true,true]]);assert.equal(JSON.stringify(opts.data).includes('Uaaaa'),false);
+ assert.equal((await f.call({action:'rider-options'})).code,401);
+ assert.equal((await f.call({role:'staff',staff:true,action:'create',body:{riderId:'a2',destination:{lat:13.7,lng:100.5}}})).code,400);
+ assert.equal((await f.call({role:'staff',staff:true,action:'create',body:{riderId:'a3',destination:{lat:13.7,lng:100.5}}})).code,400);
+ assert.equal((await f.call({role:'staff',staff:true,action:'create',body:{destination:{lat:'x',lng:1}}})).code,400);
+ const r=await f.call({role:'staff',staff:true,action:'create',body:{riderId:'a1',place:'Siam Paragon',destination:{lat:13.7463,lng:100.5346}}});
+ assert.equal(r.code,200);assert.equal(r.data.created,true);assert.match(r.data.driverUrl,/^\/driver-delivery\.html#/);assert.equal(r.data.lineSent,true);
+ const rec=f.db.get(key(f.id));assert.deepEqual(rec.destination,{lat:13.7463,lng:100.5346});assert.equal(rec.place,'Siam Paragon');assert.equal(rec.driver.accountId,'a1');assert.equal(rec.driver.phone,'0812345678');
+ assert.equal(sent.length,1);assert.match(sent[0][1],/Siam Paragon/);assert.match(sent[0][1],/https:\/\/www\.dankbangkok\.com\/driver-delivery\.html#/);
+ const s=await f.call({role:'staff',staff:true});assert.equal(s.data.address,'Siam Paragon');assert.equal(r.data.driverUrl,s.data.driverUrl);
 });

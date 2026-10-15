@@ -83,7 +83,11 @@ dispatch requires the above account and group setup and a configured eligible
 order. Automated tests use simulated LINE requests and do not contact real staff.
 
 If a delivery order has no tracking yet (setup failed at checkout, or its products
-were approved afterwards), open it and press Create delivery tracking link. The same
+were approved afterwards), open it and press Create delivery tracking link. Search
+the destination (Google autocomplete sets the map pin; without a Maps key, enter the
+coordinates), choose a rider (staff with orders access and a phone, on-shift first),
+then Create link & assign rider. Riders with a registered LINE ID get their link in
+LINE; otherwise copy it from the dialog. The same
 eligibility rules as checkout apply; ineligible orders are refused with a reason.
 Pressing it again returns the existing link instead of creating a second one.
 
