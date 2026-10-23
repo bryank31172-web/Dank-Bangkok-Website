@@ -18,16 +18,16 @@ async function call(handler,body){
 }
 const order=(extra={})=>({items:[{name:'Test item',option:'1g',qty:2,price:300,lineTotal:600}],customer:{name:'Test',phone:'+66 81-234-5678'},fulfilment:'delivery',payment:'Cash',deliveryFee:0,delivery:{coordinates:{lat:13.75,lng:100.55},zone:'Somewhere in Bangkok',address:'Lobby'},...extra});
 
-test('first 3 km are free, the 4th costs 100 and each km after adds 12',()=>{
+test('first 3 km are free, the 4th costs 60 and each km after adds 15',()=>{
  assert.equal(deliveryFeeForKm(0),0);
  assert.equal(deliveryFeeForKm(2.4),0);
  assert.equal(deliveryFeeForKm(3),0);
- assert.equal(deliveryFeeForKm(3.1),100);
- assert.equal(deliveryFeeForKm(4),100);
- assert.equal(deliveryFeeForKm(5),112);
- assert.equal(deliveryFeeForKm(6),124);
- assert.equal(deliveryFeeForKm(10),172);
- assert.equal(deliveryFeeForKm(4.0000001),100,'float noise must not add a km');
+ assert.equal(deliveryFeeForKm(3.1),60);
+ assert.equal(deliveryFeeForKm(4),60);
+ assert.equal(deliveryFeeForKm(5),75);
+ assert.equal(deliveryFeeForKm(6),90);
+ assert.equal(deliveryFeeForKm(10),150);
+ assert.equal(deliveryFeeForKm(4.0000001),60,'float noise must not add a km');
  assert.equal(deliveryFeeForKm(null),null);
  assert.equal(deliveryFeeForKm(-1),null);
  assert.equal(deliveryFeeForKm('abc'),null);
@@ -36,14 +36,14 @@ test('first 3 km are free, the 4th costs 100 and each km after adds 12',()=>{
 test('a missing distance falls back to the flat 100 and says so',()=>{
  assert.deepEqual(deliveryQuote(null),{ok:false,fee:100,km:null,fallback:true});
  assert.deepEqual(deliveryQuote({ok:true,km:null}),{ok:false,fee:100,km:null,fallback:true});
- assert.equal(deliveryQuote({ok:true,km:5.2}).fee,124);
+ assert.equal(deliveryQuote({ok:true,km:5.2}).fee,90);
 });
 
 test('/api/eta returns the delivery quote with the ETA',async()=>{
  const res=await withFetch(routeOf(5200),()=>call(etaHandler,{destLat:13.75,destLng:100.55}));
  assert.equal(res.code,200);
  assert.equal(res.data.km,5.2);
- assert.deepEqual({fee:res.data.delivery.fee,billedKm:res.data.delivery.billedKm,fallback:res.data.delivery.fallback},{fee:124,billedKm:6,fallback:false});
+ assert.deepEqual({fee:res.data.delivery.fee,billedKm:res.data.delivery.billedKm,fallback:res.data.delivery.fallback},{fee:90,billedKm:6,fallback:false});
 });
 
 test('the order charges the distance fee worked out on the server, not the one the browser sent',async()=>{
@@ -51,8 +51,8 @@ test('the order charges the distance fee worked out on the server, not the one t
  assert.equal(res.code,200,JSON.stringify(res.data));
  const {getJSON}=await import('../api/_store.js');
  const saved=await getJSON('order:'+res.data.orderId);
- assert.equal(saved.deliveryFee,136);
- assert.equal(saved.total,600+136);
+ assert.equal(saved.deliveryFee,105);
+ assert.equal(saved.total,600+105);
  assert.equal(saved.delivery.km,7);
  assert.equal(saved.delivery.feeFallback,false);
 });

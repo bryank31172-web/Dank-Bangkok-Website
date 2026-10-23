@@ -1,15 +1,15 @@
 /* Delivery fee by road distance from the branch that ships the order.
      up to 3 km      → free
-     4th km          → ฿100
-     every km after  → +฿12   (5 km = ฿112, 6 km = ฿124, …)
+     4th km          → ฿60
+     every km after  → +฿15   (5 km = ฿75, 6 km = ฿90, …)
    Distance is rounded UP to the whole kilometre, so 3.2 km is charged as 4.
    When no distance can be worked out (no route provider, typed address that
    Google cannot place) the order falls back to the old flat ฿100 and is
    flagged so staff can confirm the fee before dispatch.                     */
 
 export const FREE_KM = 3;
-export const FIRST_PAID_KM_FEE = 100;
-export const PER_KM_FEE = 12;
+export const FIRST_PAID_KM_FEE = 60;
+export const PER_KM_FEE = 15;
 export const FALLBACK_FEE = 100;
 
 export function deliveryFeeForKm(kmValue) {
