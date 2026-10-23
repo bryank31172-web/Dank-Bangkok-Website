@@ -151,7 +151,7 @@ function showDone(j){
   lastDone=j;const full=u=>location.origin+u;
   el('form').classList.add('hidden');el('done').classList.remove('hidden');window.scrollTo(0,0);
   el('doneInfo').textContent=picked.orderId+' · '+el('place').value.trim()+' · Rider '+j.rider.name;
-  el('doneLine').textContent=j.lineSent?'✅ Rider link sent to '+j.rider.name+' on LINE.':j.lineRegistered?'⚠️ LINE could not deliver the rider link. Copy it below.':'Copy the rider link below and send it to '+j.rider.name+'.';
+  el('doneLine').textContent=j.groupPosted?'✅ Rider and customer links posted in the staff LINE group.':'⚠️ Could not post to the staff LINE group. Copy the links below.';
   el('custLink').value=full(j.customerUrl);el('riderLink').value=full(j.driverUrl);
   const canShare=(()=>{try{return liff.isApiAvailable('shareTargetPicker')}catch{return false}})();
   el('shareCust').classList.toggle('hidden',!canShare);

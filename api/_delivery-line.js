@@ -75,6 +75,16 @@ export function riderLinkMessage(id, address, url, note = '') {
   return `Delivery ${id}\n${address || ''}${note ? '\nNote: ' + note : ''}\nOpen your rider controls:\n${url}\nTake a picture to start delivery, then tap Delivered when complete. Open in Safari/Chrome, allow GPS and keep the page open and phone awake.`;
 }
 export const RIDER_LINK_ORIGIN = ORIGIN;
+// What the staff group gets when a rider is assigned, however it was done
+// (LINE card, staff portal, LINE form): the rider link first, then the
+// customer link card. Paths are site-relative ('/driver-delivery.html#…').
+export function assignmentMessages(order, record, riderName, driverPath, customerPath) {
+  const id = record.orderId || order.orderId;
+  const messages = [{type: 'text', text: `🛵 Rider for ${id}: ${riderName}\n${riderLinkMessage(id, record.place || order.delivery?.address, ORIGIN + driverPath, record.note)}`}];
+  if (customerPath) messages.push(customerLinkCard({...order, orderId: id}, ORIGIN + customerPath, riderName));
+  else messages[0].text += '\nThe customer link could not be made. Open this order in the staff portal to get it.';
+  return messages;
+}
 export function createRidersHandler(deps = {}) {
   const d = {get: getJSON, accounts: listAccounts, permission: requirePermission, ...delivery, ...deps};
   return async (req, res) => {
@@ -166,15 +176,12 @@ export function createDeliveryLineHandler(deps = {}) {
       if (!d.ready() || await ended()) throw new Error('Delivery unavailable or ended.');
       const latest = await d.get(d.key(id));
       if (latest?.driver?.token !== record.driver.token) throw new Error('Rider assignment changed. Use the staff portal.');
-      const url = ORIGIN + '/driver-delivery.html#' + new URLSearchParams({id, token: record.driver.token});
+      const driverPath = '/driver-delivery.html#' + new URLSearchParams({id, token: record.driver.token});
       // Both links go to the staff group (Oct 2026: the owner chose the group
       // over a private message to the rider). Rider link first, then the
       // customer link — made now, after the rider.
       const customerPath = await d.issueCustomerLink(id, {get: d.get, write: d.write, token: d.token});
-      const messages = [{type: 'text', text: `🛵 Rider for ${id}: ${rider.name}\n${riderLinkMessage(id, record.place || order.delivery?.address, url, record.note)}`}];
-      if (customerPath) messages.push(customerLinkCard(order, ORIGIN + customerPath, rider.name));
-      else messages[0].text += '\nThe customer link could not be made. Open this order in the staff portal to get it.';
-      await d.send(ev.replyToken, messages, {reply: true});
+      await d.send(ev.replyToken, assignmentMessages(order, latest, rider.name, driverPath, customerPath), {reply: true});
       return true;
     } catch (e) {await reply(e.message || 'Delivery assignment unavailable. Use the staff portal.'); return true;}
   };
