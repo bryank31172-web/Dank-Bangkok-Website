@@ -23,8 +23,8 @@ function checkoutHtml() {
 
   html = replaceRequired(
     html,
-    "const state={step:1,payment:CANNABIS_TABLE?'Cash':'RevolutTransfer',discount:0,promo:'',deliveryFee:CANNABIS_TABLE?0:100};",
-    "const state={step:1,payment:CANNABIS_TABLE?'Cash':'RevolutTransfer'};",
+    "const state={step:1,payment:CANNABIS_TABLE?'Cash':'RevolutTransfer',discount:0,promo:'',deliveryFee:0,deliveryQuote:null,promoFreeDelivery:false};",
+    "const state={step:1,payment:CANNABIS_TABLE?'Cash':'RevolutTransfer',deliveryQuote:null};",
     "checkout state"
   );
 
@@ -39,8 +39,6 @@ function checkoutHtml() {
     .replace("document.getElementById('itemCount').textContent=cart.reduce((sum,x)=>sum+(Number(x.qty)||1),0)+' items';", "document.getElementById('itemCount').textContent=(window.Cart?Cart.count(summary.items):summary.items.reduce((sum,x)=>sum+(Number(x.qty)||1),0))+' items';")
     .replace("document.getElementById('cartItems').innerHTML=cart.length?cart.map((x,index)=>", "document.getElementById('cartItems').innerHTML=summary.items.length?summary.items.map((x,index)=>")
     .replace("document.getElementById('subtotal').textContent=money(subtotal());", "document.getElementById('subtotal').textContent=money(summary.subtotal);")
-    .replace("document.getElementById('deliveryFee').textContent=state.deliveryFee===0?'FREE':money(state.deliveryFee);", "document.getElementById('deliveryFee').textContent=summary.deliveryFee===0?'FREE':money(summary.deliveryFee);")
-    .replace("document.getElementById('deliveryFee').classList.toggle('cart-free',state.deliveryFee===0);", "document.getElementById('deliveryFee').classList.toggle('cart-free',summary.deliveryFee===0);")
     .replace("document.getElementById('discountRow').style.display=state.discount?'flex':'none';", "document.getElementById('discountRow').style.display=summary.discount?'flex':'none';")
     .replace("document.getElementById('discount').textContent='−'+money(state.discount);", "document.getElementById('discount').textContent='−'+money(summary.discount);")
     .replace("document.getElementById('total').textContent=money(total());", "document.getElementById('total').textContent=money(summary.total);")

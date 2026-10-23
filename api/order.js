@@ -25,6 +25,8 @@ import { notifyStaffWhatsApp } from "./_whatsapp.js";
 import { pushShopifyOrder } from "./_shopify.js";
 import { requireRate } from "./_ratelimit.js";
 import { validatePromotion, normalizePromotionCode } from "./_promotion.js";
+import { computeEta } from "./_route.js";
+import { deliveryQuote } from "./_delivery-fee.js";
 
 const OWNER_EMAIL = process.env.ORDER_EMAIL_TO || "dankclubbkk@gmail.com";
 
@@ -137,7 +139,25 @@ export default async function handler(req, res) {
     return sum + (Number.isFinite(unit) ? Math.max(0, unit) * qty : Number.isFinite(line) ? Math.max(0, line) : 0);
   }, 0);
   const authoritativeSubtotal = itemSubtotal > 0 ? Math.round(itemSubtotal) : Math.max(0, Number(o.subtotal) || 0);
-  const submittedDeliveryFee = matchedTable ? 0 : 100;
+  // The fee is never taken from the browser: it is worked out here from the
+  // customer's pin (or typed address) by road distance. See _delivery-fee.js.
+  let submittedDeliveryFee = 0;
+  if (!matchedTable) {
+    const c = o.delivery?.coordinates;
+    const hasPin = c && Number.isFinite(Number(c.lat)) && Number.isFinite(Number(c.lng));
+    const address = String(o.delivery?.zone || "").trim().slice(0, 500);
+    let eta = null;
+    try {
+      if (hasPin) eta = await computeEta({ destLat: Number(c.lat), destLng: Number(c.lng) });
+      else if (address) eta = await computeEta({ address });
+    } catch (e) {
+      console.error("delivery distance skipped:", e.message);
+    }
+    const quote = deliveryQuote(eta);
+    submittedDeliveryFee = quote.fee;
+    o.delivery = { ...(o.delivery || {}), km: quote.km, feeFallback: quote.fallback };
+    if (quote.branch) o.delivery.branch = quote.branch;
+  }
   if (submittedPromotion) {
     try {
       const promotion = await validatePromotion(submittedPromotion, authoritativeSubtotal, submittedDeliveryFee);
@@ -206,10 +226,13 @@ export default async function handler(req, res) {
     .map((i) => `• ${i.name} (${i.option || ""}) ×${i.qty} — ฿${i.lineTotal}`)
     .join("\n");
   const tableDisplay = o.tableLabel || matchedTable;
+  const feeNote = o.delivery?.feeFallback
+    ? `฿${o.deliveryFee} delivery (flat — distance unknown, confirm with customer)`
+    : `฿${o.deliveryFee} delivery (${o.delivery?.km} km)`;
   const where = matchedTable
     ? `🪑 TABLE ${tableDisplay} — bring it over`
     : o.fulfilment === "delivery"
-    ? `🚚 Delivery — ${o.delivery?.zone || ""}\n${o.delivery?.address || ""}`
+    ? `🚚 Delivery — ${o.delivery?.zone || ""}\n${o.delivery?.address || ""}\n📏 ${feeNote}`
     : `🏬 Pickup — ${o.pickup?.branch || ""}${o.pickup?.time ? " at " + o.pickup.time : ""}`;
   const promoCode = String(o.promo || "").trim().toUpperCase().slice(0, 24);
   const promoBlock = promoCode
@@ -329,7 +352,7 @@ export default async function handler(req, res) {
         ${matchedTable
           ? `<b>Table:</b> ${esc(o.tableLabel || matchedTable)}`
           : o.fulfilment === "delivery"
-          ? `<b>Area:</b> ${esc(o.delivery?.zone)} · <b>Address:</b> ${esc(o.delivery?.address)}`
+          ? `<b>Area:</b> ${esc(o.delivery?.zone)} · <b>Address:</b> ${esc(o.delivery?.address)}<br><b>Delivery:</b> ${esc(feeNote)}`
           : `<b>Branch:</b> ${esc(o.pickup?.branch)} · <b>Time:</b> ${esc(o.pickup?.time)}`}<br>
         ${o.notes ? `<b>Notes:</b> ${esc(o.notes)}` : ""}</p>`;
       const r = await fetch("https://api.resend.com/emails", {
