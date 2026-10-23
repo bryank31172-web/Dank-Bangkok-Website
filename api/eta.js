@@ -2,12 +2,15 @@
      { destLat, destLng } or { address }   → required (the customer's location)
      { replyToken }                        → reply in the LINE chat, OR
      { to, key }                           → push to a LINE userId (needs STAFF_KEY)
-   Returns { ok, minutes, travelMin, km, text }.
+   Returns { ok, minutes, travelMin, km, text, delivery }.
+   `delivery` is the distance fee quote from _delivery-fee.js — the checkout
+   shows it, and /api/order works it out again itself.
    Used by the LINE webhook (location pin) and can be called by staff tools.   */
 import { computeEta, etaText, routeConfigured } from "./_route.js";
 import { lineReply, linePush } from "./_line.js";
 import { requireRate } from "./_ratelimit.js";
 import { requirePermission } from "./_auth.js";
+import { deliveryQuote } from "./_delivery-fee.js";
 
 export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
@@ -15,7 +18,7 @@ export default async function handler(req, res) {
   if (req.method === "OPTIONS") return res.status(204).end();
   if (req.method !== "POST") return res.status(405).json({ error: "POST only" });
   if (!(await requireRate(req, res, "eta", 12, 300))) return;
-  if (!routeConfigured()) return res.status(200).json({ ok: false, error: "route provider not configured" });
+  if (!routeConfigured()) return res.status(200).json({ ok: false, error: "route provider not configured", delivery: deliveryQuote(null) });
 
   const b = req.body || {};
   if (b.destLat == null && b.destLng == null && !b.address)
@@ -43,5 +46,5 @@ export default async function handler(req, res) {
   if (b.replyToken) await lineReply(b.replyToken, text);
   else if (b.to) await linePush(b.to, text);
 
-  return res.status(200).json({ ok: eta.ok, minutes: eta.minutes, travelMin: eta.travelMin, km: eta.km, text });
+  return res.status(200).json({ ok: eta.ok, minutes: eta.minutes, travelMin: eta.travelMin, km: eta.km, text, delivery: deliveryQuote(eta) });
 }
