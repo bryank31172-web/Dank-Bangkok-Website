@@ -266,9 +266,12 @@ export default async function handler(req, res) {
     saved = true;
   } catch (e) { console.error("order save failed:", e.message); }
 
-  let deliveryUrl = null;
+  // Tracking is set up for every delivery order, but without links: staff
+  // choose the rider on the LINE card, which makes the rider link and then
+  // the customer link (see _delivery-line.js).
+  let tracked = false;
   if (saved) {
-    try { deliveryUrl = await createDelivery({ ...o, orderId }); }
+    try { tracked = await createDelivery({ ...o, orderId }); }
     catch { console.error("Delivery tracking setup unavailable"); }
   }
 
@@ -299,7 +302,7 @@ export default async function handler(req, res) {
 
   if (saved) {
     try {
-      const card = deliveryUrl ? deliveryOrderCard({...o, orderId}, deliveryUrl)
+      const card = tracked ? deliveryOrderCard({...o, orderId})
         : o.fulfilment === 'delivery' ? createLinkCard({...o, orderId}) : null;
       const r = card
         ? await lineMessages(process.env.LINE_TO, [{type: 'text', text: staffAlert.slice(0,4900)}, card])
@@ -372,7 +375,7 @@ export default async function handler(req, res) {
     } catch (e) { results.push(false); }
   }
 
-  const tracking = deliveryUrl ? { deliveryUrl } : {};
+  const tracking = tracked ? { trackingPending: true } : {};
   if (results.some(Boolean)) return res.status(200).json({ ok: true, orderId, delivered: true, ...walletInfo, ...tracking });
 
   if (results.length === 0) console.log("ORDER (no channels configured):", orderId, JSON.stringify(o));

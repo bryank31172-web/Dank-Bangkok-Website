@@ -1197,7 +1197,7 @@ async function createDeliveryLink(button){
       if(!r.ok)throw new Error(j.error||'Could not create the delivery link');
       if(order)order.deliveryTrackingAvailable=true;
       button.outerHTML=`<button type="button" class="btn" data-act="delivery-manage" data-id="${esc(id)}">Manage delivery tracking</button>`;
-      const full=u=>location.origin+u,line=j.lineSent?'✅ Sent to '+esc(j.rider.name)+' on LINE.':j.lineRegistered?'⚠️ LINE could not deliver it — copy the rider link below.':'Copy the rider link and send it to '+esc(j.rider.name)+'.';
+      const full=u=>location.origin+u,line=j.groupPosted?'✅ Rider and customer links posted in the staff LINE group.':'⚠️ Could not post to the staff LINE group — copy the links below.';
       $c('#deliveryCreateForm').hidden=true;const done=$c('#dcDone');done.hidden=false;
       done.innerHTML=`<p style="margin:0 0 4px"><b>Delivery link created</b></p><p class="dash-muted" style="margin:0 0 14px">${esc(input.value.trim())} · Rider ${esc(j.rider.name)}</p><p style="margin:0 0 14px">${line}</p>
         <label>Customer tracking link<input readonly data-link="customer" style="${field}"></label><button class="btn" type="button" data-copy="customer" style="width:100%">Copy customer link</button>
@@ -1231,7 +1231,7 @@ async function openDeliveryManager(id){
     });
     ov.querySelector('form').addEventListener('submit',async event=>{
       event.preventDefault();const form=event.target,button=form.querySelector('button');button.disabled=true;
-      try{const r=await authPost('/api/delivery',{role:'staff',id,action:'assign',name:form.elements.name.value,phone:form.elements.phone.value,photo,destination:{lat:Number(form.elements.lat.value),lng:Number(form.elements.lng.value)}}),j=await r.json();if(!r.ok)throw new Error(j.error);ov.querySelector('#deliveryDriverLink').value=full(j.driverUrl);message('Driver assigned. Copy the private driver link and send it to the driver.')}catch(e){message(e.message)}finally{button.disabled=false}
+      try{const r=await authPost('/api/delivery',{role:'staff',id,action:'assign',name:form.elements.name.value,phone:form.elements.phone.value,photo,destination:{lat:Number(form.elements.lat.value),lng:Number(form.elements.lng.value)}}),j=await r.json();if(!r.ok)throw new Error(j.error);ov.querySelector('#deliveryDriverLink').value=full(j.driverUrl);if(j.customerUrl)ov.querySelector('#deliveryCustomerLink').value=full(j.customerUrl);message(j.groupPosted?'Driver assigned. Rider and customer links posted in the staff LINE group.':'Driver assigned. Could not post to the staff LINE group — copy the links below.')}catch(e){message(e.message)}finally{button.disabled=false}
     });
     ov.addEventListener('click',async event=>{
       if(event.target===ov||event.target.closest('[data-delivery-close]')){ov.remove();return}

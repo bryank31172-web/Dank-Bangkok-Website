@@ -6,12 +6,19 @@ import { requirePermission, safeEq, hasPermission } from './_auth.js';
 import { requireRate } from './_ratelimit.js';
 import * as delivery from './_delivery.js';
 import {createSetupHandler} from './_delivery-setup.js';
-import {createRidersHandler, riderOptions, riderLinkMessage, RIDERS_KEY, RIDER_LINK_ORIGIN} from './_delivery-line.js';
+import {createRidersHandler, riderOptions, assignmentMessages, RIDERS_KEY} from './_delivery-line.js';
 import {createProofCompleter, proofKey, jpegPhoto} from './_delivery-proof.js';
 
 // Dependency injection keeps lifecycle/security tests isolated from real orders.
 export function createHandler(deps = {}) {
-  const d = { ...delivery, get: getJSON, accounts: listAccounts, send: lineMessages, verifyLine: verifyLineIdToken, groupMember: isStaffGroupMember, orderIds: () => indexList('orders:index'), permission: requirePermission, rate: requireRate, ...deps };
+  const d = { ...delivery, get: getJSON, accounts: listAccounts, send: lineMessages, group: () => process.env.LINE_TO || '', verifyLine: verifyLineIdToken, groupMember: isStaffGroupMember, orderIds: () => indexList('orders:index'), permission: requirePermission, rate: requireRate, ...deps };
+  // Rider and customer links go to the staff LINE group, never to the rider
+  // privately. Best effort: staff also see both links to copy, so a failed
+  // LINE send loses nothing.
+  const postToGroup = async (order, record, riderName, driverUrl, customerUrl) => {
+    if (!d.group()) return false;
+    try { return Boolean((await d.send(d.group(), assignmentMessages(order, record, riderName, driverUrl, customerUrl))).ok); } catch { return false; }
+  };
   const demoRoutes = new Map(), demoFlights = new Map();
   return async function handler(req, res) {
     res.setHeader('Cache-Control', 'private, no-store');
@@ -132,12 +139,13 @@ export function createHandler(deps = {}) {
         let record = await d.get(d.key(id)), created = false;
         if (!record || record.expiresAt <= Date.now()) {
           const destination = d.point(b.destination) || d.point(order.delivery?.coordinates);
-          const url = await d.createDelivery({ ...order, orderId: id, delivery: { ...order.delivery, coordinates: destination } }, { byStaff: true });
-          if (!url) return res.status(503).json({ error: 'Could not create the tracking link. Please retry.' });
+          const made = await d.createDelivery({ ...order, orderId: id, delivery: { ...order.delivery, coordinates: destination } }, { byStaff: true });
+          if (!made) return res.status(503).json({ error: 'Could not create the tracking link. Please retry.' });
           record = await d.get(d.key(id)); created = true;
           if (!record) throw new Error('Storage unavailable');
         }
-        const customerUrl = '/delivery.html#' + new URLSearchParams({ id, token: record.customerToken });
+        // The customer link only exists once a rider has been assigned.
+        let customerUrl = d.customerPath(id, record.customerToken);
         if (!rider) return res.status(200).json({ ok: true, created, customerUrl });
         const destination = d.point(b.destination) || record.destination;
         if (!destination) return res.status(400).json({ error: 'Choose the delivery destination before assigning a rider', created, customerUrl });
@@ -149,12 +157,9 @@ export function createHandler(deps = {}) {
         await d.write(d.key(id), record);
         if (previous) { await d.write(d.locationKey(id, previous.token), null, 1); if (d.departureKey) await d.write(d.departureKey(id, previous.token), null, 1); }
         const driverUrl = '/driver-delivery.html#' + new URLSearchParams({ id, token: record.driver.token });
-        // Best effort: the link is also shown to staff to copy, so a failed LINE send loses nothing.
-        let lineSent = false;
-        if (rider.lineUserId) {
-          try { lineSent = Boolean((await d.send(rider.lineUserId, [{ type: 'text', text: riderLinkMessage(id, record.place || order.delivery?.address, RIDER_LINK_ORIGIN + driverUrl, record.note) }])).ok); } catch {}
-        }
-        return res.status(200).json({ ok: true, created, customerUrl, driverUrl, rider: { name: rider.name, phone: rider.phone }, lineSent, lineRegistered: Boolean(rider.lineUserId) });
+        customerUrl = await d.issueCustomerLink(id, { get: d.get, write: d.write, token: d.token });
+        const groupPosted = await postToGroup(order, record, rider.name, driverUrl, customerUrl);
+        return res.status(200).json({ ok: true, created, customerUrl, driverUrl, rider: { name: rider.name, phone: rider.phone }, groupPosted });
       }
       const record = await d.get(d.key(id));
       if (!d.ready()) throw new Error('Storage unavailable');
@@ -189,7 +194,10 @@ export function createHandler(deps = {}) {
           record.destination = destination;
           await d.write(d.key(id), record);
           if (previous) {await d.write(d.locationKey(id, previous.token), null, 1);await d.write(d.departureKey(id, previous.token), null, 1);}
-          return res.status(200).json({ ok: true, driverUrl: '/driver-delivery.html#' + new URLSearchParams({ id, token: record.driver.token }) });
+          const driverUrl = '/driver-delivery.html#' + new URLSearchParams({ id, token: record.driver.token });
+          const customerUrl = await d.issueCustomerLink(id, { get: d.get, write: d.write, token: d.token });
+          const groupPosted = await postToGroup(order, record, name, driverUrl, customerUrl);
+          return res.status(200).json({ ok: true, driverUrl, customerUrl, groupPosted });
         }
         if (staff && ['complete', 'cancel'].includes(b.action)) {
           await d.endDelivery(id, b.action === 'complete' ? 'completed' : 'cancelled');
@@ -278,7 +286,7 @@ export function createHandler(deps = {}) {
         result.customer = {name:String(order.customer?.name || 'Customer').slice(0,80),phone:/^\+?\d{7,15}$/.test(phone)?phone:''};
       }
       if (staff) {
-        result.customerUrl = '/delivery.html#' + new URLSearchParams({ id, token: record.customerToken });
+        result.customerUrl = d.customerPath(id, record.customerToken);
         result.driverUrl = record.driver ? '/driver-delivery.html#' + new URLSearchParams({ id, token: record.driver.token }) : '';
       }
       return res.status(200).json(result);
