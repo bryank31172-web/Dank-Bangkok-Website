@@ -26,6 +26,10 @@ test('first 3 km are free, the 4th costs 60 and each km after adds 15',()=>{
  assert.equal(deliveryFeeForKm(3.4),0,'3.4 km rounds down to 3');
  assert.equal(deliveryFeeForKm(3.5),60,'3.5 km rounds up to 4');
  assert.equal(deliveryFeeForKm(3.99),60);
+ assert.equal(deliveryFeeForKm(3.49),0,'3.49 km rounds down to 3');
+ assert.equal(deliveryFeeForKm(3.46),0,'3.46 must not be read as 3.5');
+ assert.equal(deliveryFeeForKm(3.50),60,'3.50 km rounds up to 4');
+ assert.equal(deliveryFeeForKm(3.495),60,'only 2 decimals count: 3.495 is 3.50');
  assert.equal(deliveryFeeForKm(4.4),60);
  assert.equal(deliveryFeeForKm(4.5),75);
  assert.equal(deliveryFeeForKm(3.4000001),0,'float noise must not tip a rounding');
@@ -61,6 +65,12 @@ test('the order charges the distance fee worked out on the server, not the one t
  assert.equal(saved.total,600+105);
  assert.equal(saved.delivery.km,7);
  assert.equal(saved.delivery.feeFallback,false);
+});
+
+test('3.46 km is measured to 2 decimals, rounds down and is free',async()=>{
+ const res=await withFetch(routeOf(3460),()=>call(etaHandler,{destLat:13.75,destLng:100.55}));
+ assert.equal(res.data.km,3.46);
+ assert.deepEqual({fee:res.data.delivery.fee,billedKm:res.data.delivery.billedKm},{fee:0,billedKm:3});
 });
 
 test('within 3 km the order is delivered free',async()=>{
