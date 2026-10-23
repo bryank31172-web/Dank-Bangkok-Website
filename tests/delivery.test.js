@@ -182,6 +182,25 @@ test('create link with destination and chosen rider assigns, DMs on LINE and rej
  const drv=await f.call({role:'driver',token:f.db.get(key(f.id)).driver.token});assert.equal(drv.data.note,'Gate 3, call on arrival');assert.match(sent[0][1],/https:\/\/www\.dankbangkok\.com\/driver-delivery\.html#/);
  const s=await f.call({role:'staff',staff:true});assert.equal(s.data.address,'Siam Paragon');assert.equal(r.data.driverUrl,s.data.driverUrl);
 });
+test('website tracking starts with no customer link; it is made only when a rider is assigned',async()=>{
+ const staffAcct={id:'a1',name:'Rider a1',phone:'081-234-5678',role:'parttime',active:true};
+ let f;f=fixture({accounts:async()=>[staffAcct],send:async()=>({ok:true}),
+  createDelivery:async o=>{f.db.set(key(o.orderId),{orderId:o.orderId,customerToken:null,expiresAt:Date.now()+86400000,destination:o.delivery?.coordinates||null,departurePhotoRequired:true,driver:null});return true}});
+ f.db.set('delivery:line-riders:v1',[{accountId:'a1',lineUserId:'U'+'a'.repeat(32),onShift:true}]);
+ f.db.delete(key(f.id));Object.assign(f.db.get('order:'+f.id),{fulfilment:'delivery',items:[{name:'Sandwich',qty:1}]});
+ const noRider=await f.call({role:'staff',staff:true,action:'create'});
+ assert.equal(noRider.code,200);assert.equal(noRider.data.customerUrl,'');
+ assert.equal(f.db.get(key(f.id)).customerToken,null);
+ assert.equal((await f.call({role:'staff',staff:true})).data.customerUrl,'');
+ assert.equal((await f.call({token:''})).code,403,'an empty token must never open a record that has no customer link');
+ assert.equal((await f.call({token:'null'})).code,403);
+ const r=await f.call({role:'staff',staff:true,action:'create',body:{riderId:'a1',destination:{lat:13.7463,lng:100.5346}}});
+ assert.equal(r.code,200);assert.match(r.data.driverUrl,/^\/driver-delivery\.html#/);
+ const token=f.db.get(key(f.id)).customerToken;assert.match(token,/^[0-9a-f]{64}$/);
+ assert.equal(r.data.customerUrl,'/delivery.html#'+new URLSearchParams({id:f.id,token}));
+ assert.equal((await f.call({token})).code,200);
+ assert.equal((await f.call({role:'staff',staff:true})).data.customerUrl,r.data.customerUrl);
+});
 test('LINE form: staff-group members and registered LINE IDs can sign in; others refused; staff key paths unchanged',async()=>{
  const U='U'+'b'.repeat(32),acct={id:'s1',name:'Mai',phone:'0812345678',role:'parttime',active:true};
  let f;f=fixture({accounts:async()=>[acct,{id:'s2',name:'Old',phone:'0811111111',role:'parttime',active:false}],

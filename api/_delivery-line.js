@@ -22,16 +22,17 @@ export function createLinkCard(order) {
       {type: 'button', style: 'primary', color: '#008F4B', action: {type: 'uri', label: 'Create delivery link', uri: url}},
     ]}}} : null;
 }
-export function deliveryOrderCard(order, customerUrl) {
-  return {type: 'flex', altText: `Delivery ${order.orderId}: track delivery or choose rider`, contents: {
+// Website delivery order with its tracking record made at checkout. No links
+// exist yet: choosing a rider makes the rider link, then the customer link.
+export function deliveryOrderCard(order) {
+  return {type: 'flex', altText: `Delivery ${order.orderId}: choose rider`, contents: {
     type: 'bubble', body: {type: 'box', layout: 'vertical', spacing: 'md', contents: [
       {type: 'text', text: 'NEW DELIVERY', weight: 'bold', color: '#008F4B'},
       {type: 'text', text: String(order.orderId), weight: 'bold', size: 'xl'},
       {type: 'text', text: `${(order.items || []).map(i => `${i.name} × ${i.qty}`).join('\n')}\nTotal: ฿${order.total ?? order.subtotal ?? 0}`.slice(0, 3000), wrap: true},
-      {type: 'text', text: 'Choose the rider for this order. Their private controls are sent directly to them.', wrap: true, size: 'sm'},
+      {type: 'text', text: 'Choose the rider. Their link is sent to them first, then the customer tracking link is posted here.', wrap: true, size: 'sm'},
     ]}, footer: {type: 'box', layout: 'vertical', spacing: 'sm', contents: [
-      {type: 'button', style: 'primary', color: '#008F4B', action: {type: 'uri', label: 'Check your delivery', uri: ORIGIN + customerUrl}},
-      {type: 'button', action: {type: 'postback', label: 'Choose rider', data: postback('choose', order.orderId)}},
+      {type: 'button', style: 'primary', color: '#008F4B', action: {type: 'postback', label: 'Choose rider', data: postback('choose', order.orderId)}},
       ...(liffUrl(order.orderId) ? [{type: 'button', action: {type: 'uri', label: 'Set destination & rider', uri: liffUrl(order.orderId)}}] : []),
     ]}}};
 }
@@ -46,6 +47,30 @@ export function riderOptions(accounts, rows) {
     const r = saved.get(a.id) || {};
     return [{id: a.id, name: String(a.name || ''), phone, onShift: Boolean(r.onShift), lineUserId: uid(r.lineUserId) ? r.lineUserId : ''}];
   }).sort((a, b) => Number(b.onShift) - Number(a.onShift) || a.name.localeCompare(b.name));
+}
+// wa.me wants the full international number as digits; a Thai number written
+// locally (0812345678) is assumed to be +66.
+export function whatsappNumber(phone) {
+  const digits = String(phone || '').replace(/\D/g, '');
+  const full = /^0\d{8,9}$/.test(digits) ? '66' + digits.slice(1) : digits;
+  return /^\d{8,15}$/.test(full) ? full : '';
+}
+// Posted in the staff group straight after the rider link, so staff can pass
+// the customer their tracking link.
+export function customerLinkCard(order, url, riderName = '') {
+  const name = String(order.customer?.name || '').trim();
+  const text = `Hi${name ? ' ' + name : ''}, your DANK order ${order.orderId} is on its way${riderName ? ' with ' + riderName : ''}. Track it live here:\n${url}`;
+  const wa = whatsappNumber(order.customer?.phone);
+  return {type: 'flex', altText: `Customer tracking link for ${order.orderId}`, contents: {
+    type: 'bubble', body: {type: 'box', layout: 'vertical', spacing: 'md', contents: [
+      {type: 'text', text: 'CUSTOMER TRACKING LINK', weight: 'bold', color: '#008F4B'},
+      {type: 'text', text: String(order.orderId), weight: 'bold', size: 'xl'},
+      {type: 'text', text: [name, order.customer?.phone].filter(Boolean).join(' · ') || 'Customer', wrap: true, size: 'sm'},
+      {type: 'text', text: 'Send this link to the customer so they can follow the rider live.', wrap: true, size: 'sm', color: '#64756C'},
+    ]}, footer: {type: 'box', layout: 'vertical', spacing: 'sm', contents: [
+      ...(wa ? [{type: 'button', style: 'primary', color: '#25D366', action: {type: 'uri', label: 'Send on WhatsApp', uri: `https://wa.me/${wa}?text=${encodeURIComponent(text)}`}}] : []),
+      {type: 'button', action: {type: 'uri', label: 'Open customer link', uri: url}},
+    ]}}};
 }
 export function riderLinkMessage(id, address, url, note = '') {
   return `Delivery ${id}\n${address || ''}${note ? '\nNote: ' + note : ''}\nOpen your rider controls:\n${url}\nTake a picture to start delivery, then tap Delivered when complete. Open in Safari/Chrome, allow GPS and keep the page open and phone awake.`;
@@ -147,7 +172,12 @@ export function createDeliveryLineHandler(deps = {}) {
       const confirmation = sent.ok
         ? `Assigned ${id} to ${rider.name}. LINE accepted the direct message to their personal chat.`
         : `Assigned ${id} to ${rider.name}, but LINE could not accept the direct message. Ask the rider to add the shop LINE Official Account as a friend, then tap their rider selection again to retry.`;
-      await reply(`${confirmation}\nRider delivery link:\n${url}`);
+      // Rider link first, then the customer link — made now, after the rider.
+      const customerPath = await d.issueCustomerLink(id, {get: d.get, write: d.write, token: d.token});
+      const messages = [{type: 'text', text: `${confirmation}\nRider delivery link:\n${url}`}];
+      if (customerPath) messages.push(customerLinkCard(order, ORIGIN + customerPath, rider.name));
+      else messages[0].text += '\nThe customer link could not be made. Open this order in the staff portal to get it.';
+      await d.send(ev.replyToken, messages, {reply: true});
       return true;
     } catch (e) {await reply(e.message || 'Delivery assignment unavailable. Use the staff portal.'); return true;}
   };

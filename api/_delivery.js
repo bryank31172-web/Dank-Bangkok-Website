@@ -2,7 +2,6 @@
    Separate records prevent GPS writes from overwriting payment/order records. */
 import crypto from 'node:crypto';
 import { getJSON, setJSON, setJSONIfNewer, storageBackend } from './_store.js';
-import { getMenu } from './_menu.js';
 export const TTL = 7 * 86400;
 export const token = () => crypto.randomBytes(32).toString('hex');
 export const key = id => 'delivery:' + id;
@@ -56,22 +55,32 @@ export async function write(k, value, ttl = TTL) {
   if (!ready()) throw new Error('Delivery storage unavailable');
 }
 export async function writeLocation(k, value) { return setJSONIfNewer(k, value, 3600); }
-// byStaff: links staff create in the staff portal or LINE form work for any
-// delivery order; checkout follows the Delivery products setting.
-export async function createDelivery(order, { byStaff = false } = {}) {
-  if (!ready()) return null;
-  if (byStaff) {
-    if (order.fulfilment !== 'delivery') return null;
-  } else {
-    const [menu, config] = await Promise.all([getMenu(), getJSON(PRODUCTS_CONFIG_KEY)]);
-    if (!ready()) return null;
-    const all = tracksEverything(config);
-    if ((!all && !LIVE_MENU_SOURCES.has(menu.source)) || !eligible(order, menu.data, configuredProductIds(config), all)) return null;
-  }
-  const record = { orderId: order.orderId, customerToken: token(), createdAt: Date.now(),
+// Every website delivery order gets a tracking record the moment it is placed
+// (Oct 2026: the owner chose this over the Delivery products setting, which no
+// longer gates checkout). The record starts with NO links: the rider link is
+// made when staff choose a rider, and the customer link straight after it —
+// see issueCustomerLink(). Returns true when the record was written.
+export async function createDelivery(order) {
+  if (!ready() || order.fulfilment !== 'delivery') return false;
+  const record = { orderId: order.orderId, customerToken: null, createdAt: Date.now(),
     expiresAt: Date.now() + TTL * 1000, destination: point(order.delivery?.coordinates), departurePhotoRequired: true, driver: null };
   await write(key(order.orderId), record);
-  return '/delivery.html#' + new URLSearchParams({ id: order.orderId, token: record.customerToken });
+  return true;
+}
+export const customerPath = (id, customerToken) =>
+  customerToken ? '/delivery.html#' + new URLSearchParams({ id, token: customerToken }) : '';
+// Makes the customer's tracking link once a rider is assigned; later calls
+// return the same link. Returns '' when there is no rider yet.
+export async function issueCustomerLink(id, deps = {}) {
+  const d = { get: getJSON, write, token, ...deps };
+  const record = await d.get(key(id));
+  if (!record || record.expiresAt <= Date.now() || !record.driver) return '';
+  if (!record.customerToken) {
+    record.customerToken = d.token();
+    await d.write(key(id), record);
+  }
+  const latest = await d.get(key(id));
+  return customerPath(id, latest?.customerToken || record.customerToken);
 }
 export async function endDelivery(id, status = 'completed') {
   const d = await getJSON(key(id));

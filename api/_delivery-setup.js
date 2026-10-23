@@ -1,13 +1,12 @@
 import crypto from 'node:crypto';
 import {getJSON, storageBackend} from './_store.js';
-import {getMenu} from './_menu.js';
 import {listAccounts} from './_staff-accounts.js';
 import {requirePermission, hasPermission} from './_auth.js';
 import {RIDERS_KEY} from './_delivery-line.js';
-import {write, ready, routeFor, catalogProducts, configuredProductIds, tracksEverything, PRODUCTS_CONFIG_KEY, LIVE_MENU_SOURCES} from './_delivery.js';
+import {write, ready, routeFor} from './_delivery.js';
 
 export function createSetupHandler(deps={}) {
-  const d={get:getJSON,menu:getMenu,accounts:listAccounts,permission:requirePermission,write,ready,routeFor,backend:storageBackend,env:process.env,fetch:globalThis.fetch,...deps};
+  const d={get:getJSON,accounts:listAccounts,permission:requirePermission,write,ready,routeFor,backend:storageBackend,env:process.env,fetch:globalThis.fetch,...deps};
   return async(req,res)=>{
     if(!d.permission(req,res,'staff_manage'))return;
     if(req.method!=='POST')return res.status(405).json({error:'POST only'});
@@ -21,13 +20,7 @@ export function createSetupHandler(deps={}) {
       await d.write(key,null,1);
       add('Database',true,'Verified write and read using '+d.backend()+'.');
     }catch{add('Database',false,'Check Supabase service-role credentials or Upstash REST credentials in Vercel, then redeploy.');}
-    try{
-      const [menu,config]=await Promise.all([d.menu(),d.get(PRODUCTS_CONFIG_KEY)]);
-      const live=new Set(catalogProducts(menu.data).map(p=>p.id));
-      const count=configuredProductIds(config).filter(id=>live.has(id)).length;
-      if(tracksEverything(config))add('Delivery products',d.ready(),'Track every product is on: every delivery order gets a tracking link at checkout.');
-      else add('Delivery products',d.ready()&&LIVE_MENU_SOURCES.has(menu.source)&&count>0,count+' products selected. Use Orders → Delivery products to change the selection or turn on Track every product.');
-    }catch{add('Delivery products',false,'Check the live product connection and saved delivery product selection.');}
+    add('Delivery tracking',d.ready(),'Every website delivery order gets tracking. Staff choose the rider on the LINE order card; the rider link is made first, then the customer link.');
     add('Wayfinder basemap',true,'Uses MapLibre + PMTiles without a map API key. Open the demo to verify tiles, credits and light/dark mode in your browser.');
     const route=await d.routeFor({lat:13.7108,lng:100.5375},{lat:13.7463,lng:100.5346});
     add('Google Routes',Boolean(route),'A fixed public road route '+(route?'was returned.':'could not be returned. Set GOOGLE_MAPS_API_KEY with Routes API enabled and billing active, then redeploy.'));

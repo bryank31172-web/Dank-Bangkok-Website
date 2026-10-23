@@ -132,12 +132,13 @@ export function createHandler(deps = {}) {
         let record = await d.get(d.key(id)), created = false;
         if (!record || record.expiresAt <= Date.now()) {
           const destination = d.point(b.destination) || d.point(order.delivery?.coordinates);
-          const url = await d.createDelivery({ ...order, orderId: id, delivery: { ...order.delivery, coordinates: destination } }, { byStaff: true });
-          if (!url) return res.status(503).json({ error: 'Could not create the tracking link. Please retry.' });
+          const made = await d.createDelivery({ ...order, orderId: id, delivery: { ...order.delivery, coordinates: destination } }, { byStaff: true });
+          if (!made) return res.status(503).json({ error: 'Could not create the tracking link. Please retry.' });
           record = await d.get(d.key(id)); created = true;
           if (!record) throw new Error('Storage unavailable');
         }
-        const customerUrl = '/delivery.html#' + new URLSearchParams({ id, token: record.customerToken });
+        // The customer link only exists once a rider has been assigned.
+        let customerUrl = d.customerPath(id, record.customerToken);
         if (!rider) return res.status(200).json({ ok: true, created, customerUrl });
         const destination = d.point(b.destination) || record.destination;
         if (!destination) return res.status(400).json({ error: 'Choose the delivery destination before assigning a rider', created, customerUrl });
@@ -149,6 +150,7 @@ export function createHandler(deps = {}) {
         await d.write(d.key(id), record);
         if (previous) { await d.write(d.locationKey(id, previous.token), null, 1); if (d.departureKey) await d.write(d.departureKey(id, previous.token), null, 1); }
         const driverUrl = '/driver-delivery.html#' + new URLSearchParams({ id, token: record.driver.token });
+        customerUrl = await d.issueCustomerLink(id, { get: d.get, write: d.write, token: d.token });
         // Best effort: the link is also shown to staff to copy, so a failed LINE send loses nothing.
         let lineSent = false;
         if (rider.lineUserId) {
@@ -278,7 +280,7 @@ export function createHandler(deps = {}) {
         result.customer = {name:String(order.customer?.name || 'Customer').slice(0,80),phone:/^\+?\d{7,15}$/.test(phone)?phone:''};
       }
       if (staff) {
-        result.customerUrl = '/delivery.html#' + new URLSearchParams({ id, token: record.customerToken });
+        result.customerUrl = d.customerPath(id, record.customerToken);
         result.driverUrl = record.driver ? '/driver-delivery.html#' + new URLSearchParams({ id, token: record.driver.token }) : '';
       }
       return res.status(200).json(result);
