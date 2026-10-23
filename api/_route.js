@@ -95,7 +95,7 @@ export async function computeEta({ destLat, destLng, address } = {}) {
         const j = await r.json();
         const travelMin = j.minutes ?? j.durationMin ?? (j.durationSec ? j.durationSec / 60 : null);
         const km = j.km ?? (j.distanceMeters ? j.distanceMeters / 1000 : null);
-        if (travelMin != null) return { ok: true, travelMin: Math.round(travelMin), minutes: Math.round(travelMin) + prep, km: km != null ? +km.toFixed(1) : null, prep, branch: j.branch || null };
+        if (travelMin != null) return { ok: true, travelMin: Math.round(travelMin), minutes: Math.round(travelMin) + prep, km: km != null ? +km.toFixed(2) : null, prep, branch: j.branch || null };
       }
     } catch {}
   }
@@ -121,7 +121,8 @@ export async function computeEta({ destLat, destLng, address } = {}) {
 
   const best = viable[0];
   const travelMin = Math.round(best.r.sec / 60);
-  const km = best.r.meters != null ? +(best.r.meters / 1000).toFixed(1) : null;
+  // two decimals: the delivery fee rounds from this, see _delivery-fee.js
+  const km = best.r.meters != null ? +(best.r.meters / 1000).toFixed(2) : null;
   return { ok: true, travelMin, minutes: travelMin + prep, km, prep, branch: { id: best.b.id, name: best.b.name } };
 }
 
