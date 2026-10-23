@@ -35,7 +35,7 @@ test('choosing a rider makes the rider link first, then the customer link, poste
   assert.match(record.customerToken,/^customer-token-/);
   const group=f.messages.at(-1);
   assert.equal(group.to,'reply');
-  assert.match(group.content[0].text,/Rider delivery link:/);
+  assert.match(group.content[0].text,/driver-delivery\.html#id=DR-TEST&token=driver-token/);
   const card=group.content[1];
   assert.equal(card.contents.body.contents[0].text,'CUSTOMER TRACKING LINK');
   const [wa,open]=card.contents.footer.contents;
@@ -43,8 +43,7 @@ test('choosing a rider makes the rider link first, then the customer link, poste
   assert.match(wa.action.uri,/^https:\/\/wa\.me\/66812345678\?text=/);
   assert.match(decodeURIComponent(wa.action.uri),new RegExp('Hi Ann, your DANK order DR-TEST is on its way with Rider[\\s\\S]*token='+record.customerToken));
   assert.doesNotMatch(JSON.stringify(card),/driver-token/,'the customer card must never carry the rider credential');
-  const rider=f.messages.find(m=>m.to===riderId);
-  assert.doesNotMatch(JSON.stringify(rider.content),/customer-token/);
+  assert.doesNotMatch(group.content[0].text,/customer-token/,'the rider message must never carry the customer credential');
 });
 test('tapping the rider again resends the same rider and customer links',async()=>{
   const f=fixture();await f.handle(f.ev('assign'));const first=f.db.get(key('DR-TEST')).customerToken;
@@ -62,20 +61,22 @@ test('WhatsApp numbers: international kept, Thai local gets 66, junk is dropped'
   assert.equal(noPhone.contents.footer.contents.length,1);
   assert.equal(noPhone.contents.footer.contents[0].action.label,'Open customer link');
 });
-test('group selection assigns an on-shift rider and shares the same link privately and in the staff group',async()=>{
+test('group selection assigns an on-shift rider and posts the rider link in the staff group only',async()=>{
   const f=fixture();await f.handle(f.ev());const picker=f.messages[0];assert.equal(picker.content[0].quickReply.items.length,1);
   assert.equal(picker.content[0].quickReply.items[0].action.label,'Rider');
-  await f.handle(f.ev('assign'));const push=f.messages.find(m=>m.to===riderId);
-  assert.match(push.content[0].text,/driver-delivery.html#id=DR-TEST&token=driver-token/);
-  assert.equal(push.options.retryKey,f.db.get(key('DR-TEST')).driver.retryKey);
+  await f.handle(f.ev('assign'));
   assert.equal(f.db.get(key('DR-TEST')).driver.accountId,'rider');
   assert.doesNotMatch(JSON.stringify(picker.content),/driver-token/);
-  assert.match(f.messages.at(-1).content[0].text,/Rider delivery link:\nhttps:\/\/www.dankbangkok.com\/driver-delivery.html#id=DR-TEST&token=driver-token/);
-  assert.match(f.messages.at(-1).content[0].text,/LINE accepted/);
+  assert.equal(f.messages.some(m=>m.to===riderId),false,'no private message to the rider');
+  assert.ok(f.messages.every(m=>m.to==='reply'&&m.options.reply===true),'everything is a reply in the group');
+  const text=f.messages.at(-1).content[0].text;
+  assert.match(text,/^🛵 Rider for DR-TEST: Rider\n/);
+  assert.match(text,/Open your rider controls:\nhttps:\/\/www.dankbangkok.com\/driver-delivery.html#id=DR-TEST&token=driver-token/);
+  assert.match(text,/Sample address/);
 });
 test('unknown actor, wrong group and private-chat postbacks cannot assign',async()=>{
   for(const source of [{type:'group',groupId:group,userId:'unknown'},{type:'group',groupId:'wrong',userId:managerId},{type:'user',userId:managerId}]){
-    const f=fixture();await f.handle(f.ev('assign',{source}));assert.equal(f.db.get(key('DR-TEST')).driver,null);assert.equal(f.messages.some(m=>m.to===riderId),false);
+    const f=fixture();await f.handle(f.ev('assign',{source}));assert.equal(f.db.get(key('DR-TEST')).driver,null);assert.doesNotMatch(JSON.stringify(f.messages),/driver-delivery/);
   }
 });
 test('off-shift, inactive, invalid-phone, expired and terminal orders cannot assign',async()=>{
@@ -84,13 +85,13 @@ test('off-shift, inactive, invalid-phone, expired and terminal orders cannot ass
 });
 test('twenty simultaneous selections create just one assignment',async()=>{
   const f=fixture();await Promise.all(Array.from({length:20},()=>f.handle(f.ev('assign'))));
-  assert.equal(f.messages.filter(m=>m.to===riderId).length,1);assert.equal(f.db.get(key('DR-TEST')).driver.accountId,'rider');
+  assert.equal(f.messages.filter(m=>/Rider for DR-TEST/.test(m.content[0].text||'')).length,1);assert.equal(f.db.get(key('DR-TEST')).driver.accountId,'rider');
 });
-test('failed direct push can retry with the same token and LINE retry key',async()=>{
-  const f=fixture();f.setPush(false);await f.handle(f.ev('assign'));assert.match(f.messages.at(-1).content[0].text,/could not accept/);
-  assert.match(f.messages.at(-1).content[0].text,/Rider delivery link:/);
-  const first=f.messages.find(m=>m.to===riderId);f.setPush(true);await f.handle(f.ev('assign'));
-  const pushes=f.messages.filter(m=>m.to===riderId);assert.equal(pushes[1].options.retryKey,first.options.retryKey);assert.equal(pushes[1].content[0].text,first.content[0].text);
+test('choosing the same rider again posts the same rider link, not a new one',async()=>{
+  const f=fixture();await f.handle(f.ev('assign'));const first=f.messages.at(-1).content[0].text;
+  await f.handle(f.ev('assign'));
+  assert.equal(f.messages.at(-1).content[0].text,first);
+  assert.equal(f.db.get(key('DR-TEST')).driver.token,'driver-token');
 });
 test('storage failure refuses dispatch even if counter falls back to memory',async()=>{
   const f=fixture();f.deps.claim=async()=>{f.setReady(false);return 1;};const handle=createDeliveryLineHandler(f.deps);await handle(f.ev('assign'));

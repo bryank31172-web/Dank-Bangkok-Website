@@ -1,4 +1,3 @@
-import crypto from 'node:crypto';
 import {getJSON, bump} from './_store.js';
 import {listAccounts} from './_staff-accounts.js';
 import {hasPermission, requirePermission} from './_auth.js';
@@ -30,7 +29,7 @@ export function deliveryOrderCard(order) {
       {type: 'text', text: 'NEW DELIVERY', weight: 'bold', color: '#008F4B'},
       {type: 'text', text: String(order.orderId), weight: 'bold', size: 'xl'},
       {type: 'text', text: `${(order.items || []).map(i => `${i.name} × ${i.qty}`).join('\n')}\nTotal: ฿${order.total ?? order.subtotal ?? 0}`.slice(0, 3000), wrap: true},
-      {type: 'text', text: 'Choose the rider. Their link is sent to them first, then the customer tracking link is posted here.', wrap: true, size: 'sm'},
+      {type: 'text', text: 'Choose the rider. Their link is posted here first, then the customer tracking link.', wrap: true, size: 'sm'},
     ]}, footer: {type: 'box', layout: 'vertical', spacing: 'sm', contents: [
       {type: 'button', style: 'primary', color: '#008F4B', action: {type: 'postback', label: 'Choose rider', data: postback('choose', order.orderId)}},
       ...(liffUrl(order.orderId) ? [{type: 'button', action: {type: 'uri', label: 'Set destination & rider', uri: liffUrl(order.orderId)}}] : []),
@@ -100,9 +99,9 @@ export function createRidersHandler(deps = {}) {
 }
 
 // Only invoked after the webhook verifies LINE's signature. Rider controls are
-// shared with the configured staff group and assigned rider. An atomic claim prevents double assignment.
+// posted in the configured staff group only. An atomic claim prevents double assignment.
 export function createDeliveryLineHandler(deps = {}) {
-  const d = {get: getJSON, accounts: listAccounts, claim: bump, send: lineMessages, group: () => process.env.LINE_TO || '', uuid: () => crypto.randomUUID(), ...delivery, ...deps};
+  const d = {get: getJSON, accounts: listAccounts, claim: bump, send: lineMessages, group: () => process.env.LINE_TO || '', ...delivery, ...deps};
   return async ev => {
     if (ev.type === 'message' && ev.source?.type === 'user' && /^rider id$/i.test(ev.message?.text?.trim() || '')) {
       await d.send(ev.replyToken, [{type: 'text', text: 'Your LINE user ID: ' + ev.source.userId + '\nGive this to the shop manager for LINE riders setup.'}], {reply: true});
@@ -147,7 +146,7 @@ export function createDeliveryLineHandler(deps = {}) {
         const items = slice.map(r => ({type: 'action', action: {type: 'postback', label: r.name.slice(0, 20), data: postback('assign', id, r.accountId)}}));
         if (selectable.length > page * 12 + 12) items.push({type: 'action', action: {type: 'postback', label: 'More riders', data: postback('choose', id, '', page + 1)}});
         if (!items.length) throw new Error('Rider list changed. Tap Choose rider again.');
-        await d.send(ev.replyToken, [{type: 'text', text: (record.driver ? 'Tap the assigned rider to resend their private link for ' : 'Choose the on-shift rider for ') + id, quickReply: {items}}], {reply: true});
+        await d.send(ev.replyToken, [{type: 'text', text: (record.driver ? 'Tap the assigned rider to post their link again for ' : 'Choose the on-shift rider for ') + id, quickReply: {items}}], {reply: true});
         return true;
       }
       if (p.get('delivery') !== 'assign') throw new Error('Unknown delivery action');
@@ -161,20 +160,18 @@ export function createDeliveryLineHandler(deps = {}) {
         if (n !== 1) throw new Error('Assignment is being processed. Retry in a moment or use the staff portal.');
         record = await d.get(d.key(id));
         if (record.driver || await ended()) throw new Error('Assignment changed or delivery ended.');
-        record.driver = {name: rider.name, phone: rider.phone, photo: '', token: d.token(), assignedAt: Date.now(), accountId: rider.accountId, assignedVia: 'line', retryKey: d.uuid()};
+        record.driver = {name: rider.name, phone: rider.phone, photo: '', token: d.token(), assignedAt: Date.now(), accountId: rider.accountId, assignedVia: 'line'};
         await d.write(d.key(id), record);
       }
       if (!d.ready() || await ended()) throw new Error('Delivery unavailable or ended.');
       const latest = await d.get(d.key(id));
       if (latest?.driver?.token !== record.driver.token) throw new Error('Rider assignment changed. Use the staff portal.');
       const url = ORIGIN + '/driver-delivery.html#' + new URLSearchParams({id, token: record.driver.token});
-      const sent = await d.send(rider.lineUserId, [{type: 'text', text: riderLinkMessage(id, record.place || order.delivery?.address, url, record.note)}], {retryKey: record.driver.retryKey});
-      const confirmation = sent.ok
-        ? `Assigned ${id} to ${rider.name}. LINE accepted the direct message to their personal chat.`
-        : `Assigned ${id} to ${rider.name}, but LINE could not accept the direct message. Ask the rider to add the shop LINE Official Account as a friend, then tap their rider selection again to retry.`;
-      // Rider link first, then the customer link — made now, after the rider.
+      // Both links go to the staff group (Oct 2026: the owner chose the group
+      // over a private message to the rider). Rider link first, then the
+      // customer link — made now, after the rider.
       const customerPath = await d.issueCustomerLink(id, {get: d.get, write: d.write, token: d.token});
-      const messages = [{type: 'text', text: `${confirmation}\nRider delivery link:\n${url}`}];
+      const messages = [{type: 'text', text: `🛵 Rider for ${id}: ${rider.name}\n${riderLinkMessage(id, record.place || order.delivery?.address, url, record.note)}`}];
       if (customerPath) messages.push(customerLinkCard(order, ORIGIN + customerPath, rider.name));
       else messages[0].text += '\nThe customer link could not be made. Open this order in the staff portal to get it.';
       await d.send(ev.replyToken, messages, {reply: true});
