@@ -22,7 +22,13 @@ test('first 3 km are free, the 4th costs 60 and each km after adds 15',()=>{
  assert.equal(deliveryFeeForKm(0),0);
  assert.equal(deliveryFeeForKm(2.4),0);
  assert.equal(deliveryFeeForKm(3),0);
- assert.equal(deliveryFeeForKm(3.1),60);
+ assert.equal(deliveryFeeForKm(3.1),0,'3.1 km rounds down to 3');
+ assert.equal(deliveryFeeForKm(3.4),0,'3.4 km rounds down to 3');
+ assert.equal(deliveryFeeForKm(3.5),60,'3.5 km rounds up to 4');
+ assert.equal(deliveryFeeForKm(3.99),60);
+ assert.equal(deliveryFeeForKm(4.4),60);
+ assert.equal(deliveryFeeForKm(4.5),75);
+ assert.equal(deliveryFeeForKm(3.4000001),0,'float noise must not tip a rounding');
  assert.equal(deliveryFeeForKm(4),60);
  assert.equal(deliveryFeeForKm(5),75);
  assert.equal(deliveryFeeForKm(6),90);
@@ -36,14 +42,14 @@ test('first 3 km are free, the 4th costs 60 and each km after adds 15',()=>{
 test('a missing distance falls back to the flat 100 and says so',()=>{
  assert.deepEqual(deliveryQuote(null),{ok:false,fee:100,km:null,fallback:true});
  assert.deepEqual(deliveryQuote({ok:true,km:null}),{ok:false,fee:100,km:null,fallback:true});
- assert.equal(deliveryQuote({ok:true,km:5.2}).fee,90);
+ assert.equal(deliveryQuote({ok:true,km:5.2}).fee,75);
 });
 
 test('/api/eta returns the delivery quote with the ETA',async()=>{
  const res=await withFetch(routeOf(5200),()=>call(etaHandler,{destLat:13.75,destLng:100.55}));
  assert.equal(res.code,200);
  assert.equal(res.data.km,5.2);
- assert.deepEqual({fee:res.data.delivery.fee,billedKm:res.data.delivery.billedKm,fallback:res.data.delivery.fallback},{fee:90,billedKm:6,fallback:false});
+ assert.deepEqual({fee:res.data.delivery.fee,billedKm:res.data.delivery.billedKm,fallback:res.data.delivery.fallback},{fee:75,billedKm:5,fallback:false});
 });
 
 test('the order charges the distance fee worked out on the server, not the one the browser sent',async()=>{
