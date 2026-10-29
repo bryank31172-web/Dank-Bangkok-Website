@@ -957,7 +957,7 @@ async function labDelete(){
 
 async function refreshChats(){ try{ const r=await authGet(`${API}?list=1`); if(r.ok) renderList((await r.json()).threads); }catch(e){} }
 async function pollOrders(){
-  try{ const r=await authGet('/api/orders'); if(!r.ok) return;
+  try{ const r=await authGet('/api/orders?include=line'); if(!r.ok) return;
     ORDERS=((await r.json()).orders||[]).filter(order=>order.status==='done'||Number(order.at)>=NEW_ORDER_DISPLAY_RESET_AT);
     if(dashboardAlertOrderId&&!ORDERS.some(o=>String(o.orderId)===String(dashboardAlertOrderId)&&!['done','cancelled'].includes(o.status)))dashboardAlertOrderId='';
     const fresh=ORDERS.filter(o=>!knownOrders.has(o.orderId)&&!['done','cancelled'].includes(o.status));
@@ -1002,7 +1002,7 @@ function renderOrders(){
       '<td><div class="product-table-name"><strong>'+esc(id||'New order')+'</strong></div></td>'+
       '<td><strong>'+esc(customer)+'</strong><span class="order-option">'+esc(order.customer?.phone||'No phone')+'</span></td>'+
       '<td>'+esc(category)+'</td>'+
-      '<td>'+esc(order.fulfilment||'Order')+'</td>'+
+      '<td>'+esc(order.fulfilment||'Order')+(order.source==='line'?' · LINE':'')+'</td>'+
       '<td><span class="product-status '+(completed?'in':'out')+'">'+(cancelled?'Cancelled':completed?'Completed':'New')+'</span></td>'+
       '<td class="product-price">฿'+total.toLocaleString('en-US',{maximumFractionDigits:2})+'</td>'+
       '<td>'+esc(order.at?ago(order.at):'Just received')+'</td>'+

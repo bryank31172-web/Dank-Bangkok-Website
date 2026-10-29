@@ -95,6 +95,26 @@ order, whatever its products. An optional Note for rider (gate code, floor, call
 arrival) shows on the rider's page and in their LINE message, never to the customer.
 Pressing it again returns the existing link instead of creating a second one.
 
+### Typing "delivery" in the staff LINE group (Oct 2026)
+
+The form opens on **✍️ New order**, for customers who ordered by LINE, WhatsApp
+or phone: customer name and phone (both optional), one row per product (name,
+qty, price each; names are suggested from the POS menu and fill in its price),
+and a total that adds itself up unless staff type over it. **🌐 Website order**
+is the old picker. A typed order gets a reference like `LN-1029-4821` and is
+stored as `order:<id>` with `source: "line"`, listed in its own index
+`orders:line`, never `orders:index`, so it stays out of /api/sales, the Numbers
+page, best sellers and the POS order pull (the till records that sale). The
+staff portal shows it in Orders, marked "delivery · LINE"
+(`/api/orders?include=line`).
+
+Rider: pick a **saved rider**, a **staff** rider, or **＋ New rider** (name and
+phone). New riders are saved for next time when the box is ticked; editing a
+saved rider's details updates the saved record; **Remove from saved riders**
+deletes one. Anyone allowed to open the form may add or remove saved riders.
+They are stored in `delivery:saved-riders:v1` (name and phone only, no login,
+max 100) and are not staff accounts.
+
 Staff portal -> Orders -> open an eligible order -> Manage delivery tracking.
 Enter driver name/phone, upload profile photo and confirm destination coordinates.
 The checkout captures coordinates when the customer selects a Google Places
