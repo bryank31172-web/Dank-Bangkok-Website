@@ -5,6 +5,16 @@ import { key as deliveryKey, terminalKey, endDelivery } from "./_delivery.js";
      POST {orderId, status:"done"|"new", key}       → update order status  */
 import { getJSON, setJSON, indexList } from "./_store.js";
 import { requirePermission, staffIdentity } from "./_auth.js";
+import { MANUAL_INDEX } from "./_delivery-manual.js";
+
+async function withDelivery(o, id) {
+  const delivery = await getJSON(deliveryKey(id));
+  const ended = await getJSON(terminalKey(id));
+  o.deliveryTrackingAvailable = Boolean(delivery && delivery.expiresAt > Date.now());
+  if (ended?.status === "completed") o.status = "done";
+  if (ended?.status === "cancelled") o.status = "cancelled";
+  return o;
+}
 
 export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
@@ -27,16 +37,26 @@ export default async function handler(req, res) {
       const orders = [];
       for (const id of page) {
         const o = await getJSON("order:" + id);
-        if (o) {
-          const delivery = await getJSON(deliveryKey(id));
-          const ended = await getJSON(terminalKey(id));
-          o.deliveryTrackingAvailable = Boolean(delivery && delivery.expiresAt > Date.now());
-          if (ended?.status === "completed") o.status = "done";
-          if (ended?.status === "cancelled") o.status = "cancelled";
-          orders.push(o);
-        }
+        if (o) orders.push(await withDelivery(o, id));
       }
       const nextOffset = offset + page.length;
+      /* Orders typed into the LINE delivery form sit in their own index so they
+         never reach sales, stats or the POS pull (which reads this same reply
+         without ?include). The staff portal asks for them and they are slotted
+         into this page by time: newer than the next page, no newer than the
+         previous one. Only the 60 most recent are read, to bound the cost. */
+      if (String(req.query?.include || "") === "line") {
+        const times = orders.map((o) => Number(o.at)).filter(Number.isFinite);
+        const lower = nextOffset < ids.length && times.length ? Math.min(...times) : -Infinity;
+        const before = offset > 0 ? Number((await getJSON("order:" + ids[offset - 1]))?.at) : NaN;
+        const upper = Number.isFinite(before) ? before : Infinity;
+        for (const id of (await indexList(MANUAL_INDEX)).slice(0, 60)) {
+          const o = await getJSON("order:" + id);
+          if (!o || !(Number(o.at) > lower && Number(o.at) <= upper)) continue;
+          orders.push(await withDelivery(o, id));
+        }
+        orders.sort((x, y) => (Number(y.at) || 0) - (Number(x.at) || 0));
+      }
       return res.status(200).json({
         orders, total: ids.length, offset,
         nextOffset: nextOffset < ids.length ? nextOffset : null,

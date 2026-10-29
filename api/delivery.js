@@ -1,4 +1,4 @@
-import { getJSON, indexList } from './_store.js';
+import { getJSON, indexList, indexAdd } from './_store.js';
 import { liffId, verifyLineIdToken } from './_liff.js';
 import { listAccounts } from './_staff-accounts.js';
 import { lineMessages, isStaffGroupMember } from './_line.js';
@@ -8,10 +8,11 @@ import * as delivery from './_delivery.js';
 import {createSetupHandler} from './_delivery-setup.js';
 import {createRidersHandler, riderOptions, assignmentMessages, RIDERS_KEY} from './_delivery-line.js';
 import {createProofCompleter, proofKey, jpegPhoto} from './_delivery-proof.js';
+import {MANUAL_INDEX, SAVED_RIDERS_KEY, SAVED_RIDERS_TTL, parseManualOrder, manualOrderId, manualOrderRecord, parseRider, saveRider, savedRiderList} from './_delivery-manual.js';
 
 // Dependency injection keeps lifecycle/security tests isolated from real orders.
 export function createHandler(deps = {}) {
-  const d = { ...delivery, get: getJSON, accounts: listAccounts, send: lineMessages, group: () => process.env.LINE_TO || '', verifyLine: verifyLineIdToken, groupMember: isStaffGroupMember, orderIds: () => indexList('orders:index'), permission: requirePermission, rate: requireRate, ...deps };
+  const d = { ...delivery, get: getJSON, accounts: listAccounts, send: lineMessages, group: () => process.env.LINE_TO || '', verifyLine: verifyLineIdToken, groupMember: isStaffGroupMember, orderIds: () => indexList('orders:index'), indexAdd, manualOrderId, permission: requirePermission, rate: requireRate, ...deps };
   // Rider and customer links go to the staff LINE group, never to the rider
   // privately. Best effort: staff also see both links to copy, so a failed
   // LINE send loses nothing.
@@ -87,8 +88,21 @@ export function createHandler(deps = {}) {
       try {
         if (!d.ready()) throw new Error('Storage unavailable');
         const riders = riderOptions(await d.accounts(), await d.get(RIDERS_KEY));
-        return res.status(200).json({ riders: riders.map(({lineUserId, ...r}) => ({...r, line: Boolean(lineUserId)})) });
+        const saved = savedRiderList(await d.get(SAVED_RIDERS_KEY));
+        if (!d.ready()) throw new Error('Storage unavailable');
+        return res.status(200).json({ riders: riders.map(({lineUserId, ...r}) => ({...r, line: Boolean(lineUserId)})), saved });
       } catch { return res.status(503).json({ error: 'Rider list unavailable. Please retry.' }); }
+    }
+    if (b.action === 'saved-rider-remove') {
+      // Anyone who may use the form may remove a saved rider (owner's choice, Oct 2026).
+      if (req.method !== 'POST') return res.status(405).json({ error: 'POST only' });
+      if (!(await ordersAccess())) return;
+      try {
+        if (!d.ready()) throw new Error('Storage unavailable');
+        const rows = savedRiderList(await d.get(SAVED_RIDERS_KEY));
+        await d.write(SAVED_RIDERS_KEY, rows.filter(r => r.id !== String(b.riderId || '')), SAVED_RIDERS_TTL);
+        return res.status(200).json({ ok: true, saved: rows.filter(r => r.id !== String(b.riderId || '')) });
+      } catch { return res.status(503).json({ error: 'Could not remove the rider. Please retry.' }); }
     }
     if (b.action === 'pending') {
       // Recent delivery orders still open, for the Create delivery link form.
@@ -110,8 +124,10 @@ export function createHandler(deps = {}) {
         return res.status(200).json({ orders });
       } catch { return res.status(503).json({ error: 'Orders unavailable. Please retry.' }); }
     }
-    const id = String(b.id || '');
-    if (!/^[A-Za-z0-9_-]{3,80}$/.test(id)) return res.status(400).json({ error: 'Invalid order reference' });
+    // A hand-typed order from the LINE form has no reference yet; one is made below.
+    const manual = b.action === 'create' && b.manual != null;
+    let id = String(b.id || '');
+    if (!manual && !/^[A-Za-z0-9_-]{3,80}$/.test(id)) return res.status(400).json({ error: 'Invalid order reference' });
     try {
       if (!d.ready()) return res.status(503).json({ error: 'Tracking temporarily unavailable. Please retry.' });
       const staff = b.role === 'staff';
@@ -123,19 +139,36 @@ export function createHandler(deps = {}) {
         // checkout apply; this never widens which orders can be tracked.
         if (!staff) return res.status(403).json({ error: 'Staff access required' });
         if (req.method !== 'POST') return res.status(405).json({ error: 'POST only' });
+        const place = String(b.place || '').trim().slice(0, 200);
+        const note = String(b.note || '').replace(/\s+/g, ' ').trim().slice(0, 300);
+        if (b.destination != null && !d.point(b.destination)) return res.status(400).json({ error: 'Choose the destination from the suggestions' });
+        // Everything is checked before a hand-typed order is written, so a
+        // rejected form never leaves a half-made order behind.
+        const typed = manual ? parseManualOrder(b.manual) : null;
+        if (typed?.error) return res.status(400).json({ error: typed.error });
+        if (manual && !d.point(b.destination)) return res.status(400).json({ error: 'Choose the delivery destination' });
+        // A rider is a staff account (riderId) or a person typed into the form,
+        // who can be saved for next time (rider: {id?, name, phone, save}).
+        let rider = null, typedRider = null;
+        if (b.riderId) {
+          rider = riderOptions(await d.accounts(), await d.get(RIDERS_KEY)).find(r => r.id === String(b.riderId));
+          if (!rider) return res.status(400).json({ error: 'Choose a rider from the list. Riders need orders access and a phone number.' });
+        } else if (b.rider != null) {
+          typedRider = parseRider(b.rider);
+          if (typedRider.error) return res.status(400).json({ error: typedRider.error });
+          rider = { id: '', name: typedRider.name, phone: typedRider.phone };
+        }
+        if (manual && !rider) return res.status(400).json({ error: 'Choose a rider' });
+        if (manual) {
+          id = await d.manualOrderId(d.get);
+          await d.write('order:' + id, manualOrderRecord(id, typed, place, d.point(b.destination)), 30 * 86400);
+          await d.indexAdd(id, MANUAL_INDEX);
+        }
         const order = await d.get('order:' + id);
         if (!order) return res.status(404).json({ error: 'Order not found' });
         if (order.fulfilment !== 'delivery') return res.status(409).json({ error: 'Tracking links are only for delivery orders' });
         if (['done', 'cancelled', 'canceled'].includes(order.status) || await d.get(d.terminalKey(id)))
           return res.status(409).json({ error: 'This order has already ended' });
-        const place = String(b.place || '').trim().slice(0, 200);
-        const note = String(b.note || '').replace(/\s+/g, ' ').trim().slice(0, 300);
-        if (b.destination != null && !d.point(b.destination)) return res.status(400).json({ error: 'Choose the destination from the suggestions' });
-        let rider = null;
-        if (b.riderId) {
-          rider = riderOptions(await d.accounts(), await d.get(RIDERS_KEY)).find(r => r.id === String(b.riderId));
-          if (!rider) return res.status(400).json({ error: 'Choose a rider from the list. Riders need orders access and a phone number.' });
-        }
         let record = await d.get(d.key(id)), created = false;
         if (!record || record.expiresAt <= Date.now()) {
           const destination = d.point(b.destination) || d.point(order.delivery?.coordinates);
@@ -153,13 +186,22 @@ export function createHandler(deps = {}) {
         record.destination = destination;
         if (place) record.place = place;
         if (note || b.note === '') record.note = note;
-        record.driver = { name: rider.name, phone: rider.phone, photo: '', token: d.token(), assignedAt: Date.now(), accountId: rider.id, assignedVia: 'staff' };
+        let savedRiderId = '';
+        if (typedRider) {
+          // Best effort: a failed save must not cost the delivery.
+          try {
+            const saved = saveRider(await d.get(SAVED_RIDERS_KEY), typedRider);
+            if (saved.rows) { await d.write(SAVED_RIDERS_KEY, saved.rows, SAVED_RIDERS_TTL); savedRiderId = saved.id; }
+          } catch {}
+        }
+        record.driver = { name: rider.name, phone: rider.phone, photo: '', token: d.token(), assignedAt: Date.now(),
+          ...(typedRider ? { savedRiderId } : { accountId: rider.id }), assignedVia: 'staff' };
         await d.write(d.key(id), record);
         if (previous) { await d.write(d.locationKey(id, previous.token), null, 1); if (d.departureKey) await d.write(d.departureKey(id, previous.token), null, 1); }
         const driverUrl = '/driver-delivery.html#' + new URLSearchParams({ id, token: record.driver.token });
         customerUrl = await d.issueCustomerLink(id, { get: d.get, write: d.write, token: d.token });
         const groupPosted = await postToGroup(order, record, rider.name, driverUrl, customerUrl);
-        return res.status(200).json({ ok: true, created, customerUrl, driverUrl, rider: { name: rider.name, phone: rider.phone }, groupPosted });
+        return res.status(200).json({ ok: true, created, orderId: id, customerUrl, driverUrl, rider: { name: rider.name, phone: rider.phone, savedId: savedRiderId || undefined }, groupPosted });
       }
       const record = await d.get(d.key(id));
       if (!d.ready()) throw new Error('Storage unavailable');

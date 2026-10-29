@@ -22,6 +22,13 @@ input,select{width:100%;padding:13px 14px;border:1px solid var(--line);border-ra
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
 .done{text-align:center}.tick{width:70px;height:70px;border-radius:50%;background:#e7f5eb;color:var(--green);display:grid;place-items:center;margin:4px auto 12px;font-size:34px}
 .done h1{font-size:22px;margin:0 0 4px}.link{display:flex;gap:8px;margin:8px 0 4px}.link input{font-size:13px;color:var(--muted)}
+.tabs{display:grid;grid-template-columns:1fr 1fr;gap:6px;background:var(--soft);border-radius:12px;padding:4px;margin-bottom:12px}
+.tabs button{border:0;border-radius:9px;padding:10px 8px;font:inherit;font-size:14px;font-weight:650;background:none;color:var(--muted);cursor:pointer}.tabs button[aria-selected=true]{background:#fff;color:var(--green);box-shadow:0 1px 4px #0001}
+.line{display:grid;grid-template-columns:1fr 1fr 36px;gap:6px;margin-top:12px;padding-top:12px;border-top:1px dashed var(--line)}.line .pname{grid-column:1/-1}.line input{padding:11px 10px}
+.line label{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--muted)}.line label input{color:var(--ink);font-size:16px}.line .x{border:0;background:none;color:var(--muted);font-size:22px;cursor:pointer}
+.total{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:14px;padding-top:12px;border-top:1px solid var(--line);font-weight:750}.total input{max-width:140px;text-align:right;font-weight:750}
+.check{display:flex;align-items:center;gap:8px;margin-top:10px;font-size:14px}.check input{width:auto}
+.ghost.danger{color:var(--warn)}
 .hidden{display:none!important}.center{text-align:center;padding:40px 16px;color:var(--muted)}
 </style></head><body>
 <header><div><b>DANK BKK</b><small>Create delivery link</small></div><button class="ghost" id="closeBtn" type="button">Close</button></header>
@@ -32,8 +39,19 @@ input,select{width:100%;padding:13px 14px;border:1px solid var(--line);border-ra
   <form id="form" class="hidden" autocomplete="off" novalidate>
     <section class="card">
       <h2><span class="n">1</span>Order</h2>
-      <div id="orderPicked" class="hidden"></div>
-      <div id="orderList" class="orders"></div>
+      <div class="tabs" role="tablist" aria-label="Order type"><button type="button" role="tab" id="tabNew" aria-selected="true" aria-controls="newOrder">✍️ New order</button><button type="button" role="tab" id="tabWeb" aria-selected="false" aria-controls="webOrder">🌐 Website order</button></div>
+      <div id="newOrder" role="tabpanel" aria-labelledby="tabNew">
+        <div class="grid2" style="margin-top:0"><input id="custName" type="text" maxlength="80" placeholder="Customer name" aria-label="Customer name"><input id="custPhone" type="tel" inputmode="tel" maxlength="20" placeholder="Customer phone" aria-label="Customer phone"></div>
+        <div id="lines"></div>
+        <datalist id="productNames"></datalist>
+        <button class="ghost" type="button" id="addLine">＋ Add item</button>
+        <label class="total" for="total">Total ฿<input id="total" type="number" inputmode="decimal" min="0" step="any" placeholder="0"></label>
+        <p id="totalNote" class="muted">Adds up the prices. Type over it to change it.</p>
+      </div>
+      <div id="webOrder" class="hidden" role="tabpanel" aria-labelledby="tabWeb">
+        <div id="orderPicked" class="hidden"></div>
+        <div id="orderList" class="orders"></div>
+      </div>
     </section>
     <section class="card">
       <h2><span class="n">2</span>Destination</h2>
@@ -44,6 +62,11 @@ input,select{width:100%;padding:13px 14px;border:1px solid var(--line);border-ra
     <section class="card">
       <h2><span class="n">3</span>Rider</h2>
       <select id="rider" aria-label="Rider"><option value="">Loading riders…</option></select>
+      <div id="riderFields" class="hidden">
+        <div class="grid2"><input id="riderName" type="text" maxlength="80" placeholder="Rider name" aria-label="Rider name"><input id="riderPhone" type="tel" inputmode="tel" maxlength="20" placeholder="Rider phone" aria-label="Rider phone"></div>
+        <label class="check" id="saveRow"><input id="saveRider" type="checkbox" checked> Save this rider for next time</label>
+        <button class="ghost danger" type="button" id="removeRider">Remove from saved riders</button>
+      </div>
       <p id="riderNote" class="muted"></p>
       <label for="note" style="display:block;margin-top:14px;font-weight:650;font-size:15px">Note for rider <span class="muted" style="font-weight:400">(optional)</span></label>
       <textarea id="note" rows="3" maxlength="300" placeholder="Gate code, floor, call on arrival, what to collect…" style="width:100%;margin-top:8px;padding:13px 14px;border:1px solid var(--line);border-radius:12px;font:inherit;resize:vertical"></textarea>
@@ -74,7 +97,8 @@ input,select{width:100%;padding:13px 14px;border:1px solid var(--line);border-ra
 <script>
 const el=id=>document.getElementById(id);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-let idToken='',orders=[],riders=[],picked=null,dest=null;
+let idToken='',orders=[],riders=[],saved=[],picked=null,dest=null,mode='new',totalEdited=false;
+const prices=new Map();
 function fatal(t){el('loading').classList.add('hidden');el('form').classList.add('hidden');el('fatal').textContent=t;el('fatal').classList.remove('hidden')}
 async function api(method,params){
   const url='/api/delivery'+(method==='GET'?'?'+new URLSearchParams(params):'');
@@ -82,6 +106,39 @@ async function api(method,params){
   const j=await r.json().catch(()=>({}));if(!r.ok)throw new Error(j.error||'Request failed ('+r.status+')');return j;
 }
 el('closeBtn').addEventListener('click',()=>{try{if(window.liff?.isInClient?.())return liff.closeWindow()}catch{}history.length>1?history.back():window.close()});
+
+// Order: typed in here (customer ordered by LINE, WhatsApp or phone) or a website order.
+function setMode(m){
+  mode=m;el('tabNew').setAttribute('aria-selected',String(m==='new'));el('tabWeb').setAttribute('aria-selected',String(m==='web'));
+  el('newOrder').classList.toggle('hidden',m!=='new');el('webOrder').classList.toggle('hidden',m!=='web');
+}
+el('tabNew').addEventListener('click',()=>setMode('new'));
+el('tabWeb').addEventListener('click',()=>{setMode('web');renderOrders()});
+function addLine(){
+  const row=document.createElement('div');row.className='line';
+  row.innerHTML='<input class="pname" type="text" list="productNames" maxlength="120" placeholder="Product" aria-label="Product"><label>Qty<input class="pqty" type="number" inputmode="numeric" min="1" max="999" step="1" value="1"></label><label>฿<input class="pprice" type="number" inputmode="decimal" min="0" step="any" placeholder="Price each"></label><button class="x" type="button" aria-label="Remove item">×</button>';
+  el('lines').appendChild(row);return row;
+}
+function lineItems(){return [...el('lines').children].map(r=>({name:r.querySelector('.pname').value.trim(),qty:Number(r.querySelector('.pqty').value),price:r.querySelector('.pprice').value})).filter(i=>i.name)}
+function sumLines(){return Math.round(lineItems().reduce((s,i)=>s+(Number(i.price)||0)*(Number(i.qty)||0),0)*100)/100}
+function renderTotal(){if(!totalEdited)el('total').value=sumLines()||'';el('totalNote').textContent=totalEdited?'Typed by hand. Clear it to add up the prices again.':'Adds up the prices. Type over it to change it.'}
+el('addLine').addEventListener('click',()=>addLine().querySelector('.pname').focus());
+el('lines').addEventListener('click',e=>{const x=e.target.closest('.x');if(!x)return;x.parentElement.remove();if(!el('lines').children.length)addLine();renderTotal()});
+el('lines').addEventListener('input',e=>{
+  // Picking a POS product fills in its price, unless one was typed already.
+  const row=e.target.closest('.line');if(e.target.classList.contains('pname')&&prices.has(e.target.value)&&!row.querySelector('.pprice').value)row.querySelector('.pprice').value=prices.get(e.target.value);
+  renderTotal();
+});
+el('total').addEventListener('input',()=>{totalEdited=el('total').value!=='';renderTotal()});
+// Suggestions only: any product name can be typed.
+async function loadMenu(){
+  try{const list=await (await fetch('/api/products',{cache:'no-store'})).json();if(!Array.isArray(list))return;
+    for(const p of list){if(!p||p._hidden||!p.name)continue;const tiers=p.priceTiers?.length>1?p.priceTiers:[{label:'',price:p.price}];
+      for(const t of tiers){const n=t.label?`${p.name} (${t.label})`:String(p.name);if(!prices.has(n))prices.set(n,Number.isFinite(Number(t.price))?Number(t.price):'')}}
+    el('productNames').replaceChildren(...[...prices.keys()].slice(0,800).map(n=>{const o=document.createElement('option');o.value=n;return o}));
+  }catch{}
+}
+function resetNewOrder(){el('custName').value='';el('custPhone').value='';el('lines').replaceChildren();addLine();totalEdited=false;renderTotal()}
 
 function renderOrders(){
   const list=el('orderList'),box=el('orderPicked');
@@ -127,41 +184,70 @@ async function initPlaces(){
   }catch{manualPin()}
 }
 
-async function loadRiders(){
-  try{riders=(await api('GET',{action:'rider-options'})).riders||[]}catch(e){el('rider').innerHTML='<option value="">Rider list unavailable</option>';el('riderNote').textContent=e.message;return}
-  el('rider').innerHTML=riders.length?'<option value="">Choose a rider</option>'+riders.map(r=>`<option value="${esc(r.id)}">${esc(r.name)} · ${esc(r.phone)}${r.onShift?' · on shift':''}</option>`).join(''):'<option value="">No riders yet</option>';
-  el('riderNote').textContent=riders.length?'':'Add staff with a phone number in the staff portal first.';
+// Rider: a saved rider, a staff account, or a new person typed in (saved for next time when ticked).
+// Option values: s:<saved id>, a:<staff account id>, new.
+function renderRiders(keep){
+  const opt=(v,t)=>`<option value="${esc(v)}">${esc(t)}</option>`;
+  el('rider').innerHTML='<option value="">Choose a rider</option>'+
+    (saved.length?'<optgroup label="Saved riders">'+saved.map(r=>opt('s:'+r.id,r.name+' · '+r.phone)).join('')+'</optgroup>':'')+
+    (riders.length?'<optgroup label="Staff">'+riders.map(r=>opt('a:'+r.id,r.name+' · '+r.phone+(r.onShift?' · on shift':''))).join('')+'</optgroup>':'')+
+    opt('new','＋ New rider');
+  el('rider').value=[...el('rider').options].some(o=>o.value===keep)?keep:'';riderChanged();
 }
-el('rider').addEventListener('change',()=>{const r=riders.find(x=>x.id===el('rider').value);el('riderNote').textContent=!r?'':r.line?'Their link is also sent to them on LINE.':'No LINE ID registered — copy their link after creating.'});
+async function loadRiders(keep){
+  try{const j=await api('GET',{action:'rider-options'});riders=j.riders||[];saved=j.saved||[]}catch(e){el('rider').innerHTML='<option value="">Rider list unavailable</option><option value="new">＋ New rider</option>';el('riderNote').textContent=e.message;return}
+  renderRiders(keep);
+}
+function riderChanged(){
+  const v=el('rider').value,s=v.startsWith('s:')&&saved.find(r=>'s:'+r.id===v);
+  el('riderFields').classList.toggle('hidden',!(v==='new'||s));el('saveRow').classList.toggle('hidden',v!=='new');el('removeRider').classList.toggle('hidden',!s);
+  if(v==='new'){el('riderName').value='';el('riderPhone').value='';el('saveRider').checked=true}
+  if(s){el('riderName').value=s.name;el('riderPhone').value=s.phone}
+  el('riderNote').textContent=s?'Changes to the name or phone are saved for next time.':v==='new'?'':v?'Staff rider. Their link is posted in the staff LINE group.':'';
+}
+el('rider').addEventListener('change',()=>{riderChanged();if(el('rider').value==='new')el('riderName').focus()});
+el('removeRider').addEventListener('click',async()=>{
+  const v=el('rider').value,s=saved.find(r=>'s:'+r.id===v);if(!s||!confirm('Remove '+s.name+' from saved riders?'))return;
+  try{saved=(await api('POST',{action:'saved-rider-remove',riderId:s.id})).saved||[];renderRiders('');el('riderNote').textContent=s.name+' removed.'}catch(e){el('riderNote').textContent=e.message}
+});
 
 el('form').addEventListener('submit',async e=>{
   e.preventDefault();el('msg').textContent='';
-  if(!picked)return el('msg').textContent='Choose the order first.';
+  const items=lineItems();
+  if(mode==='web'&&!picked)return el('msg').textContent='Choose the order first.';
+  if(mode==='new'){
+    if(!items.length){el('msg').textContent='Add at least one product.';return el('lines').querySelector('.pname')?.focus()}
+    const bad=items.find(i=>!Number.isInteger(i.qty)||i.qty<1);if(bad)return el('msg').textContent='Check the quantity for '+bad.name+'.';
+  }
   if(!el('manual').classList.contains('hidden')){const lat=Number(el('lat').value),lng=Number(el('lng').value);dest=el('lat').value&&el('lng').value&&Math.abs(lat)<=90&&Math.abs(lng)<=180?{lat,lng}:null}
   if(!dest){el('msg').textContent='Choose the destination from the suggestions so the map pin is right.';return el('place').focus()}
-  const riderId=el('rider').value;if(!riderId){el('msg').textContent='Choose a rider.';return el('rider').focus()}
+  const rv=el('rider').value;if(!rv){el('msg').textContent='Choose a rider.';return el('rider').focus()}
+  const typed=rv==='new'||rv.startsWith('s:');
+  if(typed&&(!el('riderName').value.trim()||!/^\+?\d{7,15}$/.test(el('riderPhone').value.replace(/[\s()-]/g,'')))){el('msg').textContent='Add the rider name and a valid phone number.';return el(el('riderName').value.trim()?'riderPhone':'riderName').focus()}
+  const rider=rv.startsWith('a:')?{riderId:rv.slice(2)}:{rider:{...(rv.startsWith('s:')?{id:rv.slice(2)}:{}),name:el('riderName').value.trim(),phone:el('riderPhone').value.trim(),save:rv!=='new'||el('saveRider').checked}};
   const btn=el('submit');btn.disabled=true;btn.textContent='Creating…';
   try{
-    const j=await api('POST',{role:'staff',action:'create',id:picked.orderId,destination:dest,place:el('place').value.trim(),riderId,note:el('note').value.trim()});
-    showDone(j);
+    const order=mode==='new'?{manual:{customer:{name:el('custName').value.trim(),phone:el('custPhone').value.trim()},items,total:el('total').value}}:{id:picked.orderId};
+    const j=await api('POST',{role:'staff',action:'create',...order,destination:dest,place:el('place').value.trim(),...rider,note:el('note').value.trim()});
+    showDone(j);loadRiders(j.rider?.savedId?'s:'+j.rider.savedId:'');
   }catch(err){el('msg').textContent=err.message}finally{btn.disabled=false;btn.textContent='Create link & assign rider'}
 });
 let lastDone=null;
 function showDone(j){
-  lastDone=j;const full=u=>location.origin+u;
+  lastDone=j;const full=u=>location.origin+u,oid=j.orderId||picked?.orderId||'';
   el('form').classList.add('hidden');el('done').classList.remove('hidden');window.scrollTo(0,0);
-  el('doneInfo').textContent=picked.orderId+' · '+el('place').value.trim()+' · Rider '+j.rider.name;
+  el('doneInfo').textContent=oid+' · '+el('place').value.trim()+' · Rider '+j.rider.name;
   el('doneLine').textContent=j.groupPosted?'✅ Rider and customer links posted in the staff LINE group.':'⚠️ Could not post to the staff LINE group. Copy the links below.';
   el('custLink').value=full(j.customerUrl);el('riderLink').value=full(j.driverUrl);
   const canShare=(()=>{try{return liff.isApiAvailable('shareTargetPicker')}catch{return false}})();
   el('shareCust').classList.toggle('hidden',!canShare);
   // Let the staff group see what happened, when the form was opened from a chat.
-  try{if(liff.isInClient()&&['group','room','utou'].includes(liff.getContext()?.type))liff.sendMessages([{type:'text',text:`🛵 ${picked.orderId} → ${j.rider.name}\n📍 ${el('place').value.trim()}\nTracking link ready.`}]).catch(()=>{})}catch{}
+  try{if(liff.isInClient()&&['group','room','utou'].includes(liff.getContext()?.type))liff.sendMessages([{type:'text',text:`🛵 ${oid} → ${j.rider.name}\n📍 ${el('place').value.trim()}\nTracking link ready.`}]).catch(()=>{})}catch{}
 }
 async function copy(id){const v=el(id).value;try{await navigator.clipboard.writeText(v);el('copied').textContent='Copied.'}catch{el(id).select();el('copied').textContent='Long-press the link to copy.'}}
 el('copyCust').addEventListener('click',()=>copy('custLink'));el('copyRider').addEventListener('click',()=>copy('riderLink'));
 el('shareCust').addEventListener('click',async()=>{try{await liff.shareTargetPicker([{type:'text',text:`Your DANK BKK delivery is on its way soon 🛵\nTrack your rider here:\n${el('custLink').value}`}])}catch{copy('custLink')}});
-el('another').addEventListener('click',async()=>{picked=null;dest=null;el('place').value='';el('rider').value='';el('note').value='';el('done').classList.add('hidden');el('form').classList.remove('hidden');await loadOrders();renderOrders()});
+el('another').addEventListener('click',async()=>{picked=null;dest=null;el('place').value='';el('rider').value='';riderChanged();el('note').value='';resetNewOrder();el('done').classList.add('hidden');el('form').classList.remove('hidden');await loadOrders();renderOrders()});
 
 async function loadOrders(want){orders=(await api('GET',{action:'pending',...(want?{id:want}:{})})).orders||[]}
 (async()=>{
@@ -174,8 +260,9 @@ async function loadOrders(want){orders=(await api('GET',{action:'pending',...(wa
     const want=new URLSearchParams(location.search).get('order')||'';
     await loadOrders(want);
     el('loading').classList.add('hidden');el('form').classList.remove('hidden');
-    const pre=orders.find(o=>o.orderId===want);if(pre)pickOrder(pre);else renderOrders();
-    loadRiders();initPlaces();
+    resetNewOrder();
+    const pre=orders.find(o=>o.orderId===want);if(pre){setMode('web');pickOrder(pre)}else{setMode('new');renderOrders()}
+    loadRiders();initPlaces();loadMenu();
   }catch(e){fatal(e.message||'Could not open the form. Close and try again.')}
 })();
 </script>

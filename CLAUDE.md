@@ -158,7 +158,7 @@ it did on 13 Aug 2026, when a Redis 401 made `/api/products` answer 500.
 
 Upstash Redis when the two env vars are set, otherwise an in-memory object.
 Keys in use: `crm:members`, `pos:customers`, `wallet:<phone>`, `order:<id>`,
-`orders:index` (+`:archive`), `orders:by:<phone>`, `mcode:<CODE>`,
+`orders:index` (+`:archive`), `orders:line` (orders typed into the LINE delivery form, kept out of sales — see `DELIVERY-TRACKING.md`), `delivery:saved-riders:v1`, `orders:by:<phone>`, `mcode:<CODE>`,
 `admin:overrides`, `topup:<chargeId>`, `tab:<phone>`, `tabs:phones`.
 Phone numbers are normalised by `api/_phone.js`: digits only, a leading `66`
 folded to `0`.
