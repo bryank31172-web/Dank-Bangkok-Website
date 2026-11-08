@@ -1005,6 +1005,11 @@ window.addEventListener("appinstalled", function () {
   .gp-line h2{font-size:clamp(21px,3vw,29px);line-height:1.1;margin:0}
   .gp-stars{color:#fbbc04;font-size:19px;letter-spacing:2px;white-space:nowrap;text-shadow:0 1px 10px rgba(251,188,4,.2)}
   .gp-copy p{margin:4px 0 0;color:var(--muted);font-size:13.5px}
+  .gp-review{margin:12px 0 0;padding:10px 12px;border-left:3px solid var(--green);
+    border-radius:0 10px 10px 0;background:rgba(61,220,132,.07)}
+  .gp-review p{margin:0;color:var(--txt);font-size:13.5px;line-height:1.55}
+  .gp-review cite{display:block;margin-top:6px;color:var(--muted);font-size:11.5px;font-style:normal}
+  .gp-review cite a{color:var(--green2);font-weight:800;text-decoration:underline;text-underline-offset:2px}
   .gp-cta{display:inline-flex;align-items:center;justify-content:center;min-height:46px;padding:0 17px;border-radius:12px;
     background:var(--txt);color:#0b120d;font-size:13.5px;font-weight:850;white-space:nowrap}
   @media(max-width:620px){
@@ -1013,6 +1018,7 @@ window.addEventListener("appinstalled", function () {
     .gp-pin{width:48px;height:48px;border-radius:14px;font-size:23px}
     .gp-line{gap:6px 9px}.gp-line h2{font-size:20px}.gp-stars{font-size:16px}
     .gp-copy p{font-size:12.5px}
+    .gp-review{margin-top:10px;padding:9px 10px}.gp-review p{font-size:12.5px}
     .gp-cta{grid-column:1/-1;width:100%;min-height:44px}
   }
 
@@ -1279,20 +1285,24 @@ window.addEventListener("appinstalled", function () {
      statement false. This is visible trust content only, not review schema. -->
 <section class="google-proof" aria-labelledby="googleProofTitle">
   <div class="wrap">
-    <a class="google-proof-card" href="https://maps.app.goo.gl/Q8KQq5noTHABf4HN6?g_st=ic"
-       target="_blank" rel="noopener noreferrer"
-       aria-label="Read more than 1,174 Google reviews for DANK Cannabis Club Pattanakarn">
+    <article class="google-proof-card">
       <span class="gp-pin" aria-hidden="true">📍</span>
-      <span class="gp-copy">
+      <div class="gp-copy">
         <span class="gp-kick">Google Maps · Pattanakarn</span>
-        <span class="gp-line">
+        <div class="gp-line">
           <h2 id="googleProofTitle">5.0 from 1,174+ reviews</h2>
           <span class="gp-stars" aria-label="5 out of 5 stars">★★★★★</span>
-        </span>
+        </div>
         <p>See why customers choose DANK Cannabis Club.</p>
-      </span>
-      <span class="gp-cta">Read Google reviews ↗</span>
-    </a>
+        <blockquote class="gp-review">
+          <p>“Great shop with a clean and relaxing atmosphere. The staff were friendly, knowledgeable, and helped me choose the right products.”</p>
+          <cite>— <a href="https://www.google.com/maps/contrib/104623078981575290667?hl=en-GB" target="_blank" rel="noopener noreferrer">Kaung Satt</a> · 5-star Google review</cite>
+        </blockquote>
+      </div>
+      <a class="gp-cta" href="https://maps.app.goo.gl/Q8KQq5noTHABf4HN6?g_st=ic"
+         target="_blank" rel="noopener noreferrer"
+         aria-label="Read more than 1,174 Google reviews for DANK Cannabis Club Pattanakarn">Read Google reviews ↗</a>
+    </article>
   </div>
 </section>
 
