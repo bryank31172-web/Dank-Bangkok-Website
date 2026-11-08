@@ -18,6 +18,7 @@ import { listAccounts } from "./_staff-accounts.js";
 import { normPhone } from "./_phone.js";
 import { getBalance } from "./_wallet.js";
 import { boxesInOrder, issueGifts, giftAlertLines, getGiftConfig } from "./_boxgifts.js";
+import { recordPromotionRedemption } from "./_promotion.js";
 import { getMenu } from "./_menu.js";
 import { notifyStaffLine, lineMessages } from "./_line.js";
 import { deliveryOrderCard, createLinkCard } from "./_delivery-line.js";
@@ -265,6 +266,17 @@ export default async function handler(req, res) {
     if (o.promo) await bump("promotion:uses:" + o.promo, 60 * 60 * 24 * 365 * 10);
     saved = true;
   } catch (e) { console.error("order save failed:", e.message); }
+
+  // Redemption history (docs/dank-backoffice/BACKOFFICE_REQUIREMENTS.md's
+  // Module I gap). Deliberately its own try/catch, after `saved` is already
+  // set: a failure here must never be mistaken for the order itself failing
+  // to save, and must never roll anything back — it's a nice-to-have report
+  // row, not something the order's success depends on.
+  if (saved && o.promo) {
+    try {
+      await recordPromotionRedemption({ code: o.promo, orderId, discount: o.discount, phone: o.customer?.phone, at: takenAt });
+    } catch (e) { console.error("promotion redemption log failed:", e.message); }
+  }
 
   // Tracking is set up for every delivery order, but without links: staff
   // choose the rider on the LINE card, which makes the rider link and then

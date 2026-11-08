@@ -125,8 +125,9 @@ const NAV=[
   {id:'suppliers',label:'Suppliers',perm:'suppliers'},
   {id:'purchasing',label:'Purchase Orders',perm:'purchasing'},
   {id:'expenses',label:'Expenses',perm:'expenses'},
-  {id:'promotions',label:'Promotions',perm:'promotions',external:'/staffportal#promotions'},
+  {id:'promotions',label:'Promotions',perm:'promotions'},
   {id:'staff',label:'Staff',perm:'staff_manage',external:'/staffportal#staffinfo'},
+  {id:'settings',label:'Settings',perm:'settings'},
 ];
 
 function renderNav(){
@@ -393,45 +394,213 @@ async function viewExpenses(){
   const m=$('#main');
   m.innerHTML=`<h2>Expenses</h2>
     <div class="card"><h3>Record an expense</h3>
-      <form data-act="expense-add" class="row">
-        <select name="category" required>
-          ${['utilities','rent','staff','equipment','repairs','supplier','other'].map(c=>`<option value="${c}">${c}</option>`).join('')}
-        </select>
-        <input name="vendor" placeholder="Vendor">
-        <input name="amount" type="number" step="0.01" placeholder="Amount" required style="width:110px">
-        <input name="expense_date" type="date" required value="${new Date().toISOString().slice(0,10)}">
-        <input name="note" placeholder="Note">
-        <button class="btn" type="submit">Save</button>
+      <form data-act="expense-add">
+        <div class="row">
+          <select name="category" required>
+            ${['utilities','rent','staff','equipment','repairs','supplier','other'].map(c=>`<option value="${c}">${c}</option>`).join('')}
+          </select>
+          <input name="vendor" placeholder="Vendor">
+          <input name="amount" type="number" step="0.01" placeholder="Amount" required style="width:110px">
+          <input name="expense_date" type="date" required value="${new Date().toISOString().slice(0,10)}">
+          <input name="note" placeholder="Note">
+        </div>
+        <div class="row" style="margin-top:8px">
+          <label>Receipt photo <input type="file" id="expAttachment" accept="image/png,image/jpeg,image/webp,image/gif"></label>
+          <button class="btn" type="submit">Save</button>
+        </div>
       </form>
     </div>
-    <div class="card" id="expList"><p class="muted">Loading…</p></div>`;
+    <div class="card" id="expList"><p class="muted">Loading…</p></div>
+    <div class="card"><h3>Monthly cost analysis</h3><div id="expMonthly"><p class="muted">Loading…</p></div></div>`;
   refreshExpenses();
 }
 async function refreshExpenses(){
-  const j=await boGet('/api/backoffice/expenses').catch(()=>({rows:[],total:0}));
-  $('#expList').innerHTML=`<p><b>Total: ${money(j.total)}</b></p>` + ((j.rows||[]).length?`<table><tr><th>Date</th><th>Category</th><th>Vendor</th><th>Amount</th><th>Note</th></tr>
-    ${j.rows.map(e=>`<tr><td>${esc(e.expense_date)}</td><td>${esc(e.category)}</td><td>${esc(e.vendor||'—')}</td><td>${money(e.amount)}</td><td>${esc(e.note||'')}</td></tr>`).join('')}
+  const j=await boGet('/api/backoffice/expenses?monthly=1').catch(()=>({rows:[],total:0,monthly:[]}));
+  $('#expList').innerHTML=`<p><b>Total: ${money(j.total)}</b></p>` + ((j.rows||[]).length?`<table><tr><th>Date</th><th>Category</th><th>Vendor</th><th>Amount</th><th>Note</th><th>Receipt</th></tr>
+    ${j.rows.map(e=>`<tr><td>${esc(e.expense_date)}</td><td>${esc(e.category)}</td><td>${esc(e.vendor||'—')}</td><td>${money(e.amount)}</td><td>${esc(e.note||'')}</td>
+      <td>${e.attachment_url?`<a href="${esc(e.attachment_url)}" target="_blank" rel="noopener">view</a>`:'—'}</td></tr>`).join('')}
     </table>`:'<p class="muted">No expenses recorded yet.</p>');
+  const monthly=j.monthly||[];
+  $('#expMonthly').innerHTML=monthly.length?`<table><tr><th>Month</th><th>Total</th><th>By category</th></tr>
+    ${monthly.map(m=>`<tr><td>${esc(m.month)}</td><td>${money(m.total)}</td><td>${Object.entries(m.byCategory).map(([c,v])=>`${esc(c)}: ${money(v)}`).join(', ')}</td></tr>`).join('')}
+    </table>`:'<p class="muted">Nothing to analyze yet.</p>';
+}
+function readFileAsDataURL(file){
+  return new Promise((resolve,reject)=>{ const r=new FileReader(); r.onload=()=>resolve(r.result); r.onerror=reject; r.readAsDataURL(file); });
 }
 
 /* ---------------- Reports ---------------- */
+const REPORT_TYPES=[
+  {id:'sales-by-product',label:'Sales by product'},
+  {id:'sales-by-category',label:'Sales by category'},
+  {id:'sales-by-store',label:'Sales by store'},
+  {id:'discounts',label:'Discounts'},
+  {id:'returns-corrections',label:'Returns & corrections'},
+  {id:'cogs',label:'Cost of goods (revenue side)'},
+  {id:'stock-value',label:'Stock value'},
+  {id:'waste-costs',label:'Waste costs'},
+  {id:'staff-activity',label:'Staff activity (BackOffice actions)'},
+];
+let _lastReportRows=[];
 async function viewReports(){
   const m=$('#main');
   m.innerHTML=`<h2>Sales Reports</h2>
-    <div class="card"><h3>Top products (30 days)</h3><div id="repProducts"><p class="muted">Loading…</p></div></div>
-    <div class="card"><h3>Stock value</h3><div id="repStock"><p class="muted">Loading…</p></div></div>`;
-  boGet('/api/backoffice/reports?type=sales-by-product&days=30').then(j=>{
-    $('#repProducts').innerHTML=(j.rows||[]).length?`<table><tr><th>Product</th><th>Qty sold</th><th>Gross</th></tr>
-      ${j.rows.slice(0,20).map(r=>`<tr><td>${esc(r.name)}</td><td>${esc(r.qty)}</td><td>${money(r.gross)}</td></tr>`).join('')}</table>`:'<p class="muted">No sales recorded.</p>';
-  }).catch(e=>{ $('#repProducts').innerHTML=`<p class="muted">${esc(e.message)}</p>`; });
-  boGet('/api/backoffice/reports?type=stock-value').then(j=>{
-    $('#repStock').innerHTML=`<p><b>Total stock value: ${money(j.total)}</b></p>`+((j.rows||[]).length?`<table><tr><th>Product</th><th>Store</th><th>Balance</th><th>Value</th></tr>
-      ${j.rows.slice(0,30).map(r=>`<tr><td>${esc(r.product_key)}</td><td>${esc(r.store_id)}</td><td>${esc(r.balance)}</td><td>${money(r.value)}</td></tr>`).join('')}</table>`:'');
-  }).catch(e=>{ $('#repStock').innerHTML=`<p class="muted">${esc(e.message)}</p>`; });
+    <div class="row">
+      <select id="repType">${REPORT_TYPES.map(t=>`<option value="${t.id}">${esc(t.label)}</option>`).join('')}</select>
+      <select id="repDays"><option value="7">7 days</option><option value="30" selected>30 days</option><option value="90">90 days</option></select>
+      <button class="btn ghost" data-act="rep-load">Load</button>
+      <button class="btn ghost" data-act="rep-export">Export CSV</button>
+    </div>
+    <div class="card" id="repBox" style="margin-top:12px"><p class="muted">Pick a report and Load.</p></div>`;
+  loadReport();
+}
+async function loadReport(){
+  const type=$('#repType').value, days=$('#repDays').value;
+  const box=$('#repBox'); box.innerHTML='<p class="muted">Loading…</p>';
+  try{
+    const q=`type=${type}&days=${days}${CURRENT_STORE!=='all'?`&store=${encodeURIComponent(CURRENT_STORE)}`:''}`;
+    const j=await boGet(`/api/backoffice/reports?${q}`);
+    box.innerHTML=renderReport(type,j);
+  }catch(e){ box.innerHTML=`<p class="muted">${esc(e.message)}</p>`; _lastReportRows=[]; }
+}
+function sourceNote(j){
+  if(j.source==='unavailable') return `<p class="muted">⚠ ${esc(j.note||'Not available yet.')}</p>`;
+  if(j.source==='unavailable-partial') return `<p class="muted">⚠ ${esc(j.note||'Partial data only.')}</p>`;
+  if(j.note) return `<p class="muted">${esc(j.note)}</p>`;
+  return '';
+}
+function renderReport(type,j){
+  if(type==='sales-by-product'||type==='sales-by-category'){
+    const key=type==='sales-by-product'?'name':'category';
+    _lastReportRows=j.rows||[];
+    return sourceNote(j)+((j.rows||[]).length?`<table><tr><th>${key==='name'?'Product':'Category'}</th><th>Qty</th><th>Gross</th></tr>
+      ${j.rows.slice(0,50).map(r=>`<tr><td>${esc(r[key])}</td><td>${esc(r.qty)}</td><td>${money(r.gross)}</td></tr>`).join('')}</table>`:'<p class="muted">No sales recorded.</p>');
+  }
+  if(type==='sales-by-store'){ _lastReportRows=j.rows||[]; return sourceNote(j); }
+  if(type==='discounts'){
+    _lastReportRows=j.rows||[];
+    return `<p><b>Total discounted: ${money(j.total)}</b> across ${j.orderCount||0} orders</p>`+
+      ((j.rows||[]).length?`<table><tr><th>Order</th><th>When</th><th>Promo</th><th>Discount</th></tr>
+      ${j.rows.map(r=>`<tr><td>${esc(r.orderId)}</td><td>${new Date(r.at).toLocaleString()}</td><td>${esc(r.promo)}</td><td>${money(r.discount)}</td></tr>`).join('')}</table>`:'');
+  }
+  if(type==='returns-corrections'){
+    _lastReportRows=[...(j.returns?.rows||[]).map(r=>({...r,kind:'return'})),...(j.corrections?.rows||[]).map(r=>({...r,kind:'correction'}))];
+    return `<p><b>Returns:</b> ${j.returns?.count||0} orders, ${money(j.returns?.total)} &nbsp; <b>Corrections:</b> ${j.corrections?.count||0} orders</p>`+
+      (_lastReportRows.length?`<table><tr><th>Type</th><th>Order</th><th>When</th><th>Total</th></tr>
+      ${_lastReportRows.map(r=>`<tr><td>${esc(r.kind)}</td><td>${esc(r.orderId)}</td><td>${new Date(r.at).toLocaleString()}</td><td>${money(r.total)}</td></tr>`).join('')}</table>`:'<p class="muted">None in range.</p>');
+  }
+  if(type==='cogs'){
+    _lastReportRows=j.rows||[];
+    return sourceNote(j)+((j.rows||[]).length?`<table><tr><th>Product</th><th>Qty sold</th><th>Revenue</th></tr>
+      ${j.rows.slice(0,50).map(r=>`<tr><td>${esc(r.name)}</td><td>${esc(r.qty)}</td><td>${money(r.gross)}</td></tr>`).join('')}</table>`:'');
+  }
+  if(type==='stock-value'){
+    _lastReportRows=j.rows||[];
+    return `<p><b>Total stock value: ${money(j.total)}</b></p>`+((j.rows||[]).length?`<table><tr><th>Product</th><th>Store</th><th>Balance</th><th>Value</th></tr>
+      ${j.rows.slice(0,50).map(r=>`<tr><td>${esc(r.product_key)}</td><td>${esc(r.store_id)}</td><td>${esc(r.balance)}</td><td>${money(r.value)}</td></tr>`).join('')}</table>`:'');
+  }
+  if(type==='waste-costs'){
+    _lastReportRows=j.rows||[];
+    return `<p><b>Total waste cost: ${money(j.total)}</b></p>`+((j.rows||[]).length?`<table><tr><th>When</th><th>Item</th><th>Store</th><th>Qty</th><th>Reason</th><th>Cost</th></tr>
+      ${j.rows.slice(0,50).map(r=>`<tr><td>${new Date(r.created_at).toLocaleDateString()}</td><td>${esc(r.item_type)}:${esc(r.item_key)}</td><td>${esc(r.store_id)}</td><td>${esc(r.qty_delta)}</td><td>${esc(r.reason)}</td><td>${money(r.cost)}</td></tr>`).join('')}</table>`:'<p class="muted">No waste/damage recorded.</p>');
+  }
+  if(type==='staff-activity'){
+    _lastReportRows=j.rows||[];
+    return sourceNote(j)+((j.rows||[]).length?`<table><tr><th>Staff</th><th>Stock adj.</th><th>Kitchen tickets</th><th>Purchase orders</th><th>Expenses</th></tr>
+      ${j.rows.map(r=>`<tr><td>${esc(r.staff_id)}</td><td>${esc(r.inventoryAdjustments)}</td><td>${esc(r.kitchenTickets)}</td><td>${esc(r.purchaseOrders)}</td><td>${esc(r.expenses)}</td></tr>`).join('')}</table>`:'<p class="muted">No activity in range.</p>');
+  }
+  return '<p class="muted">Unknown report.</p>';
+}
+function exportCSV(){
+  if(!_lastReportRows.length) return toast('Nothing to export — load a report first',true);
+  const cols=Object.keys(_lastReportRows[0]);
+  const esc2=v=>'"'+String(v??'').replace(/"/g,'""')+'"';
+  const csv=[cols.join(','),..._lastReportRows.map(r=>cols.map(c=>esc2(r[c])).join(','))].join('\r\n');
+  const blob=new Blob([csv],{type:'text/csv'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+  a.download=`dank-backoffice-${$('#repType').value}-${new Date().toISOString().slice(0,10)}.csv`;
+  document.body.appendChild(a); a.click(); a.remove();
+}
+
+/* ---------------- Settings (stores + staff permissions) ---------------- */
+async function viewSettings(){
+  const m=$('#main');
+  m.innerHTML=`<h2>Settings</h2>
+    <div class="card"><h3>Stores</h3>
+      <div id="storeMgmt"><p class="muted">Loading…</p></div>
+      <form data-act="store-add" class="row" style="margin-top:10px">
+        <input name="id" placeholder="id (e.g. newbranch)" required style="width:140px">
+        <input name="name" placeholder="Name" required>
+        <input name="address" placeholder="Address">
+        <button class="btn ghost" type="submit">Add store</button>
+      </form>
+    </div>
+    <div class="card"><h3>Staff permissions</h3>
+      <p class="muted">Role sets a sensible default; checking a box here grants that one BackOffice
+        permission to this person specifically, on top of their role. You can only grant scopes you
+        have yourself.</p>
+      <div id="staffPerms"><p class="muted">Loading…</p></div>
+    </div>
+    <div class="card"><h3>Other settings</h3>
+      <p>Account, tax and payment settings live in <b>Owner mode</b> on the homepage (scroll to the
+        footer → <i>Owner</i>), and the full staff directory is in
+        <a href="/staffportal#staffinfo">Staff Portal → Staff</a>.</p>
+    </div>`;
+  renderStoreMgmt();
+  renderStaffPerms();
+}
+async function renderStoreMgmt(){
+  const j=await boGet('/api/backoffice/stores').catch(e=>({error:e.message}));
+  if(j.error){ $('#storeMgmt').innerHTML=`<p class="muted">${esc(j.error)}</p>`; return; }
+  $('#storeMgmt').innerHTML=`<table><tr><th>ID</th><th>Name</th><th>Address</th><th>Active</th><th></th></tr>
+    ${j.rows.map(s=>`<tr data-store="${esc(s.id)}">
+      <td>${esc(s.id)}</td>
+      <td><input class="st-name" value="${esc(s.name)}" style="width:140px"></td>
+      <td><input class="st-address" value="${esc(s.address||'')}" style="width:180px"></td>
+      <td><input type="checkbox" class="st-active" ${s.active?'checked':''}></td>
+      <td><button class="btn ghost" data-act="store-save" data-id="${esc(s.id)}">Save</button></td>
+    </tr>`).join('')}</table>`;
+}
+async function renderStaffPerms(){
+  const j=await boSend('/api/staff-auth','POST',{action:'list'}).catch(e=>({error:e.message}));
+  if(j.error){ $('#staffPerms').innerHTML=`<p class="muted">${esc(j.error)}</p>`; return; }
+  const scopes=j.assignableScopes||[];
+  $('#staffPerms').innerHTML=`<table><tr><th>Name</th><th>Role</th>${scopes.map(s=>`<th>${esc(s)}</th>`).join('')}<th></th></tr>
+    ${j.accounts.filter(a=>a.id!=='legacy-owner').map(a=>`<tr data-staff="${esc(a.id)}">
+      <td>${esc(a.name)}</td><td>${esc(a.role)}</td>
+      ${scopes.map(s=>`<td style="text-align:center"><input type="checkbox" class="sc-${esc(s)}" ${a.scopes?.includes(s)?'checked':''} ${a.role==='owner'?'disabled':''}></td>`).join('')}
+      <td>${a.role==='owner'?'<span class="muted">full access</span>':`<button class="btn ghost" data-act="staff-scopes-save" data-id="${esc(a.id)}">Save</button>`}</td>
+    </tr>`).join('')}</table>`;
+}
+
+/* ---------------- Promotions (reads the existing promo-code module; editing still happens in staffportal) ---------------- */
+async function viewPromotions(){
+  const m=$('#main');
+  m.innerHTML=`<h2>Promotions</h2>
+    <p class="muted">Create/edit promo codes in <a href="/staffportal#promotions">Staff Portal → Promotions</a> —
+      this view surfaces usage and redemption history for the codes that already exist.</p>
+    <div class="card" id="promoList"><p class="muted">Loading…</p></div>
+    <div class="card"><h3>Recent redemptions</h3><div id="promoRedemptions"><p class="muted">Loading…</p></div></div>`;
+  try{
+    const r=await fetch('/api/staff-tools?section=promotions',{headers:authHeaders()});
+    const j=await r.json();
+    const codes=Object.keys(j.promotions||{});
+    $('#promoList').innerHTML=codes.length?`<table><tr><th>Code</th><th>Type</th><th>Value</th><th>Categories</th><th>Used</th><th>Limit</th><th>Active</th></tr>
+      ${codes.map(c=>{const p=j.promotions[c];return `<tr><td>${esc(c)}</td><td>${esc(p.type)}</td><td>${esc(p.value)}</td><td>${(p.categories||[]).map(esc).join(', ')||'<span class="muted">any</span>'}</td><td>${esc(j.usage?.[c]||0)}</td><td>${esc(p.quantity||'∞')}</td><td>${p.active?'✅':'—'}</td></tr>`}).join('')}
+      </table>`:'<p class="muted">No promo codes yet.</p>';
+  }catch(e){ $('#promoList').innerHTML=`<p class="muted">${esc(e.message)}</p>`; }
+  try{
+    const r=await fetch('/api/staff-tools?section=promotions&redemptions=1',{headers:authHeaders()});
+    const j=await r.json();
+    const rows=(j.redemptions||[]).slice(0,50);
+    $('#promoRedemptions').innerHTML=rows.length?`<table><tr><th>Code</th><th>Order</th><th>When</th><th>Discount</th></tr>
+      ${rows.map(r=>`<tr><td>${esc(r.code)}</td><td>${esc(r.orderId)}</td><td>${new Date(r.at).toLocaleString()}</td><td>${money(r.discount)}</td></tr>`).join('')}
+      </table>`:'<p class="muted">No redemptions recorded yet.</p>';
+  }catch(e){ $('#promoRedemptions').innerHTML=`<p class="muted">${esc(e.message)}</p>`; }
 }
 
 const VIEWS={overview:viewOverview,products:viewProducts,inventory:viewInventory,food:viewFood,kitchen:viewKitchen,
-  reports:viewReports,suppliers:viewSuppliers,purchasing:viewPurchasing,expenses:viewExpenses};
+  reports:viewReports,suppliers:viewSuppliers,purchasing:viewPurchasing,expenses:viewExpenses,settings:viewSettings,promotions:viewPromotions};
 
 function setTab(id){
   TAB=id; renderNav();
@@ -471,6 +640,20 @@ document.addEventListener('click',async e=>{
       try{ await boSend('/api/backoffice/kitchen','PATCH',{id:el.dataset.id,status:el.dataset.to}); toast('Updated'); refreshKitchen(); }
       catch(err){ toast(err.message,true); } return;
     }
+    case 'store-save': {
+      const tr=el.closest('tr');
+      const body={id:el.dataset.id,name:tr.querySelector('.st-name').value,address:tr.querySelector('.st-address').value,active:tr.querySelector('.st-active').checked};
+      try{ await boSend('/api/backoffice/stores','PATCH',body); toast('Saved'); STORES=(await boGet('/api/backoffice/stores')).rows||[]; renderStoreSelect(); }
+      catch(err){ toast(err.message,true); } return;
+    }
+    case 'staff-scopes-save': {
+      const tr=el.closest('tr');
+      const scopes=[...tr.querySelectorAll('input[type=checkbox]:checked')].map(cb=>cb.className.replace('sc-',''));
+      try{ await boSend('/api/staff-auth','POST',{action:'scopes',id:el.dataset.id,scopes}); toast('Permissions saved'); }
+      catch(err){ toast(err.message,true); } return;
+    }
+    case 'rep-load': { await loadReport(); return; }
+    case 'rep-export': { exportCSV(); return; }
   }
 });
 
@@ -515,8 +698,16 @@ document.addEventListener('submit',async e=>{
       toast('Recipe saved'); viewFood();
     } else if(act==='expense-add'){
       b.amount=Number(b.amount);
+      const file=$('#expAttachment')?.files?.[0];
+      if(file){
+        if(file.size>700000) return toast('Receipt photo is too large (max ~700KB)',true);
+        b.attachment=await readFileAsDataURL(file);
+      }
       await boSend('/api/backoffice/expenses','POST',b);
       toast('Expense recorded'); viewExpenses();
+    } else if(act==='store-add'){
+      await boSend('/api/backoffice/stores','POST',b);
+      toast('Store added'); form.reset(); const s=await boGet('/api/backoffice/stores'); STORES=s.rows||[]; renderStoreSelect(); renderStoreMgmt();
     }
   }catch(err){ toast(err.message,true); }
 });

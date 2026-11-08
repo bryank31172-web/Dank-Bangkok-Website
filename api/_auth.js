@@ -56,7 +56,7 @@ export function safeEq(a, b) {
 const STAFF_ROLE_PERMISSIONS = Object.freeze({
   owner:["*"],
   manager:["orders","dashboard","sales","announcement_read","products","announcements","staff_manage","promotions",
-    "inventory_view","inventory_adjust","suppliers","purchasing","expenses","food_ops","kitchen_tickets"],
+    "inventory_view","inventory_adjust","suppliers","purchasing","expenses","food_ops","kitchen_tickets","settings"],
   professional:["orders","dashboard","announcement_read","inventory_view","kitchen_tickets"],
   parttime:["orders","dashboard","announcement_read"],
   kitchen:["dashboard","announcement_read","kitchen_tickets","food_ops"],
@@ -71,7 +71,7 @@ function readStaffToken(token){
   try{
     const p=JSON.parse(Buffer.from(payload,"base64url").toString("utf8"));
     if(!p.id||!p.role||!p.exp||Date.now()>=p.exp||!STAFF_ROLE_PERMISSIONS[p.role]) return null;
-    return {id:p.id,name:p.name||"Staff",role:p.role,active:true};
+    return {id:p.id,name:p.name||"Staff",role:p.role,active:true,scopes:Array.isArray(p.scopes)?p.scopes:[]};
   }catch{return null;}
 }
 function identityFromCredential(given){
@@ -79,17 +79,22 @@ function identityFromCredential(given){
   if(k&&safeEq(given,k)) return {id:"legacy-owner",name:"Bryan",role:"owner",active:true,legacy:true};
   return readStaffToken(given);
 }
+/* `identity.scopes` are the per-account extra grants from setAccountScopes()
+   in _staff-accounts.js (docs/dank-backoffice/BACKOFFICE_REQUIREMENTS.md's
+   "StoreHub-style granular permissions" gap) — baked into the signed token at
+   login so a permission check never needs its own storage round trip, same
+   reasoning as the role check itself. */
 export function hasPermission(identity,permission){
   if(!identity) return false;
   const list=STAFF_ROLE_PERMISSIONS[identity.role]||[];
-  return list.includes("*")||list.includes(permission);
+  return list.includes("*")||list.includes(permission)||Boolean(identity.scopes?.includes(permission));
 }
 export function staffIdentity(req){
   return identityFromCredential(keyFrom(req));
 }
 staffIdentity.makeToken=function(account){
   if(!staffSecret()) throw new Error("ADMIN_SECRET is not configured");
-  const payload=b64u(JSON.stringify({id:account.id,name:account.name,role:account.role,exp:Date.now()+1000*60*60*12}));
+  const payload=b64u(JSON.stringify({id:account.id,name:account.name,role:account.role,scopes:Array.isArray(account.scopes)?account.scopes:[],exp:Date.now()+1000*60*60*12}));
   return payload+"."+staffSign(payload);
 };
 

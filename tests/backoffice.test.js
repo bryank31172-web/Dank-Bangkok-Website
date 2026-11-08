@@ -225,16 +225,26 @@ function call(handler, { method = 'GET', body, query = {} } = {}) {
 /* ---------------------------------------------------------- permission consistency */
 test('STAFF_ROLE_PERMISSIONS (_auth.js) and ROLE_PERMISSIONS (_staff-accounts.js) stay in sync', async () => {
   // These two files intentionally carry separate copies (see the comment in
-  // _auth.js for why) — this test exists specifically because nothing else
-  // would catch them drifting apart.
-  const authMod = await import('../api/_auth.js?t=' + Date.now());
-  const acctMod = await import('../api/_staff-accounts.js?t=' + Date.now());
-  // Both modules freeze an object but don't export it directly for _auth.js;
-  // exercise behaviour instead of reaching into internals.
-  for (const role of Object.keys(acctMod.ROLE_PERMISSIONS)) {
-    assert.ok(acctMod.ROLE_LABELS[role], `role '${role}' has no label`);
+  // both files for why — a token-based session must be checkable without a
+  // storage round trip). _auth.js doesn't export its copy directly, so this
+  // exercises it indirectly through hasPermission()/staffIdentity instead of
+  // reaching into the module — but it checks every role's full scope list
+  // against _staff-accounts.js's copy, not just one role, so the two files
+  // drifting apart on ANY role or ANY scope fails this test.
+  const { hasPermission } = await import('../api/_auth.js');
+  const { ROLE_PERMISSIONS, ROLE_LABELS } = await import('../api/_staff-accounts.js');
+  const ALL_KNOWN_SCOPES = [...new Set(Object.values(ROLE_PERMISSIONS).flat())].filter((s) => s !== '*');
+
+  for (const role of Object.keys(ROLE_PERMISSIONS)) {
+    assert.ok(ROLE_LABELS[role], `role '${role}' has no label`);
+    const identity = { role };
+    for (const scope of ALL_KNOWN_SCOPES) {
+      const expected = ROLE_PERMISSIONS[role].includes('*') || ROLE_PERMISSIONS[role].includes(scope);
+      assert.equal(hasPermission(identity, scope), expected,
+        `role '${role}' x scope '${scope}': _staff-accounts.js says ${expected}, but _auth.js's hasPermission() disagrees — the two files have drifted apart`);
+    }
   }
-  assert.deepEqual(acctMod.ROLE_PERMISSIONS.kitchen.sort(), ['announcement_read', 'dashboard', 'food_ops', 'kitchen_tickets'].sort());
+  assert.deepEqual(ROLE_PERMISSIONS.kitchen.sort(), ['announcement_read', 'dashboard', 'food_ops', 'kitchen_tickets'].sort());
 });
 
 /* ---------------------------------------------------------- kitchen ticket state machine */
@@ -404,6 +414,39 @@ test('an expense needs a known category, a positive amount and a date', async ()
     assert.equal(missingDate.code, 400);
     const ok = await call(expensesHandler, { method: 'POST', body: { category: 'rent', amount: 25000, expense_date: '2026-01-01' } });
     assert.equal(ok.code, 200);
+  });
+});
+
+/* ---------------------------------------------------------- expenses (attachments + monthly) */
+test('an expense attachment must be a real image data URL or an http(s) link, within the size cap', async () => {
+  await withFakeSupabase(async () => {
+    const expensesHandler = (await import('../api/backoffice/expenses.js')).default;
+    const base = { category: 'repairs', amount: 500, expense_date: '2026-01-15' };
+    const badFormat = await call(expensesHandler, { method: 'POST', body: { ...base, attachment: 'not-a-data-url' } });
+    assert.equal(badFormat.code, 400);
+    const tooBig = await call(expensesHandler, { method: 'POST', body: { ...base, attachment: 'data:image/png;base64,' + 'A'.repeat(800000) } });
+    assert.equal(tooBig.code, 413);
+    const badLink = await call(expensesHandler, { method: 'POST', body: { ...base, attachment_url: 'ftp://not-http' } });
+    assert.equal(badLink.code, 400);
+    const ok = await call(expensesHandler, { method: 'POST', body: { ...base, attachment: 'data:image/png;base64,iVBORw0KGgo=' } });
+    assert.equal(ok.code, 200, JSON.stringify(ok.data));
+    assert.equal(ok.data.row.attachment_url, 'data:image/png;base64,iVBORw0KGgo=');
+  });
+});
+
+test('monthly cost analysis groups expenses by month and category', async () => {
+  await withFakeSupabase(async () => {
+    const expensesHandler = (await import('../api/backoffice/expenses.js')).default;
+    await call(expensesHandler, { method: 'POST', body: { category: 'rent', amount: 20000, expense_date: '2026-01-05' } });
+    await call(expensesHandler, { method: 'POST', body: { category: 'utilities', amount: 3000, expense_date: '2026-01-20' } });
+    await call(expensesHandler, { method: 'POST', body: { category: 'rent', amount: 20000, expense_date: '2026-02-05' } });
+
+    const res = await call(expensesHandler, { method: 'GET', query: { monthly: '1' } });
+    assert.equal(res.data.monthly.length, 2);
+    const jan = res.data.monthly.find((m) => m.month === '2026-01');
+    assert.equal(jan.total, 23000);
+    assert.equal(jan.byCategory.rent, 20000);
+    assert.equal(jan.byCategory.utilities, 3000);
   });
 });
 

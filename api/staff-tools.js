@@ -2,6 +2,7 @@ import crypto from "node:crypto";
 import { requirePermission } from "./_auth.js";
 import { getJSON, setJSON } from "./_store.js";
 import { getMenu, bustMenu } from "./_menu.js";
+import { listPromotionRedemptions } from "./_promotion.js";
 
 const YEAR=60*60*24*365;
 const text=(v,n=160)=>String(v??"").trim().slice(0,n);
@@ -22,7 +23,12 @@ export default async function handler(req,res){
       if(section==="announcements") return res.status(200).json({ok:true,announcements:(await getJSON("staff:announcements"))||[]});
       const ov=(await getJSON("admin:overrides"))||{}, promotions=ov.promos||{};
       const usage=Object.fromEntries(await Promise.all(Object.keys(promotions).map(async code=>[code,Math.max(0,Number(await getJSON("promotion:uses:"+code))||0)])));
-      return res.status(200).json({ok:true,promotions,usage});
+      // Redemption history (docs/dank-backoffice/BACKOFFICE_REQUIREMENTS.md's
+      // Module I gap) — only fetched when asked for, since walking the index
+      // costs a read per redemption and most callers of this endpoint (the
+      // promo editor itself) don't need it.
+      const redemptions=req.query?.redemptions?await listPromotionRedemptions({limit:300}):undefined;
+      return res.status(200).json({ok:true,promotions,usage,...(redemptions?{redemptions}:{})});
     }
     if(req.method!=="POST") return res.status(405).json({error:"method"});
     const b=req.body||{}, action=String(b.action||"");
@@ -38,7 +44,9 @@ export default async function handler(req,res){
       if(!code)return res.status(400).json({error:"promotion code required"});
       if(action==="delete") delete ov.promos[code];
       else if(action==="availability") ov.promos[code]={...(ov.promos[code]||{}),active:b.active===true||b.active==="true"};
-      else {const quantity=Math.floor(number(b.quantity));if(quantity<1)return res.status(400).json({error:"promotion quantity must be a whole number of at least 1"});ov.promos[code]={type:["pct","fixed","freedelivery"].includes(b.type)?b.type:"pct",value:number(b.value),min:number(b.min),quantity,desc:text(b.desc,160),active:b.active!==false&&b.active!=="false"};}
+      else {const quantity=Math.floor(number(b.quantity));if(quantity<1)return res.status(400).json({error:"promotion quantity must be a whole number of at least 1"});
+        const categories=Array.isArray(b.categories)?b.categories.map(v=>text(v,40)).filter(Boolean).slice(0,20):(typeof b.categories==="string"?b.categories.split(",").map(v=>v.trim()).filter(Boolean).slice(0,20):[]);
+        ov.promos[code]={type:["pct","fixed","freedelivery"].includes(b.type)?b.type:"pct",value:number(b.value),min:number(b.min),quantity,categories,desc:text(b.desc,160),active:b.active!==false&&b.active!=="false"};}
     } else {
       const id=text(b.id,120), name=text(b.name,120);if(!id&&!name)return res.status(400).json({error:"product required"});
       const rawPicture=String(b.picture??"").trim();
