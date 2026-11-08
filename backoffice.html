@@ -91,6 +91,10 @@
 const $=(s,r=document)=>r.querySelector(s);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const money=n=>'฿'+Math.round(Number(n)||0).toLocaleString();
+// Per-unit ingredient costs are routinely sub-baht (rice is ~฿0.05/g) — money()'s
+// whole-baht rounding would show every one of them as "฿0". Found by actually
+// opening the Food & Drinks tab in a browser, not by code review.
+const moneyPrecise=n=>'฿'+(Number(n)||0).toFixed(Number(n)<1?4:2);
 
 let KEY=localStorage.getItem('dankStaffToken')||sessionStorage.getItem('dankStaffToken')||localStorage.getItem('dankStaffKey')||'';
 let PROFILE=null, PERMS=[], STORES=[], CURRENT_STORE='all', TAB='overview';
@@ -352,7 +356,7 @@ async function viewFood(){
   const ings=await boGet('/api/backoffice/ingredients').catch(()=>({rows:[]}));
   window._ingredients=ings.rows||[];
   $('#ingList').innerHTML=(ings.rows||[]).length?`<table><tr><th>Name</th><th>Unit</th><th>Cost/unit</th></tr>
-    ${ings.rows.map(i=>`<tr><td>${esc(i.name)}</td><td>${esc(i.unit)}</td><td>${money(i.cost_per_unit)}</td></tr>`).join('')}</table>`:'<p class="muted">No ingredients yet.</p>';
+    ${ings.rows.map(i=>`<tr><td>${esc(i.name)}</td><td>${esc(i.unit)}</td><td>${moneyPrecise(i.cost_per_unit)}/${esc(i.unit)}</td></tr>`).join('')}</table>`:'<p class="muted">No ingredients yet.</p>';
   addRecipeLine();
   const recipes=await boGet('/api/backoffice/recipes').catch(()=>({rows:[]}));
   $('#recipeList').innerHTML=(recipes.rows||[]).length?`<table><tr><th>Menu item</th><th>Recipe</th><th>Cost/serving</th></tr>

@@ -67,6 +67,35 @@ New, additive-only surface on top of the existing site:
    empty and needs real entry — the Dashboard and Reports tabs will look empty/zero until then. This
    is expected, not a bug: nothing is pre-filled with guessed data.
 
+## Verification actually performed this session (not just claimed)
+
+Two things flagged earlier as "unverified claims" were genuinely tested, not just asserted:
+
+- **The migration against real Postgres.** `tests/backoffice-migration.test.js` runs the actual
+  `0001_dank_backoffice.sql` against `@electric-sql/pglite` (Postgres compiled to WASM — a real
+  Postgres engine, no Docker needed), now a devDependency (the first one this repo has ever
+  declared — see note in that test file for why that's fine: it's test-only, nothing deployed to
+  Vercel imports it). It proved: the migration runs clean and is idempotent, all 17 tables exist,
+  foreign keys and check constraints actually reject bad data (not just declared — the in-memory
+  fake in `tests/backoffice.test.js` couldn't catch a real constraint bug), column defaults apply,
+  `bo_ledger_adjust()` and `bo_next_po_number()` work correctly as real plpgsql/sequence objects,
+  cascade deletes work, and RLS is enabled on every table. **This is still not the same as running
+  it against Bryan's actual production Supabase project** — that needs his own credentials and his
+  own execution, per the checklist above. What changed is that the SQL itself is now proven
+  correct Postgres, not just "looks right."
+- **`backoffice.html` in an actual browser.** Served locally with a stub API (static files + canned
+  JSON responses, the same `http.createServer` + API-stubbing technique `PROJECT-HANDOVER.md`
+  documents for Playwright page tests), then driven with a real browser: logged in, clicked through
+  all 11 tabs, added/removed purchase-order lines, advanced a kitchen ticket (watched the error
+  toast appear on a 404, then the success toast once stubbed), exported a CSV, toggled light/dark
+  theme (confirmed the background actually changes color, not just an attribute flip), and
+  previewed the mobile nav layout. This found and fixed one real bug: ingredient cost-per-unit
+  (e.g. ฿0.05/g for rice) was rendering as "฿0" because it reused the whole-baht rounding helper
+  meant for totals — now has its own precise formatter. **One real limitation:** the harness's
+  window-resize tool didn't actually change the page's viewport width, so true narrow-phone
+  rendering (versus the ~767px width tested, and a forced-CSS preview of the `@media` block) wasn't
+  verified on a real small screen — worth a quick check on an actual phone before relying on it.
+
 ## Rollback plan
 
 - **Code:** this is all on the `dank-backoffice` branch, not merged. Rollback = don't merge (or
@@ -94,10 +123,12 @@ New, additive-only surface on top of the existing site:
    surface and needs its own review. Likewise, **COGS is revenue-only** — order lines are recorded
    by product name, not the BackOffice `product_key`, so cost can't be reliably joined per line
    without that same order-write change.
-3. **`backoffice.html`'s UI is functional, not polished.** Now has 11 tabs including Settings (store
-   management + per-employee BackOffice permission grants) and a real Promotions view (usage +
-   redemption history). Reports cover 9 types with CSV export. Detailed UX passes (richer tables,
-   bulk actions, mobile polish) remain straightforward follow-up work against working APIs.
+3. **`backoffice.html`'s UI is functional, not polished — but it has now actually been opened in a
+   browser** (see "Verification actually performed this session" above), not just syntax-checked.
+   11 tabs including Settings (store management + per-employee BackOffice permission grants) and a
+   real Promotions view (usage + redemption history). Reports cover 9 types with CSV export.
+   Detailed UX passes (richer tables, bulk actions) remain follow-up work; true narrow-phone
+   rendering specifically still wants a check on a real device (see that section for why).
 4. **StoreHub modules not surveyed:** Stock Transfers/Return detail screens, the 11 individual sales
    report types, Loyalty/Membership, Online Store/Beep detail, Billing — `STOREHUB_FEATURE_ANALYSIS.md`
    lists these as open unknowns. DANK BackOffice's own Stock Transfer and Expenses modules were built
@@ -105,11 +136,11 @@ New, additive-only surface on top of the existing site:
 5. **Staff permission grants expire with the session token (12h).** A scope granted via Settings →
    Staff permissions takes effect on that person's next login, same staleness window the existing
    role field already has — not a new limitation introduced by this feature.
-6. **No automated DB-level tests** — `tests/backoffice.test.js` tests the endpoint logic against an
-   in-memory fake of Supabase's REST surface (modeled on the actual migration schema), not a real
-   Postgres instance. The race-safety of `bo_ledger_adjust`'s advisory lock is reasoned about and
-   documented in `DATABASE_SCHEMA.md`, but has not been load-tested against a real concurrent
-   Postgres connection pool.
+6. **DB-level tests now run against real Postgres** (`tests/backoffice-migration.test.js`, see
+   above) — `tests/backoffice.test.js`'s in-memory fake still covers the endpoint logic on top.
+   What's still not tested: `bo_ledger_adjust`'s advisory lock under genuine multi-connection
+   concurrency (PGlite is single-connection; the lock's correctness is standard Postgres behavior,
+   trusted, but a real concurrent-write load test against an actual Postgres server hasn't been run).
 7. **No backup/restore test was performed** — this needs access to the actual Supabase project
    (service-role key), which this session didn't have reason to use destructively. Recommend Bryan
    (or whoever applies the migration) takes a Supabase backup/snapshot immediately before and
