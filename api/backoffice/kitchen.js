@@ -16,7 +16,7 @@ import { boConfigured, boSelect, boInsert, boUpdate, boLedgerAdjust, enc } from 
 
 const ORDER = ["new", "preparing", "ready", "served"];
 
-function isValidTransition(from, to) {
+export function isValidTransition(from, to) {
   if (to === "cancelled") return from !== "served";
   const fi = ORDER.indexOf(from), ti = ORDER.indexOf(to);
   return fi >= 0 && ti === fi + 1;
