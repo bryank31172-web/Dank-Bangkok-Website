@@ -1,0 +1,551 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>DANK BackOffice</title>
+<style>
+  :root{
+    --brand:#007A4D; --brand-dark:#00603c;
+    --bg:#f5f7f6; --panel:#ffffff; --text:#14231c; --muted:#5b6b64; --line:#dde4e1;
+    --danger:#c0392b; --warn:#b8860b; --ok:#1f8a4c;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{ --bg:#0f1512; --panel:#161f1a; --text:#e8efe9; --muted:#9db0a6; --line:#273830; }
+  }
+  html[data-theme="dark"]{ --bg:#0f1512; --panel:#161f1a; --text:#e8efe9; --muted:#9db0a6; --line:#273830; }
+  html[data-theme="light"]{ --bg:#f5f7f6; --panel:#ffffff; --text:#14231c; --muted:#5b6b64; --line:#dde4e1; }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);font:14px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+  a{color:var(--brand)}
+  button{font:inherit;cursor:pointer}
+  input,select,textarea{font:inherit;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--panel);color:var(--text)}
+  .btn{background:var(--brand);color:#fff;border:none;border-radius:8px;padding:9px 14px;font-weight:600}
+  .btn:hover{background:var(--brand-dark)}
+  .btn.ghost{background:transparent;color:var(--brand);border:1px solid var(--brand)}
+  .btn.danger{background:var(--danger)}
+  .btn:disabled{opacity:.5;cursor:not-allowed}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:14px}
+  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line)}
+  th{color:var(--muted);font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.02em}
+  .badge{display:inline-block;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:700}
+  .badge.open{background:#fff3cd;color:#8a6500}
+  .badge.ok{background:#d4f5e3;color:var(--ok)}
+  .badge.warn{background:#fde2d8;color:var(--danger)}
+  .kpi{font-size:26px;font-weight:800}
+  .muted{color:var(--muted)}
+  .grid{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}
+  #loginGate{display:flex;align-items:center;justify-content:center;min-height:100vh;flex-direction:column;gap:12px;text-align:center;padding:20px}
+  #app{display:none}
+  header.top{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;background:var(--panel);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:5}
+  header.top b{color:var(--brand);font-size:18px}
+  .layout{display:flex;min-height:calc(100vh - 53px)}
+  nav.side{width:200px;flex-shrink:0;border-right:1px solid var(--line);background:var(--panel);padding:10px}
+  nav.side button{display:block;width:100%;text-align:left;background:none;border:none;padding:10px 12px;border-radius:8px;color:var(--text)}
+  nav.side button.on{background:var(--brand);color:#fff}
+  nav.side button[hidden]{display:none}
+  main{flex:1;padding:18px;min-width:0}
+  section[data-view]{display:none}
+  section[data-view].on{display:block}
+  h2{margin:0 0 14px}
+  .toast{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);background:var(--text);color:var(--bg);padding:10px 16px;border-radius:8px;font-size:13px;opacity:0;pointer-events:none;transition:opacity .2s;z-index:50}
+  .toast.on{opacity:1}
+  @media (max-width:760px){
+    .layout{flex-direction:column}
+    nav.side{width:100%;display:flex;overflow-x:auto;gap:4px;border-right:none;border-bottom:1px solid var(--line)}
+    nav.side button{white-space:nowrap}
+  }
+</style>
+</head>
+<body>
+
+<div id="loginGate">
+  <b style="color:var(--brand);font-size:22px">DANK BackOffice</b>
+  <p class="muted">Sign in on the staff portal first, then come back here.</p>
+  <a class="btn" href="/staffportal">Go to Staff Portal</a>
+</div>
+
+<div id="app">
+  <header class="top">
+    <b>DANK BackOffice</b>
+    <div class="row">
+      <select id="storeSel" data-act="store-change" style="padding:6px 8px"></select>
+      <span id="whoAmI" class="muted"></span>
+      <button class="btn ghost" data-act="theme-toggle">🌓</button>
+      <button class="btn ghost" data-act="logout">Log out</button>
+    </div>
+  </header>
+  <div class="layout">
+    <nav class="side" id="nav"></nav>
+    <main id="main"></main>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+'use strict';
+const $=(s,r=document)=>r.querySelector(s);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const money=n=>'฿'+Math.round(Number(n)||0).toLocaleString();
+
+let KEY=localStorage.getItem('dankStaffToken')||sessionStorage.getItem('dankStaffToken')||localStorage.getItem('dankStaffKey')||'';
+let PROFILE=null, PERMS=[], STORES=[], CURRENT_STORE='all', TAB='overview';
+const can=p=>PERMS.includes('*')||PERMS.includes(p);
+
+function authHeaders(){ return {'X-Staff-Key':KEY,'Authorization':'Bearer '+KEY}; }
+async function boGet(path){
+  const r=await fetch(path,{headers:authHeaders()});
+  const j=await r.json().catch(()=>({}));
+  if(!r.ok) throw new Error(j.error||j.detail||('HTTP '+r.status));
+  return j;
+}
+async function boSend(path,method,body){
+  const r=await fetch(path,{method,headers:{'Content-Type':'application/json',...authHeaders()},body:JSON.stringify(body||{})});
+  const j=await r.json().catch(()=>({}));
+  if(!r.ok) throw new Error(j.error||j.detail||('HTTP '+r.status));
+  return j;
+}
+let toastT;
+function toast(msg,isErr){
+  const t=$('#toast'); t.textContent=msg; t.style.background=isErr?'var(--danger)':'var(--text)';
+  t.classList.add('on'); clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove('on'),3200);
+}
+
+const NAV=[
+  {id:'overview',label:'Overview',perm:'dashboard'},
+  {id:'products',label:'Products',perm:'inventory_view'},
+  {id:'inventory',label:'Inventory',perm:'inventory_view'},
+  {id:'food',label:'Food & Drinks',perm:'food_ops'},
+  {id:'kitchen',label:'Kitchen',perm:'kitchen_tickets'},
+  {id:'reports',label:'Sales Reports',perm:'dashboard'},
+  {id:'suppliers',label:'Suppliers',perm:'suppliers'},
+  {id:'purchasing',label:'Purchase Orders',perm:'purchasing'},
+  {id:'expenses',label:'Expenses',perm:'expenses'},
+  {id:'promotions',label:'Promotions',perm:'promotions',external:'/staffportal#promotions'},
+  {id:'staff',label:'Staff',perm:'staff_manage',external:'/staffportal#staffinfo'},
+];
+
+function renderNav(){
+  $('#nav').innerHTML=NAV.map(n=>can(n.perm)
+    ?`<button data-act="tab" data-tab="${n.id}" data-ext="${esc(n.external||'')}" class="${TAB===n.id?'on':''}">${esc(n.label)}</button>`
+    :'').join('');
+}
+
+function renderStoreSelect(){
+  $('#storeSel').innerHTML='<option value="all">All stores</option>'+
+    STORES.map(s=>`<option value="${esc(s.id)}">${esc(s.name)}</option>`).join('');
+  $('#storeSel').value=CURRENT_STORE;
+}
+
+/* ---------------- Overview ---------------- */
+async function viewOverview(){
+  const m=$('#main'); m.innerHTML='<h2>Overview</h2><p class="muted">Loading…</p>';
+  try{
+    const d=await boGet(`/api/backoffice/dashboard?range=today&store=${encodeURIComponent(CURRENT_STORE)}`);
+    const sales=d.sales||{}, lowStock=d.lowStock||{rows:[]}, po=d.purchaseOrders||{}, kt=d.kitchenTickets||{};
+    m.innerHTML=`
+      <h2>Overview — today</h2>
+      <div class="grid">
+        <div class="card"><div class="muted">Sales (${esc(sales.source||'—')})</div><div class="kpi">${money(sales.total)}</div><div class="muted">${sales.count||0} orders</div></div>
+        <div class="card"><div class="muted">Low stock</div><div class="kpi">${lowStock.count||0}</div><div class="muted">items at/under threshold</div></div>
+        <div class="card"><div class="muted">Open purchase orders</div><div class="kpi">${po.open||0}</div></div>
+        <div class="card"><div class="muted">Pending kitchen tickets</div><div class="kpi">${kt.pending||0}</div></div>
+      </div>
+      <div class="card">
+        <h3>Recent stock adjustments</h3>
+        ${renderLedgerTable((d.recentStockAdjustments||{}).rows||[])}
+      </div>
+      <div class="card">
+        <h3>Low-stock items</h3>
+        ${lowStock.rows.length?`<table><tr><th>Product</th><th>Store</th><th>Balance</th><th>Threshold</th></tr>
+          ${lowStock.rows.map(r=>`<tr><td>${esc(r.product_key)}</td><td>${esc(r.store_id)}</td><td>${esc(r.balance)}</td><td>${esc(r.threshold)}</td></tr>`).join('')}
+        </table>`:'<p class="muted">Nothing below threshold.</p>'}
+      </div>
+    `;
+  }catch(e){ m.innerHTML=`<h2>Overview</h2><p class="muted">Couldn't load: ${esc(e.message)}</p>`; }
+}
+function renderLedgerTable(rows){
+  if(!rows.length) return '<p class="muted">No movements yet.</p>';
+  return `<table><tr><th>When</th><th>Item</th><th>Store</th><th>Δ</th><th>Balance</th><th>Reason</th></tr>
+    ${rows.map(r=>`<tr><td>${new Date(r.created_at).toLocaleString()}</td><td>${esc(r.item_type)}:${esc(r.item_key)}</td><td>${esc(r.store_id)}</td>
+      <td style="color:${r.qty_delta<0?'var(--danger)':'var(--ok)'}">${r.qty_delta>0?'+':''}${esc(r.qty_delta)}</td>
+      <td>${esc(r.balance_after)}</td><td>${esc(r.reason)}</td></tr>`).join('')}</table>`;
+}
+
+/* ---------------- Products (BackOffice fields only — BRYAN POS owns the rest) ---------------- */
+async function viewProducts(){
+  const m=$('#main');
+  m.innerHTML=`<h2>Products</h2>
+    <p class="muted">Name, price and stock count are owned by BRYAN POS and shown read-only. Cost, supplier and
+    per-store par levels are BackOffice-only fields.</p>
+    <div class="row"><input id="prodSearch" placeholder="Search by name or SKU…" style="flex:1;min-width:200px"><button class="btn" data-act="prod-search">Search</button></div>
+    <div id="prodResults" class="card" style="margin-top:12px"><p class="muted">Search for a product to edit its BackOffice fields.</p></div>`;
+}
+async function searchProducts(){
+  const q=$('#prodSearch').value.trim().toLowerCase();
+  const r=await fetch('/api/products'); const j=await r.json().catch(()=>({}));
+  const list=(j.products||j||[]).filter(p=>!q||String(p.name||'').toLowerCase().includes(q)||String(p.id||p.sku||'').toLowerCase().includes(q)).slice(0,25);
+  $('#prodResults').innerHTML=list.length?`<table><tr><th>Name</th><th>SKU</th><th>Stock</th><th></th></tr>
+    ${list.map(p=>`<tr><td>${esc(p.name)}</td><td>${esc(p.id||p.sku)}</td><td>${esc(p.stock)}</td>
+      <td><button class="btn ghost" data-act="prod-edit" data-key="${esc(p.id||p.sku)}" data-name="${esc(p.name)}">Edit BackOffice fields</button></td></tr>`).join('')}
+    </table>`:'<p class="muted">No matches.</p>';
+}
+async function editProductSettings(key,name){
+  let settings={};
+  try{ const j=await boGet(`/api/backoffice/product-settings?product_key=${encodeURIComponent(key)}`); settings=j.settings||{}; }catch(e){}
+  const suppliers=await loadSuppliersCached();
+  $('#prodResults').innerHTML=`<h3>${esc(name)}</h3>
+    <form data-act="prod-settings-save" data-key="${esc(key)}" class="row">
+      <label>Cost price <input name="cost_price" type="number" step="0.01" value="${esc(settings.cost_price??'')}" style="width:110px"></label>
+      <label>Supplier <select name="supplier_id"><option value="">—</option>${suppliers.map(s=>`<option value="${esc(s.id)}" ${s.id===settings.supplier_id?'selected':''}>${esc(s.name)}</option>`).join('')}</select></label>
+      <label><input type="checkbox" name="track_stock" ${settings.track_stock!==false?'checked':''}> Track stock</label>
+      <button class="btn" type="submit">Save</button>
+      <button class="btn ghost" type="button" data-act="prod-search">Back to search</button>
+    </form>`;
+}
+let _suppliersCache=null;
+async function loadSuppliersCached(){
+  if(_suppliersCache) return _suppliersCache;
+  try{ const j=await boGet('/api/backoffice/suppliers'); return (_suppliersCache=j.rows||[]); }catch(e){ return []; }
+}
+
+/* ---------------- Inventory ---------------- */
+async function viewInventory(){
+  const m=$('#main');
+  m.innerHTML=`<h2>Inventory</h2>
+    <div class="card">
+      <h3>Manual adjustment</h3>
+      <form data-act="inv-adjust" class="row">
+        <select name="item_type"><option value="product">Product</option><option value="ingredient">Ingredient</option></select>
+        <input name="item_key" placeholder="product SKU / ingredient id" required style="min-width:160px">
+        <select name="store_id">${STORES.map(s=>`<option value="${esc(s.id)}">${esc(s.name)}</option>`).join('')}</select>
+        <input name="qty_delta" type="number" step="0.001" placeholder="qty Δ (-5 or 5)" required style="width:140px">
+        <select name="reason"><option value="manual_adjust">Manual adjust</option><option value="waste">Waste</option><option value="damage">Damage</option></select>
+        <input name="note" placeholder="note (optional)" style="flex:1;min-width:140px">
+        <button class="btn" type="submit">Record</button>
+      </form>
+    </div>
+    <div class="card">
+      <div class="row" style="justify-content:space-between"><h3 style="margin:0">Recent movements</h3><button class="btn ghost" data-act="inv-refresh">Refresh</button></div>
+      <div id="ledgerBox"><p class="muted">Loading…</p></div>
+    </div>`;
+  refreshLedger();
+}
+async function refreshLedger(){
+  try{
+    const q=CURRENT_STORE!=='all'?`&store=${encodeURIComponent(CURRENT_STORE)}`:'';
+    const j=await boGet(`/api/backoffice/inventory?limit=50${q}`);
+    $('#ledgerBox').innerHTML=renderLedgerTable(j.rows||[]);
+  }catch(e){ $('#ledgerBox').innerHTML=`<p class="muted">Couldn't load: ${esc(e.message)}</p>`; }
+}
+
+/* ---------------- Suppliers ---------------- */
+async function viewSuppliers(){
+  const m=$('#main');
+  m.innerHTML=`<h2>Suppliers</h2>
+    <div class="card"><h3>Add supplier</h3>
+      <form data-act="supplier-add" class="row">
+        <input name="name" placeholder="Name" required>
+        <input name="contact_name" placeholder="Contact name">
+        <input name="phone" placeholder="Phone">
+        <input name="email" placeholder="Email" type="email">
+        <button class="btn" type="submit">Add</button>
+      </form>
+    </div>
+    <div class="card" id="supplierList"><p class="muted">Loading…</p></div>`;
+  _suppliersCache=null;
+  const rows=await loadSuppliersCached();
+  $('#supplierList').innerHTML=rows.length?`<table><tr><th>Name</th><th>Contact</th><th>Phone</th><th>Email</th></tr>
+    ${rows.map(s=>`<tr><td>${esc(s.name)}</td><td>${esc(s.contact_name||'—')}</td><td>${esc(s.phone||'—')}</td><td>${esc(s.email||'—')}</td></tr>`).join('')}
+    </table>`:'<p class="muted">No suppliers yet.</p>';
+}
+
+/* ---------------- Purchase Orders ---------------- */
+async function viewPurchasing(){
+  const m=$('#main');
+  const suppliers=await loadSuppliersCached();
+  m.innerHTML=`<h2>Purchase Orders</h2>
+    <div class="card"><h3>New purchase order</h3>
+      <form data-act="po-create">
+        <div class="row">
+          <select name="supplier_id" required><option value="">Supplier…</option>${suppliers.map(s=>`<option value="${esc(s.id)}">${esc(s.name)}</option>`).join('')}</select>
+          <select name="store_id" required>${STORES.map(s=>`<option value="${esc(s.id)}">${esc(s.name)}</option>`).join('')}</select>
+          <input name="expected_date" type="date">
+        </div>
+        <div id="poLines"></div>
+        <button type="button" class="btn ghost" data-act="po-add-line">+ Add line</button>
+        <button class="btn" type="submit">Create draft PO</button>
+      </form>
+    </div>
+    <div class="card" id="poList"><p class="muted">Loading…</p></div>`;
+  addPOLine();
+  refreshPOs();
+}
+function addPOLine(){
+  const div=document.createElement('div'); div.className='row'; div.style.marginTop='8px';
+  div.innerHTML=`<select class="po-item-type"><option value="product">Product</option><option value="ingredient">Ingredient</option></select>
+    <input class="po-item-key" placeholder="item key / SKU" required style="min-width:140px">
+    <input class="po-qty" type="number" step="0.001" placeholder="qty" required style="width:100px">
+    <input class="po-cost" type="number" step="0.01" placeholder="unit cost" style="width:100px">
+    <button type="button" class="btn ghost" data-act="po-remove-line">×</button>`;
+  $('#poLines').appendChild(div);
+}
+async function refreshPOs(){
+  try{
+    const j=await boGet('/api/backoffice/purchase-orders');
+    $('#poList').innerHTML=(j.rows||[]).length?`<table><tr><th>PO#</th><th>Status</th><th>Store</th><th>Lines</th><th></th></tr>
+      ${j.rows.map(po=>`<tr><td>${esc(po.po_number)}</td><td><span class="badge ${po.status==='completed'?'ok':po.status==='draft'?'':'open'}">${esc(po.status)}</span></td>
+        <td>${esc(po.store_id)}</td><td>${(po.lines||[]).length}</td>
+        <td>${po.status==='draft'?`<button class="btn ghost" data-act="po-send" data-id="${esc(po.id)}">Send</button>`:''}
+        ${['ordered','receiving'].includes(po.status)?`<button class="btn ghost" data-act="po-receive" data-id="${esc(po.id)}">Receive</button>`:''}</td></tr>`).join('')}
+      </table>`:'<p class="muted">No purchase orders yet.</p>';
+  }catch(e){ $('#poList').innerHTML=`<p class="muted">Couldn't load: ${esc(e.message)}</p>`; }
+}
+async function receivePO(id){
+  const j=await boGet('/api/backoffice/purchase-orders');
+  const po=(j.rows||[]).find(p=>p.id===id);
+  if(!po) return toast('PO not found',true);
+  const lines=[];
+  for(const l of po.lines||[]){
+    const remaining=Number(l.qty_ordered)-Number(l.qty_received);
+    if(remaining<=0) continue;
+    const v=prompt(`Receive how much of ${l.item_key}? (ordered ${l.qty_ordered}, received so far ${l.qty_received})`,remaining);
+    if(v==null) continue;
+    const qty=Number(v); if(qty>0) lines.push({line_id:l.id,qty_received:qty});
+  }
+  if(!lines.length) return;
+  try{ await boSend('/api/backoffice/purchase-orders','POST',{id,action:'receive',lines}); toast('Received'); refreshPOs(); }
+  catch(e){ toast(e.message,true); }
+}
+
+/* ---------------- Food & Drinks ---------------- */
+async function viewFood(){
+  const m=$('#main');
+  m.innerHTML=`<h2>Food & Drinks</h2>
+    <div class="card"><h3>Add ingredient</h3>
+      <form data-act="ing-add" class="row">
+        <input name="name" placeholder="Ingredient name" required>
+        <input name="unit" placeholder="unit (g, ml, pc)" required style="width:90px">
+        <input name="cost_per_unit" type="number" step="0.0001" placeholder="cost/unit" style="width:110px">
+        <button class="btn" type="submit">Add</button>
+      </form>
+    </div>
+    <div class="card" id="ingList"><p class="muted">Loading…</p></div>
+    <div class="card"><h3>Add recipe</h3>
+      <form data-act="recipe-add">
+        <div class="row">
+          <input name="menu_item_key" placeholder="menu item key (matches food-menu.json)" required style="min-width:180px">
+          <input name="name" placeholder="recipe name" required>
+          <input name="yield_qty" type="number" step="0.01" value="1" style="width:80px">
+        </div>
+        <div id="recipeLines"></div>
+        <button type="button" class="btn ghost" data-act="recipe-add-line">+ Add ingredient line</button>
+        <button class="btn" type="submit">Save recipe</button>
+      </form>
+    </div>
+    <div class="card" id="recipeList"><p class="muted">Loading…</p></div>`;
+  const ings=await boGet('/api/backoffice/ingredients').catch(()=>({rows:[]}));
+  window._ingredients=ings.rows||[];
+  $('#ingList').innerHTML=(ings.rows||[]).length?`<table><tr><th>Name</th><th>Unit</th><th>Cost/unit</th></tr>
+    ${ings.rows.map(i=>`<tr><td>${esc(i.name)}</td><td>${esc(i.unit)}</td><td>${money(i.cost_per_unit)}</td></tr>`).join('')}</table>`:'<p class="muted">No ingredients yet.</p>';
+  addRecipeLine();
+  const recipes=await boGet('/api/backoffice/recipes').catch(()=>({rows:[]}));
+  $('#recipeList').innerHTML=(recipes.rows||[]).length?`<table><tr><th>Menu item</th><th>Recipe</th><th>Cost/serving</th></tr>
+    ${recipes.rows.map(r=>`<tr><td>${esc(r.menu_item_key)}</td><td>${esc(r.name)}</td><td>${money(r.costPerServing)}</td></tr>`).join('')}</table>`:'<p class="muted">No recipes yet.</p>';
+}
+function addRecipeLine(){
+  const div=document.createElement('div'); div.className='row'; div.style.marginTop='6px';
+  const opts=(window._ingredients||[]).map(i=>`<option value="${esc(i.id)}">${esc(i.name)} (${esc(i.unit)})</option>`).join('');
+  div.innerHTML=`<select class="rec-ing">${opts}</select><input class="rec-qty" type="number" step="0.001" placeholder="qty" style="width:90px">
+    <button type="button" class="btn ghost" data-act="recipe-remove-line">×</button>`;
+  $('#recipeLines').appendChild(div);
+}
+
+/* ---------------- Kitchen ---------------- */
+async function viewKitchen(){
+  const m=$('#main');
+  m.innerHTML=`<h2>Kitchen</h2><div class="grid" id="kBoard"></div>`;
+  await refreshKitchen();
+}
+async function refreshKitchen(){
+  const j=await boGet('/api/backoffice/kitchen'+(CURRENT_STORE!=='all'?`?store=${encodeURIComponent(CURRENT_STORE)}`:'')).catch(()=>({rows:[]}));
+  const cols=['new','preparing','ready','served'];
+  const labels={new:'New',preparing:'Preparing',ready:'Ready',served:'Served'};
+  const next={new:'preparing',preparing:'ready',ready:'served'};
+  $('#kBoard').innerHTML=cols.map(c=>{
+    const tickets=(j.rows||[]).filter(t=>t.status===c);
+    return `<div class="card"><h3>${labels[c]} (${tickets.length})</h3>
+      ${tickets.map(t=>`<div style="border:1px solid var(--line);border-radius:8px;padding:8px;margin-bottom:8px">
+        <div class="muted">${new Date(t.created_at).toLocaleTimeString()}</div>
+        <ul style="margin:4px 0;padding-left:16px">${(t.lines||[]).map(l=>`<li>${esc(l.qty)}× ${esc(l.menu_item_key)}${l.special_instructions?' — '+esc(l.special_instructions):''}</li>`).join('')}</ul>
+        ${next[c]?`<button class="btn ghost" data-act="ticket-advance" data-id="${esc(t.id)}" data-to="${next[c]}">→ ${labels[next[c]]}</button>`:''}
+      </div>`).join('')||'<p class="muted">—</p>'}
+    </div>`;
+  }).join('');
+}
+
+/* ---------------- Expenses ---------------- */
+async function viewExpenses(){
+  const m=$('#main');
+  m.innerHTML=`<h2>Expenses</h2>
+    <div class="card"><h3>Record an expense</h3>
+      <form data-act="expense-add" class="row">
+        <select name="category" required>
+          ${['utilities','rent','staff','equipment','repairs','supplier','other'].map(c=>`<option value="${c}">${c}</option>`).join('')}
+        </select>
+        <input name="vendor" placeholder="Vendor">
+        <input name="amount" type="number" step="0.01" placeholder="Amount" required style="width:110px">
+        <input name="expense_date" type="date" required value="${new Date().toISOString().slice(0,10)}">
+        <input name="note" placeholder="Note">
+        <button class="btn" type="submit">Save</button>
+      </form>
+    </div>
+    <div class="card" id="expList"><p class="muted">Loading…</p></div>`;
+  refreshExpenses();
+}
+async function refreshExpenses(){
+  const j=await boGet('/api/backoffice/expenses').catch(()=>({rows:[],total:0}));
+  $('#expList').innerHTML=`<p><b>Total: ${money(j.total)}</b></p>` + ((j.rows||[]).length?`<table><tr><th>Date</th><th>Category</th><th>Vendor</th><th>Amount</th><th>Note</th></tr>
+    ${j.rows.map(e=>`<tr><td>${esc(e.expense_date)}</td><td>${esc(e.category)}</td><td>${esc(e.vendor||'—')}</td><td>${money(e.amount)}</td><td>${esc(e.note||'')}</td></tr>`).join('')}
+    </table>`:'<p class="muted">No expenses recorded yet.</p>');
+}
+
+/* ---------------- Reports ---------------- */
+async function viewReports(){
+  const m=$('#main');
+  m.innerHTML=`<h2>Sales Reports</h2>
+    <div class="card"><h3>Top products (30 days)</h3><div id="repProducts"><p class="muted">Loading…</p></div></div>
+    <div class="card"><h3>Stock value</h3><div id="repStock"><p class="muted">Loading…</p></div></div>`;
+  boGet('/api/backoffice/reports?type=sales-by-product&days=30').then(j=>{
+    $('#repProducts').innerHTML=(j.rows||[]).length?`<table><tr><th>Product</th><th>Qty sold</th><th>Gross</th></tr>
+      ${j.rows.slice(0,20).map(r=>`<tr><td>${esc(r.name)}</td><td>${esc(r.qty)}</td><td>${money(r.gross)}</td></tr>`).join('')}</table>`:'<p class="muted">No sales recorded.</p>';
+  }).catch(e=>{ $('#repProducts').innerHTML=`<p class="muted">${esc(e.message)}</p>`; });
+  boGet('/api/backoffice/reports?type=stock-value').then(j=>{
+    $('#repStock').innerHTML=`<p><b>Total stock value: ${money(j.total)}</b></p>`+((j.rows||[]).length?`<table><tr><th>Product</th><th>Store</th><th>Balance</th><th>Value</th></tr>
+      ${j.rows.slice(0,30).map(r=>`<tr><td>${esc(r.product_key)}</td><td>${esc(r.store_id)}</td><td>${esc(r.balance)}</td><td>${money(r.value)}</td></tr>`).join('')}</table>`:'');
+  }).catch(e=>{ $('#repStock').innerHTML=`<p class="muted">${esc(e.message)}</p>`; });
+}
+
+const VIEWS={overview:viewOverview,products:viewProducts,inventory:viewInventory,food:viewFood,kitchen:viewKitchen,
+  reports:viewReports,suppliers:viewSuppliers,purchasing:viewPurchasing,expenses:viewExpenses};
+
+function setTab(id){
+  TAB=id; renderNav();
+  (VIEWS[id]||viewOverview)();
+}
+
+/* ---------------- event delegation (one listener, data-act switch — same pattern as staffportal.html) ---------------- */
+document.addEventListener('click',async e=>{
+  const el=e.target.closest('[data-act]'); if(!el) return;
+  const act=el.dataset.act;
+  switch(act){
+    case 'tab': {
+      if(el.dataset.ext){ location.href=el.dataset.ext; return; }
+      setTab(el.dataset.tab); return;
+    }
+    case 'theme-toggle': {
+      const cur=document.documentElement.getAttribute('data-theme');
+      const next=cur==='dark'?'light':'dark';
+      document.documentElement.setAttribute('data-theme',next);
+      try{ localStorage.setItem('dankBOTheme',next); }catch(_){}
+      return;
+    }
+    case 'logout': { localStorage.removeItem('dankStaffToken'); sessionStorage.removeItem('dankStaffToken'); location.href='/staffportal'; return; }
+    case 'prod-search': { await searchProducts(); return; }
+    case 'prod-edit': { await editProductSettings(el.dataset.key,el.dataset.name); return; }
+    case 'inv-refresh': { await refreshLedger(); return; }
+    case 'po-add-line': { addPOLine(); return; }
+    case 'po-remove-line': { el.closest('.row').remove(); return; }
+    case 'po-send': {
+      try{ await boSend('/api/backoffice/purchase-orders','POST',{id:el.dataset.id,action:'send'}); toast('Sent'); refreshPOs(); }
+      catch(err){ toast(err.message,true); } return;
+    }
+    case 'po-receive': { await receivePO(el.dataset.id); return; }
+    case 'recipe-add-line': { addRecipeLine(); return; }
+    case 'recipe-remove-line': { el.closest('.row').remove(); return; }
+    case 'ticket-advance': {
+      try{ await boSend('/api/backoffice/kitchen','PATCH',{id:el.dataset.id,status:el.dataset.to}); toast('Updated'); refreshKitchen(); }
+      catch(err){ toast(err.message,true); } return;
+    }
+  }
+});
+
+document.addEventListener('submit',async e=>{
+  const form=e.target.closest('[data-act]'); if(!form) return;
+  e.preventDefault();
+  const act=form.dataset.act;
+  const fd=new FormData(form);
+  const b=Object.fromEntries(fd.entries());
+  try{
+    if(act==='inv-adjust'){
+      b.qty_delta=Number(b.qty_delta);
+      await boSend('/api/backoffice/inventory','POST',b);
+      toast('Recorded'); form.reset(); refreshLedger();
+    } else if(act==='prod-settings-save'){
+      await boSend('/api/backoffice/product-settings','POST',{product_key:form.dataset.key,cost_price:b.cost_price?Number(b.cost_price):null,supplier_id:b.supplier_id||null,track_stock:fd.has('track_stock')});
+      toast('Saved');
+    } else if(act==='supplier-add'){
+      await boSend('/api/backoffice/suppliers','POST',b);
+      toast('Supplier added'); form.reset(); _suppliersCache=null; viewSuppliers();
+    } else if(act==='po-create'){
+      const lines=[...$('#poLines').children].map(row=>({
+        item_type:row.querySelector('.po-item-type').value,
+        item_key:row.querySelector('.po-item-key').value,
+        qty_ordered:Number(row.querySelector('.po-qty').value),
+        unit_cost:Number(row.querySelector('.po-cost').value)||0,
+      })).filter(l=>l.item_key&&l.qty_ordered>0);
+      if(!lines.length) return toast('Add at least one line',true);
+      await boSend('/api/backoffice/purchase-orders','POST',{...b,lines});
+      toast('PO created'); viewPurchasing();
+    } else if(act==='ing-add'){
+      b.cost_per_unit=Number(b.cost_per_unit)||0;
+      await boSend('/api/backoffice/ingredients','POST',b);
+      toast('Ingredient added'); viewFood();
+    } else if(act==='recipe-add'){
+      const lines=[...$('#recipeLines').children].map(row=>({
+        ingredient_id:row.querySelector('.rec-ing').value,
+        qty:Number(row.querySelector('.rec-qty').value),
+      })).filter(l=>l.ingredient_id&&l.qty>0);
+      if(!lines.length) return toast('Add at least one ingredient line',true);
+      await boSend('/api/backoffice/recipes','POST',{...b,lines});
+      toast('Recipe saved'); viewFood();
+    } else if(act==='expense-add'){
+      b.amount=Number(b.amount);
+      await boSend('/api/backoffice/expenses','POST',b);
+      toast('Expense recorded'); viewExpenses();
+    }
+  }catch(err){ toast(err.message,true); }
+});
+
+document.addEventListener('change',e=>{
+  if(e.target.id==='storeSel'){ CURRENT_STORE=e.target.value; VIEWS[TAB]&&VIEWS[TAB](); }
+});
+
+/* ---------------- boot ---------------- */
+async function boot(){
+  try{ const saved=localStorage.getItem('dankBOTheme'); if(saved) document.documentElement.setAttribute('data-theme',saved); }catch(_){}
+  if(!KEY){ $('#loginGate').style.display='flex'; return; }
+  try{
+    const r=await fetch('/api/staff-auth',{method:'POST',headers:{'Content-Type':'application/json',...authHeaders()},body:JSON.stringify({action:'verify'})});
+    const auth=await r.json().catch(()=>({}));
+    if(!r.ok) throw new Error('session expired');
+    PROFILE=auth.profile; PERMS=auth.permissions||[];
+  }catch(e){
+    $('#loginGate').style.display='flex'; $('#loginGate').querySelector('p').textContent='Your session expired — please sign in again.';
+    return;
+  }
+  $('#loginGate').style.display='none'; $('#app').style.display='block';
+  $('#whoAmI').textContent=PROFILE?.name?('👤 '+PROFILE.name):'';
+  try{ const s=await boGet('/api/backoffice/stores'); STORES=s.rows||[]; renderStoreSelect(); }catch(e){}
+  renderNav();
+  const firstAllowed=NAV.find(n=>can(n.perm)&&!n.external);
+  setTab(firstAllowed?firstAllowed.id:'overview');
+}
+boot();
+</script>
+</body>
+</html>

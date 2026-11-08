@@ -112,6 +112,10 @@
       "destination": "/staffportal.html"
     },
     {
+      "source": "/backoffice",
+      "destination": "/backoffice.html"
+    },
+    {
       "source": "/homepage-v2",
       "destination": "/homepage-v2.html"
     },
@@ -243,6 +247,32 @@
     },
     {
       "source": "/staffportal",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, nofollow"
+        },
+        {
+          "key": "Cache-Control",
+          "value": "private, no-store, max-age=0, must-revalidate"
+        }
+      ]
+    },
+    {
+      "source": "/backoffice.html",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, nofollow"
+        },
+        {
+          "key": "Cache-Control",
+          "value": "private, no-store, max-age=0, must-revalidate"
+        }
+      ]
+    },
+    {
+      "source": "/backoffice",
       "headers": [
         {
           "key": "X-Robots-Tag",

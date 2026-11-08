@@ -4,17 +4,23 @@ import { safeEq } from "./_auth.js";
 
 const STORE_KEY = "staff:accounts:v1";
 const TTL = 60 * 60 * 24 * 365 * 10;
+/* Must match STAFF_ROLE_PERMISSIONS in _auth.js — see the comment there for why
+   there are two copies. This one is what validates a role when an account is
+   created/edited; that one is what a request is actually checked against. */
 export const ROLE_PERMISSIONS = Object.freeze({
   owner: ["*"],
-  manager: ["orders", "dashboard", "sales", "announcement_read", "products", "announcements", "staff_manage", "promotions"],
-  professional: ["orders", "dashboard", "announcement_read"],
+  manager: ["orders", "dashboard", "sales", "announcement_read", "products", "announcements", "staff_manage", "promotions",
+    "inventory_view", "inventory_adjust", "suppliers", "purchasing", "expenses", "food_ops", "kitchen_tickets"],
+  professional: ["orders", "dashboard", "announcement_read", "inventory_view", "kitchen_tickets"],
   parttime: ["orders", "dashboard", "announcement_read"],
+  kitchen: ["dashboard", "announcement_read", "kitchen_tickets", "food_ops"],
 });
 export const ROLE_LABELS = Object.freeze({
   owner: "Owner",
   manager: "Manager",
   professional: "Professional Staff",
   parttime: "Part-time Staff",
+  kitchen: "Kitchen Staff",
 });
 const secret = () => process.env.STAFF_SESSION_SECRET || process.env.ADMIN_SECRET || "";
 const hashKey = (key) => crypto.createHmac("sha256", secret()).update(String(key)).digest("hex");

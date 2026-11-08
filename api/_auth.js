@@ -46,11 +46,20 @@ export function safeEq(a, b) {
   return A.length > 0 && A.length === B.length && crypto.timingSafeEqual(A, B);
 }
 
+/* Kept in sync by hand with ROLE_PERMISSIONS in _staff-accounts.js — that file
+   governs account creation/role assignment, this one gates every request via
+   requirePermission(). Two copies because token sessions (readStaffToken,
+   below) carry only {id,name,role,exp} and must stay verifiable without a
+   database round trip; a single source of truth would mean every permission
+   check becomes a storage call. Adding BackOffice's scopes here, kept the
+   same list shape so a diff between the two files stays trivial. */
 const STAFF_ROLE_PERMISSIONS = Object.freeze({
   owner:["*"],
-  manager:["orders","dashboard","sales","announcement_read","products","announcements","staff_manage","promotions"],
-  professional:["orders","dashboard","announcement_read"],
+  manager:["orders","dashboard","sales","announcement_read","products","announcements","staff_manage","promotions",
+    "inventory_view","inventory_adjust","suppliers","purchasing","expenses","food_ops","kitchen_tickets"],
+  professional:["orders","dashboard","announcement_read","inventory_view","kitchen_tickets"],
   parttime:["orders","dashboard","announcement_read"],
+  kitchen:["dashboard","announcement_read","kitchen_tickets","food_ops"],
 });
 const staffSecret=()=>process.env.STAFF_SESSION_SECRET||process.env.ADMIN_SECRET||"";
 const b64u=(v)=>Buffer.from(v).toString("base64url");
