@@ -26,6 +26,9 @@
   .btn.ghost{background:transparent;color:var(--brand);border:1px solid var(--brand)}
   .btn.danger{background:var(--danger)}
   .btn:disabled{opacity:.5;cursor:not-allowed}
+  th[data-sort]{cursor:pointer;user-select:none;white-space:nowrap}
+  th[data-sort]:hover{color:var(--brand)}
+  .bulkbar{background:var(--panel);border:1px solid var(--brand);border-radius:8px;padding:8px 12px;margin-bottom:10px}
   .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:14px}
   .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
   table{width:100%;border-collapse:collapse;font-size:13px}
@@ -251,17 +254,47 @@ async function viewInventory(){
       </form>
     </div>
     <div class="card">
-      <div class="row" style="justify-content:space-between"><h3 style="margin:0">Recent movements</h3><button class="btn ghost" data-act="inv-refresh">Refresh</button></div>
+      <div class="row" style="justify-content:space-between">
+        <h3 style="margin:0">Recent movements</h3>
+        <div class="row">
+          <select id="invLimit"><option value="25">25 rows</option><option value="50" selected>50 rows</option><option value="100">100 rows</option><option value="200">200 rows</option></select>
+          <button class="btn ghost" data-act="inv-refresh">Refresh</button>
+        </div>
+      </div>
       <div id="ledgerBox"><p class="muted">Loading…</p></div>
     </div>`;
   refreshLedger();
 }
+let _ledgerRows=[], _ledgerSort={key:'created_at',dir:'desc'};
 async function refreshLedger(){
   try{
+    const limit=$('#invLimit')?.value||50;
     const q=CURRENT_STORE!=='all'?`&store=${encodeURIComponent(CURRENT_STORE)}`:'';
-    const j=await boGet(`/api/backoffice/inventory?limit=50${q}`);
-    $('#ledgerBox').innerHTML=renderLedgerTable(j.rows||[]);
+    const j=await boGet(`/api/backoffice/inventory?limit=${limit}${q}`);
+    _ledgerRows=j.rows||[];
+    renderLedgerBox();
   }catch(e){ $('#ledgerBox').innerHTML=`<p class="muted">Couldn't load: ${esc(e.message)}</p>`; }
+}
+function renderLedgerBox(){
+  const box=$('#ledgerBox'); if(!box) return;
+  if(!_ledgerRows.length){ box.innerHTML='<p class="muted">No movements yet.</p>'; return; }
+  const {key,dir}=_ledgerSort;
+  const rows=[..._ledgerRows].sort((a,b)=>{
+    const va=key==='qty_delta'||key==='balance_after'?Number(a[key]):String(a[key]??'');
+    const vb=key==='qty_delta'||key==='balance_after'?Number(b[key]):String(b[key]??'');
+    return (va<vb?-1:va>vb?1:0)*(dir==='asc'?1:-1);
+  });
+  const arrow=(k)=>k===key?(dir==='asc'?' ▲':' ▼'):'';
+  box.innerHTML=`<table><tr>
+    <th data-act="inv-sort" data-key="created_at">When${arrow('created_at')}</th>
+    <th data-act="inv-sort" data-key="item_key">Item${arrow('item_key')}</th>
+    <th data-act="inv-sort" data-key="store_id">Store${arrow('store_id')}</th>
+    <th data-act="inv-sort" data-key="qty_delta">Δ${arrow('qty_delta')}</th>
+    <th data-act="inv-sort" data-key="balance_after">Balance${arrow('balance_after')}</th>
+    <th data-act="inv-sort" data-key="reason">Reason${arrow('reason')}</th></tr>
+    ${rows.map(r=>`<tr><td>${new Date(r.created_at).toLocaleString()}</td><td>${esc(r.item_type)}:${esc(r.item_key)}</td><td>${esc(r.store_id)}</td>
+      <td style="color:${r.qty_delta<0?'var(--danger)':'var(--ok)'}">${r.qty_delta>0?'+':''}${esc(r.qty_delta)}</td>
+      <td>${esc(r.balance_after)}</td><td>${esc(r.reason)}</td></tr>`).join('')}</table>`;
 }
 
 /* ---------------- Suppliers ---------------- */
@@ -315,16 +348,40 @@ function addPOLine(){
     <button type="button" class="btn ghost" data-act="po-remove-line">×</button>`;
   $('#poLines').appendChild(div);
 }
+let _poRows=[], _poSort={key:'po_number',dir:'desc'}, _poSelected=new Set();
 async function refreshPOs(){
   try{
     const j=await boGet('/api/backoffice/purchase-orders');
-    $('#poList').innerHTML=(j.rows||[]).length?`<table><tr><th>PO#</th><th>Status</th><th>Store</th><th>Lines</th><th></th></tr>
-      ${j.rows.map(po=>`<tr><td>${esc(po.po_number)}</td><td><span class="badge ${po.status==='completed'?'ok':po.status==='draft'?'':'open'}">${esc(po.status)}</span></td>
-        <td>${esc(po.store_id)}</td><td>${(po.lines||[]).length}</td>
-        <td>${po.status==='draft'?`<button class="btn ghost" data-act="po-send" data-id="${esc(po.id)}">Send</button>`:''}
-        ${['ordered','receiving'].includes(po.status)?`<button class="btn ghost" data-act="po-receive" data-id="${esc(po.id)}">Receive</button>`:''}</td></tr>`).join('')}
-      </table>`:'<p class="muted">No purchase orders yet.</p>';
+    _poRows=j.rows||[];
+    _poSelected=new Set([..._poSelected].filter(id=>_poRows.some(po=>po.id===id&&po.status==='draft')));
+    renderPOList();
   }catch(e){ $('#poList').innerHTML=`<p class="muted">Couldn't load: ${esc(e.message)}</p>`; }
+}
+function renderPOList(){
+  const box=$('#poList'); if(!box) return;
+  if(!_poRows.length){ box.innerHTML='<p class="muted">No purchase orders yet.</p>'; return; }
+  const {key,dir}=_poSort;
+  const rows=[..._poRows].sort((a,b)=>{
+    const va=String(a[key]??''), vb=String(b[key]??'');
+    return (va<vb?-1:va>vb?1:0)*(dir==='asc'?1:-1);
+  });
+  const arrow=(k)=>k===key?(dir==='asc'?' ▲':' ▼'):'';
+  const draftIds=_poRows.filter(po=>po.status==='draft').map(po=>po.id);
+  const bulkBar=_poSelected.size?`<div class="row bulkbar"><span>${_poSelected.size} draft PO(s) selected</span>
+    <button class="btn ghost" data-act="po-bulk-send">Send selected</button>
+    <button class="btn ghost" data-act="po-clear-selection">Clear</button></div>`:'';
+  box.innerHTML=bulkBar+`<table><tr>
+    <th>${draftIds.length?`<input type="checkbox" id="poSelAll" ${draftIds.length&&draftIds.every(id=>_poSelected.has(id))?'checked':''}>`:''}</th>
+    <th data-act="po-sort" data-key="po_number">PO#${arrow('po_number')}</th>
+    <th data-act="po-sort" data-key="status">Status${arrow('status')}</th>
+    <th data-act="po-sort" data-key="store_id">Store${arrow('store_id')}</th>
+    <th>Lines</th><th></th></tr>
+    ${rows.map(po=>`<tr><td>${po.status==='draft'?`<input type="checkbox" class="po-sel" data-id="${esc(po.id)}" ${_poSelected.has(po.id)?'checked':''}>`:''}</td>
+      <td>${esc(po.po_number)}</td><td><span class="badge ${po.status==='completed'?'ok':po.status==='draft'?'':'open'}">${esc(po.status)}</span></td>
+      <td>${esc(po.store_id)}</td><td>${(po.lines||[]).length}</td>
+      <td>${po.status==='draft'?`<button class="btn ghost" data-act="po-send" data-id="${esc(po.id)}">Send</button>`:''}
+      ${['ordered','receiving'].includes(po.status)?`<button class="btn ghost" data-act="po-receive" data-id="${esc(po.id)}">Receive</button>`:''}</td></tr>`).join('')}
+    </table>`;
 }
 async function receivePO(id){
   const j=await boGet('/api/backoffice/purchase-orders');
@@ -446,17 +503,44 @@ async function viewExpenses(){
     </div>`;
   refreshExpenses();
 }
+let _expRows=[], _expTotal=0, _expSort={key:'expense_date',dir:'desc'}, _expSelected=new Set();
 async function refreshExpenses(){
   const j=await boGet('/api/backoffice/expenses?monthly=1').catch(()=>({rows:[],total:0,monthly:[]}));
-  $('#expList').innerHTML=`<p><b>Total: ${money(j.total)}</b></p>` + ((j.rows||[]).length?`<table><tr><th>Date</th><th>Category</th><th>Vendor</th><th>Amount</th><th>Note</th><th>Receipt</th></tr>
-    ${j.rows.map(e=>`<tr><td>${esc(e.expense_date)}</td><td>${esc(e.category)}</td><td>${esc(e.vendor||'—')}</td><td>${money(e.amount)}</td>
-      <td>${esc(e.note||'')}${e.recurring?` <span class="badge ok">${esc(e.recurring)}</span>`:''}${e.generated_from?' <span class="badge open">auto</span>':''}</td>
-      <td>${e.attachment_url?`<a href="${esc(e.attachment_url)}" target="_blank" rel="noopener">view</a>`:'—'}</td></tr>`).join('')}
-    </table>`:'<p class="muted">No expenses recorded yet.</p>');
+  _expRows=j.rows||[]; _expTotal=j.total||0;
+  _expSelected=new Set([..._expSelected].filter(id=>_expRows.some(e=>e.id===id)));
+  renderExpenseList();
   const monthly=j.monthly||[];
   $('#expMonthly').innerHTML=monthly.length?`<table><tr><th>Month</th><th>Total</th><th>By category</th></tr>
     ${monthly.map(m=>`<tr><td>${esc(m.month)}</td><td>${money(m.total)}</td><td>${Object.entries(m.byCategory).map(([c,v])=>`${esc(c)}: ${money(v)}`).join(', ')}</td></tr>`).join('')}
     </table>`:'<p class="muted">Nothing to analyze yet.</p>';
+}
+function renderExpenseList(){
+  const box=$('#expList'); if(!box) return;
+  const header=`<p><b>Total: ${money(_expTotal)}</b></p>`;
+  if(!_expRows.length){ box.innerHTML=header+'<p class="muted">No expenses recorded yet.</p>'; return; }
+  const {key,dir}=_expSort;
+  const rows=[..._expRows].sort((a,b)=>{
+    const va=key==='amount'?Number(a[key]):String(a[key]??'');
+    const vb=key==='amount'?Number(b[key]):String(b[key]??'');
+    return (va<vb?-1:va>vb?1:0)*(dir==='asc'?1:-1);
+  });
+  const arrow=(k)=>k===key?(dir==='asc'?' ▲':' ▼'):'';
+  const bulkBar=_expSelected.size?`<div class="row bulkbar"><span>${_expSelected.size} selected</span>
+    <button class="btn danger" data-act="exp-bulk-delete">Delete selected</button>
+    <button class="btn ghost" data-act="exp-clear-selection">Clear</button></div>`:'';
+  box.innerHTML=header+bulkBar+`<table><tr>
+    <th><input type="checkbox" id="expSelAll" ${_expRows.length&&_expRows.every(e=>_expSelected.has(e.id))?'checked':''}></th>
+    <th data-act="exp-sort" data-key="expense_date">Date${arrow('expense_date')}</th>
+    <th data-act="exp-sort" data-key="category">Category${arrow('category')}</th>
+    <th>Vendor</th>
+    <th data-act="exp-sort" data-key="amount">Amount${arrow('amount')}</th>
+    <th>Note</th><th>Receipt</th><th></th></tr>
+    ${rows.map(e=>`<tr><td><input type="checkbox" class="exp-sel" data-id="${esc(e.id)}" ${_expSelected.has(e.id)?'checked':''}></td>
+      <td>${esc(e.expense_date)}</td><td>${esc(e.category)}</td><td>${esc(e.vendor||'—')}</td><td>${money(e.amount)}</td>
+      <td>${esc(e.note||'')}${e.recurring?` <span class="badge ok">${esc(e.recurring)}</span>`:''}${e.generated_from?' <span class="badge open">auto</span>':''}</td>
+      <td>${e.attachment_url?`<a href="${esc(e.attachment_url)}" target="_blank" rel="noopener">view</a>`:'—'}</td>
+      <td><button class="btn ghost" data-act="exp-delete" data-id="${esc(e.id)}">Delete</button></td></tr>`).join('')}
+    </table>`;
 }
 /* Minimal CSV parser for the import box — handles quoted fields with commas,
    not a general RFC4180 parser, but enough for a bank/accounting export
@@ -757,6 +841,24 @@ document.addEventListener('click',async e=>{
       catch(err){ toast(err.message,true); } return;
     }
     case 'po-receive': { await receivePO(el.dataset.id); return; }
+    case 'po-sort': {
+      _poSort = _poSort.key===el.dataset.key ? {key:el.dataset.key,dir:_poSort.dir==='asc'?'desc':'asc'} : {key:el.dataset.key,dir:'asc'};
+      renderPOList(); return;
+    }
+    case 'po-clear-selection': { _poSelected.clear(); renderPOList(); return; }
+    case 'po-bulk-send': {
+      const ids=[..._poSelected];
+      if(!ids.length) return;
+      if(!confirm(`Send ${ids.length} draft purchase order(s)?`)) return;
+      let ok=0, failed=0;
+      for(const id of ids){
+        try{ await boSend('/api/backoffice/purchase-orders','POST',{id,action:'send'}); ok++; }
+        catch(err){ failed++; }
+      }
+      _poSelected.clear();
+      toast(failed?`Sent ${ok}, ${failed} failed`:`Sent ${ok} purchase order(s)`,Boolean(failed));
+      refreshPOs(); return;
+    }
     case 'recipe-add-line': { addRecipeLine(); return; }
     case 'recipe-remove-line': { el.closest('.row').remove(); return; }
     case 'ticket-advance': {
@@ -781,6 +883,33 @@ document.addEventListener('click',async e=>{
     case 'audit-load': { await renderAuditLog(); return; }
     case 'exp-export-pdf': { printSection('Expenses'); return; }
     case 'import-run': { await runImport(); return; }
+    case 'exp-sort': {
+      _expSort = _expSort.key===el.dataset.key ? {key:el.dataset.key,dir:_expSort.dir==='asc'?'desc':'asc'} : {key:el.dataset.key,dir:'asc'};
+      renderExpenseList(); return;
+    }
+    case 'exp-clear-selection': { _expSelected.clear(); renderExpenseList(); return; }
+    case 'exp-delete': {
+      if(!confirm('Delete this expense? This cannot be undone.')) return;
+      try{ await boSend('/api/backoffice/expenses','DELETE',{id:el.dataset.id}); toast('Deleted'); refreshExpenses(); }
+      catch(err){ toast(err.message,true); } return;
+    }
+    case 'exp-bulk-delete': {
+      const ids=[..._expSelected];
+      if(!ids.length) return;
+      if(!confirm(`Delete ${ids.length} expense(s)? This cannot be undone.`)) return;
+      let ok=0, failed=0;
+      for(const id of ids){
+        try{ await boSend('/api/backoffice/expenses','DELETE',{id}); ok++; }
+        catch(err){ failed++; }
+      }
+      _expSelected.clear();
+      toast(failed?`Deleted ${ok}, ${failed} failed`:`Deleted ${ok} expense(s)`,Boolean(failed));
+      refreshExpenses(); return;
+    }
+    case 'inv-sort': {
+      _ledgerSort = _ledgerSort.key===el.dataset.key ? {key:el.dataset.key,dir:_ledgerSort.dir==='asc'?'desc':'asc'} : {key:el.dataset.key,dir:'asc'};
+      renderLedgerBox(); return;
+    }
   }
 });
 
@@ -840,7 +969,26 @@ document.addEventListener('submit',async e=>{
 });
 
 document.addEventListener('change',e=>{
-  if(e.target.id==='storeSel'){ CURRENT_STORE=e.target.value; VIEWS[TAB]&&VIEWS[TAB](); }
+  const t=e.target;
+  if(t.id==='storeSel'){ CURRENT_STORE=t.value; VIEWS[TAB]&&VIEWS[TAB](); return; }
+  if(t.id==='invLimit'){ refreshLedger(); return; }
+  if(t.classList.contains('po-sel')){
+    if(t.checked) _poSelected.add(t.dataset.id); else _poSelected.delete(t.dataset.id);
+    renderPOList(); return;
+  }
+  if(t.id==='poSelAll'){
+    const draftIds=_poRows.filter(po=>po.status==='draft').map(po=>po.id);
+    if(t.checked) draftIds.forEach(id=>_poSelected.add(id)); else draftIds.forEach(id=>_poSelected.delete(id));
+    renderPOList(); return;
+  }
+  if(t.classList.contains('exp-sel')){
+    if(t.checked) _expSelected.add(t.dataset.id); else _expSelected.delete(t.dataset.id);
+    renderExpenseList(); return;
+  }
+  if(t.id==='expSelAll'){
+    if(t.checked) _expRows.forEach(e=>_expSelected.add(e.id)); else _expSelected.clear();
+    renderExpenseList(); return;
+  }
 });
 
 /* ---------------- boot ---------------- */

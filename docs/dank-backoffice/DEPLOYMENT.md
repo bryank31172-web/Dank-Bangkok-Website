@@ -173,12 +173,16 @@ Two things flagged earlier as "unverified claims" were genuinely tested, not jus
    route couldn't be resolved, carry no `storeId`; a renamed/delisted product's older lines carry no
    `productKey`. Both degrade to "untagged"/"revenue only," not a wrong number. Covered by
    `tests/backoffice-order-attribution.test.js` and `tests/backoffice-reports-attribution.test.js`.
-3. **`backoffice.html`'s UI is functional, not polished — but it has now actually been opened in a
-   browser** (see "Verification actually performed this session" above), not just syntax-checked.
-   11 tabs including Settings (store management + per-employee BackOffice permission grants) and a
-   real Promotions view (usage + redemption history). Reports cover 9 types with CSV export.
-   Detailed UX passes (richer tables, bulk actions) remain follow-up work; true narrow-phone
-   rendering specifically still wants a check on a real device (see that section for why).
+3. **`backoffice.html`'s UI is functional, and has now had a real UX pass on its three busiest
+   tables.** Purchase Orders, Expenses and Inventory's ledger now have sortable columns (click a
+   header, click again to reverse) and the first bulk actions: select draft POs and send them all at
+   once; select expenses and delete them all at once (plus a per-row Delete that didn't exist before);
+   Inventory's ledger (append-only by design — no delete fits there) got a row-count selector (25/50/
+   100/200) instead. Verified in a real browser against a local stub API: select-all, individual
+   checkboxes re-deriving the header's checked state, string and numeric sort in both directions, and
+   both bulk actions, all produce the expected result with zero console errors. Other tabs (Suppliers,
+   Food & Drinks, Kitchen board) weren't touched this pass — smaller tables, lower priority. True
+   narrow-phone rendering specifically still wants a check on a real device (see that section for why).
 4. **StoreHub modules not surveyed:** Stock Transfers/Return detail screens, the 11 individual sales
    report types, Loyalty/Membership, Online Store/Beep detail, Billing — `STOREHUB_FEATURE_ANALYSIS.md`
    lists these as open unknowns. DANK BackOffice's own Stock Transfer and Expenses modules were built

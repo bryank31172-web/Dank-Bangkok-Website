@@ -23,6 +23,7 @@
 | 17 | Import validation, duplicate detection and reconciliation (Module G, `/api/backoffice/import`) | 9 | never creates expenses/orders from an uploaded file — only reports matched/unmatched/duplicate/invalid against existing records (tested) |
 | 18 | PDF export (Expenses, Reports) via the browser's native print-to-PDF | 7,9 | no new client-side dependency; `@media print` hides nav/forms, prints only the current tab's tables |
 | 19 | Sales-by-store + COGS: `storeId`/`productKey` tagged on each order at write time (`api/order.js`); `reports.js`'s `sales-by-store`/`cogs` join on them | 7 | delivery branch used as-is from the existing road-distance quote, dine-in attributed to DANK's one confirmed physical location, never a guessed branch or cost; untagged/uncosted data reported explicitly, not silently dropped (tested) |
+| 20 | UX pass (Phase 11): sortable columns + bulk actions on Purchase Orders, Expenses, Inventory | 7,9 | bulk-send (drafts) and bulk-delete (expenses) fan out to the existing single-item endpoints — no new API surface; verified click-through in a real browser against a stub API, zero console errors |
 
 Items 12-14 were a second pass closing gaps identified against the original master prompt after the
 first 11 shipped — see `DEPLOYMENT.md`'s release notes for what changed and which existing files
@@ -42,10 +43,6 @@ See `DEPLOYMENT.md`'s known-gaps section #2 for exactly what this does and does 
 - Payment checkout/gateway/terminal integration of any kind.
 - Replacing BRYAN POS as the catalogue source of truth.
 - Thai cannabis compliance fields — blocked on legal research, tracked as an open unknown.
-- Sales-by-store and a cost-joined COGS report — both need `order.js` to write a `store_id`/
-  `product_key` onto each order line at checkout time, which is a bigger, separate change to
-  checkout-path code than this build's "additive, defensively-isolated" touches to `order.js`
-  warranted on its own.
 - Migrating `_staff-accounts.js` fully to StoreHub's per-module checkbox model (one toggle per
   screen) — the per-account scope-grant mechanism built in item 12 covers the same real gap (a
   specific person getting one extra permission without a role change) without a bigger auth rewrite.
