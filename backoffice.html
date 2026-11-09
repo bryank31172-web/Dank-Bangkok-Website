@@ -262,8 +262,42 @@ async function viewInventory(){
         </div>
       </div>
       <div id="ledgerBox"><p class="muted">Loading…</p></div>
+    </div>
+    <div class="card">
+      <h3>Stock takes</h3>
+      <p class="muted">Start a count session for a set of items, then record what you actually count against
+        what the ledger expects. Completing a session writes one ledger adjustment per item whose count
+        differs — items never counted are left alone, not assumed to be zero.</p>
+      <form data-act="stk-start">
+        <div class="row">
+          <select name="store_id">${STORES.map(s=>`<option value="${esc(s.id)}">${esc(s.name)}</option>`).join('')}</select>
+        </div>
+        <div id="stkItems"></div>
+        <button type="button" class="btn ghost" data-act="stk-add-item">+ Add item to count</button>
+        <button class="btn" type="submit">Start count</button>
+      </form>
+      <div id="stkList" style="margin-top:12px"><p class="muted">Loading…</p></div>
+      <div id="stkDetail"></div>
+    </div>
+    <div class="card">
+      <h3>Stock transfers</h3>
+      <p class="muted">Move stock between outlets. Completing a transfer writes a transfer-out row at the
+        source and a matching transfer-in row at the destination.</p>
+      <form data-act="xfer-create">
+        <div class="row">
+          <select name="from_store_id">${STORES.map(s=>`<option value="${esc(s.id)}">${esc(s.name)}</option>`).join('')}</select>
+          <span class="muted">→</span>
+          <select name="to_store_id">${STORES.map(s=>`<option value="${esc(s.id)}">${esc(s.name)}</option>`).join('')}</select>
+        </div>
+        <div id="xferLines"></div>
+        <button type="button" class="btn ghost" data-act="xfer-add-line">+ Add line</button>
+        <button class="btn" type="submit">Create transfer</button>
+      </form>
+      <div id="xferList" style="margin-top:12px"><p class="muted">Loading…</p></div>
     </div>`;
   refreshLedger();
+  addStkItem(); refreshStocktakes();
+  addXferLine(); refreshTransfers();
 }
 let _ledgerRows=[], _ledgerSort={key:'created_at',dir:'desc'};
 async function refreshLedger(){
@@ -295,6 +329,78 @@ function renderLedgerBox(){
     ${rows.map(r=>`<tr><td>${new Date(r.created_at).toLocaleString()}</td><td>${esc(r.item_type)}:${esc(r.item_key)}</td><td>${esc(r.store_id)}</td>
       <td style="color:${r.qty_delta<0?'var(--danger)':'var(--ok)'}">${r.qty_delta>0?'+':''}${esc(r.qty_delta)}</td>
       <td>${esc(r.balance_after)}</td><td>${esc(r.reason)}</td></tr>`).join('')}</table>`;
+}
+
+/* ---------------- Stock takes ---------------- */
+function addStkItem(){
+  const div=document.createElement('div'); div.className='row'; div.style.marginTop='8px';
+  div.innerHTML=`<select class="stk-item-type"><option value="product">Product</option><option value="ingredient">Ingredient</option></select>
+    <input class="stk-item-key" placeholder="item key / SKU" required style="min-width:160px">
+    <button type="button" class="btn ghost" data-act="stk-remove-item">×</button>`;
+  $('#stkItems').appendChild(div);
+}
+let _stkRows=[], _stkDetailId=null, _stkDetailLines=[];
+async function refreshStocktakes(){
+  try{
+    const q=CURRENT_STORE!=='all'?`?store=${encodeURIComponent(CURRENT_STORE)}`:'';
+    const j=await boGet(`/api/backoffice/stocktakes${q}`);
+    _stkRows=j.rows||[];
+    if(_stkDetailId && !_stkRows.some(s=>s.id===_stkDetailId)) _stkDetailId=null;
+    renderStkList(); renderStkDetail();
+  }catch(e){ $('#stkList').innerHTML=`<p class="muted">Couldn't load: ${esc(e.message)}</p>`; }
+}
+function renderStkList(){
+  const box=$('#stkList'); if(!box) return;
+  box.innerHTML=_stkRows.length?`<table><tr><th>Store</th><th>Started</th><th>Status</th><th>Lines</th><th></th></tr>
+    ${_stkRows.map(s=>`<tr><td>${esc(s.store_id)}</td><td>${new Date(s.started_at).toLocaleString()}</td>
+      <td><span class="badge ${s.status==='completed'?'ok':'open'}">${esc(s.status)}</span></td><td>${(s.lines||[]).length}</td>
+      <td><button class="btn ghost" data-act="stk-open" data-id="${esc(s.id)}">${s.status==='in_progress'?'Count':'View'}</button></td></tr>`).join('')}
+    </table>`:'<p class="muted">No stock takes yet.</p>';
+}
+function renderStkDetail(){
+  const box=$('#stkDetail'); if(!box) return;
+  const session=_stkDetailId?_stkRows.find(s=>s.id===_stkDetailId):null;
+  if(!session){ box.innerHTML=''; return; }
+  const editable=session.status==='in_progress';
+  box.innerHTML=`<div class="card" style="margin-top:10px">
+    <div class="row" style="justify-content:space-between"><h4 style="margin:0">Counting — ${esc(session.store_id)}</h4>
+      <button class="btn ghost" data-act="stk-close">Close</button></div>
+    <table><tr><th>Item</th><th>Expected</th><th>Counted</th></tr>
+    ${_stkDetailLines.map((l,i)=>`<tr><td>${esc(l.item_type)}:${esc(l.item_key)}</td><td>${esc(l.expected_qty)}</td>
+      <td>${editable?`<input type="number" step="0.001" class="stk-counted" data-idx="${i}" value="${l.counted_qty??''}" style="width:100px">`:esc(l.counted_qty??'—')}</td></tr>`).join('')}
+    </table>
+    ${editable?`<div class="row" style="margin-top:8px">
+      <button class="btn ghost" data-act="stk-save-counts">Save counts</button>
+      <button class="btn" data-act="stk-complete">Complete count</button>
+    </div>`:''}
+  </div>`;
+}
+
+/* ---------------- Stock transfers ---------------- */
+function addXferLine(){
+  const div=document.createElement('div'); div.className='row'; div.style.marginTop='8px';
+  div.innerHTML=`<select class="xfer-item-type"><option value="product">Product</option><option value="ingredient">Ingredient</option></select>
+    <input class="xfer-item-key" placeholder="item key / SKU" required style="min-width:140px">
+    <input class="xfer-qty" type="number" step="0.001" placeholder="qty" required style="width:100px">
+    <button type="button" class="btn ghost" data-act="xfer-remove-line">×</button>`;
+  $('#xferLines').appendChild(div);
+}
+let _xferRows=[];
+async function refreshTransfers(){
+  try{
+    const q=CURRENT_STORE!=='all'?`?store=${encodeURIComponent(CURRENT_STORE)}`:'';
+    const j=await boGet(`/api/backoffice/transfers${q}`);
+    _xferRows=j.rows||[];
+    renderXferList();
+  }catch(e){ $('#xferList').innerHTML=`<p class="muted">Couldn't load: ${esc(e.message)}</p>`; }
+}
+function renderXferList(){
+  const box=$('#xferList'); if(!box) return;
+  box.innerHTML=_xferRows.length?`<table><tr><th>From</th><th>To</th><th>Status</th><th>Lines</th><th></th></tr>
+    ${_xferRows.map(t=>`<tr><td>${esc(t.from_store_id)}</td><td>${esc(t.to_store_id)}</td>
+      <td><span class="badge ${t.status==='completed'?'ok':'open'}">${esc(t.status)}</span></td><td>${(t.lines||[]).length}</td>
+      <td>${t.status==='pending'?`<button class="btn ghost" data-act="xfer-complete" data-id="${esc(t.id)}">Complete</button>`:''}</td></tr>`).join('')}
+    </table>`:'<p class="muted">No transfers yet.</p>';
 }
 
 /* ---------------- Suppliers ---------------- */
@@ -910,6 +1016,31 @@ document.addEventListener('click',async e=>{
       _ledgerSort = _ledgerSort.key===el.dataset.key ? {key:el.dataset.key,dir:_ledgerSort.dir==='asc'?'desc':'asc'} : {key:el.dataset.key,dir:'asc'};
       renderLedgerBox(); return;
     }
+    case 'stk-add-item': { addStkItem(); return; }
+    case 'stk-remove-item': { el.closest('.row').remove(); return; }
+    case 'stk-open': { _stkDetailId=el.dataset.id; _stkDetailLines=(_stkRows.find(s=>s.id===_stkDetailId)?.lines||[]).map(l=>({...l})); renderStkDetail(); return; }
+    case 'stk-close': { _stkDetailId=null; renderStkDetail(); return; }
+    case 'stk-save-counts': {
+      const lines=_stkDetailLines.map((l,i)=>{
+        const input=document.querySelector(`.stk-counted[data-idx="${i}"]`);
+        return { item_type:l.item_type, item_key:l.item_key, counted_qty: input&&input.value!==''?Number(input.value):null };
+      }).filter(l=>l.counted_qty!=null);
+      if(!lines.length) return toast('Enter at least one count',true);
+      try{ await boSend('/api/backoffice/stocktakes','PATCH',{id:_stkDetailId,lines}); toast('Counts saved'); await refreshStocktakes(); _stkDetailLines=(_stkRows.find(s=>s.id===_stkDetailId)?.lines||[]).map(l=>({...l})); renderStkDetail(); }
+      catch(err){ toast(err.message,true); } return;
+    }
+    case 'stk-complete': {
+      if(!confirm('Complete this count? Every counted item that differs from the ledger will post an adjustment.')) return;
+      try{ const j=await boSend('/api/backoffice/stocktakes','POST',{id:_stkDetailId,action:'complete'}); toast(`Completed — ${(j.adjustments||[]).length} adjustment(s) posted`); await refreshStocktakes(); }
+      catch(err){ toast(err.message,true); } return;
+    }
+    case 'xfer-add-line': { addXferLine(); return; }
+    case 'xfer-remove-line': { el.closest('.row').remove(); return; }
+    case 'xfer-complete': {
+      if(!confirm('Complete this transfer? Stock will move from the source to the destination store.')) return;
+      try{ await boSend('/api/backoffice/transfers','POST',{id:el.dataset.id,action:'complete'}); toast('Transfer completed'); refreshTransfers(); refreshLedger(); }
+      catch(err){ toast(err.message,true); } return;
+    }
   }
 });
 
@@ -964,6 +1095,24 @@ document.addEventListener('submit',async e=>{
     } else if(act==='store-add'){
       await boSend('/api/backoffice/stores','POST',b);
       toast('Store added'); form.reset(); const s=await boGet('/api/backoffice/stores'); STORES=s.rows||[]; renderStoreSelect(); renderStoreMgmt();
+    } else if(act==='stk-start'){
+      const items=[...$('#stkItems').children].map(row=>({
+        item_type:row.querySelector('.stk-item-type').value,
+        item_key:row.querySelector('.stk-item-key').value,
+      })).filter(i=>i.item_key);
+      if(!items.length) return toast('Add at least one item to count',true);
+      await boSend('/api/backoffice/stocktakes','POST',{store_id:b.store_id,items});
+      toast('Count started'); $('#stkItems').innerHTML=''; addStkItem(); await refreshStocktakes();
+    } else if(act==='xfer-create'){
+      if(b.from_store_id===b.to_store_id) return toast('From and to must be different stores',true);
+      const lines=[...$('#xferLines').children].map(row=>({
+        item_type:row.querySelector('.xfer-item-type').value,
+        item_key:row.querySelector('.xfer-item-key').value,
+        qty:Number(row.querySelector('.xfer-qty').value),
+      })).filter(l=>l.item_key&&l.qty>0);
+      if(!lines.length) return toast('Add at least one line',true);
+      await boSend('/api/backoffice/transfers','POST',{from_store_id:b.from_store_id,to_store_id:b.to_store_id,lines});
+      toast('Transfer created'); $('#xferLines').innerHTML=''; addXferLine(); await refreshTransfers();
     }
   }catch(err){ toast(err.message,true); }
 });

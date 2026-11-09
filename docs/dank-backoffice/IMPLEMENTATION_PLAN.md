@@ -24,6 +24,7 @@
 | 18 | PDF export (Expenses, Reports) via the browser's native print-to-PDF | 7,9 | no new client-side dependency; `@media print` hides nav/forms, prints only the current tab's tables |
 | 19 | Sales-by-store + COGS: `storeId`/`productKey` tagged on each order at write time (`api/order.js`); `reports.js`'s `sales-by-store`/`cogs` join on them | 7 | delivery branch used as-is from the existing road-distance quote, dine-in attributed to DANK's one confirmed physical location, never a guessed branch or cost; untagged/uncosted data reported explicitly, not silently dropped (tested) |
 | 20 | UX pass (Phase 11): sortable columns + bulk actions on Purchase Orders, Expenses, Inventory | 7,9 | bulk-send (drafts) and bulk-delete (expenses) fan out to the existing single-item endpoints — no new API surface; verified click-through in a real browser against a stub API, zero console errors |
+| 21 | Stock Takes + Stock Transfers UI on the Inventory tab, calling the already-built `stocktakes.js`/`transfers.js` | 1,4 | start → count → complete and create → complete both verified end-to-end in a real browser; an uncounted item posts no adjustment (never assumed zero); no new API/DB/scopes |
 
 Items 12-14 were a second pass closing gaps identified against the original master prompt after the
 first 11 shipped — see `DEPLOYMENT.md`'s release notes for what changed and which existing files

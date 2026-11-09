@@ -183,19 +183,29 @@ Two things flagged earlier as "unverified claims" were genuinely tested, not jus
    both bulk actions, all produce the expected result with zero console errors. Other tabs (Suppliers,
    Food & Drinks, Kitchen board) weren't touched this pass — smaller tables, lower priority. True
    narrow-phone rendering specifically still wants a check on a real device (see that section for why).
-4. **StoreHub modules not surveyed:** Stock Transfers/Return detail screens, the 11 individual sales
+4. **Stock Takes and Stock Transfers now have UI.** `api/backoffice/stocktakes.js` and `transfers.js`
+   were fully built and tested from the start (session-based counting with expected-vs-counted ledger
+   writes; two-sided transfer-out/transfer-in) but `backoffice.html` never called them — a competitive
+   gap against StoreHub, which has both as first-class screens. Both now live as extra cards on the
+   Inventory tab: starting a count snapshots each item's current ledger balance as "expected," counts
+   are entered and saved independently of completing, and completing writes one ledger adjustment per
+   item that differs — an item never counted is left alone, never assumed to be zero (verified in a
+   real browser: a session with one counted, one uncounted item posted exactly one adjustment).
+   Transfers create as `pending` and post both sides of the ledger on Complete. Neither added new API
+   surface or scopes — `inventory_view`/`inventory_adjust` already existed.
+5. **StoreHub modules not surveyed:** Stock Return detail screens, the 11 individual sales
    report types, Loyalty/Membership, Online Store/Beep detail, Billing — `STOREHUB_FEATURE_ANALYSIS.md`
    lists these as open unknowns. DANK BackOffice's own Stock Transfer and Expenses modules were built
    from the brief's spec directly rather than blocked on surveying StoreHub's exact UI for them.
-5. **Staff permission grants expire with the session token (12h).** A scope granted via Settings →
+6. **Staff permission grants expire with the session token (12h).** A scope granted via Settings →
    Staff permissions takes effect on that person's next login, same staleness window the existing
    role field already has — not a new limitation introduced by this feature.
-6. **DB-level tests now run against real Postgres** (`tests/backoffice-migration.test.js`, see
+7. **DB-level tests now run against real Postgres** (`tests/backoffice-migration.test.js`, see
    above) — `tests/backoffice.test.js`'s in-memory fake still covers the endpoint logic on top.
    What's still not tested: `bo_ledger_adjust`'s advisory lock under genuine multi-connection
    concurrency (PGlite is single-connection; the lock's correctness is standard Postgres behavior,
    trusted, but a real concurrent-write load test against an actual Postgres server hasn't been run).
-7. **No backup/restore test was performed** — this needs access to the actual Supabase project
+8. **No backup/restore test was performed** — this needs access to the actual Supabase project
    (service-role key), which this session didn't have reason to use destructively. Recommend Bryan
    (or whoever applies the migration) takes a Supabase backup/snapshot immediately before and
    confirms Supabase's point-in-time-recovery window before trusting BackOffice with real data.
