@@ -48,7 +48,11 @@
   .hbar-row{margin:8px 0}
   .hbar-track{background:var(--line);border-radius:6px;height:10px;overflow:hidden}
   .hbar-fill{height:100%;background:var(--s1)}
-  .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:14px}
+  /* overflow-x:auto so a wide table (Expenses: checkbox+date+category+vendor+
+     amount+note+receipt+delete, 8 columns) scrolls within its own card on a
+     narrow phone instead of forcing the whole page wider — found by actually
+     resizing a real browser window narrow, not by reading the CSS. */
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:14px;overflow-x:auto}
   .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
   table{width:100%;border-collapse:collapse;font-size:13px}
   th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line)}

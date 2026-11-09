@@ -134,6 +134,18 @@ Two things flagged earlier as "unverified claims" were genuinely tested, not jus
   window-resize tool didn't actually change the page's viewport width, so true narrow-phone
   rendering (versus the ~767px width tested, and a forced-CSS preview of the `@media` block) wasn't
   verified on a real small screen — worth a quick check on an actual phone before relying on it.
+- **A later session's browser tool could resize narrower** (`window.innerWidth` confirmed at 502px,
+  well under the `@media(max-width:760px)` breakpoint — though still not a true ~375px phone; this
+  Chrome build appears to clamp the window to a minimum width regardless of what's requested, so
+  sub-400px still hasn't been verified on a real device). At 502px the nav correctly becomes a
+  horizontal scroll strip, the KPI grid collapses to 2 columns, the dashboard's SVG charts scale
+  cleanly with no overflow, and forms wrap field-by-field. **This found and fixed one real bug:**
+  wide tables (Expenses: checkbox+date+category+vendor+amount+note+receipt+delete, 8 columns) had no
+  overflow handling, so the table forced the *entire page* wider than the viewport — `.card` now
+  carries `overflow-x:auto`, so a wide table scrolls within its own card instead — confirmed both visually (the scrollbar moved from
+  spanning the whole window to sitting inside the card) and by measurement: after the fix,
+  `document.body.scrollWidth` (487px) is less than `window.innerWidth` (502px), so there's no
+  page-level horizontal scroll left. Still outstanding: true sub-400px rendering on a real phone.
 
 ## Rollback plan
 
