@@ -5,9 +5,11 @@
    these tests prove the behavior described there: a delivery order gets the
    real branch the road-distance quote resolved (never guessed), table/
    dine-in orders get DANK's one confirmed physical location, a line that
-   already carries its own catalogue id uses it as-is, a line that doesn't is
-   resolved by name against the live menu, and anything that can't be
-   resolved is left untagged rather than fabricated.
+   carries a catalogue id is trusted once it's checked against the live
+   menu, a line that doesn't is resolved by name against the live menu, and
+   anything that can't be resolved — including a client-forged branch or
+   item id that doesn't match anything real — is left untagged rather than
+   fabricated or blindly trusted.
 
    Follows the existing pattern in tests/delivery-fee.test.js: node:test, a
    fake fetch installed on globalThis for the Google Routes call, and a
@@ -27,7 +29,10 @@ process.env.SHOP_BRANCHES = JSON.stringify([
 
 await setJSON('pos:feed', {
   at: Date.now(),
-  products: [{ id: 'sku-attribution-test', name: 'Test Resolve Product', price: 300, member: 270, stock: 10 }],
+  products: [
+    { id: 'sku-attribution-test', name: 'Test Resolve Product', price: 300, member: 270, stock: 10 },
+    { id: 'food-9', name: 'Fried Rice', price: 120, member: 108, stock: 10 },
+  ],
 });
 await bustMenu();
 
@@ -116,4 +121,39 @@ test('a line whose name matches nothing in the live menu is left untagged, never
   assert.equal(res.code, 200, JSON.stringify(res.data));
   const saved = await getJSON('order:' + res.data.orderId);
   assert.equal(saved.items[0].productKey, undefined);
+});
+
+test('a client-supplied delivery.branch is never trusted — a forged value on the fallback-fee path is ignored, not persisted as storeId', async () => {
+  const res = await withFetch(routeFails, () => call(baseOrder({
+    fulfilment: 'delivery', deliveryFee: 0,
+    delivery: {
+      coordinates: { lat: 13.75, lng: 100.55 }, zone: 'Somewhere', address: 'Lobby',
+      branch: { id: 'forged-branch', name: 'Not A Real Branch' }, // attacker-supplied
+    },
+  })));
+  assert.equal(res.code, 200, JSON.stringify(res.data));
+  const saved = await getJSON('order:' + res.data.orderId);
+  assert.equal(saved.storeId, undefined, 'the client-supplied branch must never survive into storeId');
+  assert.equal(saved.delivery.feeFallback, true);
+});
+
+test('a client-supplied item.id that is not a real catalogue product is never trusted as productKey', async () => {
+  const res = await call(baseOrder({
+    fulfilment: 'table', table: 'T4',
+    items: [{ id: 'forged-product-key', name: 'Totally Unknown Product XYZ', option: '', qty: 1, price: 50, lineTotal: 50 }],
+  }));
+  assert.equal(res.code, 200, JSON.stringify(res.data));
+  const saved = await getJSON('order:' + res.data.orderId);
+  assert.equal(saved.items[0].productKey, undefined, 'a bogus id must not be trusted, even though a real one from food.html would be');
+});
+
+test('a client-supplied item.id that DOES match a real catalogue product is still accepted (food.html\'s normal case)', async () => {
+  const res = await call({
+    items: [{ id: 'food-9', name: 'Fried Rice (renamed by the customer)', option: '', qty: 1, price: 120, lineTotal: 120, kind: 'food' }],
+    customer: { name: 'Walk-in', phone: '0899999998' },
+    payment: 'Cash', fulfilment: 'pickup', pickup: {},
+  });
+  assert.equal(res.code, 200, JSON.stringify(res.data));
+  const saved = await getJSON('order:' + res.data.orderId);
+  assert.equal(saved.items[0].productKey, 'food-9', 'a real catalogue id is trusted even if the line\'s name was also tampered with');
 });

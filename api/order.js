@@ -143,6 +143,12 @@ export default async function handler(req, res) {
   // The fee is never taken from the browser: it is worked out here from the
   // customer's pin (or typed address) by road distance. See _delivery-fee.js.
   let submittedDeliveryFee = 0;
+  // Set only from quote.branch below, never read back from o.delivery.branch
+  // afterward: o.delivery is spread from client input a few lines down, so a
+  // client-supplied `delivery.branch` would otherwise survive untouched
+  // whenever quote.branch comes back empty (the fallback-fee path) and reach
+  // the store-attribution block below as if it were server-resolved.
+  let resolvedDeliveryBranchId = null;
   if (!matchedTable) {
     const c = o.delivery?.coordinates;
     const hasPin = c && Number.isFinite(Number(c.lat)) && Number.isFinite(Number(c.lng));
@@ -157,7 +163,7 @@ export default async function handler(req, res) {
     const quote = deliveryQuote(eta);
     submittedDeliveryFee = quote.fee;
     o.delivery = { ...(o.delivery || {}), km: quote.km, feeFallback: quote.fallback };
-    if (quote.branch) o.delivery.branch = quote.branch;
+    if (quote.branch) { o.delivery.branch = quote.branch; resolvedDeliveryBranchId = String(quote.branch.id); }
   }
   if (submittedPromotion) {
     try {
@@ -263,7 +269,16 @@ export default async function handler(req, res) {
      own try/catches, placed after everything above has already run: a
      failure here must never affect pricing, totals or whether the order
      saves, and nothing here is trusted from the client over what's already
-     been resolved server-side.
+     been resolved server-side — storeId comes only from
+     resolvedDeliveryBranchId (set above, strictly from quote.branch, never
+     from the client's own o.delivery), and productKey is only ever accepted
+     from the client when it matches a real id in the live catalogue, never
+     taken as-is. Both were previously trusting client-controlled fields
+     (a client-supplied delivery.branch survived the fallback-fee path's
+     empty quote.branch; item.id was accepted unchecked) — closed after a
+     security review flagged the gap; low real-world impact since it only
+     ever affected attribution of the client's own order, but worth closing
+     since internal reports should never trust unvalidated client input.
        storeId: a delivery order already resolves a real branch by road
        distance (api/_route.js, via the fee quote earlier in this handler)
        whenever the route provider succeeds — that id is used as-is, never
@@ -280,32 +295,33 @@ export default async function handler(req, res) {
   const DINE_IN_STORE_ID = "pattanakarn";
   try {
     if (o.fulfilment === "delivery") {
-      if (o.delivery?.branch?.id) o.storeId = String(o.delivery.branch.id);
+      if (resolvedDeliveryBranchId) o.storeId = resolvedDeliveryBranchId;
     } else if (matchedTable || o.table || o.fulfilment === "table" || o.fulfilment === "pickup") {
       o.storeId = DINE_IN_STORE_ID;
     }
   } catch (e) { console.error("store attribution skipped:", e.message); }
 
-  /* productKey: food.html already sends each line's own catalogue id as
-     `id` — used as-is. Cannabis checkout (checkout.html/index.html) sends
-     `shId`, which the live BRYAN POS feed doesn't populate (see AUDIT.md),
-     so it's resolved here by matching the line's name against the same
-     getMenu() the price guard above already reads — the identical lookup,
-     just keyed by name instead of shId since that's what's actually on the
-     line. An unmatched name (renamed/delisted product) is left untagged,
-     never guessed at. */
+  /* productKey: resolved against the live catalogue (getMenu()), never
+     taken as-is from the client. food.html sends each line's own catalogue
+     id as `id`, which is used only once confirmed to match a real product —
+     a client can't point productKey at an arbitrary id (e.g. to misattribute
+     COGS to a product it didn't actually sell). Cannabis checkout (checkout.
+     html/index.html) sends `shId`, which the live BRYAN POS feed doesn't
+     populate (see AUDIT.md), so those lines are resolved by matching the
+     line's name against the same catalogue — the identical lookup, just
+     keyed by name instead of id. An unmatched name/id (renamed/delisted
+     product, or a bogus client value) is left untagged, never guessed at. */
   try {
-    if (o.items?.length && o.items.some((i) => !i.id && !i.productKey)) {
+    if (o.items?.length) {
       const { data: menu } = await getMenu();
+      const idSet = new Set((menu || []).map((p) => String(p.id)));
       const byName = new Map((menu || []).map((p) => [String(p.name || "").trim().toLowerCase(), String(p.id)]));
       for (const it of o.items) {
         if (it.productKey) continue;
-        if (it.id) { it.productKey = String(it.id); continue; }
+        if (it.id && idSet.has(String(it.id))) { it.productKey = String(it.id); continue; }
         const key = byName.get(String(it.name || "").trim().toLowerCase());
         if (key) it.productKey = key;
       }
-    } else if (o.items?.length) {
-      for (const it of o.items) if (!it.productKey && it.id) it.productKey = String(it.id);
     }
   } catch (e) { console.error("product_key attribution skipped:", e.message); }
 

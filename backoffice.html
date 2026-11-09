@@ -928,7 +928,17 @@ function renderReport(type,j){
 function exportCSV(){
   if(!_lastReportRows.length) return toast('Nothing to export — load a report first',true);
   const cols=Object.keys(_lastReportRows[0]);
-  const esc2=v=>'"'+String(v??'').replace(/"/g,'""')+'"';
+  /* Report rows can carry a customer-chosen order item name verbatim
+     (api/order.js never overwrites it) — a cell starting with =/+/-/@ or a
+     tab is the classic CSV/DDE formula-injection vector (Excel/Sheets treat
+     a leading = as a formula on open). A leading apostrophe forces the cell
+     to plain text in every spreadsheet app without changing the visible
+     value, so this is the standard mitigation, not a cosmetic quoting fix. */
+  const esc2=v=>{
+    let s=String(v??'');
+    if(/^[=+\-@\t]/.test(s)) s="'"+s;
+    return '"'+s.replace(/"/g,'""')+'"';
+  };
   const csv=[cols.join(','),..._lastReportRows.map(r=>cols.map(c=>esc2(r[c])).join(','))].join('\r\n');
   const blob=new Blob([csv],{type:'text/csv'});
   const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
