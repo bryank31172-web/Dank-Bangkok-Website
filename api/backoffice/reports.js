@@ -60,10 +60,31 @@ function salesByCategory(orders) {
   return [...cats.values()].sort((a, b) => b.gross - a.gross);
 }
 
-function salesByStore() {
-  // Orders in this repo don't currently carry a store_id (BRYAN POS pushes
-  // one combined feed) — reported as a flagged unknown rather than guessed.
-  return { note: "Orders aren't tagged by outlet in the current order record shape — per-outlet sales reporting needs that field added at the order-write step first (api/order.js).", rows: [] };
+function salesByStore(orders) {
+  // api/order.js tags o.storeId at write time (delivery: the real branch the
+  // road-distance quote resolved; table/in-house: DANK's one dine-in
+  // location — see the comment there for why). Orders placed before that
+  // shipped, or a delivery whose route couldn't be resolved, carry no
+  // storeId — counted separately as "untagged" rather than dropped silently
+  // or guessed at.
+  const stores = new Map();
+  let untaggedOrders = 0, untaggedGross = 0;
+  for (const o of orders) {
+    if (o.status === "cancelled") continue;
+    const gross = money(o.total ?? o.subtotal);
+    if (!o.storeId) { untaggedOrders++; untaggedGross += gross; continue; }
+    const rec = stores.get(o.storeId) || { store_id: o.storeId, orders: 0, gross: 0 };
+    rec.orders++; rec.gross += gross;
+    stores.set(o.storeId, rec);
+  }
+  const rows = [...stores.values()].sort((a, b) => b.gross - a.gross);
+  return {
+    rows,
+    untagged: { orders: untaggedOrders, gross: untaggedGross },
+    note: untaggedOrders
+      ? `${untaggedOrders} order(s) in this window have no store recorded (placed before store attribution shipped, or a delivery whose branch couldn't be resolved by road distance) — their ฿${untaggedGross} isn't included in the rows above.`
+      : undefined,
+  };
 }
 
 function discounts(orders) {
@@ -96,16 +117,45 @@ function returnsAndCorrections(orders) {
 }
 
 async function cogs(orders) {
-  const bySku = salesByProduct(orders); // name-keyed, not SKU-keyed — see the limitation note below
-  // Order items in this repo are recorded by display name, not the BackOffice
-  // product_key — there is no reliable join from an order line back to
-  // bo_product_settings.cost_price without that key being written at order
-  // time. Rather than fuzzy-matching on name (which would silently
-  // mis-price COGS whenever two products share wording), this returns the
-  // revenue side only and says plainly that cost can't be joined in yet.
+  const bySku = salesByProduct(orders); // still name-keyed rows (qty/gross) — product_key is joined on top below
+  // api/order.js now tags each line with productKey when it can resolve one
+  // (see the comment there). Only orders written after that shipped carry
+  // it, so this joins whatever's actually present rather than assuming
+  // every line has one — a line with no productKey, or a productKey with no
+  // cost_price on file, shows revenue only, never a guessed cost.
+  const keyByName = new Map();
+  for (const o of orders) {
+    if (o.status === "cancelled") continue;
+    for (const i of o.items || []) {
+      const n = String(i.name || "").trim();
+      if (n && i.productKey && !keyByName.has(n)) keyByName.set(n, String(i.productKey));
+    }
+  }
+  const keys = [...new Set(keyByName.values())];
+  const costs = keys.length && boConfigured()
+    ? await boSelect("bo_product_settings", `product_key=in.(${keys.map(enc).join(",")})&select=product_key,cost_price`)
+    : [];
+  const costByKey = new Map((costs || []).map((c) => [c.product_key, Number(c.cost_price) || 0]));
+
+  let totalRevenue = 0, totalCost = 0, costedRows = 0;
+  const rows = bySku.map((row) => {
+    totalRevenue += row.gross;
+    const key = keyByName.get(row.name) || null;
+    const cost = key != null && costByKey.has(key) ? costByKey.get(key) : null;
+    if (cost != null) { totalCost += cost * row.qty; costedRows++; }
+    return {
+      ...row, product_key: key, cost_price: cost,
+      cost_total: cost != null ? Math.round(cost * row.qty) : null,
+      margin: cost != null ? Math.round(row.gross - cost * row.qty) : null,
+    };
+  });
+
   return {
-    note: "Order lines are recorded by product name, not the BackOffice product_key, so cost can't be reliably joined per line yet — this shows revenue only. Fixing it means writing product_key onto each order line at checkout time (api/order.js), outside BackOffice's own surface.",
-    rows: bySku,
+    note: costedRows
+      ? `Cost joined for ${costedRows} of ${rows.length} product(s) via each line's resolved product_key and a cost price on file in Products settings. The rest show revenue only — either no line this window resolved a product_key, or no cost_price is set yet.`
+      : "No product in this window has both a resolved product_key and a cost price on file yet — showing revenue only, not a guessed cost. Set cost prices in Products settings; new orders resolve product_key automatically.",
+    totalRevenue: money(totalRevenue), totalCost: Math.round(totalCost), grossMargin: Math.round(totalRevenue - totalCost),
+    costedRows, rows,
   };
 }
 
@@ -191,11 +241,17 @@ export default async function handler(req, res) {
   try {
     if (type === "sales-by-product") return res.status(200).json({ rows: salesByProduct(await readLiveOrders(since)), source: "recorded" });
     if (type === "sales-by-category") return res.status(200).json({ rows: salesByCategory(await readLiveOrders(since)), source: "recorded" });
-    if (type === "sales-by-store") return res.status(200).json({ ...salesByStore(), source: "unavailable" });
+    if (type === "sales-by-store") {
+      const r = salesByStore(await readLiveOrders(since));
+      return res.status(200).json({ ...r, source: r.rows.length ? "recorded" : "unavailable" });
+    }
     if (type === "discounts") return res.status(200).json({ ...discounts(await readLiveOrders(since)), source: "recorded" });
     if (type === "returns-corrections") return res.status(200).json({ ...returnsAndCorrections(await readLiveOrders(since)), source: "recorded" });
 
-    if (type === "cogs") return res.status(200).json({ ...(await cogs(await readLiveOrders(since))), source: "unavailable-partial" });
+    if (type === "cogs") {
+      const c = await cogs(await readLiveOrders(since));
+      return res.status(200).json({ ...c, source: c.costedRows ? "derived" : "unavailable-partial" });
+    }
     if (!boConfigured()) return res.status(503).json({ error: "not configured" });
     if (type === "stock-value") return res.status(200).json({ ...(await stockValue(store)), source: "derived" });
     if (type === "waste-costs") return res.status(200).json({ ...(await wasteCosts(since, store)), source: "recorded" });

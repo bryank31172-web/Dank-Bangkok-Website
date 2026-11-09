@@ -516,7 +516,7 @@ const REPORT_TYPES=[
   {id:'sales-by-store',label:'Sales by store'},
   {id:'discounts',label:'Discounts'},
   {id:'returns-corrections',label:'Returns & corrections'},
-  {id:'cogs',label:'Cost of goods (revenue side)'},
+  {id:'cogs',label:'Cost of goods'},
   {id:'stock-value',label:'Stock value'},
   {id:'waste-costs',label:'Waste costs'},
   {id:'staff-activity',label:'Staff activity (BackOffice actions)'},
@@ -566,7 +566,11 @@ function renderReport(type,j){
     return sourceNote(j)+((j.rows||[]).length?`<table><tr><th>${key==='name'?'Product':'Category'}</th><th>Qty</th><th>Gross</th></tr>
       ${j.rows.slice(0,50).map(r=>`<tr><td>${esc(r[key])}</td><td>${esc(r.qty)}</td><td>${money(r.gross)}</td></tr>`).join('')}</table>`:'<p class="muted">No sales recorded.</p>');
   }
-  if(type==='sales-by-store'){ _lastReportRows=j.rows||[]; return sourceNote(j); }
+  if(type==='sales-by-store'){
+    _lastReportRows=j.rows||[];
+    return sourceNote(j)+((j.rows||[]).length?`<table><tr><th>Store</th><th>Orders</th><th>Gross</th></tr>
+      ${j.rows.map(r=>`<tr><td>${esc(r.store_id)}</td><td>${esc(r.orders)}</td><td>${money(r.gross)}</td></tr>`).join('')}</table>`:'<p class="muted">No store-tagged sales in range.</p>');
+  }
   if(type==='discounts'){
     _lastReportRows=j.rows||[];
     return `<p><b>Total discounted: ${money(j.total)}</b> across ${j.orderCount||0} orders</p>`+
@@ -581,8 +585,9 @@ function renderReport(type,j){
   }
   if(type==='cogs'){
     _lastReportRows=j.rows||[];
-    return sourceNote(j)+((j.rows||[]).length?`<table><tr><th>Product</th><th>Qty sold</th><th>Revenue</th></tr>
-      ${j.rows.slice(0,50).map(r=>`<tr><td>${esc(r.name)}</td><td>${esc(r.qty)}</td><td>${money(r.gross)}</td></tr>`).join('')}</table>`:'');
+    const totals=j.rows?.length?`<p><b>Revenue: ${money(j.totalRevenue)}</b> &nbsp; <b>Cost: ${money(j.totalCost)}</b> &nbsp; <b>Margin: ${money(j.grossMargin)}</b></p>`:'';
+    return sourceNote(j)+totals+((j.rows||[]).length?`<table><tr><th>Product</th><th>Qty sold</th><th>Revenue</th><th>Cost</th><th>Margin</th></tr>
+      ${j.rows.slice(0,50).map(r=>`<tr><td>${esc(r.name)}</td><td>${esc(r.qty)}</td><td>${money(r.gross)}</td><td>${r.cost_total!=null?money(r.cost_total):'—'}</td><td>${r.margin!=null?money(r.margin):'—'}</td></tr>`).join('')}</table>`:'');
   }
   if(type==='stock-value'){
     _lastReportRows=j.rows||[];

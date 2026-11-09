@@ -258,6 +258,57 @@ export default async function handler(req, res) {
   let saved = false;
   const takenAt = Date.now();
 
+  /* Store + product attribution for BackOffice reporting (sales-by-store,
+     COGS — docs/dank-backoffice/DEPLOYMENT.md's "known gaps" #2). Two of its
+     own try/catches, placed after everything above has already run: a
+     failure here must never affect pricing, totals or whether the order
+     saves, and nothing here is trusted from the client over what's already
+     been resolved server-side.
+       storeId: a delivery order already resolves a real branch by road
+       distance (api/_route.js, via the fee quote earlier in this handler)
+       whenever the route provider succeeds — that id is used as-is, never
+       re-derived or guessed. When the route couldn't be resolved (fallback
+       flat fee), no branch exists to use, so the order is left untagged
+       rather than guessed. Table/dine-in orders (checkout.html's table flow)
+       and food.html's orders (table or in-house pickup — it has no other
+       fulfilment) have no per-branch data anywhere in the current client
+       code: one shared table list serves every branch, not one list per
+       branch. Those are attributed to DANK Pattanakarn, the one physical
+       location this flow is confirmed to run from today; if a second
+       location ever gets its own tables, this needs a real per-table branch
+       field, not a wider guess. */
+  const DINE_IN_STORE_ID = "pattanakarn";
+  try {
+    if (o.fulfilment === "delivery") {
+      if (o.delivery?.branch?.id) o.storeId = String(o.delivery.branch.id);
+    } else if (matchedTable || o.table || o.fulfilment === "table" || o.fulfilment === "pickup") {
+      o.storeId = DINE_IN_STORE_ID;
+    }
+  } catch (e) { console.error("store attribution skipped:", e.message); }
+
+  /* productKey: food.html already sends each line's own catalogue id as
+     `id` — used as-is. Cannabis checkout (checkout.html/index.html) sends
+     `shId`, which the live BRYAN POS feed doesn't populate (see AUDIT.md),
+     so it's resolved here by matching the line's name against the same
+     getMenu() the price guard above already reads — the identical lookup,
+     just keyed by name instead of shId since that's what's actually on the
+     line. An unmatched name (renamed/delisted product) is left untagged,
+     never guessed at. */
+  try {
+    if (o.items?.length && o.items.some((i) => !i.id && !i.productKey)) {
+      const { data: menu } = await getMenu();
+      const byName = new Map((menu || []).map((p) => [String(p.name || "").trim().toLowerCase(), String(p.id)]));
+      for (const it of o.items) {
+        if (it.productKey) continue;
+        if (it.id) { it.productKey = String(it.id); continue; }
+        const key = byName.get(String(it.name || "").trim().toLowerCase());
+        if (key) it.productKey = key;
+      }
+    } else if (o.items?.length) {
+      for (const it of o.items) if (!it.productKey && it.id) it.productKey = String(it.id);
+    }
+  } catch (e) { console.error("product_key attribution skipped:", e.message); }
+
   try {
     await setJSON("order:" + orderId, { ...o, orderId, at: takenAt, status: "new" });
     await indexAdd(orderId, "orders:index");

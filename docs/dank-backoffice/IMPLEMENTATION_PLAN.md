@@ -22,6 +22,7 @@
 | 16 | Recurring expenses made real (`next_generated`/`generated_from` on `bo_expenses`) | 9,15 | a due recurring expense generates its successor exactly once per read, chain is traceable, generation itself is audit-logged (tested) |
 | 17 | Import validation, duplicate detection and reconciliation (Module G, `/api/backoffice/import`) | 9 | never creates expenses/orders from an uploaded file — only reports matched/unmatched/duplicate/invalid against existing records (tested) |
 | 18 | PDF export (Expenses, Reports) via the browser's native print-to-PDF | 7,9 | no new client-side dependency; `@media print` hides nav/forms, prints only the current tab's tables |
+| 19 | Sales-by-store + COGS: `storeId`/`productKey` tagged on each order at write time (`api/order.js`); `reports.js`'s `sales-by-store`/`cogs` join on them | 7 | delivery branch used as-is from the existing road-distance quote, dine-in attributed to DANK's one confirmed physical location, never a guessed branch or cost; untagged/uncosted data reported explicitly, not silently dropped (tested) |
 
 Items 12-14 were a second pass closing gaps identified against the original master prompt after the
 first 11 shipped — see `DEPLOYMENT.md`'s release notes for what changed and which existing files
@@ -30,6 +31,11 @@ first 11 shipped — see `DEPLOYMENT.md`'s release notes for what changed and wh
 Items 15-18 are a third pass, closing further gaps against the original master prompt (audit
 trail, recurring-expense automation, Module G's import/reconciliation requirement, and PDF export) —
 see `DEPLOYMENT.md`'s release notes for v1.2.
+
+Item 19 (Phase 8) is the one deferred item that touches checkout-adjacent code (`api/order.js`) a
+third time, after the promotion-redemption logging in the second pass — same posture: additive,
+isolated try/catches placed after pricing/totals are already finalized, never able to affect them.
+See `DEPLOYMENT.md`'s known-gaps section #2 for exactly what this does and does not cover.
 
 ## Out of scope for this build pass (explicitly, per the brief)
 

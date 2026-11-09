@@ -158,13 +158,21 @@ Two things flagged earlier as "unverified claims" were genuinely tested, not jus
 1. **Thai cannabis compliance fields are not implemented** — `THAI_CANNABIS_COMPLIANCE.md` is
    research, not a finished design, and explicitly needs a licensed Thai lawyer's review before any
    batch/lot/prescription-reference field is added to the ledger.
-2. **Sales-by-store reporting is still not possible** — orders aren't tagged with which outlet they
-   came from in the current order-write path (`api/order.js`). `reports.js`'s `sales-by-store`
-   returns an explicit "not available" response rather than a guessed number; fixing this means
-   adding a `store_id` field at order-creation time, which is a change outside BackOffice's own
-   surface and needs its own review. Likewise, **COGS is revenue-only** — order lines are recorded
-   by product name, not the BackOffice `product_key`, so cost can't be reliably joined per line
-   without that same order-write change.
+2. **Sales-by-store and COGS now work, but only going forward.** `api/order.js` tags each new order
+   with `storeId` and each line with `productKey` just before it saves (its own isolated try/catches,
+   never touching pricing/totals — see the comments there). Delivery orders get the real branch the
+   road-distance quote already resolves; table/dine-in orders (one shared table list, no per-branch
+   data anywhere in the client code) are attributed to DANK Pattanakarn, confirmed as the one physical
+   location that flow runs from today — if a second location ever gets its own tables, this needs a
+   real per-table branch field, not a wider guess. Product lines are tagged via the item's own
+   catalogue id when present (food.html), or by matching name against the live menu otherwise
+   (cannabis checkout). `reports.js`'s `sales-by-store` now returns real grouped totals plus an
+   explicit `untagged` count/sum for anything outside this coverage; `cogs` joins `cost_price` by
+   `product_key` wherever one resolved and reports revenue-only for the rest — never a guessed figure
+   either way. **What's still a real gap:** orders placed before this shipped, and any delivery whose
+   route couldn't be resolved, carry no `storeId`; a renamed/delisted product's older lines carry no
+   `productKey`. Both degrade to "untagged"/"revenue only," not a wrong number. Covered by
+   `tests/backoffice-order-attribution.test.js` and `tests/backoffice-reports-attribution.test.js`.
 3. **`backoffice.html`'s UI is functional, not polished — but it has now actually been opened in a
    browser** (see "Verification actually performed this session" above), not just syntax-checked.
    11 tabs including Settings (store management + per-employee BackOffice permission grants) and a
