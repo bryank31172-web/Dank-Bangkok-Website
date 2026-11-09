@@ -29,7 +29,7 @@ async function readLiveOrders(since) {
   return out;
 }
 
-function salesByProduct(orders) {
+export function salesByProduct(orders) {
   const items = new Map();
   for (const o of orders) {
     if (o.status === "cancelled") continue;
@@ -60,7 +60,7 @@ function salesByCategory(orders) {
   return [...cats.values()].sort((a, b) => b.gross - a.gross);
 }
 
-function salesByStore(orders) {
+export function salesByStore(orders) {
   // api/order.js tags o.storeId at write time (delivery: the real branch the
   // road-distance quote resolved; table/in-house: DANK's one dine-in
   // location — see the comment there for why). Orders placed before that

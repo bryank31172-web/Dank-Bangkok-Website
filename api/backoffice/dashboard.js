@@ -10,6 +10,9 @@
 import { requirePermission } from "../_auth.js";
 import { boConfigured, boSelect, enc } from "../_bo-db.js";
 import { getJSON, indexList } from "../_store.js";
+import { salesByProduct, salesByStore } from "./reports.js";
+
+const money = (n) => Math.round(Number(n) || 0);
 
 function rangeStart(range) {
   const d = new Date();
@@ -19,18 +22,77 @@ function rangeStart(range) {
   return d;
 }
 
-async function recentSales(since) {
-  // Reuses the same order index /api/sales reads from; capped so a dashboard
-  // call never has to walk the whole archive.
+/* The prior period of the same length, immediately before `start` — e.g. for
+   "today" that's yesterday, for "week" the 7 days before this week. Used for
+   the %-change KPI, same idea as StoreHub's "vs prior period". */
+function priorWindow(start, end) {
+  const lengthMs = end.getTime() - start.getTime();
+  return { prevStart: new Date(start.getTime() - lengthMs), prevEnd: new Date(start) };
+}
+
+function dayStart(d) { const x = new Date(d); x.setHours(0, 0, 0, 0); return x; }
+
+/** One walk over the order index, newest-first, capped the same way /api/sales
+    and reports.js cap their sweep — honest about the cap, never silently
+    pretending to cover more history than was actually read. */
+async function readOrders(since) {
   const ids = await indexList("orders:index");
-  let total = 0, count = 0;
+  const out = [];
   for (const id of ids.slice(0, 500)) {
     const o = await getJSON("order:" + id);
-    if (!o || !o.at || o.at < since.getTime()) continue;
-    total += Number(o.total) || 0;
-    count += 1;
+    if (!o || !o.at || o.at < since) continue;
+    out.push(o);
   }
-  return { total, count };
+  return out;
+}
+
+/* Cumulative sales through each hour of a calendar day — "today vs
+   yesterday, hourly", matching StoreHub's dashboard trend chart. Cumulative
+   (not per-hour) so the line reads as "how much has come in so far today",
+   the thing an owner glancing at this mid-afternoon actually wants to know. */
+function hourlyCumulative(orders, dayStartMs, dayEndMs) {
+  const hourly = new Array(24).fill(0);
+  for (const o of orders) {
+    if (o.status === "cancelled") continue;
+    if (o.at < dayStartMs || o.at >= dayEndMs) continue;
+    hourly[new Date(o.at).getHours()] += money(o.total ?? o.subtotal);
+  }
+  const cumulative = [];
+  let running = 0;
+  for (const h of hourly) { running += h; cumulative.push(running); }
+  return cumulative;
+}
+
+function salesByFulfilment(orders) {
+  const byType = new Map();
+  for (const o of orders) {
+    if (o.status === "cancelled") continue;
+    const type = String(o.fulfilment || "unknown");
+    const rec = byType.get(type) || { fulfilment: type, orders: 0, gross: 0 };
+    rec.orders += 1; rec.gross += money(o.total ?? o.subtotal);
+    byType.set(type, rec);
+  }
+  return [...byType.values()].sort((a, b) => b.gross - a.gross);
+}
+
+/* Top products by revenue, with a genuinely-counted "days sold" (distinct
+   calendar days the product appears on a live order) — the same field
+   StoreHub's top-products list shows, computed here rather than guessed. */
+function topProducts(orders, limit = 8) {
+  const rows = salesByProduct(orders);
+  const daysByName = new Map();
+  for (const o of orders) {
+    if (o.status === "cancelled" || !o.at) continue;
+    const day = new Date(o.at).toISOString().slice(0, 10);
+    for (const i of o.items || []) {
+      const n = String(i.name || "").trim();
+      if (!n) continue;
+      const set = daysByName.get(n) || new Set();
+      set.add(day);
+      daysByName.set(n, set);
+    }
+  }
+  return rows.slice(0, limit).map((r) => ({ ...r, daysSold: daysByName.get(r.name)?.size || 0 }));
 }
 
 export default async function handler(req, res) {
@@ -41,14 +103,51 @@ export default async function handler(req, res) {
 
   const range = ["today", "week", "month"].includes(req.query?.range) ? req.query.range : "today";
   const store = req.query?.store;
-  const since = rangeStart(range);
+  const start = rangeStart(range);
+  const end = new Date();
+  const { prevStart, prevEnd } = priorWindow(start, end);
+  const todayStart = dayStart(end);
+  const yesterdayStart = dayStart(new Date(todayStart.getTime() - 86400000));
 
-  const out = { range, since: since.toISOString(), store: store || "all" };
+  const out = { range, since: start.toISOString(), store: store || "all" };
 
-  // Sales — always available even without Supabase configured (reads site_kv).
+  // Sales, trend, channel/store/product breakdowns — all read from the same
+  // site_kv order sweep, always available even without Supabase configured.
   try {
-    const sales = await recentSales(since);
-    out.sales = { ...sales, source: "recorded" };
+    const sweepSince = Math.min(prevStart.getTime(), yesterdayStart.getTime());
+    const all = await readOrders(sweepSince);
+    const scoped = store && store !== "all" ? all.filter((o) => o.storeId === store) : all;
+
+    const inRange = (o, from, to) => o.at >= from.getTime() && (!to || o.at < to.getTime());
+    const current = scoped.filter((o) => inRange(o, start));
+    const prior = scoped.filter((o) => inRange(o, prevStart, prevEnd));
+    const liveCurrent = current.filter((o) => o.status !== "cancelled");
+    const livePrior = prior.filter((o) => o.status !== "cancelled");
+
+    const total = liveCurrent.reduce((s, o) => s + money(o.total ?? o.subtotal), 0);
+    const count = liveCurrent.length;
+    const prevTotal = livePrior.reduce((s, o) => s + money(o.total ?? o.subtotal), 0);
+    const totalItems = liveCurrent.reduce((s, o) => s + (o.items || []).reduce((si, i) => si + (Number(i.qty) || 1), 0), 0);
+
+    out.sales = {
+      total, count,
+      avgOrderValue: count ? Math.round(total / count) : 0,
+      avgItemsPerOrder: count ? Math.round((totalItems / count) * 10) / 10 : 0,
+      changePct: prevTotal > 0 ? Math.round(((total - prevTotal) / prevTotal) * 100) : null,
+      source: "recorded",
+    };
+    out.trend = {
+      today: hourlyCumulative(scoped, todayStart.getTime(), todayStart.getTime() + 86400000),
+      yesterday: hourlyCumulative(scoped, yesterdayStart.getTime(), todayStart.getTime()),
+      source: "recorded",
+    };
+    out.salesByFulfilment = {
+      rows: salesByFulfilment(current),
+      source: "recorded",
+      note: "DANK has no in-store/offline sales data to compare against (BRYAN POS counter sales are never written back here) — this breaks down website orders by how they were fulfilled (delivery / table / pickup), not an online-vs-offline split.",
+    };
+    out.salesByStoreBreakdown = { ...salesByStore(current), source: "recorded" };
+    out.topProducts = { rows: topProducts(current), source: "recorded" };
   } catch (e) {
     out.sales = { total: 0, count: 0, source: "unavailable", error: String(e.message || e) };
   }

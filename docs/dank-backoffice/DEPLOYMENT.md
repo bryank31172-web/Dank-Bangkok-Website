@@ -193,19 +193,33 @@ Two things flagged earlier as "unverified claims" were genuinely tested, not jus
    real browser: a session with one counted, one uncounted item posted exactly one adjustment).
    Transfers create as `pending` and post both sides of the ledger on Complete. Neither added new API
    surface or scopes — `inventory_view`/`inventory_adjust` already existed.
-5. **StoreHub modules not surveyed:** Stock Return detail screens, the 11 individual sales
+5. **The Overview dashboard now has StoreHub-parity charts.** `api/backoffice/dashboard.js` adds an
+   hourly cumulative today-vs-yesterday trend, a sales-by-fulfilment donut, a sales-by-store bar
+   chart, a top-products list (qty, revenue, and a genuinely-counted `daysSold` — distinct calendar
+   days sold, not guessed), and %-change-vs-prior-period on the sales KPI, plus average-order-value
+   and average-items-per-order. All of it comes from the same site_kv order sweep the sales total
+   already read, with a Today/This week/This month toggle (the `range` param already existed).
+   Charts are hand-rolled inline SVG — no new dependency — reusing `analytics.html`'s validated
+   series colours (`#1faa63`/`#3987e5`; a brand-green/gold pair fails the colour-blindness check
+   outright). **One deliberate deviation from StoreHub:** its channel donut is online-vs-offline; DANK
+   has no in-store/POS-terminal sales data at all (BRYAN POS counter sales are never written back to
+   this system — see CLAUDE.md), so faking that split would misrepresent the data. The donut instead
+   breaks down by fulfilment type (delivery/table/pickup), labeled as exactly that, with the
+   distinction explained in the UI itself. 8 new tests cover the aggregation (hourly bucketing,
+   %-change math, days-sold counting, store scoping) — `tests/backoffice-dashboard-charts.test.js`.
+6. **StoreHub modules not surveyed:** Stock Return detail screens, the 11 individual sales
    report types, Loyalty/Membership, Online Store/Beep detail, Billing — `STOREHUB_FEATURE_ANALYSIS.md`
    lists these as open unknowns. DANK BackOffice's own Stock Transfer and Expenses modules were built
    from the brief's spec directly rather than blocked on surveying StoreHub's exact UI for them.
-6. **Staff permission grants expire with the session token (12h).** A scope granted via Settings →
+7. **Staff permission grants expire with the session token (12h).** A scope granted via Settings →
    Staff permissions takes effect on that person's next login, same staleness window the existing
    role field already has — not a new limitation introduced by this feature.
-7. **DB-level tests now run against real Postgres** (`tests/backoffice-migration.test.js`, see
+8. **DB-level tests now run against real Postgres** (`tests/backoffice-migration.test.js`, see
    above) — `tests/backoffice.test.js`'s in-memory fake still covers the endpoint logic on top.
    What's still not tested: `bo_ledger_adjust`'s advisory lock under genuine multi-connection
    concurrency (PGlite is single-connection; the lock's correctness is standard Postgres behavior,
    trusted, but a real concurrent-write load test against an actual Postgres server hasn't been run).
-8. **No backup/restore test was performed** — this needs access to the actual Supabase project
+9. **No backup/restore test was performed** — this needs access to the actual Supabase project
    (service-role key), which this session didn't have reason to use destructively. Recommend Bryan
    (or whoever applies the migration) takes a Supabase backup/snapshot immediately before and
    confirms Supabase's point-in-time-recovery window before trusting BackOffice with real data.

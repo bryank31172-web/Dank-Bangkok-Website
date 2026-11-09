@@ -10,6 +10,12 @@
     --brand:#007A4D; --brand-dark:#00603c;
     --bg:#f5f7f6; --panel:#ffffff; --text:#14231c; --muted:#5b6b64; --line:#dde4e1;
     --danger:#c0392b; --warn:#b8860b; --ok:#1f8a4c;
+    /* Chart series colours — same pair analytics.html validated (brand green
+       vs. brand gold fails the colour-blindness check outright, ΔE 4.8
+       deuteranopia); s3/s4 extend it for the fulfilment donut's extra
+       categories, picked for hue distance from s1/s2 and each other, not
+       separately validated the way the two-series pair was. */
+    --s1:#1faa63; --s2:#3987e5; --s3:#e8a33d; --s4:#8b5fbf;
   }
   @media (prefers-color-scheme: dark){
     :root{ --bg:#0f1512; --panel:#161f1a; --text:#e8efe9; --muted:#9db0a6; --line:#273830; }
@@ -29,6 +35,19 @@
   th[data-sort]{cursor:pointer;user-select:none;white-space:nowrap}
   th[data-sort]:hover{color:var(--brand)}
   .bulkbar{background:var(--panel);border:1px solid var(--brand);border-radius:8px;padding:8px 12px;margin-bottom:10px}
+  svg.chart{display:block;width:100%;height:auto;overflow:visible}
+  .gl{stroke:var(--line);stroke-width:1}
+  .ax{fill:var(--muted);font-size:10px}
+  .dot{stroke:var(--panel);stroke-width:2}
+  .legend{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:8px;font-size:12px;color:var(--muted)}
+  .legend i{width:11px;height:11px;border-radius:3px;display:inline-block;margin-right:5px;vertical-align:-1px}
+  .kpicard .lab{color:var(--muted);font-size:10.5px;text-transform:uppercase;letter-spacing:.8px;font-weight:700}
+  .kpicard .val{font-size:26px;font-weight:800;margin-top:4px;letter-spacing:-.02em}
+  .kpicard .chg{font-size:12px;margin-top:3px}
+  .chg.up{color:var(--ok)} .chg.down{color:var(--danger)}
+  .hbar-row{margin:8px 0}
+  .hbar-track{background:var(--line);border-radius:6px;height:10px;overflow:hidden}
+  .hbar-fill{height:100%;background:var(--s1)}
   .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:14px}
   .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
   table{width:100%;border-collapse:collapse;font-size:13px}
@@ -115,6 +134,73 @@ const money=n=>'฿'+Math.round(Number(n)||0).toLocaleString();
 // opening the Food & Drinks tab in a browser, not by code review.
 const moneyPrecise=n=>'฿'+(Number(n)||0).toFixed(Number(n)<1?4:2);
 
+/* ---------------- hand-rolled inline-SVG charts (no library — same approach
+   analytics.html uses, "a charting library would be a bigger download than
+   the whole page") ---------------- */
+function niceMaxBO(v){
+  if(v<=5) return 5;
+  const mag=Math.pow(10,Math.floor(Math.log10(v)));
+  return Math.ceil(v/(mag/2))*(mag/2);
+}
+/* Cumulative sales through each hour of the day, today vs yesterday. */
+function hourLineChart(today,yesterday){
+  const narrow=window.innerWidth<640;
+  const W=narrow?340:680, H=narrow?190:170;
+  const P={t:10,r:12,b:22,l:50};
+  const top=niceMaxBO(Math.max(1,...today,...yesterday));
+  const iw=W-P.l-P.r, ih=H-P.t-P.b;
+  const x=i=>P.l+(i*iw)/23;
+  const y=v=>P.t+ih-(v/top)*ih;
+  const grid=[0,top/2,top].map(v=>`<line class="gl" x1="${P.l}" y1="${y(v)}" x2="${W-P.r}" y2="${y(v)}"/>
+    <text class="ax" x="${P.l-7}" y="${y(v)+3.5}" text-anchor="end">${money(v)}</text>`).join('');
+  const mkPath=(arr,color)=>{
+    const d=arr.map((v,i)=>`${i?'L':'M'}${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(' ');
+    const last=arr.length-1;
+    return `<path d="${d}" fill="none" stroke="${color}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+      <circle class="dot" cx="${x(last)}" cy="${y(arr[last])}" r="4" fill="${color}"/>`;
+  };
+  const paths=mkPath(yesterday,'var(--s2)')+mkPath(today,'var(--s1)');
+  const xlab=[0,6,12,18,23].map(h=>`<text class="ax" x="${x(h)}" y="${H-6}" text-anchor="middle">${h}:00</text>`).join('');
+  const hit=today.map((v,i)=>{
+    const w=iw/23;
+    const title=`${i}:00\nToday: ${money(today[i])}\nYesterday: ${money(yesterday[i]??0)}`;
+    return `<rect x="${(x(i)-w/2).toFixed(1)}" y="${P.t}" width="${w.toFixed(1)}" height="${ih}" fill="transparent"><title>${esc(title)}</title></rect>`;
+  }).join('');
+  return `<div class="legend"><span><i style="background:var(--s1)"></i>Today</span><span><i style="background:var(--s2)"></i>Yesterday</span></div>
+    <svg class="chart" viewBox="0 0 ${W} ${H}" role="img" aria-label="Cumulative sales, today vs yesterday, by hour">${grid}${paths}${xlab}${hit}</svg>`;
+}
+/* Donut over segments [{label,value,color}] — plain stroked arcs on one
+   circle, rotated so the first segment starts at 12 o'clock. */
+function donutChart(segments){
+  const live=segments.filter(s=>s.value>0);
+  const total=live.reduce((s,x)=>s+x.value,0);
+  if(!total) return '<p class="muted">No sales in this range.</p>';
+  const cx=90,cy=90,r=62,stroke=26,circ=2*Math.PI*r;
+  let offset=0;
+  const arcs=live.map(s=>{
+    const dash=(s.value/total)*circ;
+    const el=`<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${s.color}" stroke-width="${stroke}"
+      stroke-dasharray="${dash.toFixed(2)} ${(circ-dash).toFixed(2)}" stroke-dashoffset="${(-offset).toFixed(2)}"
+      transform="rotate(-90 ${cx} ${cy})"><title>${esc(s.label)}: ${money(s.value)} (${Math.round(s.value/total*100)}%)</title></circle>`;
+    offset+=dash; return el;
+  }).join('');
+  const legend=live.map(s=>`<div class="row" style="gap:6px;margin:3px 0"><i style="width:10px;height:10px;border-radius:2px;background:${s.color};display:inline-block"></i>
+    <span>${esc(s.label)} — ${money(s.value)} <span class="muted">(${Math.round(s.value/total*100)}%)</span></span></div>`).join('');
+  return `<div style="display:flex;gap:18px;align-items:center;flex-wrap:wrap">
+    <svg class="chart" style="width:180px;height:180px;flex:none" viewBox="0 0 180 180" role="img" aria-label="Sales by fulfilment">${arcs}</svg>
+    <div>${legend}</div></div>`;
+}
+/* Horizontal bars — one row per entry, width proportional to the max. */
+function hBarChart(rows){
+  if(!rows.length) return '<p class="muted">No data.</p>';
+  const max=Math.max(1,...rows.map(r=>r.value));
+  return rows.map(r=>{
+    const pct=Math.max(2,Math.round(r.value/max*100));
+    return `<div class="hbar-row"><div class="row" style="justify-content:space-between"><span>${esc(r.label)}</span><span class="muted">${money(r.value)}</span></div>
+      <div class="hbar-track"><div class="hbar-fill" style="width:${pct}%"></div></div></div>`;
+  }).join('');
+}
+
 let KEY=localStorage.getItem('dankStaffToken')||sessionStorage.getItem('dankStaffToken')||localStorage.getItem('dankStaffKey')||'';
 let PROFILE=null, PERMS=[], STORES=[], CURRENT_STORE='all', TAB='overview';
 const can=p=>PERMS.includes('*')||PERMS.includes(p);
@@ -166,18 +252,57 @@ function renderStoreSelect(){
 }
 
 /* ---------------- Overview ---------------- */
+const OV_RANGES=[{id:'today',label:'Today'},{id:'week',label:'This week'},{id:'month',label:'This month'}];
+let OV_RANGE='today';
 async function viewOverview(){
-  const m=$('#main'); m.innerHTML='<h2>Overview</h2><p class="muted">Loading…</p>';
+  const m=$('#main');
+  m.innerHTML=`<h2>Overview</h2>
+    <div class="row" style="margin-bottom:12px">${OV_RANGES.map(r=>`<button class="btn ${r.id===OV_RANGE?'':'ghost'}" data-act="ov-range" data-range="${r.id}">${r.label}</button>`).join('')}</div>
+    <div id="ovBody"><p class="muted">Loading…</p></div>`;
+  await loadOverview();
+}
+async function loadOverview(){
+  const box=$('#ovBody'); if(!box) return;
+  box.innerHTML='<p class="muted">Loading…</p>';
   try{
-    const d=await boGet(`/api/backoffice/dashboard?range=today&store=${encodeURIComponent(CURRENT_STORE)}`);
+    const d=await boGet(`/api/backoffice/dashboard?range=${OV_RANGE}&store=${encodeURIComponent(CURRENT_STORE)}`);
     const sales=d.sales||{}, lowStock=d.lowStock||{rows:[]}, po=d.purchaseOrders||{}, kt=d.kitchenTickets||{};
-    m.innerHTML=`
-      <h2>Overview — today</h2>
+    const trend=d.trend||{today:[],yesterday:[]};
+    const chanRows=(d.salesByFulfilment?.rows||[]).map((r,i)=>({label:r.fulfilment,value:r.gross,color:['var(--s1)','var(--s2)','var(--s3)','var(--s4)'][i%4]}));
+    const storeRows=(d.salesByStoreBreakdown?.rows||[]).map(r=>({label:STORES.find(s=>s.id===r.store_id)?.name||r.store_id,value:r.gross}));
+    const top=d.topProducts?.rows||[];
+    const chg=sales.changePct;
+    const chgHtml=chg==null?'<span class="muted">vs prior period: —</span>':`<span class="chg ${chg>=0?'up':'down'}">${chg>=0?'▲':'▼'} ${Math.abs(chg)}% vs prior period</span>`;
+    box.innerHTML=`
       <div class="grid">
-        <div class="card"><div class="muted">Sales (${esc(sales.source||'—')})</div><div class="kpi">${money(sales.total)}</div><div class="muted">${sales.count||0} orders</div></div>
-        <div class="card"><div class="muted">Low stock</div><div class="kpi">${lowStock.count||0}</div><div class="muted">items at/under threshold</div></div>
-        <div class="card"><div class="muted">Open purchase orders</div><div class="kpi">${po.open||0}</div></div>
-        <div class="card"><div class="muted">Pending kitchen tickets</div><div class="kpi">${kt.pending||0}</div></div>
+        <div class="card kpicard"><div class="lab">Sales (${esc(sales.source||'—')})</div><div class="val">${money(sales.total)}</div><div class="chg">${chgHtml}</div></div>
+        <div class="card kpicard"><div class="lab">Orders</div><div class="val">${sales.count||0}</div></div>
+        <div class="card kpicard"><div class="lab">Avg order value</div><div class="val">${money(sales.avgOrderValue)}</div></div>
+        <div class="card kpicard"><div class="lab">Avg items / order</div><div class="val">${sales.avgItemsPerOrder??0}</div></div>
+        <div class="card kpicard"><div class="lab">Low stock</div><div class="val">${lowStock.count||0}</div><div class="muted" style="font-size:11px">items at/under threshold</div></div>
+        <div class="card kpicard"><div class="lab">Open purchase orders</div><div class="val">${po.open||0}</div></div>
+        <div class="card kpicard"><div class="lab">Pending kitchen tickets</div><div class="val">${kt.pending||0}</div></div>
+      </div>
+      <div class="card">
+        <h3>Sales trend — today vs yesterday</h3>
+        ${trend.today.length?hourLineChart(trend.today,trend.yesterday):'<p class="muted">Not available.</p>'}
+      </div>
+      <div class="row" style="align-items:stretch;flex-wrap:wrap">
+        <div class="card" style="flex:1;min-width:280px">
+          <h3>Sales by fulfilment</h3>
+          <p class="muted" style="font-size:12px">${esc(d.salesByFulfilment?.note||'')}</p>
+          ${donutChart(chanRows)}
+        </div>
+        <div class="card" style="flex:1;min-width:280px">
+          <h3>Sales by store</h3>
+          ${hBarChart(storeRows)}
+        </div>
+      </div>
+      <div class="card">
+        <h3>Top products</h3>
+        ${top.length?`<table><tr><th>Product</th><th>Qty sold</th><th>Revenue</th><th>Days sold</th></tr>
+          ${top.map(r=>`<tr><td>${esc(r.name)}</td><td>${esc(r.qty)}</td><td>${money(r.gross)}</td><td>${esc(r.daysSold)}</td></tr>`).join('')}
+          </table>`:'<p class="muted">No sales in this range.</p>'}
       </div>
       <div class="card">
         <h3>Recent stock adjustments</h3>
@@ -190,7 +315,7 @@ async function viewOverview(){
         </table>`:'<p class="muted">Nothing below threshold.</p>'}
       </div>
     `;
-  }catch(e){ m.innerHTML=`<h2>Overview</h2><p class="muted">Couldn't load: ${esc(e.message)}</p>`; }
+  }catch(e){ box.innerHTML=`<p class="muted">Couldn't load: ${esc(e.message)}</p>`; }
 }
 function renderLedgerTable(rows){
   if(!rows.length) return '<p class="muted">No movements yet.</p>';
@@ -928,6 +1053,11 @@ document.addEventListener('click',async e=>{
     case 'tab': {
       if(el.dataset.ext){ location.href=el.dataset.ext; return; }
       setTab(el.dataset.tab); return;
+    }
+    case 'ov-range': {
+      OV_RANGE=el.dataset.range;
+      document.querySelectorAll('[data-act="ov-range"]').forEach(b=>b.classList.toggle('ghost',b.dataset.range!==OV_RANGE));
+      await loadOverview(); return;
     }
     case 'theme-toggle': {
       const cur=document.documentElement.getAttribute('data-theme');
