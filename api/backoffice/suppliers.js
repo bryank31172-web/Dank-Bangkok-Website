@@ -5,8 +5,8 @@
      DELETE { id }  → soft delete (active:false). Never hard-deleted: purchase
                       orders reference suppliers historically and must still
                       resolve the name even after a supplier is retired. */
-import { requirePermission } from "../_auth.js";
-import { boConfigured, boSelect, boInsert, boUpdate, enc } from "../_bo-db.js";
+import { requirePermission, staffIdentity } from "../_auth.js";
+import { boConfigured, boSelect, boInsert, boUpdate, boAudit, enc } from "../_bo-db.js";
 
 export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
@@ -14,6 +14,7 @@ export default async function handler(req, res) {
   if (req.method === "OPTIONS") return res.status(204).end();
   if (!boConfigured()) return res.status(503).json({ error: "not configured", detail: "SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY not set" });
   if (!requirePermission(req, res, "suppliers")) return;
+  const identity = staffIdentity(req);
 
   try {
     if (req.method === "GET") {
@@ -30,7 +31,9 @@ export default async function handler(req, res) {
         name, contact_name: b.contact_name || null, phone: b.phone || null,
         email: b.email || null, address: b.address || null, note: b.note || null,
       });
-      return res.status(200).json({ ok: true, row: row?.[0] || row });
+      const created = row?.[0] || row;
+      await boAudit({ actorId: identity.id, action: "create", entityType: "supplier", entityId: created.id, after: created });
+      return res.status(200).json({ ok: true, row: created });
     }
 
     if (req.method === "PATCH") {
@@ -40,15 +43,21 @@ export default async function handler(req, res) {
       for (const f of ["name", "contact_name", "phone", "email", "address", "note", "active"]) {
         if (b[f] !== undefined) patch[f] = b[f];
       }
+      const [before] = await boSelect("bo_suppliers", `id=eq.${enc(b.id)}&select=*`);
       const row = await boUpdate("bo_suppliers", `id=eq.${enc(b.id)}`, patch);
-      return res.status(200).json({ ok: true, row: row?.[0] || row });
+      const updated = row?.[0] || row;
+      await boAudit({ actorId: identity.id, action: "update", entityType: "supplier", entityId: b.id, before, after: updated });
+      return res.status(200).json({ ok: true, row: updated });
     }
 
     if (req.method === "DELETE") {
       const id = req.query?.id || req.body?.id;
       if (!id) return res.status(400).json({ error: "id required" });
+      const [before] = await boSelect("bo_suppliers", `id=eq.${enc(id)}&select=*`);
       const row = await boUpdate("bo_suppliers", `id=eq.${enc(id)}`, { active: false });
-      return res.status(200).json({ ok: true, row: row?.[0] || row });
+      const updated = row?.[0] || row;
+      await boAudit({ actorId: identity.id, action: "delete", entityType: "supplier", entityId: id, before, after: updated, note: "soft delete (active:false)" });
+      return res.status(200).json({ ok: true, row: updated });
     }
 
     return res.status(405).json({ error: "method" });

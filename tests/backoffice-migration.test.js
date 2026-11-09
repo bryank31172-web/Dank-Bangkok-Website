@@ -21,10 +21,12 @@ import { dirname, join } from 'node:path';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const migrationSql = await readFile(join(here, '..', 'supabase', 'migrations', '0001_dank_backoffice.sql'), 'utf8');
+const migrationSql2 = await readFile(join(here, '..', 'supabase', 'migrations', '0002_dank_backoffice_audit_import.sql'), 'utf8');
 
 async function freshDb() {
   const db = new PGlite();
   await db.exec(migrationSql);
+  await db.exec(migrationSql2);
   return db;
 }
 
@@ -129,4 +131,46 @@ test('row level security is enabled on every bo_* table (matches site_kv\'s post
     `select relname from pg_class c join pg_namespace n on n.oid=c.relnamespace where n.nspname='public' and c.relkind='r' and c.relname like 'bo_%' and c.relrowsecurity = false`
   );
   assert.deepEqual(rows, [], `these bo_* tables do NOT have RLS enabled: ${rows.map((r) => r.relname).join(', ')}`);
+});
+
+/* ---- migration 0002: audit log, recurring expenses, import/reconciliation ---- */
+
+test('0002 adds bo_audit_log, bo_import_batches and bo_import_rows', async () => {
+  const db = await freshDb();
+  const { rows } = await db.query(
+    `select table_name from information_schema.tables where table_schema='public' and table_name in ('bo_audit_log','bo_import_batches','bo_import_rows')`
+  );
+  assert.equal(rows.length, 3);
+});
+
+test('0002 adds next_generated and generated_from to bo_expenses, defaulting correctly', async () => {
+  const db = await freshDb();
+  const { rows } = await db.query(`insert into bo_expenses (category, amount, expense_date, created_by) values ('rent', 1000, '2026-01-01', 'tester') returning next_generated, generated_from`);
+  assert.equal(rows[0].next_generated, false);
+  assert.equal(rows[0].generated_from, null);
+});
+
+test('bo_audit_log rejects an unknown action value', async () => {
+  const db = await freshDb();
+  await assert.rejects(
+    db.exec(`insert into bo_audit_log (actor_id,action,entity_type,entity_id) values ('tester','bogus-action','supplier','x')`),
+    /violates check constraint/i
+  );
+});
+
+test('bo_import_batches/bo_import_rows enforce their check constraints and cascade delete', async () => {
+  const db = await freshDb();
+  await assert.rejects(
+    db.exec(`insert into bo_import_batches (import_type, source_label, imported_by) values ('bogus','x','tester')`),
+    /violates check constraint/i
+  );
+  const batch = await db.query(`insert into bo_import_batches (import_type, source_label, imported_by) values ('expenses','test.csv','tester') returning id`);
+  await db.exec(`insert into bo_import_rows (batch_id, row_number, status) values ('${batch.rows[0].id}', 1, 'invalid')`);
+  await assert.rejects(
+    db.exec(`insert into bo_import_rows (batch_id, row_number, status) values ('${batch.rows[0].id}', 2, 'bogus-status')`),
+    /violates check constraint/i
+  );
+  await db.exec(`delete from bo_import_batches where id = '${batch.rows[0].id}'`);
+  const orphans = await db.query(`select count(*)::int as n from bo_import_rows where batch_id = '${batch.rows[0].id}'`);
+  assert.equal(orphans.rows[0].n, 0, 'ON DELETE CASCADE removed the rows with their batch');
 });

@@ -27,9 +27,9 @@ const EMBED_FK = {
 };
 const UUID_TABLES = new Set([
   'bo_stocktakes', 'bo_stock_transfers', 'bo_suppliers', 'bo_purchase_orders',
-  'bo_ingredients', 'bo_recipes', 'bo_kitchen_tickets', 'bo_expenses',
+  'bo_ingredients', 'bo_recipes', 'bo_kitchen_tickets', 'bo_expenses', 'bo_import_batches',
 ]);
-const SERIAL_TABLES = new Set(['bo_inventory_ledger', 'bo_purchase_order_lines', 'bo_kitchen_ticket_lines']);
+const SERIAL_TABLES = new Set(['bo_inventory_ledger', 'bo_purchase_order_lines', 'bo_kitchen_ticket_lines', 'bo_audit_log', 'bo_import_rows']);
 // Mirrors the `not null default X` columns in supabase/migrations/0001_dank_backoffice.sql.
 // A real Postgres insert fills these in when the caller omits them; this fake
 // must too, or a test here passes/fails for a reason that has nothing to do
@@ -45,7 +45,8 @@ const COLUMN_DEFAULTS = {
   bo_ingredients: { track_stock: true, active: true, cost_per_unit: 0 },
   bo_recipes: { yield_qty: 1, active: true },
   bo_kitchen_tickets: { source: 'manual', status: 'new', consumption_recorded: false },
-  bo_expenses: {},
+  bo_expenses: { next_generated: false },
+  bo_import_batches: { row_count: 0, valid_count: 0, duplicate_count: 0, invalid_count: 0, matched_amount: 0, unmatched_amount: 0 },
 };
 
 function makeFakeSupabase() {
@@ -55,6 +56,7 @@ function makeFakeSupabase() {
     'bo_suppliers', 'bo_purchase_orders', 'bo_purchase_order_lines',
     'bo_ingredients', 'bo_recipes', 'bo_recipe_lines',
     'bo_kitchen_tickets', 'bo_kitchen_ticket_lines', 'bo_expenses',
+    'bo_audit_log', 'bo_import_batches', 'bo_import_rows',
   ].map(t => [t, []]));
   let serial = 1;
   let poSeq = 0;
@@ -447,6 +449,163 @@ test('monthly cost analysis groups expenses by month and category', async () => 
     assert.equal(jan.total, 23000);
     assert.equal(jan.byCategory.rent, 20000);
     assert.equal(jan.byCategory.utilities, 3000);
+  });
+});
+
+/* ---------------------------------------------------------- audit log */
+test('creating, updating and soft-deleting a supplier each write a bo_audit_log row with correct before/after', async () => {
+  await withFakeSupabase(async (db) => {
+    const suppliersHandler = (await import('../api/backoffice/suppliers.js')).default;
+    const created = await call(suppliersHandler, { method: 'POST', body: { name: 'Acme Co', phone: '0811111111' } });
+    const id = created.data.row.id;
+
+    const updated = await call(suppliersHandler, { method: 'PATCH', body: { id, phone: '0822222222' } });
+    assert.equal(updated.code, 200);
+
+    const deleted = await call(suppliersHandler, { method: 'DELETE', body: { id } });
+    assert.equal(deleted.code, 200);
+
+    const log = db.bo_audit_log.filter((r) => r.entity_type === 'supplier' && r.entity_id === id);
+    assert.equal(log.length, 3, 'create, update, delete each logged once');
+    assert.equal(log[0].action, 'create');
+    assert.equal(log[0].after.name, 'Acme Co');
+    assert.equal(log[1].action, 'update');
+    assert.equal(log[1].before.phone, '0811111111');
+    assert.equal(log[1].after.phone, '0822222222');
+    assert.equal(log[2].action, 'delete');
+    assert.equal(log[2].after.active, false);
+  });
+});
+
+test('a purchase order status change (send, receive) is audit-logged', async () => {
+  await withFakeSupabase(async (db) => {
+    const poHandler = (await import('../api/backoffice/purchase-orders.js')).default;
+    const supplierId = crypto.randomUUID();
+    db.bo_suppliers.push({ id: supplierId, name: 'Test Supplier', active: true });
+    const created = await call(poHandler, { method: 'POST', body: { supplier_id: supplierId, store_id: 'pattanakarn', lines: [{ item_type: 'product', item_key: 'sku-1', qty_ordered: 5 }] } });
+    const poId = created.data.row.id;
+    const lineId = created.data.row.lines[0].id;
+    await call(poHandler, { method: 'POST', body: { id: poId, action: 'send' } });
+    await call(poHandler, { method: 'POST', body: { id: poId, action: 'receive', lines: [{ line_id: lineId, qty_received: 5 }] } });
+
+    const log = db.bo_audit_log.filter((r) => r.entity_type === 'purchase_order' && r.entity_id === poId);
+    assert.equal(log.length, 3, 'create + send + receive');
+    assert.deepEqual(log.map((r) => r.action), ['create', 'status_change', 'status_change']);
+    assert.equal(log[1].after.status, 'ordered');
+    assert.equal(log[2].after.status, 'completed');
+  });
+});
+
+/* ---------------------------------------------------------- recurring expenses */
+test('a due recurring expense generates its successor exactly once, with a traceable chain', async () => {
+  await withFakeSupabase(async (db) => {
+    const expensesHandler = (await import('../api/backoffice/expenses.js')).default;
+    const pastMonth = new Date(); pastMonth.setMonth(pastMonth.getMonth() - 2);
+    const pastDate = pastMonth.toISOString().slice(0, 10);
+
+    const created = await call(expensesHandler, { method: 'POST', body: { category: 'rent', amount: 20000, expense_date: pastDate, recurring: 'monthly' } });
+    assert.equal(created.code, 200);
+    const originalId = created.data.row.id;
+
+    // The very next GET should notice this is overdue and generate a successor.
+    const afterFirstLoad = await call(expensesHandler, { method: 'GET', query: {} });
+    const chain = afterFirstLoad.data.rows.filter((r) => r.category === 'rent');
+    assert.ok(chain.length >= 2, 'a successor was generated');
+    const successor = chain.find((r) => r.generated_from === originalId);
+    assert.ok(successor, 'the successor traces back to the original via generated_from');
+    assert.equal(successor.created_by, 'system:recurring');
+    assert.equal(successor.recurring, 'monthly', 'the chain continues');
+
+    // A second GET must not spawn a SECOND direct child of the SAME original —
+    // next_generated already flipped on it, so generateDueRecurring skips it.
+    // (The successor itself, being ~1 month overdue, legitimately advances
+    // its own chain on this second read — that's correct catch-up behavior
+    // for an expense that's been due for 2 months, not a bug: each read
+    // advances the chain by at most one period per row, on purpose, rather
+    // than generating an unbounded run of catch-up rows in a single call.)
+    const afterSecondLoad = await call(expensesHandler, { method: 'GET', query: {} });
+    const directChildrenOfOriginal = afterSecondLoad.data.rows.filter((r) => r.generated_from === originalId);
+    assert.equal(directChildrenOfOriginal.length, 1, 'still exactly one direct successor of the original — no duplicate generation from the same row');
+
+    const auditRows = db.bo_audit_log.filter((r) => r.entity_type === 'expense' && r.note?.includes('auto-generated'));
+    assert.ok(auditRows.length >= 1, 'at least the first generation was audit-logged');
+  });
+});
+
+test('a non-recurring expense never generates anything', async () => {
+  await withFakeSupabase(async () => {
+    const expensesHandler = (await import('../api/backoffice/expenses.js')).default;
+    await call(expensesHandler, { method: 'POST', body: { category: 'repairs', amount: 500, expense_date: '2020-01-01' } });
+    const res = await call(expensesHandler, { method: 'GET', query: {} });
+    assert.equal(res.data.rows.length, 1, 'a decade-old non-recurring expense stays exactly one row');
+  });
+});
+
+/* ---------------------------------------------------------- import / reconciliation */
+test('import: invalid rows (bad date, bad amount) are flagged, not silently dropped or inserted anywhere', async () => {
+  await withFakeSupabase(async (db) => {
+    const importHandler = (await import('../api/backoffice/import.js')).default;
+    const res = await call(importHandler, {
+      method: 'POST',
+      body: { import_type: 'expenses', source_label: 'test.csv', rows: [
+        { date: 'not-a-date', amount: '100', description: 'bad date' },
+        { date: '2026-01-05', amount: 'abc', description: 'bad amount' },
+        { date: '2026-01-05', amount: '-50', description: 'negative' },
+      ] },
+    });
+    assert.equal(res.code, 200, JSON.stringify(res.data));
+    assert.equal(res.data.summary.invalid, 3);
+    assert.equal(res.data.summary.valid, 0);
+    assert.equal(db.bo_expenses.length, 0, 'import never writes to bo_expenses directly');
+  });
+});
+
+test('import: duplicate rows within the same file are detected', async () => {
+  await withFakeSupabase(async () => {
+    const importHandler = (await import('../api/backoffice/import.js')).default;
+    const res = await call(importHandler, {
+      method: 'POST',
+      body: { import_type: 'expenses', source_label: 'test.csv', rows: [
+        { date: '2026-01-05', amount: '100', description: 'Internet bill' },
+        { date: '2026-01-05', amount: '100', description: 'Internet bill' },
+      ] },
+    });
+    assert.equal(res.data.summary.duplicates, 1);
+  });
+});
+
+test('import: a row matching an existing expense reconciles as matched; one with no match is flagged unmatched', async () => {
+  await withFakeSupabase(async (db) => {
+    const expensesHandler = (await import('../api/backoffice/expenses.js')).default;
+    const importHandler = (await import('../api/backoffice/import.js')).default;
+    const existing = await call(expensesHandler, { method: 'POST', body: { category: 'utilities', amount: 3200, expense_date: '2026-02-10' } });
+
+    const res = await call(importHandler, {
+      method: 'POST',
+      body: { import_type: 'expenses', source_label: 'bank-statement.csv', rows: [
+        { date: '2026-02-10', amount: '3200', description: 'Electricity' },  // should match the existing expense
+        { date: '2026-02-11', amount: '999', description: 'Unknown charge' }, // should not match anything
+      ] },
+    });
+    assert.equal(res.data.summary.matched, 1);
+    assert.equal(res.data.summary.unmatched, 1);
+    assert.equal(res.data.summary.matchedAmount, 3200);
+    assert.equal(res.data.summary.unmatchedAmount, 999);
+
+    const detail = await call(importHandler, { method: 'GET', query: { batch_id: res.data.batch.id } });
+    const matchedRow = detail.data.rows.find((r) => r.status === 'matched');
+    assert.equal(matchedRow.matched_entity_id, String(existing.data.row.id));
+    assert.equal(matchedRow.matched_entity_type, 'expense');
+  });
+});
+
+test('import rejects an unknown import_type and requires at least one row', async () => {
+  await withFakeSupabase(async () => {
+    const importHandler = (await import('../api/backoffice/import.js')).default;
+    const bad = await call(importHandler, { method: 'POST', body: { import_type: 'bogus', source_label: 'x', rows: [{ date: '2026-01-01', amount: 1 }] } });
+    assert.equal(bad.code, 400);
+    const empty = await call(importHandler, { method: 'POST', body: { import_type: 'expenses', source_label: 'x', rows: [] } });
+    assert.equal(empty.code, 400);
   });
 });
 

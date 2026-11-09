@@ -38,22 +38,61 @@ New, additive-only surface on top of the existing site:
 - **Explicitly NOT included:** any payment/checkout/gateway code, any change to BRYAN POS's feed, any
   change to the storefront's own pages, any change to existing order/pricing behavior.
 
+## Release notes (v1.2 — third pass, this build)
+
+A third gap-closing pass against the original master prompt, on top of v1.1. Additive only, same
+"reuse, don't duplicate" posture as before:
+
+- **Unified audit log** (`bo_audit_log`, migration `0002`) — every create/update/delete/status-change
+  across suppliers, purchase orders, recipes, ingredients, stores, expenses, and staff account/role/
+  scope changes now writes a before/after row via a new `boAudit()` helper in `api/_bo-db.js`. Stock
+  movements keep their own separate append-only trail (`bo_inventory_ledger`) — not duplicated here.
+  An audit-log write failure never blocks or rolls back the action it's recording (logged, swallowed).
+  Surfaced read-only in BackOffice → Settings → Audit log, and via `GET /api/backoffice/audit-log`
+  (requires the `settings` scope).
+- **Recurring expenses, made real.** `bo_expenses.recurring` existed before but nothing acted on it.
+  Two new columns (`next_generated`, `generated_from`) and a generator that runs on every
+  `GET /api/backoffice/expenses`: a due recurring expense spawns its successor exactly once (guarded
+  by the same compare-and-swap shape as the kitchen ticket consume-once guard), chained and traceable,
+  and the generation itself is audit-logged as `system:recurring`. No cron involved — this repo has no
+  scheduled task runner, so generation happens on read instead.
+- **Import validation, duplicate detection and reconciliation** (Module G from the original brief) —
+  new `/api/backoffice/import` + `bo_import_batches`/`bo_import_rows` (migration `0002`). Staff upload
+  a CSV (bank statement, delivery-platform settlement, accounting export) via Expenses → Import &
+  reconciliation; it's checked against existing `bo_expenses` (or near-dated orders, for a `sales`
+  import) and reported as matched/unmatched/duplicate-in-file/invalid. **This never creates a new
+  expense or order** — per the brief's "never fabricate financial information" rule, it's a
+  reconciliation report, not a side door into confirmed records.
+- **PDF export** (Expenses, Reports) via the browser's own print-to-PDF — no new client-side library.
+  A `@media print` block hides the nav/forms/toast and prints only the current tab's tables under a
+  plain header.
+- **Touches existing files**, additive only: `api/staff-auth.js` (every staff-account mutation now
+  also calls `boAudit()`), and the six backoffice endpoint files for suppliers/stores/recipes/
+  ingredients/purchase-orders/expenses (each create/update/delete now also writes its audit row).
+  `backoffice.html` gained the Import box (Expenses tab), the Audit log card (Settings tab), and two
+  "Export PDF" buttons (Expenses, Reports). No existing endpoint's request/response shape changed.
+- **Tests:** `tests/backoffice-migration.test.js` gained 4 tests running migration `0002` against real
+  Postgres (pglite) — table existence, column defaults, check-constraint rejection, cascade delete.
+  `tests/backoffice.test.js` gained tests for audit-log writes on supplier/PO mutations and the
+  recurring-expense generator's exactly-once behavior. **182/182 tests pass.**
+- **Not yet done:** migration `0002` has not been applied to Bryan's real Supabase project (same
+  pending-his-review status as `0001`); this round is not yet merged.
+
 ## Pre-deployment checklist
 
-1. **Apply the migration.** Run `supabase/migrations/0001_dank_backoffice.sql` via the Supabase SQL
-   editor or CLI against the same project (`SUPABASE_URL` already in Vercel — Tokyo region). It's
-   written to be safe to re-run (`IF NOT EXISTS` throughout) if it's interrupted partway.
+1. **Apply the migrations, in order.** Run `supabase/migrations/0001_dank_backoffice.sql` then
+   `0002_dank_backoffice_audit_import.sql` via the Supabase SQL editor or CLI against the same
+   project (`SUPABASE_URL` already in Vercel — Tokyo region). Both are written to be safe to re-run
+   (`IF NOT EXISTS`/`ON CONFLICT DO NOTHING` throughout) if interrupted partway.
 2. **No new environment variables are required.** BackOffice reuses `SUPABASE_URL` and
    `SUPABASE_SERVICE_ROLE_KEY`, already set for `site_kv`, and the existing `STAFF_KEY`/
    `ADMIN_SECRET`/`STAFF_SESSION_SECRET` for auth. Confirm via `/api/health` that
    `wired.supabase` (or equivalent) is already true before relying on BackOffice — if Supabase is
    misconfigured, every `/api/backoffice/*` endpoint answers `503`, loudly, rather than silently
    doing nothing (same fail-closed posture as the rest of this repo's single-purpose secrets).
-3. **Run the test suite:** `node --test tests/` — 160 tests as of this build, including
-   `tests/backoffice.test.js` (13 tests: kitchen double-deduction guard, PO partial receiving, ledger
-   balance accumulation, full cross-file permission-table sync, recipe costing, expense attachment
-   validation, monthly cost analysis) and `tests/promotion-categories.test.js` (4 tests covering the
-   promotions category-restriction and redemption-history additions). All must pass.
+3. **Run the test suite:** `node --test tests/` — 182 tests as of this build, including
+   `tests/backoffice.test.js`, `tests/backoffice-migration.test.js` (now covering both migrations),
+   and `tests/promotion-categories.test.js`. All must pass.
 4. **Syntax-check `backoffice.html`'s inline script** the same way the rest of the repo does (extract
    `<script>` blocks without `src=`, run `node --check`) — done once already this session, redo after
    any further edits.
@@ -102,11 +141,14 @@ Two things flagged earlier as "unverified claims" were genuinely tested, not jus
   revert the merge commit if it's already landed). No existing file's prior behavior was changed —
   `_auth.js`/`_staff-accounts.js` only had new entries *added* to existing objects, nothing removed
   or renamed, so reverting is a plain revert with no data migration needed on that side.
-- **Database:** the migration is purely additive (new `bo_*` tables, one new sequence, two new
-  functions). Rollback is `drop table if exists bo_<name> cascade;` for each table, in reverse
-  dependency order (lines tables before header tables, e.g. `bo_purchase_order_lines` before
-  `bo_purchase_orders`), or simply dropping them all — nothing outside the `bo_*` namespace
-  references them, so this cannot touch `site_kv`, `kv_state`, `audit_log`, or any existing table.
+- **Database:** both migrations are purely additive (new `bo_*` tables, one new sequence, two new
+  functions, plus 0002's two new columns on `bo_expenses`). Rollback is `drop table if exists
+  bo_<name> cascade;` for each table, in reverse dependency order (lines/rows tables before header
+  tables, e.g. `bo_purchase_order_lines` before `bo_purchase_orders`, `bo_import_rows` before
+  `bo_import_batches`), plus `alter table bo_expenses drop column if exists next_generated, drop
+  column if exists generated_from;` for 0002's additions — or simply dropping/reverting all of it.
+  Nothing outside the `bo_*` namespace references any of this, so rollback cannot touch `site_kv`,
+  `kv_state`, `audit_log`, or any existing table.
 - **No data loss risk to existing systems** either way: BackOffice never writes to `site_kv` except
   reading order records for sales reporting (read-only), and never writes to BRYAN POS's tables at
   all.

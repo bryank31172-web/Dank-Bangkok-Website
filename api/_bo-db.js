@@ -108,3 +108,23 @@ export async function boLatestBalance(itemType, itemKey, storeId) {
 }
 
 export const enc = encodeURIComponent;
+
+/* Unified audit log (bo_audit_log, migration 0002) — covers the
+   administrative mutations bo_inventory_ledger doesn't (suppliers, recipes,
+   ingredients, stores, expenses, purchase order status, staff scope grants).
+   Deliberately swallows its own errors: an audit-log write failing must
+   never roll back or fail the actual action it's recording — a missing
+   audit row is a smaller problem than a supplier edit silently not saving
+   because logging it hit a network blip. Call it AFTER the real write
+   succeeds, never before. */
+export async function boAudit({ actorId, action, entityType, entityId, before = null, after = null, note = null }) {
+  if (!boConfigured()) return; // same fail-soft posture as everything else when Supabase isn't set up
+  try {
+    await boInsert("bo_audit_log", {
+      actor_id: actorId, action, entity_type: entityType, entity_id: String(entityId),
+      before, after, note,
+    });
+  } catch (e) {
+    console.error("bo_audit_log write failed:", e.message);
+  }
+}

@@ -15,7 +15,7 @@
      PATCH { id, ...fields }                         → edit while draft/ordered
    Every write requires the 'purchasing' scope. */
 import { requirePermission, staffIdentity } from "../_auth.js";
-import { boConfigured, boSelect, boInsert, boUpdate, boRpc, boLedgerAdjust, enc } from "../_bo-db.js";
+import { boConfigured, boSelect, boInsert, boUpdate, boRpc, boLedgerAdjust, boAudit, enc } from "../_bo-db.js";
 
 async function listPOs(q) {
   const parts = ["select=*,lines:bo_purchase_order_lines(*)", "order=created_at.desc"];
@@ -58,6 +58,7 @@ export default async function handler(req, res) {
     if (b.action === "send") {
       const row = await boUpdate("bo_purchase_orders", `id=eq.${enc(b.id)}&status=eq.draft`, { status: "ordered", updated_at: new Date().toISOString() });
       if (!row?.length) return res.status(409).json({ error: "PO not found, or not in draft status" });
+      await boAudit({ actorId: identity.id, action: "status_change", entityType: "purchase_order", entityId: b.id, before: { status: "draft" }, after: { status: "ordered" } });
       return res.status(200).json({ ok: true, row: row[0] });
     }
 
@@ -95,6 +96,7 @@ export default async function handler(req, res) {
       const fullyReceived = (refreshedLines || []).every((l) => Number(l.qty_received) >= Number(l.qty_ordered) - 1e-9);
       const newStatus = fullyReceived ? "completed" : "receiving";
       const [updatedPO] = await boUpdate("bo_purchase_orders", `id=eq.${enc(b.id)}`, { status: newStatus, updated_at: new Date().toISOString() });
+      await boAudit({ actorId: identity.id, action: "status_change", entityType: "purchase_order", entityId: b.id, before: { status: po.status }, after: { status: newStatus }, note: `received ${results.length} line(s)` });
       return res.status(200).json({ ok: true, po: updatedPO, results, status: newStatus });
     }
 
@@ -120,6 +122,7 @@ export default async function handler(req, res) {
       qty_ordered: Number(l.qty_ordered), unit_cost: Number(l.unit_cost) || 0,
     })));
     const [full] = await listPOsById(po.id);
+    await boAudit({ actorId: identity.id, action: "create", entityType: "purchase_order", entityId: po.id, after: full || po });
     return res.status(200).json({ ok: true, row: full || po });
   } catch (e) {
     return res.status(502).json({ error: "bo-db error", detail: String(e.message || e) });

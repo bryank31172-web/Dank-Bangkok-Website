@@ -12,8 +12,8 @@
    bo_stores so later BackOffice tables (inventory, POs, …) have real store_id
    foreign keys to point at. Safe to call repeatedly — it's an upsert on the
    primary key. */
-import { requirePermission } from "../_auth.js";
-import { boConfigured, boSelect, boInsert, boUpdate, enc } from "../_bo-db.js";
+import { requirePermission, staffIdentity } from "../_auth.js";
+import { boConfigured, boSelect, boInsert, boUpdate, boAudit, enc } from "../_bo-db.js";
 import { getBranches } from "../_route.js";
 
 export default async function handler(req, res) {
@@ -41,24 +41,30 @@ export default async function handler(req, res) {
 
     if (req.method === "PATCH") {
       if (!requirePermission(req, res, "settings")) return;
+      const identity = staffIdentity(req);
       const b = req.body || {};
       if (!b.id) return res.status(400).json({ error: "id required" });
       const patch = {};
       for (const f of ["name", "address", "active"]) if (b[f] !== undefined) patch[f] = b[f];
       if (!Object.keys(patch).length) return res.status(400).json({ error: "nothing to update" });
+      const [before] = await boSelect("bo_stores", `id=eq.${enc(b.id)}&select=*`);
       const row = await boUpdate("bo_stores", `id=eq.${enc(b.id)}`, patch);
       if (!row?.length) return res.status(404).json({ error: "store not found" });
+      await boAudit({ actorId: identity.id, action: "update", entityType: "store", entityId: b.id, before, after: row[0] });
       return res.status(200).json({ ok: true, row: row[0] });
     }
 
     if (req.method === "POST") {
       if (!requirePermission(req, res, "settings")) return;
+      const identity = staffIdentity(req);
       const b = req.body || {};
       const id = String(b.id || "").trim().toLowerCase().replace(/[^a-z0-9_-]/g, "-");
       const name = String(b.name || "").trim();
       if (!id || !name) return res.status(400).json({ error: "id and name required" });
       const row = await boInsert("bo_stores", { id, name, address: b.address || null, active: true });
-      return res.status(200).json({ ok: true, row: row?.[0] || row });
+      const created = row?.[0] || row;
+      await boAudit({ actorId: identity.id, action: "create", entityType: "store", entityId: id, after: created });
+      return res.status(200).json({ ok: true, row: created });
     }
 
     return res.status(405).json({ error: "method" });

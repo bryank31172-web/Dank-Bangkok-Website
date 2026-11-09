@@ -18,10 +18,18 @@
 | 12 | Settings tab (store management + per-employee BackOffice scope grants) | 2,3 | a manager can never grant a scope they don't have themselves (tested) |
 | 13 | Sales Reports breadth (category, discounts, returns/corrections, COGS, waste, staff activity) + CSV export | 7 | each report tags its data as recorded/derived/unavailable, never guesses |
 | 14 | Promotions: applicable categories + redemption history on the existing `_promotion.js` | none | both additions are backward compatible — omitting the new params reproduces pre-existing behavior exactly (tested) |
+| 15 | Unified audit log (`bo_audit_log`) across suppliers, purchase orders, recipes, ingredients, stores, expenses and staff account/role/scope changes | 1 | every create/update/delete writes a before/after row; a logging failure never blocks or rolls back the real write (tested) |
+| 16 | Recurring expenses made real (`next_generated`/`generated_from` on `bo_expenses`) | 9,15 | a due recurring expense generates its successor exactly once per read, chain is traceable, generation itself is audit-logged (tested) |
+| 17 | Import validation, duplicate detection and reconciliation (Module G, `/api/backoffice/import`) | 9 | never creates expenses/orders from an uploaded file — only reports matched/unmatched/duplicate/invalid against existing records (tested) |
+| 18 | PDF export (Expenses, Reports) via the browser's native print-to-PDF | 7,9 | no new client-side dependency; `@media print` hides nav/forms, prints only the current tab's tables |
 
 Items 12-14 were a second pass closing gaps identified against the original master prompt after the
 first 11 shipped — see `DEPLOYMENT.md`'s release notes for what changed and which existing files
 (`api/order.js`, `api/staff-tools.js`) were touched to do it.
+
+Items 15-18 are a third pass, closing further gaps against the original master prompt (audit
+trail, recurring-expense automation, Module G's import/reconciliation requirement, and PDF export) —
+see `DEPLOYMENT.md`'s release notes for v1.2.
 
 ## Out of scope for this build pass (explicitly, per the brief)
 

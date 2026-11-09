@@ -13,9 +13,57 @@
    shift-count proof photos) and `attachment_url` (a plain link, e.g. to an
    externally-hosted receipt) are both accepted into the same column — a
    receipt is one or the other, never both, so there's no need for a second
-   column just to tell them apart. */
+   column just to tell them apart.
+
+   RECURRING EXPENSES: every GET first calls generateDueRecurring(), which
+   finds expenses with `recurring` set whose next occurrence date has
+   arrived and are not yet marked `next_generated`, inserts the successor
+   row (same category/vendor/amount/store, new expense_date, `recurring`
+   carried forward so the chain continues, `generated_from` pointing back),
+   and flips `next_generated` on the original — guarded by a WHERE clause on
+   `next_generated=false` so two near-simultaneous requests can't both spawn
+   a successor (same compare-and-swap shape as the kitchen ticket guard in
+   api/backoffice/kitchen.js). Generation happens on read rather than on a
+   cron: this repo has no scheduled task runner, and "the next occurrence
+   appears whenever anyone next looks" is simpler and can't silently stop
+   firing the way an unmonitored cron job can. */
 import { requirePermission, staffIdentity } from "../_auth.js";
-import { boConfigured, boSelect, boInsert, boUpdate, boDelete, enc } from "../_bo-db.js";
+import { boConfigured, boSelect, boInsert, boUpdate, boDelete, boAudit, enc } from "../_bo-db.js";
+
+function addInterval(dateStr, recurring) {
+  const d = new Date(dateStr + "T00:00:00Z");
+  if (recurring === "weekly") d.setUTCDate(d.getUTCDate() + 7);
+  else if (recurring === "monthly") d.setUTCMonth(d.getUTCMonth() + 1);
+  else if (recurring === "yearly") d.setUTCFullYear(d.getUTCFullYear() + 1);
+  else return null;
+  return d.toISOString().slice(0, 10);
+}
+
+async function generateDueRecurring(actorId) {
+  const candidates = await boSelect("bo_expenses", "recurring=not.is.null&next_generated=eq.false&select=*");
+  const today = new Date().toISOString().slice(0, 10);
+  const generated = [];
+  for (const row of candidates || []) {
+    const nextDate = addInterval(row.expense_date, row.recurring);
+    if (!nextDate || nextDate > today) continue;
+    // Claim the right to generate this row's successor — if another
+    // concurrent request already flipped next_generated, this WHERE matches
+    // nothing and we skip rather than double-spawn.
+    const claimed = await boUpdate("bo_expenses", `id=eq.${enc(row.id)}&next_generated=eq.false`, { next_generated: true });
+    if (!claimed?.length) continue;
+    const [next] = await boInsert("bo_expenses", {
+      store_id: row.store_id, category: row.category, vendor: row.vendor, amount: row.amount,
+      expense_date: nextDate, recurring: row.recurring, note: row.note,
+      created_by: "system:recurring", generated_from: row.id,
+    });
+    await boAudit({
+      actorId: actorId || "system:recurring", action: "create", entityType: "expense", entityId: next.id,
+      after: next, note: `auto-generated ${row.recurring} successor of expense ${row.id}`,
+    });
+    generated.push(next);
+  }
+  return generated;
+}
 
 const CATEGORIES = new Set(["utilities", "rent", "staff", "equipment", "repairs", "supplier", "other"]);
 const MAX_ATTACHMENT_BYTES = 700000; // matches api/count.js's photo cap
@@ -60,6 +108,7 @@ export default async function handler(req, res) {
 
   try {
     if (req.method === "GET") {
+      await generateDueRecurring(identity?.id);
       const q = req.query || {};
       const parts = ["select=*", "order=expense_date.desc"];
       if (q.store) parts.push(`store_id=eq.${enc(q.store)}`);
@@ -86,7 +135,9 @@ export default async function handler(req, res) {
         expense_date: b.expense_date, recurring: b.recurring || null, note: b.note || null,
         attachment_url, created_by: identity.id,
       });
-      return res.status(200).json({ ok: true, row: row?.[0] || row });
+      const created = row?.[0] || row;
+      await boAudit({ actorId: identity.id, action: "create", entityType: "expense", entityId: created.id, after: created });
+      return res.status(200).json({ ok: true, row: created });
     }
 
     if (req.method === "PATCH") {
@@ -99,15 +150,21 @@ export default async function handler(req, res) {
       if (b.attachment !== undefined || b.attachment_url !== undefined) {
         try { patch.attachment_url = resolveAttachment(b) ?? null; } catch (e) { return res.status(e.status || 400).json({ error: e.message }); }
       }
+      const [before] = await boSelect("bo_expenses", `id=eq.${enc(b.id)}&select=*`);
       const row = await boUpdate("bo_expenses", `id=eq.${enc(b.id)}`, patch);
-      return res.status(200).json({ ok: true, row: row?.[0] || row });
+      const updated = row?.[0] || row;
+      await boAudit({ actorId: identity.id, action: "update", entityType: "expense", entityId: b.id, before, after: updated });
+      return res.status(200).json({ ok: true, row: updated });
     }
 
     if (req.method === "DELETE") {
       const id = req.query?.id || req.body?.id;
       if (!id) return res.status(400).json({ error: "id required" });
+      const [before] = await boSelect("bo_expenses", `id=eq.${enc(id)}&select=*`);
       const row = await boDelete("bo_expenses", `id=eq.${enc(id)}`);
-      return res.status(200).json({ ok: true, row: row?.[0] || row });
+      const deleted = row?.[0] || row;
+      await boAudit({ actorId: identity.id, action: "delete", entityType: "expense", entityId: id, before, note: "hard delete" });
+      return res.status(200).json({ ok: true, row: deleted });
     }
 
     return res.status(405).json({ error: "method" });

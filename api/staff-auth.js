@@ -1,5 +1,6 @@
 import { requireEnv, staffIdentity, hasPermission, safeEq } from "./_auth.js";
 import { authenticateAccountKey, seedInitialAccounts, listAccounts, publicAccount, createAccount, updateAccount, deleteAccount, resetAccount, setOwnAccountKey, setAccountKey, setAccountActive, setAccountRole, setAccountScopes, ROLE_PERMISSIONS, ROLE_LABELS, ASSIGNABLE_EXTRA_SCOPES } from "./_staff-accounts.js";
+import { boAudit } from "./_bo-db.js";
 
 const effectivePermissions=(account)=>[...new Set([...(ROLE_PERMISSIONS[account.role]||[]),...(Array.isArray(account.scopes)?account.scopes:[])])];
 import { getJSON, setJSON } from "./_store.js";
@@ -51,34 +52,47 @@ export default async function handler(req,res){
     }
     if(b.action==="create"){
       const out=await createAccount(actor,b.name,b.role,{phone:b.phone});
+      await boAudit({actorId:actor.id,action:"create",entityType:"staff_account",entityId:out.account.id,after:out.account});
       return res.status(200).json({ok:true,...out});
     }
     if(b.action==="update"){
+      const before=(await listAccounts()).find(a=>a.id===b.id);
       const account=await updateAccount(actor,b.id,{name:b.name,phone:b.phone,role:b.role,active:b.active});
+      await boAudit({actorId:actor.id,action:"update",entityType:"staff_account",entityId:b.id,before:before&&publicAccount(before),after:account});
       return res.status(200).json({ok:true,account});
     }
     if(b.action==="delete"){
+      const before=(await listAccounts()).find(a=>a.id===b.id);
       const account=await deleteAccount(actor,b.id);
+      await boAudit({actorId:actor.id,action:"delete",entityType:"staff_account",entityId:b.id,before:before&&publicAccount(before),note:"account removed"});
       return res.status(200).json({ok:true,account});
     }
     if(b.action==="reset"){
       const out=await resetAccount(actor,b.id);
+      await boAudit({actorId:actor.id,action:"update",entityType:"staff_account",entityId:b.id,note:"key reset (value not logged)"});
       return res.status(200).json({ok:true,...out});
     }
     if(b.action==="setkey"){
       const account=await setAccountKey(actor,b.id,String(b.key||""));
+      await boAudit({actorId:actor.id,action:"update",entityType:"staff_account",entityId:b.id,note:"key changed by manager/owner (value not logged)"});
       return res.status(200).json({ok:true,account});
     }
     if(b.action==="active"){
+      const before=(await listAccounts()).find(a=>a.id===b.id);
       const account=await setAccountActive(actor,b.id,b.active);
+      await boAudit({actorId:actor.id,action:"status_change",entityType:"staff_account",entityId:b.id,before:{active:before?.active!==false},after:{active:account.active}});
       return res.status(200).json({ok:true,account});
     }
     if(b.action==="role"){
+      const before=(await listAccounts()).find(a=>a.id===b.id);
       const account=await setAccountRole(actor,b.id,String(b.role||""));
+      await boAudit({actorId:actor.id,action:"update",entityType:"staff_account",entityId:b.id,before:{role:before?.role},after:{role:account.role},note:"role changed"});
       return res.status(200).json({ok:true,account});
     }
     if(b.action==="scopes"){
+      const before=(await listAccounts()).find(a=>a.id===b.id);
       const account=await setAccountScopes(actor,b.id,Array.isArray(b.scopes)?b.scopes:[]);
+      await boAudit({actorId:actor.id,action:"update",entityType:"staff_account",entityId:b.id,before:{scopes:before?.scopes||[]},after:{scopes:account.scopes},note:"BackOffice permission scopes changed"});
       return res.status(200).json({ok:true,account});
     }
     return res.status(400).json({error:"unknown action"});

@@ -58,6 +58,21 @@
     nav.side{width:100%;display:flex;overflow-x:auto;gap:4px;border-right:none;border-bottom:1px solid var(--line)}
     nav.side button{white-space:nowrap}
   }
+  /* PDF export = the browser's own print-to-PDF, not a new client-side
+     library — keeps the zero-dependency page intact. header/nav/forms/toast
+     are hidden; #main's tables print on a plain white page with a title the
+     print JS injects just before calling window.print(). */
+  #printHeader{display:none}
+  @media print{
+    header.top, nav.side, .toast, form, button, #storeSel{display:none !important}
+    body{background:#fff !important;color:#000 !important}
+    .layout{display:block}
+    main{padding:0}
+    .card{border:1px solid #999;break-inside:avoid}
+    #printHeader{display:block !important;margin-bottom:14px}
+    #printHeader b{font-size:18px}
+    table{font-size:12px}
+  }
 </style>
 </head>
 <body>
@@ -80,6 +95,7 @@
   </header>
   <div class="layout">
     <nav class="side" id="nav"></nav>
+    <div id="printHeader"><b>DANK BackOffice</b><div id="printHeaderSub" class="muted"></div></div>
     <main id="main"></main>
   </div>
 </div>
@@ -414,20 +430,80 @@ async function viewExpenses(){
         </div>
       </form>
     </div>
-    <div class="card" id="expList"><p class="muted">Loading…</p></div>
-    <div class="card"><h3>Monthly cost analysis</h3><div id="expMonthly"><p class="muted">Loading…</p></div></div>`;
+    <div class="row"><button class="btn ghost" data-act="exp-export-pdf">Export PDF</button></div>
+    <div class="card" id="expList" style="margin-top:10px"><p class="muted">Loading…</p></div>
+    <div class="card"><h3>Monthly cost analysis</h3><div id="expMonthly"><p class="muted">Loading…</p></div></div>
+    <div class="card"><h3>Import & reconciliation</h3>
+      <p class="muted">Upload a bank statement or accounting export (CSV: date, amount, description columns) to
+        check it against what's already recorded here. This never creates new expenses by itself —
+        it tells you what matches and what doesn't, so a human decides what (if anything) to record.</p>
+      <div class="row">
+        <input type="file" id="importFile" accept=".csv,text/csv">
+        <input id="importLabel" placeholder="Source label (e.g. Kasikorn Jan 2026)">
+        <button class="btn ghost" data-act="import-run">Check against records</button>
+      </div>
+      <div id="importResult" style="margin-top:10px"></div>
+    </div>`;
   refreshExpenses();
 }
 async function refreshExpenses(){
   const j=await boGet('/api/backoffice/expenses?monthly=1').catch(()=>({rows:[],total:0,monthly:[]}));
   $('#expList').innerHTML=`<p><b>Total: ${money(j.total)}</b></p>` + ((j.rows||[]).length?`<table><tr><th>Date</th><th>Category</th><th>Vendor</th><th>Amount</th><th>Note</th><th>Receipt</th></tr>
-    ${j.rows.map(e=>`<tr><td>${esc(e.expense_date)}</td><td>${esc(e.category)}</td><td>${esc(e.vendor||'—')}</td><td>${money(e.amount)}</td><td>${esc(e.note||'')}</td>
+    ${j.rows.map(e=>`<tr><td>${esc(e.expense_date)}</td><td>${esc(e.category)}</td><td>${esc(e.vendor||'—')}</td><td>${money(e.amount)}</td>
+      <td>${esc(e.note||'')}${e.recurring?` <span class="badge ok">${esc(e.recurring)}</span>`:''}${e.generated_from?' <span class="badge open">auto</span>':''}</td>
       <td>${e.attachment_url?`<a href="${esc(e.attachment_url)}" target="_blank" rel="noopener">view</a>`:'—'}</td></tr>`).join('')}
     </table>`:'<p class="muted">No expenses recorded yet.</p>');
   const monthly=j.monthly||[];
   $('#expMonthly').innerHTML=monthly.length?`<table><tr><th>Month</th><th>Total</th><th>By category</th></tr>
     ${monthly.map(m=>`<tr><td>${esc(m.month)}</td><td>${money(m.total)}</td><td>${Object.entries(m.byCategory).map(([c,v])=>`${esc(c)}: ${money(v)}`).join(', ')}</td></tr>`).join('')}
     </table>`:'<p class="muted">Nothing to analyze yet.</p>';
+}
+/* Minimal CSV parser for the import box — handles quoted fields with commas,
+   not a general RFC4180 parser, but enough for a bank/accounting export
+   with date,amount,description columns in any order. */
+function parseCSV(text){
+  const lines=text.split(/\r?\n/).filter(l=>l.trim().length);
+  if(!lines.length) return [];
+  const splitRow=row=>{
+    const out=[]; let cur='', inQuotes=false;
+    for(let i=0;i<row.length;i++){
+      const c=row[i];
+      if(inQuotes){ if(c==='"'){ if(row[i+1]==='"'){cur+='"';i++;} else inQuotes=false; } else cur+=c; }
+      else if(c==='"') inQuotes=true;
+      else if(c===','){ out.push(cur); cur=''; }
+      else cur+=c;
+    }
+    out.push(cur); return out.map(s=>s.trim());
+  };
+  const header=splitRow(lines[0]).map(h=>h.toLowerCase());
+  const dateCol=header.findIndex(h=>h.includes('date'));
+  const amountCol=header.findIndex(h=>h.includes('amount')||h.includes('total')||h.includes('value'));
+  const descCol=header.findIndex(h=>h.includes('desc')||h.includes('note')||h.includes('memo')||h.includes('vendor'));
+  return lines.slice(1).map(line=>{
+    const cells=splitRow(line);
+    return { date: cells[dateCol>=0?dateCol:0], amount: cells[amountCol>=0?amountCol:1], description: descCol>=0?cells[descCol]:'' };
+  });
+}
+async function runImport(){
+  const file=$('#importFile')?.files?.[0];
+  const label=$('#importLabel')?.value?.trim();
+  if(!file) return toast('Choose a CSV file first',true);
+  if(!label) return toast('Give this import a source label',true);
+  const text=await file.text();
+  const rows=parseCSV(text);
+  if(!rows.length) return toast('No rows found in that file',true);
+  try{
+    const j=await boSend('/api/backoffice/import','POST',{import_type:'expenses',source_label:label,rows});
+    const s=j.summary;
+    $('#importResult').innerHTML=`
+      <div class="grid">
+        <div class="card"><div class="muted">Matched</div><div class="kpi" style="color:var(--ok)">${s.matched}</div><div class="muted">${money(s.matchedAmount)}</div></div>
+        <div class="card"><div class="muted">Unmatched</div><div class="kpi" style="color:var(--warn)">${s.unmatched}</div><div class="muted">${money(s.unmatchedAmount)} — needs a look</div></div>
+        <div class="card"><div class="muted">Duplicates in file</div><div class="kpi">${s.duplicates}</div></div>
+        <div class="card"><div class="muted">Invalid rows</div><div class="kpi" style="color:var(--danger)">${s.invalid}</div></div>
+      </div>`;
+    toast('Reconciliation complete');
+  }catch(e){ toast(e.message,true); }
 }
 function readFileAsDataURL(file){
   return new Promise((resolve,reject)=>{ const r=new FileReader(); r.onload=()=>resolve(r.result); r.onerror=reject; r.readAsDataURL(file); });
@@ -454,9 +530,19 @@ async function viewReports(){
       <select id="repDays"><option value="7">7 days</option><option value="30" selected>30 days</option><option value="90">90 days</option></select>
       <button class="btn ghost" data-act="rep-load">Load</button>
       <button class="btn ghost" data-act="rep-export">Export CSV</button>
+      <button class="btn ghost" data-act="rep-export-pdf">Export PDF</button>
     </div>
     <div class="card" id="repBox" style="margin-top:12px"><p class="muted">Pick a report and Load.</p></div>`;
   loadReport();
+}
+function printSection(title){
+  // Real PDF export via the browser's own print-to-PDF ("Save as PDF" is a
+  // destination in every browser's print dialog) rather than a new
+  // client-side library — keeps backoffice.html dependency-free. The
+  // @media print block (see <style>) hides everything except #printHeader
+  // and whatever's currently in #main.
+  $('#printHeaderSub').textContent=`${title} — ${new Date().toLocaleDateString()}`;
+  window.print();
 }
 async function loadReport(){
   const type=$('#repType').value, days=$('#repDays').value;
@@ -549,9 +635,37 @@ async function viewSettings(){
       <p>Account, tax and payment settings live in <b>Owner mode</b> on the homepage (scroll to the
         footer → <i>Owner</i>), and the full staff directory is in
         <a href="/staffportal#staffinfo">Staff Portal → Staff</a>.</p>
+    </div>
+    <div class="card"><h3>Audit log</h3>
+      <p class="muted">Who changed what, across suppliers, purchase orders, recipes, ingredients,
+        stores, expenses and staff permissions. Stock movements have their own separate trail — see
+        the Inventory tab.</p>
+      <div class="row">
+        <select id="auditEntityType">
+          <option value="">All types</option>
+          <option value="supplier">Supplier</option>
+          <option value="purchase_order">Purchase order</option>
+          <option value="recipe">Recipe</option>
+          <option value="ingredient">Ingredient</option>
+          <option value="store">Store</option>
+          <option value="expense">Expense</option>
+          <option value="staff_account">Staff account</option>
+        </select>
+        <button class="btn ghost" data-act="audit-load">Refresh</button>
+      </div>
+      <div id="auditLog" style="margin-top:10px"><p class="muted">Loading…</p></div>
     </div>`;
   renderStoreMgmt();
   renderStaffPerms();
+  renderAuditLog();
+}
+async function renderAuditLog(){
+  const type=$('#auditEntityType')?.value||'';
+  const j=await boGet(`/api/backoffice/audit-log?limit=100${type?`&entity_type=${encodeURIComponent(type)}`:''}`).catch(e=>({error:e.message}));
+  if(j.error){ $('#auditLog').innerHTML=`<p class="muted">${esc(j.error)}</p>`; return; }
+  $('#auditLog').innerHTML=(j.rows||[]).length?`<table><tr><th>When</th><th>Actor</th><th>Action</th><th>Type</th><th>Entity</th><th>Note</th></tr>
+    ${j.rows.map(r=>`<tr><td>${new Date(r.created_at).toLocaleString()}</td><td>${esc(r.actor_id)}</td><td>${esc(r.action)}</td><td>${esc(r.entity_type)}</td><td>${esc(String(r.entity_id).slice(0,8))}</td><td>${esc(r.note||'')}</td></tr>`).join('')}
+    </table>`:'<p class="muted">No audit entries yet.</p>';
 }
 async function renderStoreMgmt(){
   const j=await boGet('/api/backoffice/stores').catch(e=>({error:e.message}));
@@ -658,6 +772,10 @@ document.addEventListener('click',async e=>{
     }
     case 'rep-load': { await loadReport(); return; }
     case 'rep-export': { exportCSV(); return; }
+    case 'rep-export-pdf': { printSection(REPORT_TYPES.find(t=>t.id===$('#repType').value)?.label||'Report'); return; }
+    case 'audit-load': { await renderAuditLog(); return; }
+    case 'exp-export-pdf': { printSection('Expenses'); return; }
+    case 'import-run': { await runImport(); return; }
   }
 });
 
