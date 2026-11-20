@@ -516,3 +516,51 @@ export function compareAttendance(shift, punches = {}, { graceMinutes = 0 } = {}
     payableOvertime: null,
   };
 }
+
+/* ---------------- auto-fill (draft suggestions) ---------------- */
+
+/** Suggest shifts that close the staffing gaps in one week at one store.
+    Nothing is saved: the caller shows the list and creates the ticked ones,
+    and the server re-validates each of them. For every short window the
+    smallest template that covers it is used (else the exact window, capped at
+    the longest allowed shift); the person picked is the one with the fewest
+    hours that week who passes every check without warnings, and who stays
+    under their weekly hour threshold. */
+export function planAutoFill({ storeId, weekStart, assignments = [], requirements = [], employees = [], leave = [], availability = [], templates = [], settings = DEFAULT_SETTINGS, makeId = (i) => `auto-${i}` }) {
+  const working = assignments.filter(live).slice();
+  const proposals = [], unfilled = [];
+  const active = employees.filter((e) => e.active !== false);
+  const tpls = templates.filter((t) => !t.storeId || t.storeId === storeId);
+  const maxMin = (settings.maxShiftHours || 12) * 60;
+  let n = 0;
+  for (const date of weekDates(weekStart)) {
+    for (let guard = 0; guard < 30; guard++) {
+      const cov = coverageForDate(date, working, requirements, { storeId, settings });
+      const gap = cov.shortages.find((g) => !unfilled.some((u) => u.date === date && u.start === g.start));
+      if (!gap) break;
+      const gapMin = (gap.end - gap.start) / MIN;
+      // Smallest template that fully covers the gap; otherwise the gap itself.
+      const fits = tpls.map((t) => ({ t, r: localToRange(date, t.startTime, t.endTime) }))
+        .filter(({ r }) => toMs(r.startsAt) <= gap.start && toMs(r.endsAt) >= gap.end)
+        .sort((a, b) => durationMinutes(a.r) - durationMinutes(b.r));
+      const tpl = fits[0]?.t || null;
+      const range = fits[0]?.r || { startsAt: iso(gap.start), endsAt: iso(gap.start + Math.min(gapMin, maxMin) * MIN) };
+      const role = gap.roles[0] || tpl?.role || null;
+      const hours = new Map(weeklyHours(working, active, weekStart, settings).map((r) => [r.employeeId, r]));
+      const shift = (e) => ({ id: makeId(n), employeeId: e.id, storeId, ...range, role, breakMinutes: tpl?.breakMinutes || 0, templateId: tpl?.id || null, notes: null, splitOverride: false });
+      const ranked = active.map((e) => {
+        const p = shift(e);
+        const v = validateAssignment(p, { assignments: working, leave, availability, employees: active, settings });
+        const h = hours.get(e.id) || { minutes: 0, threshold: thresholdFor(e, settings) };
+        return { e, p, v, after: h.minutes + paidMinutes(p), cap: h.threshold * 60, before: h.minutes };
+      }).filter((x) => !x.v.errors.length && x.after <= x.cap)
+        .sort((a, b) => a.v.warnings.length - b.v.warnings.length || a.before - b.before || a.e.name.localeCompare(b.e.name));
+      if (!ranked.length) { unfilled.push({ date, start: gap.start, end: gap.end, required: gap.required, lowest: gap.lowest }); continue; }
+      const pick = ranked[0];
+      n++;
+      working.push(pick.p);
+      proposals.push({ ...pick.p, warnings: pick.v.warnings.map((w) => w.message), reason: `${fmtDateShort(date)} ${bkkTime(gap.start)}–${bkkTime(gap.end)} had ${gap.lowest} of ${gap.required}` });
+    }
+  }
+  return { proposals, unfilled };
+}

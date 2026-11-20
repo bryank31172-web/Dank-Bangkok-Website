@@ -17,7 +17,6 @@ const ROLES = ['Budtender', 'Cashier', 'Kitchen', 'Bar', 'Delivery', 'Shift lead
 const KIND_LABEL = { change: 'Change time', absence: 'Absence', swap: 'Swap' };
 const LEAVE_LABEL = { annual: 'Annual', sick: 'Sick', personal: 'Personal', unpaid: 'Unpaid', other: 'Other' };
 const narrow = () => matchMedia('(max-width:760px)').matches;
-const hourPx = () => (narrow() ? 46 : 52);
 
 let S = null;
 
@@ -33,10 +32,11 @@ export async function mount(root, opts = {}) {
   S = {
     root, tab: opts.tab || 'shifts', token: opts.getToken || (() => ''), notify: opts.toast || ((m) => console.log(m)),
     heading: opts.heading || ((t) => `<h2>${esc(t)}</h2>`),
-    data: keep?.data || null, store: keep?.store || null, view: keep?.view || (narrow() ? 'day' : 'week'),
+    data: keep?.data || null, store: keep?.store || null, view: keep?.view && keep.view !== 'staff' ? keep.view : 'week',
     anchor: keep?.anchor || E.todayBkk(), selectedDate: keep?.selectedDate || E.todayBkk(), showAssigned: keep?.showAssigned || false,
     tpl: keep?.tpl || null, assignments: [], leave: [], availability: [], periods: [], report: null, pendingRequests: 0,
     edit: null, editDirty: false, inflight: 0, loading: true, error: null, modal: null, menu: null, drag: null, sheet: false,
+    role: keep?.role || '', undo: keep?.undo || [], pop: null,
   };
   root.innerHTML = `<div class="sm" id="smRoot"><p class="sm-muted">Loading Shift Maker…</p></div>`;
   bindOnce(root);
@@ -119,12 +119,10 @@ function render() {
       <div class="sm-toolbar" id="smToolbar"></div>
       <div class="sm-status" id="smStatus" aria-live="polite"></div>
       <div class="sm-work"><div class="sm-panel sm-cal" id="smCal"></div><aside class="sm-panel sm-side" id="smSide" aria-label="Assignment panel"></aside></div>
-      <div class="sm-below"><div class="sm-panel"><h3 style="margin:0 0 4px">Weekly hours</h3><p class="sm-muted" style="margin:0 0 10px">Paid scheduled hours, unpaid breaks excluded, all stores. Thresholds are planning alerts, not a payroll or legal overtime decision.</p><div class="sm-hours" id="smHours"></div></div>
-        <div class="sm-panel"><h3 style="margin:0 0 4px">Coverage by day</h3><p class="sm-muted" style="margin:0 0 10px">Measured minute by minute against staffing targets — not the number of different people who worked.</p><div class="sm-covdays" id="smCov"></div></div></div>
       <button class="sm-btn primary sm-fab" data-sm="fab">+ Add shift</button>
-      <div id="smModal"></div>`;
+      <div id="smPop"></div><div id="smModal"></div>`;
   }
-  renderToolbar(); renderStatus(); renderCalendar(); renderSide(); renderBelow(); renderModal();
+  renderToolbar(); renderStatus(); renderCalendar(); renderSide(); renderModal();
 }
 
 function rangeLabel() {
@@ -135,7 +133,7 @@ function rangeLabel() {
 
 function renderToolbar() {
   const tb = el().querySelector('#smToolbar');
-  const views = [['day', 'Day'], ['week', 'Week'], ['month', 'Month'], ['staff', 'Staff']];
+  const views = [['week', 'Week'], ['day', 'Day'], ['month', 'Month']];
   tb.innerHTML = `
     <button class="sm-btn" data-sm="today">Today</button>
     <span class="sm-seg"><button data-sm="prev" aria-label="Previous ${S.view}">‹</button><button data-sm="next" aria-label="Next ${S.view}">›</button></span>
@@ -143,8 +141,12 @@ function renderToolbar() {
     <span class="sm-seg" role="group" aria-label="Calendar view">${views.map(([v, l]) => `<button data-sm="view" data-v="${v}" aria-pressed="${S.view === v}">${l}</button>`).join('')}</span>
     <label class="sm-sr" for="smStore">Location</label>
     <select id="smStore" data-sm-change="store" aria-label="Location">${S.data.stores.map((s) => `<option value="${esc(s.id)}" ${s.id === S.store ? 'selected' : ''}>${esc(s.name)}</option>`).join('')}</select>
+    <label class="sm-sr" for="smRole">Role</label>
+    <select id="smRole" data-sm-change="role-filter" aria-label="Show role">${['', ...allRoles()].map((r) => `<option value="${esc(r)}" ${r === (S.role || '') ? 'selected' : ''}>${r ? esc(r) : 'All roles'}</option>`).join('')}</select>
     <select data-sm-change="inc" aria-label="Time increment">${[15, 30, 60].map((m) => `<option value="${m}" ${m === inc() ? 'selected' : ''}>${m} min</option>`).join('')}</select>
     <span class="sm-grow"></span>
+    <button class="sm-btn" data-sm="undo" ${S.undo.length ? '' : 'disabled'} title="${esc(S.undo.length ? 'Undo: ' + S.undo[S.undo.length - 1].label + ' (Ctrl+Z)' : 'Nothing to undo')}">↶ Undo</button>
+    <button class="sm-btn" data-sm="autofill" title="Suggest shifts for every short hour this week. Nothing is saved until you choose.">✨ Auto-fill</button>
     <button class="sm-btn" data-sm="copy-week">Copy previous week</button>
     <button class="sm-btn" data-sm="save-draft" title="Every change is saved as a draft the moment you make it">${S.inflight ? 'Saving…' : 'Save draft'}</button>
     <button class="sm-btn primary" data-sm="publish">Publish</button>
@@ -169,7 +171,7 @@ function renderStatus() {
   st.innerHTML = `<span class="sm-muted">Week of ${esc(E.fmtDateShort(weekOfAnchor()))} · ${esc(storeName(S.store))}</span> ${pill}
     ${v.errors.length ? `<button class="sm-pill err" data-sm="publish">⛔ ${v.errors.length} blocking</button>` : ''}
     ${v.warnings.length ? `<button class="sm-pill warn" data-sm="publish">⚠ ${v.warnings.length} warning${v.warnings.length > 1 ? 's' : ''}</button>` : ''}
-    ${v.shared.length ? `<span class="sm-pill info" title="Two different people on at the same time. Valid.">⇄ ${v.shared.length} shared-coverage overlap${v.shared.length > 1 ? 's' : ''}</span>` : ''}
+    ${S.role ? `<button class="sm-pill info" data-sm="clear-role">Showing ${esc(S.role)} only ✕</button>` : ''}
     ${S.pendingRequests ? `<button class="sm-pill warn" data-sm="goto-requests">${S.pendingRequests} pending request${S.pendingRequests > 1 ? 's' : ''}</button>` : ''}
     <span class="sm-saving">${S.inflight ? 'Saving…' : S.loading ? 'Loading…' : 'All changes saved'}</span>`;
 }
@@ -189,8 +191,15 @@ const sharedFor = (a, list) => E.findSharedCoverage(list).filter((s) => s.a.id =
   .map((s) => `${empName((s.a.id === a.id ? s.b : s.a).employeeId)} ${E.bkkTime(s.startsAt)}–${E.bkkTime(s.endsAt)}`);
 
 /* ---------------- render: calendar ---------------- */
+/* Week = roster (one row per person, one column per day). Day = the same rows
+   laid out along the clock. Overlapping shifts can never squeeze each other,
+   because every person has their own row. Red is reserved for things that
+   need fixing: understaffed hours, double-booking, shifts on approved leave. */
 
-function storeShifts() { return S.assignments.filter((a) => a.storeId === S.store); }
+function storeShifts() { return S.assignments.filter((a) => a.storeId === S.store && (!S.role || a.role === S.role)); }
+// With a role filter on, only targets set for that role apply (the whole-shop target would make every day look short).
+const roleReqs = () => (S.role ? (S.data?.requirements || []).filter((r) => r.role === S.role) : S.data?.requirements || []);
+const allRoles = () => [...new Set([...ROLES, ...(S.data?.templates || []).map((t) => t.role), ...S.assignments.map((a) => a.role)].filter(Boolean))].sort();
 
 function gridBounds(dates) {
   const set = settings();
@@ -203,75 +212,219 @@ function gridBounds(dates) {
   return { lo: Math.max(0, Math.floor(lo / 60) * 60), hi: Math.min(30 * 60, Math.ceil(hi / 60) * 60) };
 }
 
+const shortT = (ms) => E.bkkTime(ms).replace(/:00$/, '');
+const hh = (m) => String(Math.floor(m / 60) % 24).padStart(2, '0');
+
+/** One bucket per hour of the business day: lowest head count in that hour and
+    the worst coverage status (under > met > above > none). */
+function hourBuckets(d, list) {
+  const cov = E.coverageForDate(d, list, roleReqs(), { storeId: S.store, role: S.role || null, settings: settings() });
+  const { lo, hi } = gridBounds([d]);
+  const rank = { under: 3, met: 2, above: 1, none: 0 };
+  const buckets = [];
+  for (let m = lo; m < hi; m += 60) {
+    const s = E.bkkMs(d) + m * 60000, e = s + 3600000;
+    const segs = cov.segments.filter((x) => x.start < e && x.end > s);
+    if (!segs.length) { buckets.push({ m, count: 0, required: 0, status: 'none' }); continue; }
+    const worst = segs.reduce((w, x) => (rank[x.status] > rank[w.status] ? x : w), segs[0]);
+    buckets.push({ m, count: Math.min(...segs.map((x) => x.count)), required: Math.max(...segs.map((x) => x.required)), status: worst.status });
+  }
+  return { cov, buckets, lo, hi };
+}
+function barHtml(d, b, maxCount, unit) {
+  const h = b.status === 'under' && !b.count ? 4 : Math.max(b.count ? 4 : 2, Math.round((b.count / Math.max(1, maxCount)) * unit));
+  return `<span class="${b.status}" style="height:${h}px" data-sm="tip" data-date="${d}" data-m="${b.m}" aria-label="${esc(`${hh(b.m)}:00 ${b.count} on shift${b.required ? `, target ${b.required}` : ''}`)}"></span>`;
+}
+
 function renderCalendar() {
   const cal = el().querySelector('#smCal');
   if (!cal) return;
+  hideTip();
   if (S.loading && !S.assignments.length) { cal.innerHTML = '<div class="sm-empty">Loading shifts…</div>'; return; }
   if (S.view === 'month') return renderMonth(cal);
-  if (S.view === 'staff') return renderStaffView(cal);
-  const dates = S.view === 'day' ? [S.anchor] : E.weekDates(E.weekStartOf(S.anchor));
-  const { lo, hi } = gridBounds(dates);
-  S.grid = { lo, hi, dates };
-  const px = hourPx(), height = ((hi - lo) / 60) * px;
+  if (S.view === 'day') return renderTimeline(cal);
+  return renderRoster(cal);
+}
+
+function chipLabel(a) { return `${shortT(a.startsAt)}–${shortT(a.endsAt)}`; }
+function chipTitle(a, iss, shared) {
+  return [`${empName(a.employeeId)} · ${E.fmtRange(a)}${a.role ? ' · ' + a.role : ''}`, a.breakMinutes ? `Unpaid break ${a.breakMinutes} min` : '',
+    a.notes ? `Note: ${a.notes}` : '', ...iss.map((x) => (x.sev === 'error' ? 'Blocking: ' : 'Warning: ') + x.msg),
+    ...(shared.length ? [`Also on: ${shared.join(', ')}`] : [])].filter(Boolean).join('\n');
+}
+/** Scheduled-here people first, then everyone else; each group by name. */
+function rosterOrder(dates) {
+  const list = storeShifts().filter((a) => dates.includes(E.businessDate(a)));
+  const first = new Map();
+  for (const a of list) { const k = dates.indexOf(E.businessDate(a)) * 1e13 + E.toMs(a.startsAt) % 1e13; if (!first.has(a.employeeId) || k < first.get(a.employeeId)) first.set(a.employeeId, k); }
+  const act = activeEmployees();
+  const extra = [...first.keys()].filter((id) => !act.some((e) => e.id === id)).map((id) => ({ id, name: empName(id), role: '' }));
+  // Scheduled people first, then by name — rows never jump around while you edit.
+  return [...act, ...extra].sort((a, b) => (first.has(b.id) - first.has(a.id)) || a.name.localeCompare(b.name))
+    .map((e) => ({ ...e, here: first.has(e.id) }));
+}
+function leaveOn(empId, d) {
+  return S.leave.find((l) => l.employeeId === empId && l.status === 'approved' && E.overlaps(l, { startsAt: E.iso(E.bkkMs(d)), endsAt: E.iso(E.bkkMs(d) + E.DAY_MS) }));
+}
+
+function renderRoster(cal) {
+  const ws = E.weekStartOf(S.anchor), dates = E.weekDates(ws);
   const issues = issueIndex();
   const today = E.todayBkk();
-  const reqs = S.data.requirements;
   const list = storeShifts();
-  // Every simultaneous shift keeps a readable lane: busy days get wider columns
-  // and the calendar scrolls sideways instead of crushing cards into slivers.
-  const laneCount = (d) => Math.max(1, ...[...E.layoutLanes(list.filter((a) => E.businessDate(a) === d)).values()].map((x) => x.lanes));
-  const minW = (d) => Math.max(S.view === 'day' ? (narrow() ? 200 : 240) : 112, laneCount(d) * (S.view === 'day' ? (narrow() ? 64 : 110) : 34) + 12);
-  const cols_t = `56px ${dates.map((d) => `minmax(${minW(d)}px,1fr)`).join(' ')}`;
-  const head = dates.map((d) => {
-    const c = E.coverageForDate(d, list, reqs, { storeId: S.store, settings: settings() });
+  const hours = new Map(E.weeklyHours(S.assignments, employees(), ws, settings()).map((r) => [r.employeeId, r]));
+  const people = rosterOrder(dates).filter((e) => !S.role || e.here);
+  const days = dates.map((d) => hourBuckets(d, list));
+  const maxCount = Math.max(1, ...days.flatMap((x) => x.buckets.map((b) => b.count)));
+  const head = dates.map((d, i) => {
+    const c = days[i].cov;
+    const dayList = list.filter((a) => E.businessDate(a) === d);
+    const ppl = new Set(dayList.map((a) => a.employeeId)).size, mins = dayList.reduce((t, a) => t + E.paidMinutes(a), 0);
+    const tot = `<span class="tot">${ppl} ${ppl === 1 ? 'person' : 'people'} · ${esc(E.fmtHours(mins))}</span>`;
     const cov = !c.hasTargets ? '<span class="cov none">no target</span>'
       : c.understaffedMinutes ? `<span class="cov under">⚠ short ${esc(E.fmtHours(c.understaffedMinutes))}</span>` : '<span class="cov met">✓ target met</span>';
-    return `<button class="sm-dayhead ${d === today ? 'today' : ''} ${d === S.selectedDate ? 'sel' : ''}" data-sm="pick-date" data-date="${d}" aria-label="${esc(E.DAY_NAMES_LONG[E.weekday(d)])} ${esc(d)}">
-      <span class="d">${E.DAY_NAMES[E.weekday(d)]}</span><br><span class="n">${Number(d.slice(8))}</span>${cov}</button>`;
+    return `<th class="${d === today ? 'today' : ''} ${d === S.selectedDate ? 'sel' : ''}"><button class="sm-rhead" data-sm="pick-date" data-date="${d}" title="Open ${esc(E.fmtDateShort(d))} on the clock" aria-label="${esc(E.DAY_NAMES_LONG[E.weekday(d)])} ${esc(d)} — open day view">
+      <span class="d">${E.DAY_NAMES[E.weekday(d)]}</span> <span class="n">${Number(d.slice(8))}</span>${tot}${cov}</button></th>`;
   }).join('');
-  const hours = [];
-  for (let m = lo; m <= hi; m += 60) hours.push(`<span style="top:${((m - lo) / 60) * px}px">${String((m / 60) % 24).padStart(2, '0')}:00</span>`);
-  const cols = dates.map((d) => {
-    const day = list.filter((a) => E.businessDate(a) === d);
-    const lanes = E.layoutLanes(day);
-    const cov = E.coverageForDate(d, list, reqs, { storeId: S.store, settings: settings() });
-    const strip = cov.segments.filter((s) => s.status !== 'none').map((s) => {
-      const top = ((E.minutesFrom(d, s.start) - lo) / 60) * px, h = ((s.end - s.start) / 3600000) * px;
-      const label = `${E.bkkTime(s.start)}–${E.bkkTime(s.end)}: ${s.count} on shift, target ${s.required}${s.roleShort.length ? ' · short ' + s.roleShort.map((r) => `${r.role} ${r.have}/${r.need}`).join(', ') : ''} (${s.status === 'under' ? 'understaffed' : s.status === 'met' ? 'target met' : 'above target'})`;
-      return `<i class="${s.status}" style="top:${top}px;height:${h}px" title="${esc(label)}"></i>`;
+  const rows = people.map((e, ri) => {
+    const c = colors().get(e.id) || E.PALETTE[0];
+    const cells = dates.map((d) => {
+      const mine = S.assignments.filter((a) => a.employeeId === e.id && E.businessDate(a) === d && (a.storeId !== S.store || !S.role || a.role === S.role)).sort((x, y) => E.toMs(x.startsAt) - E.toMs(y.startsAt));
+      const lv = leaveOn(e.id, d);
+      const day = list.filter((a) => E.businessDate(a) === d);
+      return `<td class="cell ${d === S.selectedDate ? 'sel' : ''}" data-sm="cell" data-emp="${esc(e.id)}" data-date="${d}" aria-label="${esc(e.name)} ${d}${lv ? ', on leave' : ''}. Activate to add a shift.">
+        ${lv ? `<span class="sm-leave">Leave<i>${esc(LEAVE_LABEL[lv.leaveType] || 'Approved')}</i></span>` : ''}
+        ${mine.map((a) => {
+          if (a.storeId !== S.store) return `<span translate="no" class="sm-rchip other" style="${colorVars(e.id)}" title="At ${esc(storeName(a.storeId))}"><b>${esc(chipLabel(a))}</b><i>@ ${esc(storeName(a.storeId))}</i></span>`;
+          const iss = issues.get(a.id) || [];
+          const bad = iss.some((x) => x.sev === 'error'), warn = !bad && iss.length;
+          const tip = chipTitle(a, iss, sharedFor(a, day));
+          return `<button translate="no" class="sm-rchip ${bad ? 'bad' : ''} ${warn ? 'warn' : ''} ${a._saving ? 'saving' : ''}" data-sm="open" data-id="${a.id}" style="${colorVars(e.id)}" title="${esc(tip)}" aria-label="${esc(tip.replace(/\n/g, '. '))}">
+            <b>${bad ? '⛔ ' : warn ? '⚠ ' : ''}${esc(chipLabel(a))}</b>${a.role ? `<i>${esc(a.role)}</i>` : ''}</button>`;
+        }).join('')}</td>`;
     }).join('');
-    const cards = day.map((a) => {
-      const L = lanes.get(a.id) || { lane: 0, lanes: 1 };
-      const sm = E.minutesFrom(d, a.startsAt), em = E.minutesFrom(d, a.endsAt);
-      const top = ((sm - lo) / 60) * px, h = Math.max(18, ((Math.min(em, hi) - sm) / 60) * px - 2);
-      const w = 100 / L.lanes;
-      const compact = S.view !== 'day' && L.lanes >= 3;
-      const initials = empName(a.employeeId).split(/\s+/).map((p) => [...p][0] || '').join('').slice(0, 3);
-      const iss = issues.get(a.id) || [];
-      const bad = iss.some((x) => x.sev === 'error'), warn = !bad && iss.length;
-      const shared = sharedFor(a, day);
-      const tip = [`${empName(a.employeeId)} · ${E.fmtRange(a)}${a.role ? ' · ' + a.role : ''}`, a.breakMinutes ? `Unpaid break ${a.breakMinutes} min` : '',
-        a.notes ? `Note: ${a.notes}` : '', ...iss.map((x) => (x.sev === 'error' ? 'Blocking: ' : 'Warning: ') + x.msg), ...shared.map((s) => `Shared coverage with ${s}`)].filter(Boolean).join('\n');
-      const flag = bad ? '<span class="flag" aria-hidden="true">⛔</span>' : warn ? '<span class="flag" aria-hidden="true">⚠</span>' : '';
-      return `<button translate="no" class="sm-shift ${compact ? 'compact' : ''} ${bad ? 'bad' : ''} ${warn ? 'warn' : ''} ${a._saving ? 'saving' : ''}" data-sm="open" data-id="${a.id}" style="${colorVars(a.employeeId)};top:${top}px;height:${h}px;left:calc(${L.lane * w}% + 7px);width:calc(${w}% - 9px)"
-        title="${esc(tip)}" aria-label="${esc(tip.replace(/\n/g, '. '))}">
-        ${compact
-          ? `<div class="nm">${flag}${esc(initials)}</div><div class="tm">${esc(E.bkkTime(a.startsAt).replace(/:00$/, ''))}<br>${esc(E.bkkTime(a.endsAt).replace(/:00$/, ''))}</div>`
-          : `<div class="nm">${flag}${esc(empName(a.employeeId))}</div><div class="tm">${esc(E.fmtRange(a))}</div>${a.role && h > 44 ? `<div class="rl">${esc(a.role)}</div>` : ''}`}
-        ${em > hi ? '<span class="cont">→</span>' : ''}${em - sm > 0 ? '<span class="rz" data-rz="1" aria-hidden="true"></span>' : ''}</button>`;
-    }).join('');
-    const now = d === today ? (() => { const m = E.minutesFrom(d, Date.now()); return m >= lo && m <= hi ? `<div class="sm-now" style="top:${((m - lo) / 60) * px}px" aria-hidden="true"></div>` : ''; })() : '';
-    return `<div class="sm-col ${d === S.selectedDate ? 'sel' : ''}" data-col="${d}" style="height:${height}px" role="group" aria-label="${esc(E.DAY_NAMES_LONG[E.weekday(d)])} ${d}. Click an empty time to add a shift.">
-      <div class="sm-cov" aria-hidden="true">${strip}</div>${now}${cards}</div>`;
+    const h = hours.get(e.id);
+    const gap = ri > 0 && !e.here && people[ri - 1].here ? ' gap' : '';
+    return `<tr class="${e.here ? '' : 'idle'}${gap}"><th scope="row" class="who"><button class="sm-who" data-sm="person" data-emp="${esc(e.id)}" aria-haspopup="true" title="Copy this person's week, or add a shift"><span class="sw" style="background:${c.bg};border-color:${c.border}"></span><span><b translate="no">${esc(e.name)}</b><small>${esc(roleLabel(e.role))}</small></span></button></th>${cells}
+      <td class="hrs"><b class="${h?.over ? 'over' : ''}">${esc(E.fmtHours(h?.minutes || 0))}</b><small>/ ${h?.threshold ?? '–'}h</small></td></tr>`;
   }).join('');
-  const body = cal.querySelector('.sm-body');
-  const scroll = body && body.dataset.key === `${S.view}|${S.store}|${dates[0]}` ? [body.scrollTop, body.scrollLeft] : null;
-  cal.innerHTML = `<div class="sm-body" data-key="${S.view}|${esc(S.store)}|${dates[0]}"><div class="sm-grid sm-head" style="grid-template-columns:${cols_t}"><div class="sm-corner"></div>${head}</div>
-    <div class="sm-grid" style="grid-template-columns:${cols_t};--sm-hour:${px}px"><div class="sm-times" style="height:${height}px">${hours.join('')}</div>${cols}</div></div>`;
-  const nb = cal.querySelector('.sm-body');
-  if (scroll) { nb.scrollTop = scroll[0]; nb.scrollLeft = scroll[1]; }
-  else { const first = Math.min(...list.filter((a) => dates.includes(E.businessDate(a))).map((a) => E.minutesFrom(E.businessDate(a), a.startsAt)), 9 * 60); nb.scrollTop = Math.max(0, ((first - lo) / 60) * px - 20); }
+  const covRow = `<tr class="covrow"><th scope="row" class="who"><span><b>Coverage</b><small>staff on, per hour</small></span></th>${dates.map((d, i) => {
+    const c = days[i].cov;
+    return `<td><div class="sm-bars" role="img" aria-label="${esc(E.fmtDateShort(d))} staff on per hour">${days[i].buckets.map((b) => barHtml(d, b, maxCount, 30)).join('')}</div>
+      <div class="cl ${c.understaffedMinutes ? 'bad' : ''}">${!c.hasTargets ? 'no target' : c.understaffedMinutes ? `⚠ short ${esc(E.fmtHours(c.understaffedMinutes))}` : '✓ all targets met'}</div></td>`;
+  }).join('')}<td></td></tr>`;
+  const prev = cal.querySelector('.sm-rbody');
+  const scroll = prev && prev.dataset.key === `${S.store}|${ws}` ? [prev.scrollTop, prev.scrollLeft] : null;
+  S.grid = { dates };
+  cal.innerHTML = `<div class="sm-rbody" data-key="${esc(S.store)}|${ws}"><table class="sm-roster"><thead><tr><th class="who">Staff</th>${head}<th class="hrs">Hours</th></tr></thead>
+    <tbody>${rows || '<tr><td colspan="9" class="sm-empty">No staff accounts yet — add them in the staff portal under Staff Management.</td></tr>'}</tbody><tfoot>${covRow}</tfoot></table></div>
+    <div class="sm-legend"><span><i class="above"></i>more than needed</span><span><i class="met"></i>exactly the target</span><span><i class="under"></i>short</span><span><i class="dbl"></i>blocking problem (e.g. double-booked)</span><span><i class="lv"></i>on leave</span><span class="sm-muted">Tap a day to see it on the clock · point at a bar to see who is on</span></div>`;
+  if (scroll) { const nb = cal.querySelector('.sm-rbody'); nb.scrollTop = scroll[0]; nb.scrollLeft = scroll[1]; }
 }
+
+function renderTimeline(cal) {
+  const d = S.anchor;
+  const list = storeShifts();
+  const day = list.filter((a) => E.businessDate(a) === d);
+  const issues = issueIndex();
+  const { buckets, lo, hi, cov } = hourBuckets(d, list);
+  const span = (hi - lo) / 60;
+  const avail = Math.max(320, (cal.clientWidth || 900) - 160);
+  const hourW = Math.max(narrow() ? 40 : 36, Math.floor(avail / span));
+  S.grid = { lo, hi, dates: [d], hourW };
+  const x = (m) => ((m - lo) / 60) * hourW;
+  const people = rosterOrder([d]).filter((e) => !S.role || e.here);
+  const axis = Array.from({ length: span }, (_, i) => `<span style="left:${i * hourW}px;width:${hourW}px">${hh(lo + i * 60)}:00</span>`).join('');
+  const nowM = d === E.todayBkk() ? E.minutesFrom(d, Date.now()) : -1;
+  const now = nowM >= lo && nowM <= hi ? `<div class="sm-now v" style="left:${x(nowM)}px" aria-hidden="true"></div>` : '';
+  const rows = people.map((e, ri) => {
+    const c = colors().get(e.id) || E.PALETTE[0];
+    const mine = S.assignments.filter((a) => a.employeeId === e.id && E.businessDate(a) === d && (a.storeId !== S.store || !S.role || a.role === S.role));
+    const lv = leaveOn(e.id, d);
+    const bars = mine.map((a) => {
+      const sm = Math.max(lo, E.minutesFrom(d, a.startsAt)), em = Math.min(hi, E.minutesFrom(d, a.endsAt));
+      const style = `${colorVars(e.id)};left:${x(sm)}px;width:${Math.max(18, x(em) - x(sm) - 2)}px`;
+      if (a.storeId !== S.store) return `<span translate="no" class="sm-hbar other" style="${style}" title="At ${esc(storeName(a.storeId))}">${esc(E.fmtRange(a))} @ ${esc(storeName(a.storeId))}</span>`;
+      const iss = issues.get(a.id) || [];
+      const bad = iss.some((q) => q.sev === 'error'), warn = !bad && iss.length;
+      const tip = chipTitle(a, iss, sharedFor(a, day));
+      return `<button translate="no" class="sm-hbar ${bad ? 'bad' : ''} ${warn ? 'warn' : ''} ${a._saving ? 'saving' : ''}" data-sm="open" data-id="${a.id}" style="${style}" title="${esc(tip)}" aria-label="${esc(tip.replace(/\n/g, '. '))}">
+        ${bad ? '⛔ ' : warn ? '⚠ ' : ''}<b>${esc(E.fmtRange(a))}</b>${a.role ? ` · ${esc(a.role)}` : ''}${E.minutesFrom(d, a.endsAt) > hi ? ' →' : ''}<span class="rz" data-rz="1" aria-hidden="true"></span></button>`;
+    }).join('');
+    const gap = ri > 0 && !e.here && people[ri - 1].here ? '<div class="sm-tldiv">Not scheduled today — click a row at a time to add a shift</div>' : '';
+    return `${gap}<div class="sm-tlrow ${e.here ? '' : 'idle'}"><div class="who"><span class="sw" style="background:${c.bg};border-color:${c.border}"></span><span><b translate="no">${esc(e.name)}</b><small>${lv ? 'On leave' : esc(roleLabel(e.role))}</small></span></div>
+      <div class="sm-lane ${lv ? 'off' : ''}" data-lane="1" data-emp="${esc(e.id)}" data-date="${d}" style="width:${span * hourW}px" role="group" aria-label="${esc(e.name)} ${d}. Click an empty time to add a shift.">${bars}</div></div>`;
+  }).join('');
+  const maxCount = Math.max(1, ...buckets.map((b) => b.count));
+  const counts = buckets.map((b) => `<span style="width:${hourW}px">${b.count}</span>`).join('');
+  const prev = cal.querySelector('.sm-tl');
+  const scroll = prev && prev.dataset.key === `${S.store}|${d}` ? [prev.scrollTop, prev.scrollLeft] : null;
+  cal.innerHTML = `<div class="sm-tl" data-key="${esc(S.store)}|${d}" style="--hw:${hourW}px">
+    <div class="sm-tlrow head"><div class="who"><b>${esc(E.fmtDateShort(d))}</b><small>${new Set(day.map((a) => a.employeeId)).size} ${new Set(day.map((a) => a.employeeId)).size === 1 ? 'person' : 'people'} · ${esc(E.fmtHours(day.reduce((t, a) => t + E.paidMinutes(a), 0)))}</small><small>${!cov.hasTargets ? 'no target' : cov.understaffedMinutes ? `<span class="bad">⚠ short ${esc(E.fmtHours(cov.understaffedMinutes))}</span>` : '✓ target met'}</small></div><div class="sm-axis" style="width:${span * hourW}px">${axis}</div></div>
+    <div class="sm-tlrows" style="--lanes-w:${span * hourW}px">${now}${rows || '<p class="sm-empty">No staff accounts yet.</p>'}</div>
+    <div class="sm-tlrow cov"><div class="who"><b>On shift</b><small>per hour</small></div><div><div class="sm-bars wide" style="width:${span * hourW}px">${buckets.map((b) => barHtml(d, b, maxCount, 40)).join('')}</div><div class="sm-counts" style="width:${span * hourW}px">${counts}</div></div></div>
+  </div>`;
+  const nb = cal.querySelector('.sm-tl');
+  if (scroll) { nb.scrollTop = scroll[0]; nb.scrollLeft = scroll[1]; }
+  else { const first = Math.min(...day.map((a) => E.minutesFrom(d, a.startsAt)), 9 * 60); nb.scrollLeft = Math.max(0, x(first) - 40); }
+}
+
+/* ---- hover box: who is on in that hour; when short, who can fill the gap ---- */
+
+/** The short window this hour belongs to, and the people who could cover it
+    without breaking a hard rule (double-booking, leave, split shifts). */
+function gapFor(d, m) {
+  const s = E.bkkMs(d) + m * 60000, e = s + 3600000;
+  const cov = E.coverageForDate(d, storeShifts(), roleReqs(), { storeId: S.store, role: S.role || null, settings: settings() });
+  const g = cov.shortages.find((x) => x.start < e && x.end > s);
+  if (!g) return null;
+  const maxMs = (settings().maxShiftHours || 12) * 3600000;
+  const win = { startsAt: E.iso(g.start), endsAt: E.iso(Math.min(g.end, g.start + maxMs)) };
+  const role = g.roles[0] || S.role || null;
+  // Fewest hours this week first, so the fairest choice is at the front.
+  const hrs = new Map(E.weeklyHours(S.assignments, employees(), E.weekStartOf(d), settings()).map((r) => [r.employeeId, r.minutes]));
+  const people = activeEmployees().map((emp) => {
+    const v = localCheck({ id: 'gap', employeeId: emp.id, storeId: S.store, ...win, role, breakMinutes: 0 });
+    return { emp, ok: !v.errors.length, warn: v.warnings.length, mins: hrs.get(emp.id) || 0 };
+  }).filter((x) => x.ok).sort((a, b) => a.warn - b.warn || a.mins - b.mins || a.emp.name.localeCompare(b.emp.name));
+  return { win, role, people };
+}
+function tipHtml(d, m, pinned) {
+  const s = E.bkkMs(d) + m * 60000, e = s + 3600000;
+  const { buckets } = hourBuckets(d, storeShifts());
+  const b = buckets.find((x) => x.m === m) || { count: 0, required: 0, status: 'none' };
+  const on = storeShifts().filter((a) => E.toMs(a.startsAt) < e && E.toMs(a.endsAt) > s).sort((x, y) => E.toMs(x.startsAt) - E.toMs(y.startsAt));
+  const rows = on.map((a) => { const c = colors().get(a.employeeId) || E.PALETTE[0]; return `<div class="r"><i style="background:${c.border}"></i><span translate="no">${esc(empName(a.employeeId))} · ${esc(chipLabel(a))}${a.role ? ' ' + esc(a.role) : ''}</span></div>`; }).join('');
+  let fill = '';
+  if (b.status === 'under') {
+    const g = gapFor(d, m);
+    if (g && pinned) {
+      fill = `<div class="fr">Fill ${esc(E.fmtRange(g.win))}${g.role ? ' · ' + esc(g.role) : ''} with:</div>
+        <div class="fill">${g.people.slice(0, 8).map((x) => `<button data-sm="fill-gap" data-emp="${esc(x.emp.id)}" data-s="${esc(g.win.startsAt)}" data-e="${esc(g.win.endsAt)}" data-role="${esc(g.role || '')}" translate="no">${esc(x.emp.name)}${x.warn ? ' ⚠' : ''}</button>`).join('') || '<span class="muted">Nobody is free for that window</span>'}</div>`;
+    } else if (g) {
+      fill = `<div class="fr">${g.people.length ? `Free to cover: <span translate="no">${esc(g.people.slice(0, 5).map((x) => x.emp.name).join(', '))}${g.people.length > 5 ? ` +${g.people.length - 5}` : ''}</span>` : 'Nobody free for that window'}</div>${g.people.length ? '<div class="hint">Click the bar to fill this gap</div>' : ''}`;
+    }
+  }
+  const foot = b.status === 'under' ? `<div class="ft bad">⚠ target ${b.required} — short by ${Math.max(1, b.required - b.count)}</div>`
+    : b.status === 'met' ? `<div class="ft">✓ target ${b.required} met exactly</div>`
+    : b.status === 'above' ? `<div class="ft">✓ target ${b.required}, ${b.count - b.required} spare</div>` : '<div class="ft muted">No staffing target for this hour</div>';
+  return `<div class="t">${esc(E.fmtDateShort(d))} · ${hh(m)}:00–${hh(m + 60)}:00 · ${b.count} on shift</div>${rows || '<div class="r muted">Nobody on shift</div>'}${foot}${fill}`;
+}
+function showTip(t, pin = false) {
+  if (S.tipPinned && !pin) return;
+  let tip = el().querySelector('#smTip');
+  if (!tip) { el().insertAdjacentHTML('beforeend', '<div class="sm-tip" id="smTip" role="tooltip"></div>'); tip = el().querySelector('#smTip'); }
+  tip.innerHTML = tipHtml(t.dataset.date, Number(t.dataset.m), pin) + (pin ? '<button class="x" data-sm="tip-close" aria-label="Close">✕</button>' : '');
+  tip.classList.toggle('pinned', pin);
+  tip.setAttribute('role', pin ? 'dialog' : 'tooltip');
+  tip.hidden = false;
+  const r = t.getBoundingClientRect(), w = tip.offsetWidth, h = tip.offsetHeight;
+  tip.style.left = Math.max(8, Math.min(innerWidth - w - 8, r.left + r.width / 2 - w / 2)) + 'px';
+  tip.style.top = (r.top - h - 10 < 8 ? r.bottom + 10 : r.top - h - 10) + 'px';
+  S.tipFor = t; S.tipPinned = pin;
+  if (pin) tip.querySelector('.fill button')?.focus();
+}
+function hideTip() { const tip = S?.root?.querySelector('#smTip'); if (tip) tip.hidden = true; if (S) { S.tipFor = null; S.tipPinned = false; } }
 
 function renderMonth(cal) {
   const g = E.monthGrid(S.anchor);
@@ -281,7 +434,7 @@ function renderMonth(cal) {
   cal.innerHTML = `<div class="sm-month">${E.DAY_NAMES.map((d) => `<div class="mh">${d}</div>`).join('')}
     ${g.days.map((d) => {
       const day = list.filter((a) => E.businessDate(a) === d).sort((x, y) => E.toMs(x.startsAt) - E.toMs(y.startsAt));
-      const c = E.coverageForDate(d, list, S.data.requirements, { storeId: S.store, settings: settings() });
+      const c = E.coverageForDate(d, list, roleReqs(), { storeId: S.store, role: S.role || null, settings: settings() });
       const flag = c.hasTargets && c.understaffedMinutes ? `<span title="Understaffed ${esc(E.fmtHours(c.understaffedMinutes))}" style="color:var(--sm-under)">⚠ short</span>` : '';
       return `<button class="sm-mday ${d.slice(0, 7) !== g.month ? 'out' : ''}" data-sm="month-day" data-date="${d}" aria-label="${esc(d)}: ${day.length} shifts${flag ? ', understaffed' : ''}">
         <span class="n"><span ${d === today ? 'style="color:var(--brand)"' : ''}>${Number(d.slice(8))}</span>${flag}</span>
@@ -290,26 +443,7 @@ function renderMonth(cal) {
     }).join('')}</div>`;
 }
 
-function renderStaffView(cal) {
-  const ws = E.weekStartOf(S.anchor), dates = E.weekDates(ws);
-  const issues = issueIndex();
-  const hours = new Map(E.weeklyHours(S.assignments, employees(), ws, settings()).map((r) => [r.employeeId, r]));
-  const rows = activeEmployees().slice().sort((a, b) => a.name.localeCompare(b.name)).map((e) => {
-    const cells = dates.map((d) => {
-      const mine = S.assignments.filter((a) => a.employeeId === e.id && E.businessDate(a) === d);
-      const onLeave = S.leave.some((l) => l.employeeId === e.id && l.status === 'approved' && E.overlaps(l, { startsAt: E.iso(E.bkkMs(d)), endsAt: E.iso(E.bkkMs(d) + E.DAY_MS) }));
-      return `<td class="cell ${onLeave ? 'off' : ''}" data-sm="cell" data-emp="${esc(e.id)}" data-date="${d}" aria-label="${esc(e.name)} ${d}${onLeave ? ', on leave' : ''}">
-        ${mine.map((a) => a.storeId === S.store
-          ? `<button translate="no" class="sm-chip ${(issues.get(a.id) || []).some((x) => x.sev === 'error') ? 'bad' : ''}" data-sm="open" data-id="${a.id}" style="${colorVars(e.id)}" aria-label="${esc(e.name)} ${esc(E.fmtRange(a))}">${esc(E.fmtRange(a))}${a.role ? ' · ' + esc(a.role) : ''}</button>`
-          : `<span translate="no" class="sm-chip" style="${colorVars(e.id)};opacity:.6" title="At ${esc(storeName(a.storeId))}">${esc(E.fmtRange(a))} @${esc(storeName(a.storeId))}</span>`).join('')}
-        ${onLeave ? '<span class="sm-muted">On leave</span>' : ''}</td>`;
-    }).join('');
-    const h = hours.get(e.id);
-    return `<tr><td class="who" translate="no"><span class="sw" style="display:inline-block;width:10px;height:10px;border-radius:3px;background:${colors().get(e.id).bg};border:1px solid ${colors().get(e.id).border}"></span> <b>${esc(e.name)}</b><br><span class="sm-muted">${esc(roleLabel(e.role))} · ${esc(E.fmtHours(h?.minutes || 0))}${h?.over ? ' ⚠' : ''}</span></td>${cells}</tr>`;
-  }).join('');
-  cal.innerHTML = `<div style="overflow:auto;max-height:calc(100vh - 250px)"><table class="sm-staffgrid"><thead><tr><th>Staff</th>${dates.map((d) => `<th><button class="sm-btn" style="min-height:0;padding:3px 8px;border:0" data-sm="pick-date" data-date="${d}">${esc(E.fmtDateShort(d))}</button></th>`).join('')}</tr></thead><tbody>${rows || `<tr><td colspan="8" class="sm-empty">No staff accounts yet — add them in the staff portal under Staff Management.</td></tr>`}</tbody></table></div>`;
-}
-const roleLabel = (r) => ({ owner: 'Owner', manager: 'Manager', professional: 'Professional', parttime: 'Part-time', kitchen: 'Kitchen' }[r] || r || '');
+const roleLabel = (r) => ({ owner: 'Owner', manager: 'Manager', professional: 'Professional', parttime: 'Part-time', kitchen: 'Kitchen staff' }[r] || r || '');
 
 /* ---------------- render: side panel ---------------- */
 
@@ -336,7 +470,7 @@ function renderSide() {
         const canDrag = x.status === 'free' || (x.status === 'assigned' && settings().splitShifts?.allowed);
         return `<button role="listitem" class="sm-staff ${x.status !== 'free' ? 'assigned' : ''}" data-sm="pick-staff" data-emp="${esc(x.id)}" ${canDrag ? 'draggable="true"' : ''}
           aria-label="${esc(x.name)}, ${esc(roleLabel(x.role))}, ${esc(x.status)}. Activate to add a shift.">
-          <span class="sw" style="background:${c.bg};border-color:${c.border}"></span><span class="who" translate="no"><b>${esc(x.name)}</b><small>${esc(roleLabel(x.role))}</small></span>${tag}</button>`;
+          <span class="sw" style="background:${c.bg};border-color:${c.border}"></span><span class="who"><b translate="no">${esc(x.name)}</b><small>${esc(roleLabel(x.role))}</small></span>${tag}</button>`;
       }).join('') || `<p class="sm-muted">${list.length ? 'Everyone is already scheduled on this date. Tick "Show assigned staff" to see them.' : 'No staff accounts yet — create them in the staff portal (Staff Management).'}</p>`}</div></section>`;
   if (S.edit) renderEditorIssues();
 }
@@ -356,6 +490,7 @@ function editorHtml() {
       <label>Unpaid break (min)<input type="number" name="breakMinutes" min="0" max="600" step="5" value="${esc(f.breakMinutes || 0)}"></label></div>
     <datalist id="smRoles">${[...new Set([...ROLES, ...S.data.templates.map((t) => t.role).filter(Boolean)])].map((r) => `<option value="${esc(r)}">`).join('')}</datalist>
     <label>Notes<textarea name="notes" rows="2" maxlength="500">${esc(f.notes || '')}</textarea></label>
+    <label>Repeat every week<select name="repeatWeeks">${[0, 1, 2, 3, 4, 6, 8, 12].map((n) => `<option value="${n}" ${Number(f.repeatWeeks || 0) === n ? 'selected' : ''}>${n ? `Also the next ${n} week${n === 1 ? '' : 's'}` : 'No, just this one'}</option>`).join('')}</select></label>
     ${set.splitShifts?.allowed ? `<label class="check"><input type="checkbox" name="splitOverride" ${f.splitOverride ? 'checked' : ''}> Allow split shift (second shift this day, at least ${set.splitShifts.minRestMinutes} min rest)</label>` : ''}
     <div class="sm-muted" id="smDur"></div>
     <ul class="sm-issues" id="smEditorIssues" aria-live="polite"></ul>
@@ -384,32 +519,6 @@ function renderEditorIssues() {
   const shared = p.employeeId ? E.findSharedCoverage([...storeShifts().filter((a) => a.id !== p.id), p]).filter((s) => s.a.id === p.id || s.b.id === p.id) : [];
   ul.innerHTML = [...v.errors.map((x) => `<li class="error">${esc(x.message)}</li>`), ...v.warnings.map((x) => `<li class="warning">${esc(x.message)}</li>`),
     ...shared.map((s) => `<li class="info">With ${esc(empName((s.a.id === p.id ? s.b : s.a).employeeId))} ${esc(E.bkkTime(s.startsAt))}–${esc(E.bkkTime(s.endsAt))} — fine, different people.</li>`)].join('');
-}
-
-/* ---------------- render: weekly hours + coverage ---------------- */
-
-function renderBelow() {
-  const hoursEl = el().querySelector('#smHours'), covEl = el().querySelector('#smCov');
-  if (!hoursEl) return;
-  const ws = weekOfAnchor();
-  const rows = E.weeklyHours(S.assignments, activeEmployees(), ws, settings()).sort((a, b) => b.minutes - a.minutes || a.name.localeCompare(b.name));
-  hoursEl.innerHTML = rows.map((r) => {
-    const c = colors().get(r.employeeId) || E.PALETTE[0];
-    const pct = Math.min(100, Math.round((r.minutes / (r.threshold * 60)) * 100));
-    return `<div><div class="sm-hrow"><span class="sw" style="background:${c.bg};border-color:${c.border}"></span>
-      <span class="nm" translate="no">${esc(r.name)} <small>${r.days} day${r.days === 1 ? '' : 's'} · ${esc(roleLabel(r.role))}</small></span>
-      <span class="v ${r.over ? 'over' : ''}">${esc(E.fmtHours(r.minutes))} / ${r.threshold}h${r.over ? ` <span class="sm-sr">over threshold by</span> ⚠+${esc(E.fmtHours(r.over))}` : ''}</span></div>
-      <div class="sm-hrow"><span></span><div class="sm-bar ${r.over ? 'over' : ''}" role="progressbar" aria-valuemin="0" aria-valuemax="${r.threshold * 60}" aria-valuenow="${r.minutes}" aria-label="${esc(r.name)} weekly hours"><i style="width:${pct}%"></i></div></div></div>`;
-  }).join('') || '<p class="sm-muted">No staff yet.</p>';
-  covEl.innerHTML = E.weekDates(ws).map((d) => {
-    const c = E.coverageForDate(d, storeShifts(), S.data.requirements, { storeId: S.store, settings: settings() });
-    const cls = !c.hasTargets ? '' : c.understaffedMinutes ? 'under' : 'met';
-    return `<div class="sm-covday ${cls}"><b>${esc(E.fmtDateShort(d))}</b>
-      ${c.hasTargets ? `<span class="big">${c.metPercent}%</span> <span class="sm-muted">of target time covered</span><br>
-        ${c.understaffedMinutes ? `⚠ Short ${esc(E.fmtHours(c.understaffedMinutes))} · lowest ${c.lowestDuringTargets} on shift` : '✓ Every target window met'}`
-        : `<span class="sm-muted">No staffing target · peak ${c.peak} on shift</span>`}
-      <br><span class="sm-muted">${c.uniqueStaff} people scheduled</span></div>`;
-  }).join('');
 }
 
 /* ---------------- render: modals ---------------- */
@@ -583,7 +692,7 @@ function showProblems(e) {
   S.notify(list.length ? list.map((x) => x.message).join(' · ') : e.message, true);
 }
 
-async function createShift(p) {
+async function createShift(p, opts = {}) {
   const v = localCheck(p);
   if (v.errors.length) { S.notify(v.errors[0].message, true); return false; }
   const a = { ...p, id: crypto.randomUUID(), version: 1, _saving: true };
@@ -591,6 +700,7 @@ async function createShift(p) {
   try {
     const r = await api('POST', 'assignment', { ...a, _saving: undefined });
     Object.assign(a, r.assignment); delete a._saving;
+    if (!opts.noUndo) pushUndo({ type: 'create', items: [{ id: a.id, version: a.version }], label: `add ${empName(a.employeeId)} ${E.fmtDateShort(E.businessDate(a))} ${E.fmtRange(a)}` });
     if (r.warnings?.length) S.notify('Saved. ' + r.warnings.map((w) => w.message).join(' · '));
     return true;
   } catch (e) {
@@ -601,7 +711,7 @@ async function createShift(p) {
   } finally { busy(-1); render(); refreshReportSoon(); }
 }
 
-async function patchShift(a, patch) {
+async function patchShift(a, patch, opts = {}) {
   const before = { ...a };
   const next = { ...a, ...patch };
   const v = localCheck(next);
@@ -611,6 +721,7 @@ async function patchShift(a, patch) {
     const r = await api('PATCH', 'assignment', { id: a.id, version: before.version, employeeId: a.employeeId, storeId: a.storeId, startsAt: a.startsAt, endsAt: a.endsAt,
       role: a.role, breakMinutes: a.breakMinutes, notes: a.notes, templateId: a.templateId, splitOverride: a.splitOverride });
     Object.assign(a, r.assignment); delete a._saving;
+    if (!opts.noUndo) pushUndo({ type: 'patch', id: a.id, before: shiftFields(before), label: `change ${empName(before.employeeId)} ${E.fmtDateShort(E.businessDate(before))} ${E.fmtRange(before)}` });
     if (r.warnings?.length) S.notify('Saved. ' + r.warnings.map((w) => w.message).join(' · '));
     return true;
   } catch (e) {
@@ -622,12 +733,122 @@ async function patchShift(a, patch) {
   } finally { busy(-1); render(); refreshReportSoon(); }
 }
 
-async function deleteShift(a) {
+async function deleteShift(a, opts = {}) {
   const i = S.assignments.indexOf(a);
   S.assignments.splice(i, 1); render(); busy(1);
-  try { await api('DELETE', 'assignment', { id: a.id, version: a.version }); S.notify(`Removed ${empName(a.employeeId)} ${E.fmtRange(a)}`); return true; }
+  try {
+    await api('DELETE', 'assignment', { id: a.id, version: a.version });
+    if (!opts.noUndo) pushUndo({ type: 'delete', shift: shiftFields(a), label: `delete ${empName(a.employeeId)} ${E.fmtDateShort(E.businessDate(a))} ${E.fmtRange(a)}` });
+    S.notify(`Removed ${empName(a.employeeId)} ${E.fmtRange(a)}. Press Undo to bring it back.`); return true;
+  }
   catch (e) { S.assignments.splice(i, 0, a); showProblems(e); if (e.status === 409 || e.status === 404) load({ quiet: true }); return false; }
   finally { busy(-1); render(); refreshReportSoon(); }
+}
+
+/* ---------------- undo, bulk create, quick actions ---------------- */
+
+const shiftFields = (a) => ({ employeeId: a.employeeId, storeId: a.storeId, startsAt: a.startsAt, endsAt: a.endsAt, role: a.role ?? null,
+  breakMinutes: a.breakMinutes || 0, notes: a.notes ?? null, templateId: a.templateId ?? null, splitOverride: Boolean(a.splitOverride) });
+function pushUndo(entry) { S.undo.push(entry); if (S.undo.length > 25) S.undo.shift(); renderToolbar(); }
+async function undo() {
+  const u = S.undo.pop(); renderToolbar();
+  if (!u) return S.notify('Nothing to undo.');
+  if (u.type === 'create' || u.type === 'batch') {
+    let left = 0; busy(1);
+    for (const it of u.items) {
+      const cur = S.assignments.find((x) => x.id === it.id);
+      try { await api('DELETE', 'assignment', { id: it.id, version: cur?.version ?? it.version }); } catch { left++; }
+    }
+    busy(-1); await load({ quiet: true }); refreshReportSoon();
+    return S.notify(left ? `Undone, except ${left} shift${left === 1 ? '' : 's'} changed since — remove ${left === 1 ? 'it' : 'them'} by hand.` : `Undone: ${u.label}.`, left > 0);
+  }
+  if (u.type === 'patch') {
+    const a = S.assignments.find((x) => x.id === u.id);
+    if (!a) return S.notify('That shift is not on screen any more — open its week and change it by hand.', true);
+    if (await patchShift(a, u.before, { noUndo: true })) S.notify(`Undone: ${u.label}.`);
+    return;
+  }
+  if (u.type === 'delete' && await createShift(u.shift, { noUndo: true })) S.notify(`Undone: ${u.label}.`);
+}
+
+/** Create many shifts one by one (each is validated by the server). One undo step. */
+async function createMany(list, label) {
+  const made = [], failed = [];
+  busy(1);
+  try {
+    for (const p of list) {
+      try { const r = await api('POST', 'assignment', { ...shiftFields(p), id: crypto.randomUUID(), version: 1 }); made.push(r.assignment); }
+      catch (e) { failed.push(`${E.fmtDateShort(E.businessDate(p))} ${E.fmtRange(p)} ${empName(p.employeeId)}: ${e.data?.errors?.[0]?.message || e.message}`); }
+    }
+  } finally { busy(-1); }
+  if (made.length) pushUndo({ type: 'batch', items: made.map((a) => ({ id: a.id, version: a.version })), label });
+  await load({ quiet: true }); refreshReportSoon();
+  if (failed.length) alert(`${made.length} shift${made.length === 1 ? '' : 's'} added. ${failed.length} could not be added:\n\n• ${failed.slice(0, 12).join('\n• ')}${failed.length > 12 ? `\n…and ${failed.length - 12} more` : ''}`);
+  else S.notify(`${made.length} shift${made.length === 1 ? '' : 's'} added as draft. Press Undo to remove ${made.length === 1 ? 'it' : 'them all'}.`);
+  return { made, failed };
+}
+const shiftBy = (p, days) => ({ ...p, startsAt: E.iso(E.toMs(p.startsAt) + days * E.DAY_MS), endsAt: E.iso(E.toMs(p.endsAt) + days * E.DAY_MS) });
+
+/* small pop-up menu anchored to a cell or a name */
+function openPop(anchor, html) {
+  const box = el().querySelector('#smPop');
+  box.innerHTML = `<div class="sm-pop" role="menu">${html}</div>`;
+  const pop = box.firstElementChild, r = anchor.getBoundingClientRect();
+  const w = pop.offsetWidth, h = pop.offsetHeight;
+  pop.style.left = Math.max(8, Math.min(innerWidth - w - 8, r.left)) + 'px';
+  pop.style.top = (r.bottom + 4 + h > innerHeight - 8 ? Math.max(8, r.top - h - 4) : r.bottom + 4) + 'px';
+  S.pop = anchor;
+  pop.querySelector('button:not([disabled])')?.focus();
+}
+function closePop() { const box = S?.root?.querySelector('#smPop'); if (box) box.innerHTML = ''; if (S) S.pop = null; }
+const storeTemplates = () => S.data.templates.filter((t) => !t.storeId || t.storeId === S.store);
+function cellMenu(cell) {
+  const { emp, date } = cell.dataset;
+  const tpls = storeTemplates();
+  if (!tpls.length) return openEditor(null, { employeeId: emp, date });
+  S.selectedDate = date;
+  openPop(cell, `<div class="h"><b translate="no">${esc(empName(emp))}</b> · ${esc(E.fmtDateShort(date))}</div>
+    ${tpls.map((t) => `<button role="menuitem" data-sm="quick-tpl" data-tpl="${esc(t.id)}" data-emp="${esc(emp)}" data-date="${date}"><b>${esc(t.name)}</b> <span>${esc(t.startTime)}–${esc(t.endTime)}${t.role ? ' · ' + esc(t.role) : ''}</span></button>`).join('')}
+    <button role="menuitem" data-sm="quick-custom" data-emp="${esc(emp)}" data-date="${date}">Custom time…</button>`);
+}
+function personMenu(btn) {
+  const id = btn.dataset.emp;
+  const ws = weekOfAnchor();
+  const n = S.assignments.filter((a) => a.employeeId === id && a.storeId === S.store && E.weekStartOf(E.businessDate(a)) === ws).length;
+  openPop(btn, `<div class="h"><b translate="no">${esc(empName(id))}</b> · ${n} shift${n === 1 ? '' : 's'} this week</div>
+    <button role="menuitem" data-sm="copy-person" data-emp="${esc(id)}" data-weeks="1" ${n ? '' : 'disabled'}>Copy this week to next week</button>
+    <button role="menuitem" data-sm="copy-person" data-emp="${esc(id)}" data-weeks="4" ${n ? '' : 'disabled'}>Repeat this week for the next 4 weeks</button>
+    <button role="menuitem" data-sm="quick-custom" data-emp="${esc(id)}" data-date="${S.selectedDate}">Add a shift…</button>`);
+}
+async function copyPerson(id, weeks) {
+  const ws = weekOfAnchor();
+  const src = S.assignments.filter((a) => a.employeeId === id && a.storeId === S.store && E.weekStartOf(E.businessDate(a)) === ws);
+  const list = [];
+  for (let k = 1; k <= weeks; k++) for (const a of src) list.push(shiftBy(shiftFields(a), 7 * k));
+  if (!list.length) return;
+  if (!confirm(`Add ${list.length} shift${list.length === 1 ? '' : 's'} for ${empName(id)} as draft (${weeks === 1 ? 'next week' : `next ${weeks} weeks`})? Staff will not see them until each week is published.`)) return;
+  await createMany(list, `copy ${empName(id)}'s week`);
+}
+
+/* auto-fill: suggestions in a modal, nothing saved until confirmed */
+function autofillModal() {
+  const ws = weekOfAnchor();
+  const res = E.planAutoFill({ storeId: S.store, weekStart: ws, assignments: S.assignments, requirements: S.data.requirements, employees: employees(),
+    leave: S.leave, availability: S.availability, templates: S.data.templates, settings: settings() });
+  S.af = { list: res.proposals, unfilled: res.unfilled, pick: new Set(res.proposals.map((p) => p.id)) };
+  renderAutofill();
+}
+function renderAutofill() {
+  const a = S.af;
+  openModal(() => `<h2 id="smModalTitle">Auto-fill · week of ${esc(E.fmtDateShort(weekOfAnchor()))}</h2>
+    <p class="sm-muted">Suggested shifts for every hour that is short of staff. It never double-books anyone, never uses someone on leave, and keeps everyone under their weekly hours. Untick anything you do not want. Shifts go in as a <b>draft</b>.</p>
+    ${a.list.length ? `<div style="overflow:auto"><table class="sm-table"><tr><th></th><th>Day</th><th>Person</th><th>Time</th><th>Why</th></tr>${a.list.map((p) => `<tr>
+      <td><input type="checkbox" aria-label="Add this shift" data-sm-change="af-pick" data-id="${esc(p.id)}" ${a.pick.has(p.id) ? 'checked' : ''}></td>
+      <td>${esc(E.fmtDateShort(E.businessDate(p)))}</td><td><span class="sm-chip" translate="no" style="${colorVars(p.employeeId)};display:inline-block">${esc(empName(p.employeeId))}</span></td>
+      <td>${esc(E.fmtRange(p))}${p.role ? ' · ' + esc(p.role) : ''}</td><td class="sm-muted">${esc(p.reason)}${p.warnings.length ? `<div style="color:var(--sm-warn)">⚠ ${esc(p.warnings.join(' · '))}</div>` : ''}</td></tr>`).join('')}</table></div>`
+      : `<p class="sm-empty">${a.unfilled.length ? 'Nobody suitable is free for the short hours.' : '✓ Every staffing target this week is already met.'}</p>`}
+    ${a.unfilled.length ? `<h3 style="margin-top:12px">Could not fill (${a.unfilled.length})</h3><ul class="sm-issues">${a.unfilled.map((u) => `<li class="warning">${esc(E.fmtDateShort(u.date))} ${esc(E.bkkTime(u.start))}–${esc(E.bkkTime(u.end))}: ${u.lowest} of ${u.required} on shift and nobody else is free</li>`).join('')}</ul>` : ''}
+    <div class="foot"><button class="sm-btn" data-sm="close">Cancel</button><button class="sm-btn primary" data-sm="do-autofill" ${a.pick.size ? '' : 'disabled'}>Add ${a.pick.size} shift${a.pick.size === 1 ? '' : 's'} as draft</button></div>`);
 }
 
 function defaultTimes() {
@@ -654,9 +875,11 @@ function closeEditor() { S.edit = null; S.editDirty = false; S.sheet = false; re
 async function submitEditor() {
   const p = editorProposal();
   if (!p || !p.employeeId) { S.notify('Choose an employee, a date and times.', true); return; }
-  const id = S.edit.id;
+  const id = S.edit.id, repeat = Math.max(0, Math.min(12, Number(S.edit.repeatWeeks) || 0));
   const ok = id ? await patchShift(S.assignments.find((x) => x.id === id), { ...p, id }) : await createShift({ ...p, id: undefined });
-  if (ok) closeEditor();
+  if (!ok) return;
+  closeEditor();
+  if (repeat) await createMany(Array.from({ length: repeat }, (_, i) => shiftBy(shiftFields(p), 7 * (i + 1))), `repeat ${empName(p.employeeId)} weekly`);
 }
 
 /* ---------------- events ---------------- */
@@ -671,15 +894,24 @@ function bindOnce(root) {
   root.addEventListener('pointerdown', onPointerDown);
   root.addEventListener('dragstart', onDragStart);
   root.addEventListener('dragover', onDragOver);
-  root.addEventListener('dragleave', (e) => e.target.closest?.('.sm-col,td.cell')?.classList.remove('drop'));
+  root.addEventListener('dragleave', (e) => e.target.closest?.('.sm-lane,td.cell')?.classList.remove('drop'));
   root.addEventListener('drop', onDrop);
-  root.addEventListener('keydown', (e) => { if (e.key === 'Escape') { if (S.modal) closeModal(); else if (S.menu) { S.menu = null; renderToolbar(); } else if (S.edit) closeEditor(); } });
+  root.addEventListener('pointerover', (e) => { const t = e.target.closest?.('[data-sm="tip"]'); if (t && e.pointerType === 'mouse') showTip(t); });
+  root.addEventListener('pointerout', (e) => { if (e.pointerType === 'mouse' && e.target.closest?.('[data-sm="tip"]') && !e.relatedTarget?.closest?.('[data-sm="tip"]')) hideTip(); });
+  root.addEventListener('scroll', () => hideTip(), true);
+  root.addEventListener('keydown', (e) => { if (e.key === 'Escape') { if (S.pop) closePop(); else if (S.tipPinned) hideTip(); else if (S.modal) closeModal(); else if (S.menu) { S.menu = null; renderToolbar(); } else if (S.edit) closeEditor(); } });
+  document.addEventListener('keydown', (e) => {
+    if (!S || S.tab !== 'shifts' || !(e.ctrlKey || e.metaKey) || e.key.toLowerCase() !== 'z' || e.shiftKey) return;
+    if (e.target.closest?.('input,textarea,select,[contenteditable]') || S.modal || !S.root.isConnected) return;
+    e.preventDefault(); undo();
+  });
+  root.addEventListener('scroll', () => closePop(), true);
   window.addEventListener('beforeunload', (e) => { if (S && (S.inflight || S.editDirty)) { e.preventDefault(); e.returnValue = ''; } });
 }
 
-function minuteAt(col, clientY, offsetMin = 0) {
-  const r = col.getBoundingClientRect();
-  const raw = ((clientY - r.top) / hourPx()) * 60 + S.grid.lo - offsetMin;
+function minuteAt(lane, clientX, offsetMin = 0) {
+  const r = lane.getBoundingClientRect();
+  const raw = ((clientX - r.left) / S.grid.hourW) * 60 + S.grid.lo - offsetMin;
   return Math.max(S.grid.lo, Math.min(S.grid.hi - inc(), Math.round(raw / inc()) * inc()));
 }
 const hhmm = (m) => `${String(Math.floor(m / 60) % 24).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`;
@@ -687,6 +919,9 @@ const hhmm = (m) => `${String(Math.floor(m / 60) % 24).padStart(2, '0')}:${Strin
 async function onClick(e) {
   if (S.suppressClick) { S.suppressClick = false; return; }
   const t = e.target.closest('[data-sm]');
+  // Clicking anywhere else closes a pop-up menu or a pinned hover box.
+  if (S.pop && !e.target.closest('.sm-pop') && t !== S.pop) closePop();
+  if (S.tipPinned && !e.target.closest('#smTip') && t?.dataset.sm !== 'tip') hideTip();
   if (!t) {
     if (S.menu && !e.target.closest('.sm-menu')) { S.menu = null; renderToolbar(); }
     return;
@@ -705,13 +940,34 @@ async function onClick(e) {
       return load();
     }
     case 'view': S.view = t.dataset.v; if (S.view === 'day') S.anchor = S.selectedDate; return load();
-    case 'pick-date': S.selectedDate = t.dataset.date; if (S.view === 'staff') { S.view = 'day'; S.anchor = t.dataset.date; return load(); } renderCalendar(); renderSide(); return;
+    case 'pick-date': S.selectedDate = S.anchor = t.dataset.date; S.view = 'day'; return load();
     case 'month-day': S.selectedDate = S.anchor = t.dataset.date; S.view = 'day'; return load();
+    case 'tip': if (S.tipFor === t && S.tipPinned) hideTip(); else showTip(t, true); return;
+    case 'tip-close': return hideTip();
+    case 'fill-gap': {
+      hideTip();
+      return createShift({ employeeId: t.dataset.emp, storeId: S.store, startsAt: t.dataset.s, endsAt: t.dataset.e, role: t.dataset.role || null, breakMinutes: 0, templateId: null, notes: null, splitOverride: false });
+    }
+    case 'quick-tpl': {
+      const tp = S.data.templates.find((x) => x.id === t.dataset.tpl); closePop();
+      if (!tp) return;
+      return createShift({ employeeId: t.dataset.emp, storeId: S.store, ...E.localToRange(t.dataset.date, tp.startTime, tp.endTime), role: tp.role || null, breakMinutes: tp.breakMinutes || 0, templateId: tp.id, notes: null, splitOverride: false });
+    }
+    case 'quick-custom': closePop(); return openEditor(null, { employeeId: t.dataset.emp, date: t.dataset.date });
+    case 'person': if (S.pop === t) return closePop(); return personMenu(t);
+    case 'copy-person': closePop(); return copyPerson(t.dataset.emp, Number(t.dataset.weeks) || 1);
+    case 'undo': return undo();
+    case 'clear-role': S.role = ''; return render();
+    case 'autofill': return autofillModal();
+    case 'do-autofill': {
+      const list = S.af.list.filter((p) => S.af.pick.has(p.id)); closeModal();
+      return createMany(list, `auto-fill ${list.length} shift${list.length === 1 ? '' : 's'}`);
+    }
     case 'open': return openEditor(t.dataset.id);
     case 'cell': {
-      if (e.target.closest('.sm-chip')) return;
-      S.selectedDate = t.dataset.date;
-      return openEditor(null, { employeeId: t.dataset.emp, date: t.dataset.date });
+      if (e.target.closest('.sm-rchip')) return;
+      if (S.pop === t) return closePop();
+      return cellMenu(t);
     }
     case 'pick-staff': return openEditor(null, { employeeId: t.dataset.emp, date: S.selectedDate });
     case 'tpl': {
@@ -779,11 +1035,11 @@ async function onClick(e) {
 }
 
 function onColClick(e) {
-  const col = e.target.closest('.sm-col');
-  if (!col || e.target.closest('.sm-shift')) return false;
-  const d = col.dataset.col;
+  const lane = e.target.closest('.sm-lane');
+  if (!lane || e.target.closest('.sm-hbar')) return false;
+  const d = lane.dataset.date;
   S.selectedDate = d;
-  openEditor(null, { date: d, start: hhmm(minuteAt(col, e.clientY)) });
+  openEditor(null, { employeeId: lane.dataset.emp, date: d, start: hhmm(minuteAt(lane, e.clientX)) });
   return true;
 }
 
@@ -791,6 +1047,8 @@ function onChange(e) {
   const t = e.target, k = t.dataset.smChange;
   if (k === 'store') { S.store = t.value; try { localStorage.setItem('dankShiftStore', t.value); } catch {} return load(); }
   if (k === 'inc') { S.incOverride = Number(t.value); return render(); }
+  if (k === 'role-filter') { S.role = t.value; return render(); }
+  if (k === 'af-pick') { t.checked ? S.af.pick.add(t.dataset.id) : S.af.pick.delete(t.dataset.id); return renderAutofill(); }
   if (k === 'show-assigned') { S.showAssigned = t.checked; return renderSide(); }
   if (k === 'ack') { t.checked ? S.ack.add(t.dataset.key) : S.ack.delete(t.dataset.key); return publishModal(); }
   if (k === 'ack-all') { S.ack = new Set(t.checked ? S.report.validation.needsAck : []); return publishModal(); }
@@ -845,16 +1103,14 @@ async function onSubmit(e) {
 
 function onPointerDown(e) {
   if (e.button !== 0 || S.tab !== 'shifts') return;
-  const card = e.target.closest('.sm-shift[data-id], .sm-staffgrid .sm-chip[data-id]');
-  if (!card) {
-    if (e.target.closest('.sm-col') && !e.target.closest('.sm-shift')) { S.colDown = { x: e.clientX, y: e.clientY }; }
-    return;
-  }
+  const card = e.target.closest('.sm-hbar[data-id], .sm-roster .sm-rchip[data-id]');
+  if (!card) return;
   const a = S.assignments.find((x) => x.id === card.dataset.id);
   if (!a) return;
   const resize = Boolean(e.target.closest('[data-rz]'));
-  const col = card.closest('.sm-col');
-  const grabMin = col ? ((e.clientY - card.getBoundingClientRect().top) / hourPx()) * 60 : 0;
+  const lane = card.closest('.sm-lane');
+  // Minutes between the shift's start and where the pointer grabbed it.
+  const grabMin = lane ? ((e.clientX - card.getBoundingClientRect().left) / S.grid.hourW) * 60 : 0;
   S.drag = { a, card, x: e.clientX, y: e.clientY, resize, started: false, grabMin, pointerId: e.pointerId };
   document.addEventListener('pointermove', onPointerMove);
   document.addEventListener('pointerup', onPointerUp, { once: true });
@@ -867,7 +1123,7 @@ function onPointerMove(e) {
   for (const g of el().querySelectorAll('.sm-ghost')) g.remove();
   for (const c of el().querySelectorAll('.drop')) c.classList.remove('drop');
   d.proposal = null;
-  if (S.view === 'staff') {
+  if (S.view === 'week') {
     const cell = document.elementsFromPoint(e.clientX, e.clientY).find((n) => n.matches?.('td.cell'));
     if (!cell) return;
     cell.classList.add('drop');
@@ -875,22 +1131,23 @@ function onPointerMove(e) {
     d.proposal = { employeeId: cell.dataset.emp, startsAt: E.iso(E.toMs(d.a.startsAt) + delta), endsAt: E.iso(E.toMs(d.a.endsAt) + delta) };
     return;
   }
-  const col = d.resize ? d.card.closest('.sm-col') : document.elementsFromPoint(e.clientX, e.clientY).find((n) => n.matches?.('.sm-col'));
-  if (!col) return;
-  const date = col.dataset.col, px = hourPx();
+  // Day view: drag along the row to change the time, onto another row to give the shift to that person.
+  const lane = d.resize ? d.card.closest('.sm-lane') : document.elementsFromPoint(e.clientX, e.clientY).find((n) => n.matches?.('.sm-lane'));
+  if (!lane) return;
+  const date = lane.dataset.date, hw = S.grid.hourW;
   let s, en;
   if (d.resize) {
     s = E.toMs(d.a.startsAt);
-    const m = Math.max(E.minutesFrom(date, d.a.startsAt) + inc(), minuteAt(col, e.clientY) + inc());
+    const m = Math.max(E.minutesFrom(date, d.a.startsAt) + inc(), minuteAt(lane, e.clientX) + inc());
     en = E.bkkMs(date) + m * 60000;
   } else {
-    const m = minuteAt(col, e.clientY, d.grabMin);
+    const m = minuteAt(lane, e.clientX, d.grabMin);
     s = E.bkkMs(date) + m * 60000; en = s + (E.toMs(d.a.endsAt) - E.toMs(d.a.startsAt));
   }
-  d.proposal = { startsAt: E.iso(s), endsAt: E.iso(en) };
-  const top = ((E.minutesFrom(date, s) - S.grid.lo) / 60) * px, h = ((en - s) / 3600000) * px;
+  d.proposal = { startsAt: E.iso(s), endsAt: E.iso(en), ...(d.resize ? {} : { employeeId: lane.dataset.emp }) };
+  const left = ((E.minutesFrom(date, s) - S.grid.lo) / 60) * hw, w = ((en - s) / 3600000) * hw;
   const bad = localCheck({ ...d.a, ...d.proposal }).errors.length;
-  col.insertAdjacentHTML('beforeend', `<div class="sm-ghost" style="top:${top}px;height:${h}px;${bad ? 'border-color:var(--sm-under);color:var(--sm-under)' : ''}">${E.bkkTime(s)}–${E.bkkTime(en)}${bad ? ' ⛔' : ''}</div>`);
+  lane.insertAdjacentHTML('beforeend', `<div class="sm-ghost" style="left:${left}px;width:${w}px;${bad ? 'border-color:var(--sm-under);color:var(--sm-under)' : ''}">${E.bkkTime(s)}–${E.bkkTime(en)}${bad ? ' ⛔' : ''}</div>`);
 }
 async function onPointerUp() {
   document.removeEventListener('pointermove', onPointerMove);
@@ -906,11 +1163,11 @@ async function onPointerUp() {
   if (p.startsAt === d.a.startsAt && p.endsAt === d.a.endsAt && (!p.employeeId || p.employeeId === d.a.employeeId)) return render();
   await patchShift(d.a, p);
 }
-// Column click → create at that time (registered here so it never fires after a card drag).
+// Empty row click (day view) → create for that person at that time (registered here so it never fires after a card drag).
 document.addEventListener('click', (e) => {
   if (!S || S.tab !== 'shifts' || !S.root.contains(e.target)) return;
   if (S.suppressClick) return;
-  if (e.target.closest('.sm-col') && !e.target.closest('.sm-shift')) onColClick(e);
+  if (e.target.closest('.sm-lane') && !e.target.closest('.sm-hbar')) onColClick(e);
 }, true);
 
 /* ---- HTML5 drag: a staff card from the side panel onto the calendar ---- */
@@ -924,7 +1181,7 @@ function onDragStart(e) {
 }
 function onDragOver(e) {
   if (!S.dragEmp) return;
-  const target = e.target.closest?.('.sm-col, td.cell');
+  const target = e.target.closest?.('.sm-lane, td.cell');
   if (!target) return;
   e.preventDefault();
   e.dataTransfer.dropEffect = 'copy';
@@ -933,15 +1190,15 @@ function onDragOver(e) {
 }
 async function onDrop(e) {
   const emp = S.dragEmp; S.dragEmp = null;
-  const target = e.target.closest?.('.sm-col, td.cell');
+  const target = e.target.closest?.('.sm-lane, td.cell');
   for (const c of el().querySelectorAll('.drop')) c.classList.remove('drop');
   if (!emp || !target) return;
   e.preventDefault();
   const t = defaultTimes();
-  const date = target.dataset.col || target.dataset.date;
+  const date = target.dataset.date;
   let start = t.start, end = t.end;
-  if (target.classList.contains('sm-col') && !S.tpl) {
-    const m = minuteAt(target, e.clientY);
+  if (target.classList.contains('sm-lane') && !S.tpl) {
+    const m = minuteAt(target, e.clientX);
     start = hhmm(m); end = hhmm(m + 8 * 60);
   }
   S.selectedDate = date;
