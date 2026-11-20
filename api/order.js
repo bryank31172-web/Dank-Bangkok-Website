@@ -315,12 +315,20 @@ export default async function handler(req, res) {
     if (o.items?.length) {
       const { data: menu } = await getMenu();
       const idSet = new Set((menu || []).map((p) => String(p.id)));
+      const byId = new Map((menu || []).map(product=>[String(product.id),product]));
       const byName = new Map((menu || []).map((p) => [String(p.name || "").trim().toLowerCase(), String(p.id)]));
       for (const it of o.items) {
         if (it.productKey) continue;
         if (it.id && idSet.has(String(it.id))) { it.productKey = String(it.id); continue; }
         const key = byName.get(String(it.name || "").trim().toLowerCase());
         if (key) it.productKey = key;
+      }
+      // Keep verified sale-time metadata on the receipt for historical reporting.
+      for(const item of o.items){
+        const product=byId.get(String(item.productKey||''));
+        if(!product)continue;
+        item.sku=String(product.sku??'');
+        item.category=String(product.category??'');
       }
     }
   } catch (e) { console.error("product_key attribution skipped:", e.message); }

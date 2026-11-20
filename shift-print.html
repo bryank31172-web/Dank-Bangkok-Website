@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Shift Maker — PDF</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+Thai:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  /* Local Thai fallback, embedded in the PDF if Google Fonts is unreachable. */
+  @font-face{font-family:"TH Krub";src:url("assets/fonts/th-krub/TH%20Krub.ttf") format("truetype");font-weight:400}
+  @font-face{font-family:"TH Krub";src:url("assets/fonts/th-krub/TH%20Krub%20Bold.ttf") format("truetype");font-weight:700}
+  html,body{margin:0;background:#e9eeec}
+  .pv-bar{position:sticky;top:0;z-index:5;display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:10px 16px;background:#fff;border-bottom:1px solid #dde4e1;font:14px/1.3 Inter,"Noto Sans Thai",system-ui,sans-serif}
+  .pv-bar b{color:#007A4D}
+  .pv-bar button,.pv-bar select{font:inherit;border:1px solid #dde4e1;background:#fff;border-radius:8px;padding:7px 12px;min-height:36px}
+  .pv-bar .go{background:#007A4D;border-color:#007A4D;color:#fff;font-weight:700}
+  .pv-bar .hint{color:#5b6b64;font-size:12.5px}
+  .pv-bar .grow{flex:1}
+  #pages{padding:20px 16px 40px;display:grid;justify-content:safe center;gap:16px;overflow-x:auto}
+  #pages .p-page{box-shadow:0 6px 24px #0002}
+  .msg{max-width:640px;margin:60px auto;background:#fff;border-radius:14px;padding:24px;font:15px/1.5 Inter,system-ui,sans-serif}
+  .msg.err{color:#c0392b}
+  @media screen and (max-width:900px){#pages{justify-content:start;overflow-x:auto}}
+  @media print{html,body{background:#fff}.pv-bar{display:none}#pages{padding:0;display:block}#pages .p-page{box-shadow:none}}
+</style>
+<style id="pageSize">@page{size:A3 landscape;margin:0}</style>
+<style id="printCss"></style>
+</head>
+<body>
+<div class="pv-bar" id="bar">
+  <b>Shift Maker PDF</b><span class="hint" id="what"></span><span class="grow"></span>
+  <label class="hint" for="paper">Paper</label>
+  <select id="paper"><option value="A3">A3 landscape</option><option value="A4">A4 landscape</option></select>
+  <button class="go" id="print">Print / Save as PDF</button>
+  <span class="hint">Pick “Save as PDF” as the printer. Scale 100%, margins none.</span>
+</div>
+<div id="pages"><div class="msg">Preparing your schedule…</div></div>
+<script type="module">
+import * as E from './assets/shift-engine.js';
+import { renderWeekly, renderMonthly, renderIndividual, sampleData, PRINT_CSS } from './assets/shift-print.js';
+
+const q = new URLSearchParams(location.search);
+const $ = (s) => document.querySelector(s);
+document.getElementById('printCss').textContent = PRINT_CSS;
+const paperSel = $('#paper');
+paperSel.value = q.get('paper') === 'A4' ? 'A4' : 'A3';
+const token = (k) => { try { return localStorage.getItem(k) || sessionStorage.getItem(k) || ''; } catch { return ''; } };
+const showError = (m) => { $('#pages').innerHTML = `<div class="msg err">${m.replace(/</g, '&lt;')}</div>`; window.__shiftPrintReady = 'error'; };
+
+async function getJSON(url, tok) {
+  const r = await fetch(url, { headers: { Authorization: `Bearer ${tok}` } });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(j.error || `HTTP ${r.status}`);
+  return j;
+}
+
+/* Data comes from the server already authorised and validated:
+   - managers: /api/backoffice/shifts?resource=print (BackOffice session)
+   - staff:    /api/my-shifts (their own published shifts only)
+   - ?sample=1: the illustrative week, built in this browser, never stored. */
+async function loadData() {
+  if (q.get('sample') === '1') return sampleData(q.get('week') && E.isDateStr(q.get('week')) ? E.weekStartOf(q.get('week')) : '2026-11-16');
+  if (q.get('self') === '1') {
+    const tok = token('dankStaffToken');
+    if (!tok) throw new Error('Sign in to the staff portal first, then open this again from My Shifts.');
+    const month = q.get('type') === 'staff-month';
+    const anchor = E.isDateStr(q.get('week')) ? q.get('week') : E.todayBkk();
+    const from = month ? anchor.slice(0, 8) + '01' : E.weekStartOf(anchor);
+    const to = month ? E.monthGrid(anchor).days.filter((d) => d.slice(0, 7) === anchor.slice(0, 7)).slice(-1)[0] : E.addDays(from, 6);
+    const j = await getJSON(`/api/my-shifts?from=${from}&to=${to}`, tok);
+    const weeks = [];
+    for (let w = E.weekStartOf(from); w <= to; w = E.addDays(w, 7)) weeks.push({ weekStart: w, status: 'Published', assignments: j.shifts.filter((a) => E.weekStartOf(E.businessDate(a)) === w), validation: null });
+    return { self: true, store: null, stores: j.stores, type: q.get('type'), employees: [j.me], settings: {}, requirements: [], weeks, range: [from, to] };
+  }
+  const tok = token('dankBackofficeToken');
+  if (!tok) throw new Error('Sign in to BackOffice first, then open this again from Shift Maker → Export PDF.');
+  const type = q.get('type') || 'weekly';
+  const params = new URLSearchParams({ resource: 'print', store: q.get('store') || '', week: q.get('week') || E.weekStartOf(E.todayBkk()), type: type.includes('month') ? 'monthly' : 'weekly', source: q.get('source') === 'published' ? 'published' : 'draft' });
+  return getJSON(`/api/backoffice/shifts?${params}`, tok);
+}
+
+let DATA;
+async function draw() {
+  const paper = paperSel.value;
+  $('#pageSize').textContent = `@page{size:${paper} landscape;margin:0}`;
+  const type = q.get('type') || 'weekly';
+  let out;
+  if (type === 'monthly') out = renderMonthly(DATA, { paper, month: q.get('week') });
+  else if (type === 'staff-week' || type === 'staff-month') {
+    const anchor = E.isDateStr(q.get('week')) ? q.get('week') : DATA.weeks[0].weekStart;
+    const range = DATA.range || (type === 'staff-month' ? [anchor.slice(0, 8) + '01', E.monthGrid(anchor).days.filter((d) => d.slice(0, 7) === anchor.slice(0, 7)).slice(-1)[0]] : [DATA.weeks[0].weekStart, E.addDays(DATA.weeks[0].weekStart, 6)]);
+    out = renderIndividual(DATA, { paper, employeeId: q.get('employee') || DATA.employees[0]?.id, range });
+  } else out = renderWeekly(DATA, { paper });
+  $('#pages').innerHTML = out.pages.join('');
+  $('#what').textContent = `${out.pages.length} page${out.pages.length > 1 ? 's' : ''} · ${paper} landscape${DATA.sample ? ' · illustrative sample data' : ''}`;
+  document.title = `Shift Maker — ${type.startsWith('staff') ? 'Individual' : type === 'monthly' ? 'Monthly' : 'Weekly'} — ${DATA.store?.name || DATA.employees?.[0]?.name || ''}`;
+}
+
+try {
+  DATA = await loadData();
+  if (q.get('type') === 'monthly' && !DATA.weeks?.length) throw new Error('No data for that month.');
+  await draw();
+  await document.fonts.ready;
+  window.__shiftPrintReady = true;
+  if (q.get('print') === '1') setTimeout(() => print(), 300);
+} catch (e) { showError(e.message || String(e)); }
+paperSel.addEventListener('change', () => DATA && draw());
+$('#print').addEventListener('click', () => print());
+</script>
+</body>
+</html>

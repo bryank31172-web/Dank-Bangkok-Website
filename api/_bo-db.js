@@ -72,6 +72,24 @@ export function boUpsert(table, rows, conflictCols) {
   });
 }
 
+/** INSERT, silently skipping rows whose `conflictCols` already exist (used for
+    deduplicated notifications: the same event can be raised twice, the row
+    lands once). Returns only the rows actually inserted. */
+export function boInsertIgnore(table, rows, conflictCols) {
+  return req(`/${table}?on_conflict=${encodeURIComponent(conflictCols)}`, {
+    method: "POST",
+    headers: { Prefer: "resolution=ignore-duplicates,return=representation" },
+    body: JSON.stringify(Array.isArray(rows) ? rows : [rows]),
+  });
+}
+
+/** Postgres error code from a failed bo-db call (e.g. "23P01" exclusion
+    violation, "23505" unique violation), or "" if there isn't one. */
+export function boErrorCode(err) {
+  const m = /"code"\s*:\s*"([0-9A-Z]{5})"/.exec(String(err?.message || ""));
+  return m ? m[1] : "";
+}
+
 /** Soft or hard delete, matching a PostgREST filter query string. */
 export function boDelete(table, query) {
   return req(`/${table}?${query}`, { method: "DELETE", headers: { Prefer: "return=representation" } });

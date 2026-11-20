@@ -13,20 +13,14 @@
    report would need isn't tracked anywhere yet) — never silently guesses. */
 import { requirePermission } from "../_auth.js";
 import { boConfigured, boSelect, enc } from "../_bo-db.js";
-import { getJSON, indexList } from "../_store.js";
+import {readSalesRecords} from '../_bo-sales.js';
 
-const money = (n) => Math.round(Number(n) || 0);
+const money = (n) => Math.round((Number(n) || 0)*100)/100;
 
 /** One walk over the order index, newest-first, capped the same way /api/sales caps its sweep. */
-async function readLiveOrders(since) {
-  const ids = await indexList("orders:index");
-  const out = [];
-  for (const id of ids.slice(0, 500)) {
-    const o = await getJSON("order:" + id);
-    if (!o || !o.at || o.at < since) continue;
-    out.push(o);
-  }
-  return out;
+async function readLiveOrders(since,store) {
+  const {orders}=await readSalesRecords();
+  return orders.filter(o=>o.at>=since&&o.at<=Date.now()&&(!store||store==='all'||o.storeId===store));
 }
 
 export function salesByProduct(orders) {
@@ -109,9 +103,11 @@ function returnsAndCorrections(orders) {
   // separate partial-return or refund record in this codebase; if DANK adds
   // one later, add a third bucket here rather than guessing at it now.
   const cancelled = orders.filter((o) => o.status === "cancelled");
+  const returned = orders.filter(o=>['return','refund'].includes(o.type||o.kind)&&o.status!=='cancelled');
   const corrected = orders.filter((o) => o.priceAdjusted && o.status !== "cancelled");
   return {
-    returns: { count: cancelled.length, total: cancelled.reduce((s, o) => s + money(o.total), 0), rows: cancelled.slice(0, 100).map((o) => ({ orderId: o.orderId, at: o.at, total: money(o.total) })) },
+    returns: { count: returned.length, total: money(returned.reduce((s, o) => s + money(o.total), 0)), rows: returned.map((o) => ({ orderId: o.orderId, at: o.at, total: money(o.total) })) },
+    cancellations:{count:cancelled.length,total:money(cancelled.reduce((s,o)=>s+money(o.total),0))},
     corrections: { count: corrected.length, rows: corrected.slice(0, 100).map((o) => ({ orderId: o.orderId, at: o.at, total: money(o.total) })) },
   };
 }
@@ -239,17 +235,17 @@ export default async function handler(req, res) {
   const store = req.query?.store;
 
   try {
-    if (type === "sales-by-product") return res.status(200).json({ rows: salesByProduct(await readLiveOrders(since)), source: "recorded" });
-    if (type === "sales-by-category") return res.status(200).json({ rows: salesByCategory(await readLiveOrders(since)), source: "recorded" });
+    if (type === "sales-by-product") return res.status(200).json({ rows: salesByProduct(await readLiveOrders(since,store)), source: "recorded" });
+    if (type === "sales-by-category") return res.status(200).json({ rows: salesByCategory(await readLiveOrders(since,store)), source: "recorded" });
     if (type === "sales-by-store") {
-      const r = salesByStore(await readLiveOrders(since));
+      const r = salesByStore(await readLiveOrders(since,store));
       return res.status(200).json({ ...r, source: r.rows.length ? "recorded" : "unavailable" });
     }
-    if (type === "discounts") return res.status(200).json({ ...discounts(await readLiveOrders(since)), source: "recorded" });
-    if (type === "returns-corrections") return res.status(200).json({ ...returnsAndCorrections(await readLiveOrders(since)), source: "recorded" });
+    if (type === "discounts") return res.status(200).json({ ...discounts(await readLiveOrders(since,store)), source: "recorded" });
+    if (type === "returns-corrections") return res.status(200).json({ ...returnsAndCorrections(await readLiveOrders(since,store)), source: "recorded" });
 
     if (type === "cogs") {
-      const c = await cogs(await readLiveOrders(since));
+      const c = await cogs(await readLiveOrders(since,store));
       return res.status(200).json({ ...c, source: c.costedRows ? "derived" : "unavailable-partial" });
     }
     if (!boConfigured()) return res.status(503).json({ error: "not configured" });

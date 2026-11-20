@@ -1,5 +1,15 @@
 # DANK BackOffice — Deployment Prep (Phase 7)
 
+## Standalone login
+
+BackOffice now opens at `/backoffice` with its own password form. It no longer reads
+the Staff Portal session or sends users there to sign in. Set `BACKOFFICE_PASSWORD`
+as a server environment variable before deploying. BackOffice sessions are valid
+for 12 hours and stop working when that password changes. The password is never
+placed in browser code or committed to the repository. A plain static file server
+can display the login screen but cannot run `/api/backoffice/auth` or the data APIs;
+use a serverless-capable local runtime or a preview deployment to test the full flow.
+
 **Nothing has been deployed.** This is the checklist and the risk list for when Bryan is ready to do
 it himself — per the brief's rule 14 and "do not deploy to production... without explicit approval."
 
@@ -84,9 +94,8 @@ A third gap-closing pass against the original master prompt, on top of v1.1. Add
    `0002_dank_backoffice_audit_import.sql` via the Supabase SQL editor or CLI against the same
    project (`SUPABASE_URL` already in Vercel — Tokyo region). Both are written to be safe to re-run
    (`IF NOT EXISTS`/`ON CONFLICT DO NOTHING` throughout) if interrupted partway.
-2. **No new environment variables are required.** BackOffice reuses `SUPABASE_URL` and
-   `SUPABASE_SERVICE_ROLE_KEY`, already set for `site_kv`, and the existing `STAFF_KEY`/
-   `ADMIN_SECRET`/`STAFF_SESSION_SECRET` for auth. Confirm via `/api/health` that
+2. **Set `BACKOFFICE_PASSWORD`** as a new, separate secret. BackOffice reuses `SUPABASE_URL` and
+   `SUPABASE_SERVICE_ROLE_KEY`, already set for `site_kv`, for its data. Confirm via `/api/health` that
    `wired.supabase` (or equivalent) is already true before relying on BackOffice — if Supabase is
    misconfigured, every `/api/backoffice/*` endpoint answers `503`, loudly, rather than silently
    doing nothing (same fail-closed posture as the rest of this repo's single-purpose secrets).
@@ -212,6 +221,8 @@ outside `api/order.js`'s attribution block and `backoffice.html`'s `exportCSV()`
 
 ## Known risks / remaining gaps (documented, not hidden)
 
+Recent local changes add audit-log filtering by staff ID and date, a 30-day recurring-expense forecast and monthly comparison, and phone-width layout adjustments. The forecast is an estimate based on recurring records, not proof of payment. Dates in that forecast use UTC. The Settings page now labels backup status as unknown and links to Supabase instructions; it does not query the backup service or verify a restore. Settings and Expenses were checked at an emulated 360px viewport using stubbed local data. These changes have not been deployed.
+
 1. **Thai cannabis compliance fields are not implemented** — `THAI_CANNABIS_COMPLIANCE.md` is
    research, not a finished design, and explicitly needs a licensed Thai lawyer's review before any
    batch/lot/prescription-reference field is added to the ledger.
@@ -270,7 +281,13 @@ outside `api/order.js`'s attribution block and `backoffice.html`'s `exportCSV()`
    from the brief's spec directly rather than blocked on surveying StoreHub's exact UI for them.
 7. **Staff permission grants expire with the session token (12h).** A scope granted via Settings →
    Staff permissions takes effect on that person's next login, same staleness window the existing
-   role field already has — not a new limitation introduced by this feature.
+   role field already has — not a new limitation introduced by this feature. Removing a grant,
+   changing a role, resetting a key, or disabling an account also does not revoke existing tokens:
+   they may still be accepted until their 12-hour expiry. The Settings page now warns about this.
+   A disabled account cannot use its existing session to reactivate itself by changing its key,
+   but this does not revoke that session or prevent other actions it is authorized to perform.
+   Separately, a staff-derived website editor token is valid for up to seven days and is not linked
+   back to the staff account when checked. Disabling the staff account does not revoke that token.
 8. **DB-level tests now run against real Postgres** (`tests/backoffice-migration.test.js`, see
    above) — `tests/backoffice.test.js`'s in-memory fake still covers the endpoint logic on top.
    What's still not tested: `bo_ledger_adjust`'s advisory lock under genuine multi-connection

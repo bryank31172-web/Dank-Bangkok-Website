@@ -246,7 +246,8 @@ test('STAFF_ROLE_PERMISSIONS (_auth.js) and ROLE_PERMISSIONS (_staff-accounts.js
         `role '${role}' x scope '${scope}': _staff-accounts.js says ${expected}, but _auth.js's hasPermission() disagrees — the two files have drifted apart`);
     }
   }
-  assert.deepEqual(ROLE_PERMISSIONS.kitchen.sort(), ['announcement_read', 'dashboard', 'food_ops', 'kitchen_tickets'].sort());
+  // shifts_self: kitchen staff work shifts too, so they get My Shifts (Shift Maker).
+  assert.deepEqual(ROLE_PERMISSIONS.kitchen.sort(), ['announcement_read', 'dashboard', 'food_ops', 'kitchen_tickets', 'shifts_self'].sort());
 });
 
 /* ---------------------------------------------------------- kitchen ticket state machine */
@@ -538,6 +539,24 @@ test('a non-recurring expense never generates anything', async () => {
     await call(expensesHandler, { method: 'POST', body: { category: 'repairs', amount: 500, expense_date: '2020-01-01' } });
     const res = await call(expensesHandler, { method: 'GET', query: {} });
     assert.equal(res.data.rows.length, 1, 'a decade-old non-recurring expense stays exactly one row');
+  });
+});
+
+test('monthly expense response forecasts recurring expenses due within 30 days without making new entries', async () => {
+  await withFakeSupabase(async (db) => {
+    const expensesHandler = (await import('../api/backoffice/expenses.js')).default;
+    const today = new Date().toISOString().slice(0, 10);
+    db.bo_expenses.push(
+      {id:'weekly', category:'utilities', vendor:'Electricity', amount:120, expense_date:today, recurring:'weekly', next_generated:false},
+      {id:'yearly', category:'rent', amount:1000, expense_date:today, recurring:'yearly', next_generated:false},
+      {id:'one-off', category:'other', amount:10, expense_date:today, recurring:null, next_generated:false},
+      {id:'already-generated', category:'other', amount:10, expense_date:today, recurring:'weekly', next_generated:true},
+    );
+    const result = await call(expensesHandler, { method:'GET', query:{monthly:'1'} });
+    assert.equal(result.code, 200);
+    assert.deepEqual(result.data.upcoming.map(row => row.id), ['weekly']);
+    assert.equal(result.data.upcomingAsOf, today);
+    assert.equal(db.bo_expenses.length, 4);
   });
 });
 

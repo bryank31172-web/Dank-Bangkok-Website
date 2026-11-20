@@ -207,6 +207,7 @@ body.drawer-open .mobile-backdrop{opacity:1;pointer-events:auto}
   <div id="listWrap" style="display:none">
     <div id="tabs">
       <button id="tabDashboard" class="active" onclick="setTab('dashboard')"><i class="ri-dashboard-line"></i><span>Dashboard</span></button>
+      <button id="tabMyShifts" onclick="setTab('myshifts')"><i class="ri-calendar-schedule-line"></i><span>My Shifts</span></button>
       <button id="tabOrders" onclick="setTab('orders')"><i class="ri-shopping-bag-3-line"></i><span>Orders</span><span class="cnt" id="ordCnt" style="display:none">0</span></button>
       <button id="tabProducts" onclick="setTab('products')"><i class="ri-store-2-line"></i><span>Products</span></button>
       <button id="tabPromotions" onclick="setTab('promotions')"><i class="ri-coupon-3-line"></i><span>Promotion</span></button>
@@ -384,10 +385,10 @@ function closeMobileNav(){toggleMobileNav(false)}
 window.addEventListener('resize',()=>{if(innerWidth>760)closeMobileNav()});
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeStaffContact();closeMobileNav()}});
 function can(p){return PERMS.includes('*')||PERMS.includes(p)}
-function tabAllowed(t){if(t==='dashboard')return can('dashboard');if(t==='sales')return can('sales');if(t==='products')return can('products');if(t==='promotions')return can('promotions');if(t==='announcement')return can('announcement_read');if(t==='staffinfo')return can('staff_manage');if(t==='staffcontacts')return ['professional','parttime'].includes(PROFILE?.role);return can('orders')||t==='settings'}
+function tabAllowed(t){if(t==='myshifts')return can('shifts_self')||can('shifts_manage');if(t==='dashboard')return can('dashboard');if(t==='sales')return can('sales');if(t==='products')return can('products');if(t==='promotions')return can('promotions');if(t==='announcement')return can('announcement_read');if(t==='staffinfo')return can('staff_manage');if(t==='staffcontacts')return ['professional','parttime'].includes(PROFILE?.role);return can('orders')||t==='settings'}
 function applyPermissions(){
   const mobile=$('#mobileMenu');if(mobile)mobile.style.display=LIVE?'grid':'none';
-  const map={tabDashboard:'dashboard',tabSales:'sales',tabProducts:'products',tabPromotions:'promotions',tabAnnouncement:'announcement_read',tabStaffInfo:'staff_manage'};
+  const map={tabMyShifts:'shifts_self',tabDashboard:'dashboard',tabSales:'sales',tabProducts:'products',tabPromotions:'promotions',tabAnnouncement:'announcement_read',tabStaffInfo:'staff_manage'};
   Object.entries(map).forEach(([id,p])=>{$('#'+id).style.display=can(p)?'':'none'});
   $('#tabStaffContacts').style.display=['professional','parttime'].includes(PROFILE?.role)?'':'none';
   document.querySelector('.profile-dot').textContent=(PROFILE?.name||'Staff').split(/\s+/).map(x=>x[0]).join('').slice(0,2).toUpperCase();
@@ -400,9 +401,9 @@ function showGeneratedKeys(rows){
 
 function setTab(t){ closeMobileNav(); if(typeof stopCamScan==='function') stopCamScan(); TAB=t;
   if(!tabAllowed(t)) t=can('dashboard')?'dashboard':'orders'; TAB=t;
-  const ids={dashboard:'tabDashboard',orders:'tabOrders',products:'tabProducts',promotions:'tabPromotions',sales:'tabSales',announcement:'tabAnnouncement',staffinfo:'tabStaffInfo',staffcontacts:'tabStaffContacts',settings:'tabSettings'};
+  const ids={myshifts:'tabMyShifts',dashboard:'tabDashboard',orders:'tabOrders',products:'tabProducts',promotions:'tabPromotions',sales:'tabSales',announcement:'tabAnnouncement',staffinfo:'tabStaffInfo',staffcontacts:'tabStaffContacts',settings:'tabSettings'};
   Object.entries(ids).forEach(([name,id])=>$('#'+id)?.classList.toggle('active',t===name));
-  const copy={dashboard:['Dashboard','A fast overview of new orders and staff updates.'],orders:['Orders','Manage website and table orders in real time.'],products:['Products','Create, edit and remove storefront products.'],promotions:['Promotion','Create, edit and remove customer promotions.'],sales:['Sales Report','Review revenue, payments and order performance.'],announcement:['Announcement','Important updates for every DANK staff member.'],staffinfo:['',''],staffcontacts:['',''],settings:['Setting','Manage this device and staff-portal preferences.']};
+  const copy={myshifts:['My Shifts','Your published shifts, hours, leave and requests.'],dashboard:['Dashboard','A fast overview of new orders and staff updates.'],orders:['Orders','Manage website and table orders in real time.'],products:['Products','Create, edit and remove storefront products.'],promotions:['Promotion','Create, edit and remove customer promotions.'],sales:['Sales Report','Review revenue, payments and order performance.'],announcement:['Announcement','Important updates for every DANK staff member.'],staffinfo:['',''],staffcontacts:['',''],settings:['Setting','Manage this device and staff-portal preferences.']};
   $('#pageHead').style.display=['staffinfo','staffcontacts'].includes(t)?'none':'';
   $('#pageTitle').textContent=copy[t][0]; $('#pageSub').textContent=copy[t][1];
   if(history.replaceState) history.replaceState(null,'',location.pathname);
@@ -411,6 +412,7 @@ function setTab(t){ closeMobileNav(); if(typeof stopCamScan==='function') stopCa
   else if(t==='sales'){ loadSales(); }
   else if(t==='products'){ loadStaffProducts(); }
   else if(t==='promotions'){ loadPromotions(); }
+  else if(t==='myshifts'){ /* Shift Maker self-service: assets/staff-shifts.js */ $('#list').innerHTML='<p class="muted">Loading…</p>'; import('./assets/staff-shifts.js').then(m=>{if(TAB==='myshifts')m.mount($('#list'),{getToken:()=>KEY})}).catch(e=>{$('#list').textContent=e.message}); }
   else renderPortalPanel(t); }
 
 function renderPortalPanel(t){

@@ -30,7 +30,7 @@ process.env.SHOP_BRANCHES = JSON.stringify([
 await setJSON('pos:feed', {
   at: Date.now(),
   products: [
-    { id: 'sku-attribution-test', name: 'Test Resolve Product', price: 300, member: 270, stock: 10 },
+    { id: 'sku-attribution-test', name: 'Test Resolve Product', sku:'000123',category:'Exotics',price: 300, member: 270, stock: 10 },
     { id: 'food-9', name: 'Fried Rice', price: 120, member: 108, stock: 10 },
   ],
 });
@@ -111,6 +111,8 @@ test('a cannabis line with no id is resolved to its catalogue product_key by mat
   assert.equal(res.code, 200, JSON.stringify(res.data));
   const saved = await getJSON('order:' + res.data.orderId);
   assert.equal(saved.items[0].productKey, 'sku-attribution-test');
+  assert.equal(saved.items[0].sku,'000123');
+  assert.equal(saved.items[0].category,'Exotics');
 });
 
 test('a line whose name matches nothing in the live menu is left untagged, never guessed', async () => {

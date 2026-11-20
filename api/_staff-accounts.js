@@ -10,10 +10,11 @@ const TTL = 60 * 60 * 24 * 365 * 10;
 export const ROLE_PERMISSIONS = Object.freeze({
   owner: ["*"],
   manager: ["orders", "dashboard", "sales", "announcement_read", "products", "announcements", "staff_manage", "promotions",
-    "inventory_view", "inventory_adjust", "suppliers", "purchasing", "expenses", "food_ops", "kitchen_tickets", "settings"],
-  professional: ["orders", "dashboard", "announcement_read", "inventory_view", "kitchen_tickets"],
-  parttime: ["orders", "dashboard", "announcement_read"],
-  kitchen: ["dashboard", "announcement_read", "kitchen_tickets", "food_ops"],
+    "inventory_view", "inventory_adjust", "suppliers", "purchasing", "expenses", "food_ops", "kitchen_tickets", "settings",
+    "shifts_manage", "shifts_self"],
+  professional: ["orders", "dashboard", "announcement_read", "inventory_view", "kitchen_tickets", "shifts_self"],
+  parttime: ["orders", "dashboard", "announcement_read", "shifts_self"],
+  kitchen: ["dashboard", "announcement_read", "kitchen_tickets", "food_ops", "shifts_self"],
 });
 export const ROLE_LABELS = Object.freeze({
   owner: "Owner",
@@ -107,7 +108,8 @@ export async function setOwnAccountKey(actor,key) {
   if(!actor?.id||actor.id==="legacy-owner") throw new Error("use the named Bryan account to change its individual key");
   const rows=await listAccounts(), row=rows.find(a=>a.id===actor.id);
   if(!row) throw new Error("account not found");
-  row.keyHash=hashKey(key); row.updatedAt=Date.now(); row.active=true;
+  if(row.active===false) throw new Error("forbidden: account is inactive");
+  row.keyHash=hashKey(key); row.updatedAt=Date.now();
   await saveAccounts(rows); return publicAccount(row);
 }
 export async function setAccountKey(actor,id,key) {
@@ -135,6 +137,7 @@ export async function updateAccount(actor,id,details={}) {
   if(!ROLE_PERMISSIONS[role]) throw new Error("invalid role");
   if(actor.role==="manager"&&(row.role==="owner"||role!==row.role)) throw new Error("forbidden");
   if(row.id===actor.id&&role!==row.role) throw new Error("you cannot change your own role");
+  if(row.id===actor.id&&details.active!==undefined&&!Boolean(details.active)) throw new Error("forbidden: you cannot disable your own account");
   row.name=name;
   row.phone=String(details.phone||"").trim().slice(0,30);
   row.role=role;

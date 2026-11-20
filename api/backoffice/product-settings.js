@@ -17,6 +17,16 @@ export default async function handler(req, res) {
   try {
     if (req.method === "GET") {
       if (!requirePermission(req, res, "inventory_view")) return;
+      if (req.query?.catalog === "1") {
+        const rows = [];
+        const pageSize = 500;
+        for (let offset = 0; ; offset += pageSize) {
+          const page = await boSelect("bo_product_settings", `select=product_key,cost_price&order=product_key.asc&limit=${pageSize}&offset=${offset}`);
+          rows.push(...page);
+          if (page.length < pageSize) break;
+        }
+        return res.status(200).json({ rows });
+      }
       const key = req.query?.product_key;
       if (!key) return res.status(400).json({ error: "product_key required" });
       const [settings] = await boSelect("bo_product_settings", `product_key=eq.${enc(key)}&select=*`);

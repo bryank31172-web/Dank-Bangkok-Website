@@ -18,6 +18,10 @@ process.env.STAFF_KEY = 'test-staff-key-dashboard';
 
 const dashboardHandler = (await import('../api/backoffice/dashboard.js')).default;
 const { setJSON, indexAdd } = await import('../api/_store.js');
+test.beforeEach(async context=>{
+  context.mock.timers.enable({apis:['Date'],now:new Date('2026-11-20T18:00:00+07:00').getTime()});
+  await setJSON('orders:index',[]);await setJSON('orders:index:archive',[]);
+});
 
 function call(query) {
   const res = { code: 200, setHeader() {}, status(c) { this.code = c; return this; }, json(j) { this.data = j; return this; }, end() { return this; } };
@@ -72,7 +76,7 @@ test('%-change vs the prior period compares today against an equal-length slice 
   // prior comparison is exact regardless of what else is seeded elsewhere.
   const store = 'change-pct-test-store';
   await seedOrder(todayAt(9), { total: 300, storeId: store });
-  await seedOrder(justBeforeTodayMidnight(), { total: 200, storeId: store });
+  await seedOrder(yesterdayAt(9), { total: 200, storeId: store });
 
   const res = await call({ range: 'today', store });
   assert.equal(res.code, 200, JSON.stringify(res.data));

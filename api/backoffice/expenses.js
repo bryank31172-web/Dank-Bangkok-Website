@@ -117,7 +117,20 @@ export default async function handler(req, res) {
       if (q.to) parts.push(`expense_date=lte.${enc(q.to)}`);
       const rows = await boSelect("bo_expenses", parts.join("&"));
       const total = (rows || []).reduce((s, r) => s + Number(r.amount || 0), 0);
-      if (q.monthly) return res.status(200).json({ rows: rows || [], total, monthly: monthlyBreakdown(rows || []) });
+      if (q.monthly) {
+        // Forecast from the same interval calculation used by generation. This
+        // is not a bill or a payment: it is the next expected record.
+        const today = new Date().toISOString().slice(0, 10);
+        const horizon = new Date(`${today}T00:00:00Z`);
+        horizon.setUTCDate(horizon.getUTCDate() + 30);
+        const until = horizon.toISOString().slice(0, 10);
+        const upcoming = (rows || []).filter(r => r.recurring && !r.next_generated)
+          .map(r => ({ id:r.id, date:addInterval(r.expense_date, r.recurring),
+            category:r.category, vendor:r.vendor, amount:r.amount, recurring:r.recurring }))
+          .filter(r => r.date && r.date <= until)
+          .sort((a,b) => a.date.localeCompare(b.date));
+        return res.status(200).json({ rows: rows || [], total, monthly: monthlyBreakdown(rows || []), upcoming, upcomingAsOf:today });
+      }
       return res.status(200).json({ rows: rows || [], total });
     }
 
