@@ -28,6 +28,7 @@ import { requireRate } from "./_ratelimit.js";
 import { validatePromotion, normalizePromotionCode } from "./_promotion.js";
 import { computeEta } from "./_route.js";
 import { deliveryQuote } from "./_delivery-fee.js";
+import { priceOrderItems, assertPriceVerified, OrderInputError } from "./_order-pricing.js";
 
 const OWNER_EMAIL = process.env.ORDER_EMAIL_TO || "dankclubbkk@gmail.com";
 
@@ -61,6 +62,13 @@ export default async function handler(req, res) {
   if (!(await requireRate(req, res, "order", 12, 600))) return;
 
   const o = req.body || {};
+  /* Fields only the server (or staff, or a verified payment) may set. The
+     whole body is stored as the order, so without this a browser could send
+     payStatus:"paid" and the staff console would show an unpaid order as
+     PAID, or pre-reserve a wallet amount, or tag the sale to any store. */
+  for (const k of ["orderId", "at", "status", "payStatus", "paidAt", "paidBy", "chargeId", "walletReserved", "walletAmount",
+    "walletBalance", "walletSettled", "walletSettledAt", "walletBalanceAfter", "slipUploaded", "priceAdjusted",
+    "priceUnverified", "priceIssues", "box", "storeId"]) delete o[k];
   const TABLE_NAMES = ["T1", "T2", "T3", "T4", "T5", "T6", "Bar 1", "Bar 2", "C1", "C2", "C3", "C4", "C5", "C6", "C7"];
   const norm = (v) => String(v || "").trim().toLowerCase().replace(/\s+/g, "");
   const matchedTable =
@@ -77,69 +85,29 @@ export default async function handler(req, res) {
   }
   const orderId = await newOrderId(o.fulfilment);
 
+  /* Every line is re-priced on the server (api/_order-pricing.js). The
+     browser's prices, subtotal and total are never used as the amount owed.
+     Lines the menu cannot price mark the order priceUnverified: it is still
+     taken, but no online payment path will charge it (assertPriceVerified). */
+  let menu = [];
   try {
-    const items = o.items || [];
-    if (items.length && items.some((i) => i.shId)) {
-      const { data: menu } = await getMenu();
-      const price = {};
-      const products = new Map();
-      for (const p of menu || []) {
-        const tiers = p.priceTiers || (p.price != null ? [{ label: p.option || "", price: p.price }] : []);
-        for (const t of tiers) {
-          const shId = String(t.shId || p.shId || "");
-          if (shId) products.set(shId, p);
-          const base = Number(t.price);
-          const value = Math.max(0, Number(p.discountValue) || 0);
-          const discounted = p.discountEnabled === true
-            ? p.discountType === "fixed" ? base - value : base * (1 - Math.min(100, value) / 100)
-            : base;
-          price[`${shId}|${t.label}`] = Math.max(0, discounted);
-        }
-      }
-      for (const it of items) {
-        const product = products.get(String(it.shId || ""));
-        if (!product) continue;
-        it.effects = Array.isArray(product.effects)
-          ? product.effects.slice(0, 6).map((effect) => String(effect).trim()).filter(Boolean)
-          : [];
-        it.strainType = String(product.type || "").trim();
-        it.category = String(product.category || it.category || "").trim();
-        const grams = String(it.option || "").match(/(\d+(?:\.\d+)?)\s*g\b/i);
-        if (grams) {
-          it.grams = Number(grams[1]);
-          it.totalGrams = it.grams * Math.max(1, Number(it.qty) || 1);
-        }
-      }
-      let resolved = true, recomputed = 0;
-      if (!items.every((i) => i.shId)) resolved = false;
-      for (const it of items) {
-        if (!resolved) break;
-        const unit = price[`${it.shId}|${it.option || ""}`];
-        if (unit == null || !Number.isFinite(unit)) { resolved = false; break; }
-        it.unitPrice = unit;
-        recomputed += unit * (Number(it.qty) || 1);
-      }
-      const clientSub = Number(o.subtotal);
-      if (resolved && (!Number.isFinite(clientSub) || clientSub < recomputed - 0.5)) {
-        const disc = Math.max(0, Number(o.discount) || 0);
-        const fee = Math.max(0, Number(o.deliveryFee) || 0);
-        o.subtotal = Math.round(recomputed);
-        o.total = Math.max(0, Math.round(recomputed - disc + fee));
-        o.priceAdjusted = true;
-      }
-    }
+    ({ data: menu } = await getMenu());
   } catch (e) {
-    console.error("price guard skipped:", e.message);
+    console.error("menu unavailable for pricing — every line will be unverified:", e.message);
   }
+  let priced;
+  try {
+    priced = priceOrderItems(o.items, menu, { member: o.member === true });
+  } catch (e) {
+    if (e instanceof OrderInputError) return res.status(400).json({ error: "invalid order", detail: e.message });
+    throw e;
+  }
+  o.priceAdjusted = priced.adjusted;
+  o.priceUnverified = priced.unverified.length > 0;
+  o.priceIssues = priced.unverified.slice(0, 20);
 
   const submittedPromotion = normalizePromotionCode(o.promo);
-  const itemSubtotal = (o.items || []).reduce((sum, item) => {
-    const qty = Math.max(1, Number(item.qty) || 1);
-    const unit = Number(item.unitPrice ?? item.price);
-    const line = Number(item.lineTotal);
-    return sum + (Number.isFinite(unit) ? Math.max(0, unit) * qty : Number.isFinite(line) ? Math.max(0, line) : 0);
-  }, 0);
-  const authoritativeSubtotal = itemSubtotal > 0 ? Math.round(itemSubtotal) : Math.max(0, Number(o.subtotal) || 0);
+  const authoritativeSubtotal = priced.subtotal;
   // The fee is never taken from the browser: it is worked out here from the
   // customer's pin (or typed address) by road distance. See _delivery-fee.js.
   let submittedDeliveryFee = 0;
@@ -149,7 +117,10 @@ export default async function handler(req, res) {
   // whenever quote.branch comes back empty (the fallback-fee path) and reach
   // the store-attribution block below as if it were server-resolved.
   let resolvedDeliveryBranchId = null;
-  if (!matchedTable) {
+  // Only deliveries pay a delivery fee. This used to run for every non-table
+  // order, so pickup orders silently gained the ฿100 "distance unknown"
+  // fallback fee that the storefront never showed the customer.
+  if (o.fulfilment === "delivery" && !matchedTable) {
     const c = o.delivery?.coordinates;
     const hasPin = c && Number.isFinite(Number(c.lat)) && Number.isFinite(Number(c.lng));
     const address = String(o.delivery?.zone || "").trim().slice(0, 500);
@@ -188,6 +159,7 @@ export default async function handler(req, res) {
   }
 
   if (o.payment === "Wallet") {
+    if (!assertPriceVerified(o, res)) return;
     const amt = Math.round(Number(o.total ?? o.subtotal));
     if (!Number.isFinite(amt) || amt <= 0) return res.status(400).json({ error: "invalid amount" });
     const balance = await getBalance(o.customer?.phone);
@@ -246,8 +218,12 @@ export default async function handler(req, res) {
     ? `\n🎟️ Code: ${promoCode}${o.promoGift ? `  ← 🚬 ${String(o.promoGift).toUpperCase()}` : /^FREEJOINT$/.test(promoCode) ? "  ← 🚬 ADD ONE FREE JOINT" : ""}`
     : "";
 
+  const priceWarning = o.priceUnverified
+    ? `\n⚠️ PRICE NOT VERIFIED — check before taking payment: ${o.priceIssues.map((x) => `${x.name} (${x.reason})`).join("; ")}\n`
+    : "";
   const staffAlert =
     `🛒 NEW ORDER ${orderId} — dankbangkok.com\n\n${itemLines}${giftBlock}${promoBlock}\n\n` +
+    priceWarning +
     `Total: ฿${o.total ?? o.subtotal}${o.member ? " (member ⭐)" : ""}\n` +
     `Pay: ${o.payment}\n${where}\n` +
     `Customer: ${o.customer?.name || "-"} · ${o.customer?.phone}\n` +
@@ -257,6 +233,7 @@ export default async function handler(req, res) {
   const onlineStaffAlert =
     `🛒 NEW ORDER ${orderId}\n` +
     `Total: ฿${o.total ?? o.subtotal}\n` +
+    (o.priceUnverified ? `⚠️ Price not verified — check before taking payment\n` : "") +
     `Type: ${o.fulfilment || "order"}\n` +
     `Open securely: https://${host}/staffportal#orders`;
 

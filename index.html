@@ -4634,7 +4634,7 @@ function collectOrder(){
   const addr=coFulfill==="delivery"?F("coAddr").trim():"";
   const pickBranch=coFulfill==="pickup"?(F("coBranch")||branch):"";
   const pickTime=coFulfill==="pickup"?F("coTime").trim():"";
-  return {brand:CONFIG.brand,items:cart.map(c=>({name:c.name,shId:c.shId||"",option:c.tierLabel,qty:c.qty,price:c.price,lineTotal:c.price*c.qty,category:c.category||"",bonus:!!c.bonus})),
+  return {brand:CONFIG.brand,items:cart.map(c=>({name:c.name,id:c.id||"",shId:c.shId||"",option:c.tierLabel,qty:c.qty,price:c.price,lineTotal:c.price*c.qty,category:c.category||"",bonus:!!c.bonus})),
     subtotal:cartSubtotal(),discount:discountAmt(),promo:appliedPromo?appliedPromo.code:"",deliveryFee:deliveryFeeAmt(),total:cartTotal(),
     fulfilment:coFulfill,payment:coPay,member:memberMode,
     customer:{name,phone},delivery:{zone,address:addr},pickup:{branch:pickBranch,time:pickTime},notes,source:"dankbkk.com",firstOrder:bonusEligible(),registered:LS.get("reg",null)||undefined};

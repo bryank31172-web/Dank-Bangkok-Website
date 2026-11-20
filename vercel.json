@@ -206,6 +206,32 @@
   ],
   "headers": [
     {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "strict-origin-when-cross-origin"
+        }
+      ]
+    },
+    {
+      "source": "/(backoffice|backoffice\\.html|staffportal|staffportal\\.html|analytics\\.html|shift-print\\.html|blog-admin\\.html|pos\\.html|labels\\.html|sku-margins\\.html|photo-audit\\.html|delivery-create\\.html)",
+      "headers": [
+        {
+          "key": "X-Frame-Options",
+          "value": "SAMEORIGIN"
+        },
+        {
+          "key": "Content-Security-Policy",
+          "value": "frame-ancestors 'self'"
+        }
+      ]
+    },
+    {
       "source": "/homepage-v2",
       "headers": [
         {

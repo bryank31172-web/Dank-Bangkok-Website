@@ -82,7 +82,10 @@ function checkConstraints(t, row, selfIndex = -1) {
   if (t === 'bo_staff_notifications' && rows.some((r) => r.dedupe_key === row.dedupe_key)) return pgErr('23505', 'dedupe');
   return null;
 }
+const counters = new Map();
 function rpc(name, a) {
+  // The atomic counter behind api/_ratelimit.js (site_kv_bump in Supabase).
+  if (name === 'site_kv_bump') { const k = Object.values(a)[0]; counters.set(k, (counters.get(k) || 0) + 1); return counters.get(k); }
   if (name === 'bo_shift_bump_period') { const p = table('bo_schedule_periods').find((r) => r.id === a.p_period_id); if (!p) return null; p.version += 1; return p.version; }
   if (name === 'bo_shift_publish') {
     const p = table('bo_schedule_periods').find((r) => r.id === a.p_period_id);
@@ -380,6 +383,15 @@ test('staff leave and availability: own only, cancellable while pending, manager
   assert.equal(mineView.leave.length, 1);
   assert.ok(!('assignments' in mineView));
   assert.ok(mineView.colleagues.every((c) => Object.keys(c).join() === 'id,name'), 'colleagues are names only');
+});
+
+test('My Shifts submissions are rate limited per person', async () => {
+  await reset();
+  counters.clear();
+  let last;
+  for (let i = 0; i < 31; i++) last = await me('POST', tok.ava, { action: 'read' });
+  assert.equal(last.code, 429);
+  assert.equal((await me('POST', tok.noah, { action: 'read' })).code, 200, 'another person is not affected');
 });
 
 test('My Shifts refuses the shared keys, and the print data needs management rights', async () => {

@@ -15,6 +15,7 @@
    the server — the client never supplies it. Card data is tokenized in the
    browser by Omise.js and only the one-time token reaches this endpoint.   */
 
+import { assertPriceVerified } from "./_order-pricing.js";
 import { getJSON, setJSON } from "./_store.js";
 
 const SK = process.env.OMISE_SECRET_KEY || "";
@@ -67,6 +68,7 @@ export default async function handler(req, res) {
     const b = req.body || {};
     const order = await getJSON("order:" + b.orderId);
     if (!order) return res.status(404).json({ error: "order not found — place the order first" });
+    if (!assertPriceVerified(order, res)) return;
     const amount = Math.round(Number(order.total ?? order.subtotal) * 100); // satang (final total incl. delivery/discount)
     if (!amount || amount < 2000) return res.status(400).json({ error: "invalid amount" });
 

@@ -11,6 +11,7 @@
                 | "change" | "cancel-change" | "read" , ... } */
 import { requirePermission, staffIdentity, hasPermission } from "./_auth.js";
 import { boConfigured } from "./_bo-db.js";
+import { requireRate } from "./_ratelimit.js";
 import * as S from "./_shifts.js";
 import * as E from "../assets/shift-engine.js";
 
@@ -48,6 +49,9 @@ export default async function handler(req, res) {
       });
     }
     if (req.method !== "POST") return res.status(405).json({ error: "method" });
+    // Per person, not per IP: staff share the shop Wi-Fi. Plenty for real use,
+    // but a stuck button or a script cannot flood managers with requests.
+    if (!(await requireRate(req, res, `myshifts:${me.id}`, 30, 600))) return;
     const b = req.body || {};
     switch (b.action) {
       case "leave": return res.status(200).json(await S.requestLeave(actor, me.id, b));
