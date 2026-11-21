@@ -10,6 +10,7 @@
    redirects the customer there to pay; 2C2P then calls /api/2c2p-webhook
    (backend) and returns the shopper to the frontend URL.                    */
 
+import { assertPriceVerified } from "./_order-pricing.js";
 import crypto from "node:crypto";
 import { getJSON } from "./_store.js";
 
@@ -40,6 +41,7 @@ export default async function handler(req, res) {
   const b = req.body || {};
   const order = await getJSON("order:" + b.orderId);
   if (!order) return res.status(404).json({ error: "order not found" });
+  if (!assertPriceVerified(order, res)) return;
   const host = req.headers?.["x-forwarded-host"] || req.headers?.host || "dankbkk.com";
   const proto = (req.headers?.["x-forwarded-proto"] || "https");
 

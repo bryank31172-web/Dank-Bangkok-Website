@@ -149,6 +149,9 @@ function normItem(x, i) {
     id, name: String(name),
     slug: String(x.slug ?? ""),
     sku: String(x.sku ?? ""),
+    barcode: String(x.barcode ?? x.barCode ?? ""),
+    tags: Array.isArray(x.tags) ? x.tags.map(String) : String(x.tags ?? ""),
+    priceExTax: posNum(x.priceExTax ?? x.price_ex_tax ?? x.priceBeforeTax),
     productGroupID: String(x.productGroupID ?? x.product_group_id ?? x.parentId ?? x.parent_id ?? ""),
     /* ?? is the wrong operator here: the POS sends category:"" rather than
        omitting it, and an empty string is not null, so it sailed through and

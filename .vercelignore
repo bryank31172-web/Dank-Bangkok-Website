@@ -1,0 +1,25 @@
+# Files that must never be uploaded to Vercel (and so never served publicly).
+# Vercel serves this whole folder as a static site, so anything not listed
+# here can be downloaded by anyone who guesses its name. Nothing the site or
+# api/ reads at runtime is excluded (products.json, product-images.json,
+# strain-db.json, branches.json, lab-db.json, food-menu.json stay).
+
+# Secrets — real values live only in Vercel → Settings → Environment Variables.
+.env
+.env.*
+*.pem
+*.key
+
+# Internal notes, AI handover/prompt files and working spreadsheets.
+*.md
+*.csv
+*.py
+*.sql
+
+# Development-only folders.
+tests/
+docs/
+supabase/
+archive/
+.claude/
+node_modules/

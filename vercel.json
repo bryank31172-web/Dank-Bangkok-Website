@@ -112,6 +112,10 @@
       "destination": "/staffportal.html"
     },
     {
+      "source": "/backoffice",
+      "destination": "/backoffice.html"
+    },
+    {
       "source": "/homepage-v2",
       "destination": "/homepage-v2.html"
     },
@@ -202,6 +206,32 @@
   ],
   "headers": [
     {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "strict-origin-when-cross-origin"
+        }
+      ]
+    },
+    {
+      "source": "/(backoffice|backoffice\\.html|staffportal|staffportal\\.html|analytics\\.html|shift-print\\.html|blog-admin\\.html|pos\\.html|labels\\.html|sku-margins\\.html|photo-audit\\.html|delivery-create\\.html)",
+      "headers": [
+        {
+          "key": "X-Frame-Options",
+          "value": "SAMEORIGIN"
+        },
+        {
+          "key": "Content-Security-Policy",
+          "value": "frame-ancestors 'self'"
+        }
+      ]
+    },
+    {
       "source": "/homepage-v2",
       "headers": [
         {
@@ -243,6 +273,45 @@
     },
     {
       "source": "/staffportal",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, nofollow"
+        },
+        {
+          "key": "Cache-Control",
+          "value": "private, no-store, max-age=0, must-revalidate"
+        }
+      ]
+    },
+    {
+      "source": "/backoffice.html",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, nofollow"
+        },
+        {
+          "key": "Cache-Control",
+          "value": "private, no-store, max-age=0, must-revalidate"
+        }
+      ]
+    },
+    {
+      "source": "/backoffice",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, nofollow"
+        },
+        {
+          "key": "Cache-Control",
+          "value": "private, no-store, max-age=0, must-revalidate"
+        }
+      ]
+    },
+    {
+      "source": "/shift-print.html",
       "headers": [
         {
           "key": "X-Robots-Tag",

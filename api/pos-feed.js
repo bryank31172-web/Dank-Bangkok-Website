@@ -88,6 +88,11 @@ function normalize(list) {
     const member = baht(p.member) || Math.round(price * 0.9);
     const item = {
       id: String(p.id ?? p.sku ?? "pos-" + i),
+      sku: String(p.sku ?? ""),
+      barcode: String(p.barcode ?? p.barCode ?? ""),
+      tags: Array.isArray(p.tags) ? p.tags.map(String) : String(p.tags ?? ""),
+      priceExTax: p.priceExTax != null || p.price_ex_tax != null || p.priceBeforeTax != null
+        ? num(p.priceExTax ?? p.price_ex_tax ?? p.priceBeforeTax) : undefined,
       name: nc.name,
       category: String(p.category || nc.cat || "Other"),
       type: strainType(p.type, String(p.category || nc.cat || "")),
@@ -95,6 +100,8 @@ function normalize(list) {
       thcLabel: num(p.thc) > 0 ? num(p.thc) + "%" : "",
       cbd: num(p.cbd),
       stock: p.stock === undefined ? 99 : num(p.stock),
+      stockRecorded: p.stock!==null&&p.stock!==undefined&&String(p.stock).trim()!==''&&Number.isFinite(Number(p.stock)),
+      inventoryUnit: p.unit==null?null:String(p.unit).trim(),
       unit: String(p.unit || "pc"),
       image: looksLikeImg(p.img) ? String(p.img) : "",
       description: "",

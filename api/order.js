@@ -18,6 +18,7 @@ import { listAccounts } from "./_staff-accounts.js";
 import { normPhone } from "./_phone.js";
 import { getBalance } from "./_wallet.js";
 import { boxesInOrder, issueGifts, giftAlertLines, getGiftConfig } from "./_boxgifts.js";
+import { recordPromotionRedemption } from "./_promotion.js";
 import { getMenu } from "./_menu.js";
 import { notifyStaffLine, lineMessages } from "./_line.js";
 import { deliveryOrderCard, createLinkCard } from "./_delivery-line.js";
@@ -27,6 +28,7 @@ import { requireRate } from "./_ratelimit.js";
 import { validatePromotion, normalizePromotionCode } from "./_promotion.js";
 import { computeEta } from "./_route.js";
 import { deliveryQuote } from "./_delivery-fee.js";
+import { priceOrderItems, assertPriceVerified, OrderInputError } from "./_order-pricing.js";
 
 const OWNER_EMAIL = process.env.ORDER_EMAIL_TO || "dankclubbkk@gmail.com";
 
@@ -60,6 +62,13 @@ export default async function handler(req, res) {
   if (!(await requireRate(req, res, "order", 12, 600))) return;
 
   const o = req.body || {};
+  /* Fields only the server (or staff, or a verified payment) may set. The
+     whole body is stored as the order, so without this a browser could send
+     payStatus:"paid" and the staff console would show an unpaid order as
+     PAID, or pre-reserve a wallet amount, or tag the sale to any store. */
+  for (const k of ["orderId", "at", "status", "payStatus", "paidAt", "paidBy", "chargeId", "walletReserved", "walletAmount",
+    "walletBalance", "walletSettled", "walletSettledAt", "walletBalanceAfter", "slipUploaded", "priceAdjusted",
+    "priceUnverified", "priceIssues", "box", "storeId"]) delete o[k];
   const TABLE_NAMES = ["T1", "T2", "T3", "T4", "T5", "T6", "Bar 1", "Bar 2", "C1", "C2", "C3", "C4", "C5", "C6", "C7"];
   const norm = (v) => String(v || "").trim().toLowerCase().replace(/\s+/g, "");
   const matchedTable =
@@ -76,73 +85,42 @@ export default async function handler(req, res) {
   }
   const orderId = await newOrderId(o.fulfilment);
 
+  /* Every line is re-priced on the server (api/_order-pricing.js). The
+     browser's prices, subtotal and total are never used as the amount owed.
+     Lines the menu cannot price mark the order priceUnverified: it is still
+     taken, but no online payment path will charge it (assertPriceVerified). */
+  let menu = [];
   try {
-    const items = o.items || [];
-    if (items.length && items.some((i) => i.shId)) {
-      const { data: menu } = await getMenu();
-      const price = {};
-      const products = new Map();
-      for (const p of menu || []) {
-        const tiers = p.priceTiers || (p.price != null ? [{ label: p.option || "", price: p.price }] : []);
-        for (const t of tiers) {
-          const shId = String(t.shId || p.shId || "");
-          if (shId) products.set(shId, p);
-          const base = Number(t.price);
-          const value = Math.max(0, Number(p.discountValue) || 0);
-          const discounted = p.discountEnabled === true
-            ? p.discountType === "fixed" ? base - value : base * (1 - Math.min(100, value) / 100)
-            : base;
-          price[`${shId}|${t.label}`] = Math.max(0, discounted);
-        }
-      }
-      for (const it of items) {
-        const product = products.get(String(it.shId || ""));
-        if (!product) continue;
-        it.effects = Array.isArray(product.effects)
-          ? product.effects.slice(0, 6).map((effect) => String(effect).trim()).filter(Boolean)
-          : [];
-        it.strainType = String(product.type || "").trim();
-        it.category = String(product.category || it.category || "").trim();
-        const grams = String(it.option || "").match(/(\d+(?:\.\d+)?)\s*g\b/i);
-        if (grams) {
-          it.grams = Number(grams[1]);
-          it.totalGrams = it.grams * Math.max(1, Number(it.qty) || 1);
-        }
-      }
-      let resolved = true, recomputed = 0;
-      if (!items.every((i) => i.shId)) resolved = false;
-      for (const it of items) {
-        if (!resolved) break;
-        const unit = price[`${it.shId}|${it.option || ""}`];
-        if (unit == null || !Number.isFinite(unit)) { resolved = false; break; }
-        it.unitPrice = unit;
-        recomputed += unit * (Number(it.qty) || 1);
-      }
-      const clientSub = Number(o.subtotal);
-      if (resolved && (!Number.isFinite(clientSub) || clientSub < recomputed - 0.5)) {
-        const disc = Math.max(0, Number(o.discount) || 0);
-        const fee = Math.max(0, Number(o.deliveryFee) || 0);
-        o.subtotal = Math.round(recomputed);
-        o.total = Math.max(0, Math.round(recomputed - disc + fee));
-        o.priceAdjusted = true;
-      }
-    }
+    ({ data: menu } = await getMenu());
   } catch (e) {
-    console.error("price guard skipped:", e.message);
+    console.error("menu unavailable for pricing — every line will be unverified:", e.message);
   }
+  let priced;
+  try {
+    priced = priceOrderItems(o.items, menu, { member: o.member === true });
+  } catch (e) {
+    if (e instanceof OrderInputError) return res.status(400).json({ error: "invalid order", detail: e.message });
+    throw e;
+  }
+  o.priceAdjusted = priced.adjusted;
+  o.priceUnverified = priced.unverified.length > 0;
+  o.priceIssues = priced.unverified.slice(0, 20);
 
   const submittedPromotion = normalizePromotionCode(o.promo);
-  const itemSubtotal = (o.items || []).reduce((sum, item) => {
-    const qty = Math.max(1, Number(item.qty) || 1);
-    const unit = Number(item.unitPrice ?? item.price);
-    const line = Number(item.lineTotal);
-    return sum + (Number.isFinite(unit) ? Math.max(0, unit) * qty : Number.isFinite(line) ? Math.max(0, line) : 0);
-  }, 0);
-  const authoritativeSubtotal = itemSubtotal > 0 ? Math.round(itemSubtotal) : Math.max(0, Number(o.subtotal) || 0);
+  const authoritativeSubtotal = priced.subtotal;
   // The fee is never taken from the browser: it is worked out here from the
   // customer's pin (or typed address) by road distance. See _delivery-fee.js.
   let submittedDeliveryFee = 0;
-  if (!matchedTable) {
+  // Set only from quote.branch below, never read back from o.delivery.branch
+  // afterward: o.delivery is spread from client input a few lines down, so a
+  // client-supplied `delivery.branch` would otherwise survive untouched
+  // whenever quote.branch comes back empty (the fallback-fee path) and reach
+  // the store-attribution block below as if it were server-resolved.
+  let resolvedDeliveryBranchId = null;
+  // Only deliveries pay a delivery fee. This used to run for every non-table
+  // order, so pickup orders silently gained the ฿100 "distance unknown"
+  // fallback fee that the storefront never showed the customer.
+  if (o.fulfilment === "delivery" && !matchedTable) {
     const c = o.delivery?.coordinates;
     const hasPin = c && Number.isFinite(Number(c.lat)) && Number.isFinite(Number(c.lng));
     const address = String(o.delivery?.zone || "").trim().slice(0, 500);
@@ -156,7 +134,7 @@ export default async function handler(req, res) {
     const quote = deliveryQuote(eta);
     submittedDeliveryFee = quote.fee;
     o.delivery = { ...(o.delivery || {}), km: quote.km, feeFallback: quote.fallback };
-    if (quote.branch) o.delivery.branch = quote.branch;
+    if (quote.branch) { o.delivery.branch = quote.branch; resolvedDeliveryBranchId = String(quote.branch.id); }
   }
   if (submittedPromotion) {
     try {
@@ -181,6 +159,7 @@ export default async function handler(req, res) {
   }
 
   if (o.payment === "Wallet") {
+    if (!assertPriceVerified(o, res)) return;
     const amt = Math.round(Number(o.total ?? o.subtotal));
     if (!Number.isFinite(amt) || amt <= 0) return res.status(400).json({ error: "invalid amount" });
     const balance = await getBalance(o.customer?.phone);
@@ -239,8 +218,12 @@ export default async function handler(req, res) {
     ? `\n🎟️ Code: ${promoCode}${o.promoGift ? `  ← 🚬 ${String(o.promoGift).toUpperCase()}` : /^FREEJOINT$/.test(promoCode) ? "  ← 🚬 ADD ONE FREE JOINT" : ""}`
     : "";
 
+  const priceWarning = o.priceUnverified
+    ? `\n⚠️ PRICE NOT VERIFIED — check before taking payment: ${o.priceIssues.map((x) => `${x.name} (${x.reason})`).join("; ")}\n`
+    : "";
   const staffAlert =
     `🛒 NEW ORDER ${orderId} — dankbangkok.com\n\n${itemLines}${giftBlock}${promoBlock}\n\n` +
+    priceWarning +
     `Total: ฿${o.total ?? o.subtotal}${o.member ? " (member ⭐)" : ""}\n` +
     `Pay: ${o.payment}\n${where}\n` +
     `Customer: ${o.customer?.name || "-"} · ${o.customer?.phone}\n` +
@@ -250,12 +233,82 @@ export default async function handler(req, res) {
   const onlineStaffAlert =
     `🛒 NEW ORDER ${orderId}\n` +
     `Total: ฿${o.total ?? o.subtotal}\n` +
+    (o.priceUnverified ? `⚠️ Price not verified — check before taking payment\n` : "") +
     `Type: ${o.fulfilment || "order"}\n` +
     `Open securely: https://${host}/staffportal#orders`;
 
   const results = [];
   let saved = false;
   const takenAt = Date.now();
+
+  /* Store + product attribution for BackOffice reporting (sales-by-store,
+     COGS — docs/dank-backoffice/DEPLOYMENT.md's "known gaps" #2). Two of its
+     own try/catches, placed after everything above has already run: a
+     failure here must never affect pricing, totals or whether the order
+     saves, and nothing here is trusted from the client over what's already
+     been resolved server-side — storeId comes only from
+     resolvedDeliveryBranchId (set above, strictly from quote.branch, never
+     from the client's own o.delivery), and productKey is only ever accepted
+     from the client when it matches a real id in the live catalogue, never
+     taken as-is. Both were previously trusting client-controlled fields
+     (a client-supplied delivery.branch survived the fallback-fee path's
+     empty quote.branch; item.id was accepted unchecked) — closed after a
+     security review flagged the gap; low real-world impact since it only
+     ever affected attribution of the client's own order, but worth closing
+     since internal reports should never trust unvalidated client input.
+       storeId: a delivery order already resolves a real branch by road
+       distance (api/_route.js, via the fee quote earlier in this handler)
+       whenever the route provider succeeds — that id is used as-is, never
+       re-derived or guessed. When the route couldn't be resolved (fallback
+       flat fee), no branch exists to use, so the order is left untagged
+       rather than guessed. Table/dine-in orders (checkout.html's table flow)
+       and food.html's orders (table or in-house pickup — it has no other
+       fulfilment) have no per-branch data anywhere in the current client
+       code: one shared table list serves every branch, not one list per
+       branch. Those are attributed to DANK Pattanakarn, the one physical
+       location this flow is confirmed to run from today; if a second
+       location ever gets its own tables, this needs a real per-table branch
+       field, not a wider guess. */
+  const DINE_IN_STORE_ID = "pattanakarn";
+  try {
+    if (o.fulfilment === "delivery") {
+      if (resolvedDeliveryBranchId) o.storeId = resolvedDeliveryBranchId;
+    } else if (matchedTable || o.table || o.fulfilment === "table" || o.fulfilment === "pickup") {
+      o.storeId = DINE_IN_STORE_ID;
+    }
+  } catch (e) { console.error("store attribution skipped:", e.message); }
+
+  /* productKey: resolved against the live catalogue (getMenu()), never
+     taken as-is from the client. food.html sends each line's own catalogue
+     id as `id`, which is used only once confirmed to match a real product —
+     a client can't point productKey at an arbitrary id (e.g. to misattribute
+     COGS to a product it didn't actually sell). Cannabis checkout (checkout.
+     html/index.html) sends `shId`, which the live BRYAN POS feed doesn't
+     populate (see AUDIT.md), so those lines are resolved by matching the
+     line's name against the same catalogue — the identical lookup, just
+     keyed by name instead of id. An unmatched name/id (renamed/delisted
+     product, or a bogus client value) is left untagged, never guessed at. */
+  try {
+    if (o.items?.length) {
+      const { data: menu } = await getMenu();
+      const idSet = new Set((menu || []).map((p) => String(p.id)));
+      const byId = new Map((menu || []).map(product=>[String(product.id),product]));
+      const byName = new Map((menu || []).map((p) => [String(p.name || "").trim().toLowerCase(), String(p.id)]));
+      for (const it of o.items) {
+        if (it.productKey) continue;
+        if (it.id && idSet.has(String(it.id))) { it.productKey = String(it.id); continue; }
+        const key = byName.get(String(it.name || "").trim().toLowerCase());
+        if (key) it.productKey = key;
+      }
+      // Keep verified sale-time metadata on the receipt for historical reporting.
+      for(const item of o.items){
+        const product=byId.get(String(item.productKey||''));
+        if(!product)continue;
+        item.sku=String(product.sku??'');
+        item.category=String(product.category??'');
+      }
+    }
+  } catch (e) { console.error("product_key attribution skipped:", e.message); }
 
   try {
     await setJSON("order:" + orderId, { ...o, orderId, at: takenAt, status: "new" });
@@ -265,6 +318,17 @@ export default async function handler(req, res) {
     if (o.promo) await bump("promotion:uses:" + o.promo, 60 * 60 * 24 * 365 * 10);
     saved = true;
   } catch (e) { console.error("order save failed:", e.message); }
+
+  // Redemption history (docs/dank-backoffice/BACKOFFICE_REQUIREMENTS.md's
+  // Module I gap). Deliberately its own try/catch, after `saved` is already
+  // set: a failure here must never be mistaken for the order itself failing
+  // to save, and must never roll anything back — it's a nice-to-have report
+  // row, not something the order's success depends on.
+  if (saved && o.promo) {
+    try {
+      await recordPromotionRedemption({ code: o.promo, orderId, discount: o.discount, phone: o.customer?.phone, at: takenAt });
+    } catch (e) { console.error("promotion redemption log failed:", e.message); }
+  }
 
   // Tracking is set up for every delivery order, but without links: staff
   // choose the rider on the LINE card, which makes the rider link and then

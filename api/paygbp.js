@@ -8,6 +8,7 @@
    Amounts are read from the saved order (server-side). GBP notifies
    /api/gbp-webhook (set as backgroundUrl) to confirm payment.               */
 
+import { assertPriceVerified } from "./_order-pricing.js";
 import { getJSON } from "./_store.js";
 
 const SECRET = process.env.GBP_SECRET_KEY || "";
@@ -24,6 +25,7 @@ export default async function handler(req, res) {
   const b = req.body || {};
   const order = await getJSON("order:" + b.orderId);
   if (!order) return res.status(404).json({ error: "order not found" });
+  if (!assertPriceVerified(order, res)) return;
   const amount = Number((order.total ?? order.subtotal)).toFixed(2);
   const host = req.headers?.["x-forwarded-host"] || req.headers?.host || "dankbkk.com";
   const bg = `https://${host}/api/gbp-webhook`;

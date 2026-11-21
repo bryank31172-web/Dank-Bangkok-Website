@@ -46,13 +46,28 @@ export function safeEq(a, b) {
   return A.length > 0 && A.length === B.length && crypto.timingSafeEqual(A, B);
 }
 
+/* Kept in sync by hand with ROLE_PERMISSIONS in _staff-accounts.js — that file
+   governs account creation/role assignment, this one gates every request via
+   requirePermission(). Two copies because token sessions (readStaffToken,
+   below) carry only {id,name,role,exp} and must stay verifiable without a
+   database round trip; a single source of truth would mean every permission
+   check becomes a storage call. Adding BackOffice's scopes here, kept the
+   same list shape so a diff between the two files stays trivial. */
 const STAFF_ROLE_PERMISSIONS = Object.freeze({
   owner:["*"],
-  manager:["orders","dashboard","sales","announcement_read","products","announcements","staff_manage","promotions"],
-  professional:["orders","dashboard","announcement_read"],
-  parttime:["orders","dashboard","announcement_read"],
+  manager:["orders","dashboard","sales","announcement_read","products","announcements","staff_manage","promotions",
+    "inventory_view","inventory_adjust","suppliers","purchasing","expenses","food_ops","kitchen_tickets","settings",
+    "shifts_manage","shifts_self"],
+  professional:["orders","dashboard","announcement_read","inventory_view","kitchen_tickets","shifts_self"],
+  parttime:["orders","dashboard","announcement_read","shifts_self"],
+  kitchen:["dashboard","announcement_read","kitchen_tickets","food_ops","shifts_self"],
 });
 const staffSecret=()=>process.env.STAFF_SESSION_SECRET||process.env.ADMIN_SECRET||"";
+export const BACKOFFICE_PERMISSIONS=["dashboard","inventory_view","inventory_adjust","suppliers","purchasing","expenses","food_ops","kitchen_tickets","promotions","settings","shifts_manage","shifts_settings"];
+/* Shift and inventory APIs also accept personal staff sessions, preserving
+   role permissions and named audit actors. Other BackOffice routes require
+   the shared BackOffice session. */
+const SHARED_BACKOFFICE_PATHS=new Set(["/api/backoffice/shifts","/api/backoffice/inventory","/api/backoffice/stocktakes","/api/backoffice/transfers","/api/backoffice/product-settings","/api/backoffice/purchase-orders"]);
 const b64u=(v)=>Buffer.from(v).toString("base64url");
 const staffSign=(payload)=>b64u(crypto.createHmac("sha256",staffSecret()).update(payload).digest());
 function readStaffToken(token){
@@ -62,7 +77,7 @@ function readStaffToken(token){
   try{
     const p=JSON.parse(Buffer.from(payload,"base64url").toString("utf8"));
     if(!p.id||!p.role||!p.exp||Date.now()>=p.exp||!STAFF_ROLE_PERMISSIONS[p.role]) return null;
-    return {id:p.id,name:p.name||"Staff",role:p.role,active:true};
+    return {id:p.id,name:p.name||"Staff",role:p.role,active:true,scopes:Array.isArray(p.scopes)?p.scopes:[]};
   }catch{return null;}
 }
 function identityFromCredential(given){
@@ -70,17 +85,44 @@ function identityFromCredential(given){
   if(k&&safeEq(given,k)) return {id:"legacy-owner",name:"Bryan",role:"owner",active:true,legacy:true};
   return readStaffToken(given);
 }
+const backofficeSecret=()=>process.env.BACKOFFICE_PASSWORD&&process.env.ADMIN_SECRET?`backoffice:${process.env.ADMIN_SECRET}:${process.env.BACKOFFICE_PASSWORD}`:"";
+export function makeBackofficeToken(){
+  const payload=b64u(JSON.stringify({id:"backoffice",name:"BackOffice",role:"backoffice",aud:"backoffice",exp:Date.now()+1000*60*60*12}));
+  const sig=b64u(crypto.createHmac("sha256",backofficeSecret()).update(payload).digest());
+  return payload+"."+sig;
+}
+function readBackofficeToken(given){
+  if(!backofficeSecret()||typeof given!=="string") return null;
+  const [payload,sig]=given.split(".");
+  if(!payload||!sig||given.split(".").length!==2) return null;
+  const expected=b64u(crypto.createHmac("sha256",backofficeSecret()).update(payload).digest());
+  if(!safeEq(sig,expected)) return null;
+  try{const p=JSON.parse(Buffer.from(payload,"base64url").toString("utf8"));return p.aud==="backoffice"&&p.role==="backoffice"&&p.exp>Date.now()?{id:p.id,name:p.name,role:p.role,active:true}:null;}catch{return null;}
+}
+/* `identity.scopes` are the per-account extra grants from setAccountScopes()
+   in _staff-accounts.js (docs/dank-backoffice/BACKOFFICE_REQUIREMENTS.md's
+   "StoreHub-style granular permissions" gap) — baked into the signed token at
+   login so a permission check never needs its own storage round trip, same
+   reasoning as the role check itself. */
 export function hasPermission(identity,permission){
   if(!identity) return false;
-  const list=STAFF_ROLE_PERMISSIONS[identity.role]||[];
-  return list.includes("*")||list.includes(permission);
+  const list=identity.role==="backoffice"?BACKOFFICE_PERMISSIONS:(STAFF_ROLE_PERMISSIONS[identity.role]||[]);
+  return list.includes("*")||list.includes(permission)||Boolean(identity.scopes?.includes(permission));
 }
 export function staffIdentity(req){
-  return identityFromCredential(keyFrom(req));
+  const given=keyFrom(req);
+  const path=String(req?.url||"").split("?",1)[0];
+  if(SHARED_BACKOFFICE_PATHS.has(path)) return readBackofficeToken(given)||identityFromCredential(given);
+  if(path.startsWith("/api/backoffice/")) return readBackofficeToken(given);
+  if(path==="/api/staff-tools"&&req?.method==="GET"&&req?.query?.section==="promotions"){
+    const backoffice=readBackofficeToken(given);
+    if(backoffice) return backoffice;
+  }
+  return identityFromCredential(given);
 }
 staffIdentity.makeToken=function(account){
   if(!staffSecret()) throw new Error("ADMIN_SECRET is not configured");
-  const payload=b64u(JSON.stringify({id:account.id,name:account.name,role:account.role,exp:Date.now()+1000*60*60*12}));
+  const payload=b64u(JSON.stringify({id:account.id,name:account.name,role:account.role,scopes:Array.isArray(account.scopes)?account.scopes:[],exp:Date.now()+1000*60*60*12}));
   return payload+"."+staffSign(payload);
 };
 
@@ -102,7 +144,11 @@ export function isStaff(req, permission) {
 }
 
 export function requirePermission(req,res,permission){
-  if(!staffConfigured()&&!staffSecret()) return notConfigured(res,["STAFF_KEY or ADMIN_SECRET"]);
+  const reqPath=String(req?.url||"").split("?",1)[0];
+  const backofficePath=reqPath.startsWith("/api/backoffice/")&&!SHARED_BACKOFFICE_PATHS.has(reqPath);
+  if(SHARED_BACKOFFICE_PATHS.has(reqPath)&&!backofficeSecret()&&!staffSecret()) return notConfigured(res,["BACKOFFICE_PASSWORD or ADMIN_SECRET"]);
+  if(backofficePath&&!backofficeSecret()) return notConfigured(res,["BACKOFFICE_PASSWORD"]);
+  if(!backofficePath&&!staffConfigured()&&!staffSecret()) return notConfigured(res,["STAFF_KEY or ADMIN_SECRET"]);
   const identity=staffIdentity(req);
   if(!identity){res.status(401).json({error:"bad key"});return false;}
   if(permission&&!hasPermission(identity,permission)){res.status(403).json({error:"forbidden"});return false;}
