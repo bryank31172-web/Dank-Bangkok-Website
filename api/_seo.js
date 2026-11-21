@@ -415,6 +415,7 @@ export function renderProductPage(menu, categorySlug, productSlug) {
 }
 
 export function renderLocationsPage() {
+  const listedLocations = LOCATIONS.filter((location) => location.slug !== "224-livehouse");
   const path = "/locations/";
   const items = [{ name: "Home", path: "/" }, { name: "Locations" }];
   return pageShell({
@@ -422,7 +423,7 @@ export function renderLocationsPage() {
     description: "Addresses, phone numbers and Google Maps directions for every DANK BKK location: the Pattanakarn flagship, Sathorn (Rama 3) with its co-working space, and Lom Sak in Phetchabun. Open daily; adults 20+ with ID.",
     canonical: path,
     entities: [breadcrumbEntity(items, SITE_URL + path)],
-    body: `${breadcrumbs(items)}<h1>Locations</h1><p class="lede">Addresses and directions from the current DANK location list.</p><div class="grid">${LOCATIONS.map((location) => `<a class="card" href="/locations/${location.slug}/"><h2>${escapeHtml(location.name)}</h2><div class="meta">${escapeHtml(location.address)}${location.googleRating ? `<br>★★★★★ ${escapeHtml(Number(location.googleRating).toFixed(1))} on Google · ${escapeHtml(Number(location.googleReviewCount).toLocaleString("en-US"))}+ reviews` : ""}</div></a>`).join("")}</div>`,
+    body: `${breadcrumbs(items)}<h1>Locations</h1><p class="lede">Addresses and directions from the current DANK location list.</p><div class="grid">${listedLocations.map((location) => `<a class="card" href="/locations/${location.slug}/"><h2>${escapeHtml(location.name)}</h2><div class="meta">${escapeHtml(location.address)}${location.googleRating ? `<br>★★★★★ ${escapeHtml(Number(location.googleRating).toFixed(1))} on Google · ${escapeHtml(Number(location.googleReviewCount).toLocaleString("en-US"))}+ reviews` : ""}</div></a>`).join("")}</div>`,
   });
 }
 
