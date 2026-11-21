@@ -8,7 +8,8 @@
    NOT re-derived from the inventory ledger, since BRYAN POS — not this
    ledger — is the source of truth for completed sales. */
 import { requirePermission } from "../_auth.js";
-import { boConfigured, boSelect, enc } from "../_bo-db.js";
+import { boConfigured, boSelect, boRpc, enc } from "../_bo-db.js";
+import {buildInventory} from '../../assets/inventory-model.js';
 import { readSalesRecords } from "../_bo-sales.js";
 import { presetWindow, previousWindow, dayStart as bangkokDayStart, bucketWindow, normalizeOrder, dateKey } from "../../assets/backoffice-sales.js";
 import { getMenu } from "../_menu.js";
@@ -287,9 +288,19 @@ export default async function handler(req, res) {
     const recentLedger = await boSelect("bo_inventory_ledger", `order=created_at.desc&limit=10${storeFilter}&select=*`);
     out.recentStockAdjustments = { rows: recentLedger || [], source: "recorded" };
 
-    // The dashboard and bell use a fixed threshold for products measured in grams.
+    // Use the inventory page's branch thresholds when its schema is available;
+    // retain the legacy gram policy for deployments awaiting the migration.
     const stockSettings = await boSelect("bo_product_stock_settings", `select=*${storeFilter}`);
     const menu = await getMenu();
+    let snapshot=null;
+    try{snapshot=await boRpc('bo_inventory_snapshot',{});}catch(error){if(!/PGRST202|42883|404/.test(error.message))throw error;}
+    if(snapshot?.version===1){
+      const inventory=buildInventory(snapshot,menu.data||[]);
+      const rows=inventory.rows.filter(row=>row.item_type==='product'&&row.registered&&row.quantity!==null&&row.threshold!==null&&row.quantity<row.threshold&&(!store||store==='all'||row.store_id===store))
+        .map(row=>({product_key:row.item_key,name:row.name,store_id:row.store_id,balance:row.quantity,threshold:row.threshold,unit:row.unit}));
+      out.lowStock={count:rows.length,rows,source:'derived',policy:'per-product-per-store'};
+      return res.status(200).json(out);
+    }
     const gramProducts = new Map();
     for (const product of menu.data || []) {
       if (!["g", "gram", "grams", "กรัม"].includes(String(product.unit || "").trim().toLowerCase())) continue;

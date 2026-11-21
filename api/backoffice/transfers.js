@@ -1,63 +1,32 @@
-/* /api/backoffice/transfers — move stock between outlets.
-     GET  ?store=&status=
-     POST { from_store_id, to_store_id, lines:[{item_type,item_key,qty}] }  → status 'pending'
-     POST { id, action:"complete" } → writes a 'transfer_out' ledger row at the
-           source and a 'transfer_in' row at the destination for every line,
-           same ref_id so the two sides are traceable to each other. */
-import { requirePermission, staffIdentity } from "../_auth.js";
-import { boConfigured, boSelect, boInsert, boUpdate, boLedgerAdjust, enc } from "../_bo-db.js";
-
-export default async function handler(req, res) {
-  res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Staff-Key");
-  if (req.method === "OPTIONS") return res.status(204).end();
-  if (!boConfigured()) return res.status(503).json({ error: "not configured" });
-  if (!requirePermission(req, res, "inventory_adjust")) return;
-  const identity = staffIdentity(req);
-
-  try {
-    if (req.method === "GET") {
-      const parts = ["select=*,lines:bo_stock_transfer_lines(*)", "order=created_at.desc"];
-      if (req.query?.store) parts.push(`or=(from_store_id.eq.${enc(req.query.store)},to_store_id.eq.${enc(req.query.store)})`);
-      if (req.query?.status) parts.push(`status=eq.${enc(req.query.status)}`);
-      const rows = await boSelect("bo_stock_transfers", parts.join("&"));
-      return res.status(200).json({ rows: rows || [] });
+import {requirePermission} from '../_auth.js';
+import {boConfigured,boSelect,enc} from '../_bo-db.js';
+import {inventoryCommand,inventoryError} from '../_inventory.js';
+import {supplyCommand,supplyError,supplyEvents} from '../_supply.js';
+export default async function handler(req,res){
+  res.setHeader('Cache-Control','no-store');
+  if(req.method==='OPTIONS')return res.status(204).end();
+  if(!requirePermission(req,res,req.method==='GET'?'inventory_view':'inventory_adjust'))return;
+  if(!boConfigured())return res.status(503).json({error:'ยังไม่ได้เชื่อมฐานข้อมูลสต็อก'});
+  try{
+    if(req.method==='GET'){
+      const parts=['select=*,lines:bo_stock_transfer_lines(*)','order=created_at.desc,id.desc'];
+      if(req.query?.store)parts.push(`or=(from_store_id.eq.${enc(req.query.store)},to_store_id.eq.${enc(req.query.store)})`);
+      if(req.query?.status)parts.push('status=eq.'+enc(req.query.status));
+      if(req.query?.id)parts.push('id=eq.'+enc(req.query.id));
+      return res.status(200).json({rows:await boSelect('bo_stock_transfers',parts.join('&'))||[],...(req.query?.id?{events:await supplyEvents('transfer',req.query.id)}:{})});
     }
-
-    if (req.method !== "POST") return res.status(405).json({ error: "method" });
-    const b = req.body || {};
-
-    if (b.action === "complete") {
-      const [transfer] = await boSelect("bo_stock_transfers", `id=eq.${enc(b.id)}&select=*`);
-      if (!transfer) return res.status(404).json({ error: "transfer not found" });
-      if (transfer.status !== "pending") return res.status(409).json({ error: `transfer is '${transfer.status}', not pending` });
-      const lines = await boSelect("bo_stock_transfer_lines", `transfer_id=eq.${enc(b.id)}&select=*`);
-      for (const l of lines || []) {
-        await boLedgerAdjust({
-          itemType: l.item_type, itemKey: l.item_key, storeId: transfer.from_store_id,
-          qtyDelta: -Math.abs(Number(l.qty)), reason: "transfer_out", refType: "transfer", refId: transfer.id, staffId: identity.id,
-        });
-        await boLedgerAdjust({
-          itemType: l.item_type, itemKey: l.item_key, storeId: transfer.to_store_id,
-          qtyDelta: Math.abs(Number(l.qty)), reason: "transfer_in", refType: "transfer", refId: transfer.id, staffId: identity.id,
-        });
+    if(req.method!=='POST')return res.status(405).json({error:'method'});
+    const b=req.body||{};
+    if(b.action){
+      if(!b.id||!['dispatch','receive','close','cancel'].includes(b.action))return res.status(400).json({error:'เลือกส่งสินค้า รับสินค้า ปิดผลต่าง หรือยกเลิก'});
+      if(['receive','close'].includes(b.action)){
+        if(!Number.isSafeInteger(b.expected_revision)||b.expected_revision<0)return res.status(400).json({error:'โหลดเอกสารล่าสุดก่อนรับสินค้า'});
+        if(b.action==='receive'&&(!Array.isArray(b.lines)||!b.lines.length||b.lines.length>200||b.lines.some(l=>!l||!Number.isFinite(l.qty_received)||l.qty_received<=0)))return res.status(400).json({error:'ระบุจำนวนรับจริงอย่างน้อยหนึ่งรายการ'});
+        try{return res.status(200).json(await supplyCommand(req,'transfer_'+b.action,{id:b.id,expected_revision:b.expected_revision,note:String(b.note||'').slice(0,500),...(b.action==='receive'?{lines:b.lines}:{})}));}catch(error){return supplyError(res,error);}
       }
-      const [updated] = await boUpdate("bo_stock_transfers", `id=eq.${enc(b.id)}`, { status: "completed", completed_at: new Date().toISOString() });
-      return res.status(200).json({ ok: true, row: updated });
+      return res.status(200).json(await inventoryCommand(req,'transfer_'+b.action,{id:b.id}));
     }
-
-    const { from_store_id, to_store_id, lines } = b;
-    if (!from_store_id || !to_store_id) return res.status(400).json({ error: "from_store_id and to_store_id required" });
-    if (from_store_id === to_store_id) return res.status(400).json({ error: "from and to must be different stores" });
-    const list = Array.isArray(lines) ? lines : [];
-    if (!list.length) return res.status(400).json({ error: "lines required" });
-
-    const [transfer] = await boInsert("bo_stock_transfers", { from_store_id, to_store_id, status: "pending", created_by: identity.id });
-    await boInsert("bo_stock_transfer_lines", list.map((l) => ({
-      transfer_id: transfer.id, item_type: l.item_type, item_key: String(l.item_key), qty: Math.abs(Number(l.qty)),
-    })));
-    return res.status(200).json({ ok: true, row: transfer });
-  } catch (e) {
-    return res.status(502).json({ error: "bo-db error", detail: String(e.message || e) });
-  }
+    if(!b.from_store_id||!b.to_store_id||b.from_store_id===b.to_store_id||!Array.isArray(b.lines)||!b.lines.length||b.lines.length>200||b.lines.some(l=>!Number.isFinite(Number(l.qty))||Number(l.qty)<=0))return res.status(400).json({error:'เลือกสาขาต้นทางและปลายทางต่างกัน พร้อมจำนวนที่มากกว่าศูนย์'});
+    return res.status(200).json(await inventoryCommand(req,'transfer_start',{from_store_id:b.from_store_id,to_store_id:b.to_store_id,lines:b.lines}));
+  }catch(error){return inventoryError(res,error);}
 }

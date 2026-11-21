@@ -1,7 +1,7 @@
 /* DANK BackOffice — tests for the critical paths called out in
    docs/dank-backoffice/IMPLEMENTATION_PLAN.md's Phase 6 list: permission
    consistency, input validation, the kitchen-ticket status machine, the
-   consume-ingredients-exactly-once guard, PO partial receiving, and the
+   consume-ingredients-exactly-once guard and the
    ledger's race-safe balance computation.
 
    Follows the existing test pattern in tests/delivery-fee.test.js: node:test,
@@ -322,12 +322,13 @@ test('a manual inventory adjustment is rejected without a valid item_type/qty_de
 test('the ledger balance accumulates correctly across repeated adjustments for the same item+store', async () => {
   await withFakeSupabase(async (db) => {
     const inventoryHandler = (await import('../api/backoffice/inventory.js')).default;
-    const body = (delta) => ({ item_type: 'product', item_key: 'sku-1', store_id: 'pattanakarn', qty_delta: delta, reason: 'manual_adjust' });
-    const r1 = await call(inventoryHandler, { method: 'POST', body: body(10) });
+    const {boLedgerAdjust}=await import('../api/_bo-db.js');
+    const adjust=async delta=>({data:{row:await boLedgerAdjust({itemType:'product',itemKey:'sku-1',storeId:'pattanakarn',qtyDelta:delta,reason:'manual_adjust',staffId:'owner'})}});
+    const r1 = await adjust(10);
     assert.equal(r1.data.row.balance_after, 10);
-    const r2 = await call(inventoryHandler, { method: 'POST', body: body(-3) });
+    const r2 = await adjust(-3);
     assert.equal(r2.data.row.balance_after, 7);
-    const r3 = await call(inventoryHandler, { method: 'POST', body: body(5) });
+    const r3 = await adjust(5);
     assert.equal(r3.data.row.balance_after, 12);
 
     const list = await call(inventoryHandler, { method: 'GET', query: { item_type: 'product', item_key: 'sku-1', store: 'pattanakarn' } });
@@ -337,47 +338,7 @@ test('the ledger balance accumulates correctly across repeated adjustments for t
 });
 
 /* ---------------------------------------------------------- purchase orders */
-test('receiving more than qty_ordered is rejected, and partial receipt leaves the PO in receiving status', async () => {
-  await withFakeSupabase(async (db) => {
-    const poHandler = (await import('../api/backoffice/purchase-orders.js')).default;
-    const supplierId = crypto.randomUUID();
-    db.bo_suppliers.push({ id: supplierId, name: 'Test Supplier', active: true });
-
-    const created = await call(poHandler, { method: 'POST', body: { supplier_id: supplierId, store_id: 'pattanakarn', lines: [{ item_type: 'product', item_key: 'sku-1', qty_ordered: 10, unit_cost: 5 }] } });
-    assert.equal(created.code, 200, JSON.stringify(created.data));
-    const poId = created.data.row.id;
-    const lineId = created.data.row.lines[0].id;
-
-    await call(poHandler, { method: 'POST', body: { id: poId, action: 'send' } });
-
-    const overReceive = await call(poHandler, { method: 'POST', body: { id: poId, action: 'receive', lines: [{ line_id: lineId, qty_received: 99 }] } });
-    assert.equal(overReceive.code, 400, 'cannot receive more than was ordered');
-
-    const partial = await call(poHandler, { method: 'POST', body: { id: poId, action: 'receive', lines: [{ line_id: lineId, qty_received: 4 }] } });
-    assert.equal(partial.code, 200);
-    assert.equal(partial.data.status, 'receiving', 'not fully received yet');
-
-    const ledgerRows = db.bo_inventory_ledger.filter(r => r.ref_type === 'purchase_order' && r.ref_id === poId);
-    assert.equal(ledgerRows.length, 1);
-    assert.equal(ledgerRows[0].qty_delta, 4);
-
-    const complete = await call(poHandler, { method: 'POST', body: { id: poId, action: 'receive', lines: [{ line_id: lineId, qty_received: 6 }] } });
-    assert.equal(complete.data.status, 'completed', 'fully received now');
-    assert.equal(db.bo_inventory_ledger.filter(r => r.ref_type === 'purchase_order' && r.ref_id === poId).length, 2);
-  });
-});
-
-test('purchase orders get sequential PO numbers even when created out of order', async () => {
-  await withFakeSupabase(async (db) => {
-    const poHandler = (await import('../api/backoffice/purchase-orders.js')).default;
-    const supplierId = crypto.randomUUID();
-    db.bo_suppliers.push({ id: supplierId, name: 'Test Supplier', active: true });
-    const mk = () => call(poHandler, { method: 'POST', body: { supplier_id: supplierId, store_id: 'pattanakarn', lines: [{ item_type: 'product', item_key: 'x', qty_ordered: 1 }] } });
-    const a = await mk(), b = await mk();
-    assert.notEqual(a.data.row.po_number, b.data.row.po_number);
-    assert.match(a.data.row.po_number, /^PO\d{4}$/);
-  });
-});
+// Purchasing coverage now executes real SQL in purchasing-api/workflows.test.js.
 
 /* ---------------------------------------------------------- recipe costing */
 test('recipe cost-per-serving is computed live from current ingredient costs, not stored stale', async () => {
@@ -475,25 +436,6 @@ test('creating, updating and soft-deleting a supplier each write a bo_audit_log 
     assert.equal(log[1].after.phone, '0822222222');
     assert.equal(log[2].action, 'delete');
     assert.equal(log[2].after.active, false);
-  });
-});
-
-test('a purchase order status change (send, receive) is audit-logged', async () => {
-  await withFakeSupabase(async (db) => {
-    const poHandler = (await import('../api/backoffice/purchase-orders.js')).default;
-    const supplierId = crypto.randomUUID();
-    db.bo_suppliers.push({ id: supplierId, name: 'Test Supplier', active: true });
-    const created = await call(poHandler, { method: 'POST', body: { supplier_id: supplierId, store_id: 'pattanakarn', lines: [{ item_type: 'product', item_key: 'sku-1', qty_ordered: 5 }] } });
-    const poId = created.data.row.id;
-    const lineId = created.data.row.lines[0].id;
-    await call(poHandler, { method: 'POST', body: { id: poId, action: 'send' } });
-    await call(poHandler, { method: 'POST', body: { id: poId, action: 'receive', lines: [{ line_id: lineId, qty_received: 5 }] } });
-
-    const log = db.bo_audit_log.filter((r) => r.entity_type === 'purchase_order' && r.entity_id === poId);
-    assert.equal(log.length, 3, 'create + send + receive');
-    assert.deepEqual(log.map((r) => r.action), ['create', 'status_change', 'status_change']);
-    assert.equal(log[1].after.status, 'ordered');
-    assert.equal(log[2].after.status, 'completed');
   });
 });
 

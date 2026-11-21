@@ -1,5 +1,18 @@
 # DANK BackOffice — Deployment Prep (Phase 7)
 
+## Inventory review rollout
+
+Priority 5 adds `0005_purchasing_receiving.sql` after migration 0004. Deploy the
+updated UI and APIs together after applying it. See [purchasing and transfer
+receiving](PURCHASING_TRANSFERS.md) for receipt revisions, partial deliveries,
+closure behavior and validation. This has not been applied to production.
+
+The inventory review requires migration `0004_inventory_workflows.sql` after
+the existing inventory migrations. See [inventory review](INVENTORY_REVIEW.md)
+for source boundaries, API changes and validation. Until it is installed, the
+new page reports setup requirements and disables stock mutations. This migration
+and the application changes have not been applied to production.
+
 ## Standalone login
 
 BackOffice now opens at `/backoffice` with its own password form. It no longer reads

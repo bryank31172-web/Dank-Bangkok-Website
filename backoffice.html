@@ -1225,7 +1225,7 @@ async function refreshNotifications(){
     const d=await boGet('/api/backoffice/dashboard?range=week&store='+encodeURIComponent(CURRENT_STORE));
     if(KEY!==credential||!load.current())return;
     notificationUnavailable=d.inventory?.source==='unavailable'||d.inventory?.source==='error';
-    stockNotifications=[...(d.lowStock?.rows||[]).filter(row=>row.balance!=null&&Number.isFinite(Number(row.balance))&&Number(row.balance)<50).map(row=>({kind:'low',productKey:row.product_key,productName:row.name,text:`${row.name||row.product_key} · คงเหลือ ${row.balance} กรัม · ${row.store_id}`})),...(d.recentStockAdjustments?.rows||[]).filter(r=>Number(r.qty_delta)>0).map(r=>({kind:'restock',productKey:r.item_type==='product'?r.item_key:null,text:`${r.item_key} · เพิ่ม ${r.qty_delta} · ${r.store_id}`}))];
+    stockNotifications=[...(d.lowStock?.rows||[]).filter(row=>row.balance!=null&&Number.isFinite(Number(row.balance))&&Number(row.balance)<Number(row.threshold??50)).map(row=>({kind:'low',productKey:row.product_key,productName:row.name,text:`${row.name||row.product_key} · คงเหลือ ${row.balance} ${row.unit||''} · ${row.store_id}`})),...(d.recentStockAdjustments?.rows||[]).filter(r=>Number(r.qty_delta)>0).map(r=>({kind:'restock',productKey:r.item_type==='product'?r.item_key:null,text:`${r.item_key} · เพิ่ม ${r.qty_delta} · ${r.store_id}`}))];
   }catch(e){if(KEY!==credential||!load.current())return;notificationUnavailable=true;}
   load.reveal(renderNotifications);
 }
@@ -1611,7 +1611,7 @@ function renderDashboard(data, failed = false) {
     ? Number(sales.avgItemsPerOrder || 0).toLocaleString('en-US', {maximumFractionDigits: 2})
     : '—';
   const stockTable = stockRows.length
-    ? stockRows.map(row => `<tr><td>${esc(row.name || row.product_name || row.product_key)}</td><td>${esc(row.balance)}</td></tr>`).join('')
+    ? stockRows.map(row => `<tr><td>${esc(row.name || row.product_name || row.product_key)}</td><td>${esc(row.balance)} ${esc(row.unit||'')}</td></tr>`).join('')
     : `<tr><td colspan="2" class="empty-table">${stockAvailable ? 'ไม่มีสินค้าสต็อกต่ำ' : 'ยังไม่สามารถโหลดข้อมูลสต็อกได้'}</td></tr>`;
   const productTable = products.length
     ? products.map(row => `<tr><td><button class="product-order-link" data-act="best-selling-orders" data-product="${esc(row.name)}" aria-label="ดูรายการขาย ${esc(row.name)}">${esc(row.name)}</button></td><td>${Number(row.gramsSold).toLocaleString('en-US', {maximumFractionDigits: 2})}</td></tr>`).join('')
@@ -1632,7 +1632,7 @@ function renderDashboard(data, failed = false) {
       ${summaryCard('จำนวนสินค้าโดยเฉลี่ยต่อคำสั่งซื้อ', itemsValue, available ? sales.avgItemsPerOrderChangePct : null, false, false, available ? sales.avgItemsPerOrderChange : null)}
       <section class="card dashboard-stock">
         <h3>สินค้าสต็อกต่ำ</h3>
-        <div class="stock-list" tabindex="0" role="region" aria-label="สินค้าสต็อกต่ำ"><table><thead><tr><th>ชื่อ</th><th>จำนวนที่เหลือ(กรัม)</th></tr></thead><tbody>${stockTable}</tbody></table></div>
+        <div class="stock-list" tabindex="0" role="region" aria-label="สินค้าสต็อกต่ำ"><table><thead><tr><th>ชื่อ</th><th>จำนวนคงเหลือ</th></tr></thead><tbody>${stockTable}</tbody></table></div>
       </section>
     </div>
     <div class="overview-bottom">
@@ -1813,7 +1813,7 @@ async function viewProducts(){
       </form>
     </div>
     <p class="muted" role="status" id="catalogStatus">การนำเข้าและแก้ไขรายการมีผลเฉพาะในเบราว์เซอร์นี้</p>
-    <div id="prodResults"><p role="status">กำลังโหลดสินค้า…</p></div>
+    <p class="muted" style="font-size:11px">จำนวนในตารางนี้มาจากรายการสินค้านำเข้า · <button class="order-receipt-link" data-act="tab" data-tab="inventory">ดูยอดสต็อกแยกสาขาและประวัติ</button></p><div id="prodResults"><p role="status">กำลังโหลดสินค้า…</p></div>
     <dialog class="member-dialog catalog-import-dialog" id="catalogImportDialog" aria-labelledby="catalogImportTitle">
       <h2 id="catalogImportTitle">นำเข้า CSV</h2>
       <p id="catalogImportProgressText" role="status"></p>
@@ -1875,7 +1875,7 @@ async function viewProducts(){
         <tbody>${visible.map(({key,product,cells})=>`<tr data-product-key="${esc(key)}"><td><input type="checkbox" data-catalog-select aria-label="เลือก ${esc(cells[0])}"></td>
           <td>${key&&!key.startsWith('csv:')?`<button class="order-receipt-link" data-act="prod-edit" data-key="${esc(key)}" data-name="${esc(cells[0])}">${esc(cells[0])}</button>`:esc(cells[0])}</td>
           ${cells.slice(1,-1).map(value=>`<td>${esc(value??'—')}</td>`).join('')}
-          <td>${catalogStockIsLow(product)?`<span class="catalog-low-stock" title="สต็อกใกล้หมด">${esc(cells.at(-1))}</span>`:esc(cells.at(-1))}</td></tr>`).join('')||`<tr><td colspan="10" class="empty-table">${rows.length?'ไม่พบสินค้าที่ตรงกับการค้นหา':'ยังไม่มีสินค้า · เลือก นำเข้า / ส่งออก CSV เพื่ออัปโหลดรายการสินค้า'}</td></tr>`}</tbody>
+          <td><button class="order-receipt-link" data-act="inventory-product" data-key="${esc(key)}" title="จำนวนจากข้อมูลนำเข้า · เปิดดูยอดแยกสาขา">${catalogStockIsLow(product)?`<span class="catalog-low-stock" title="สต็อกใกล้หมด">${esc(cells.at(-1))}</span>`:esc(cells.at(-1))}</button></td></tr>`).join('')||`<tr><td colspan="10" class="empty-table">${rows.length?'ไม่พบสินค้าที่ตรงกับการค้นหา':'ยังไม่มีสินค้า · เลือก นำเข้า / ส่งออก CSV เพื่ออัปโหลดรายการสินค้า'}</td></tr>`}</tbody>
         </table></div><div class="catalog-bar">${pager}</div>`;
       exportButton.disabled=!matches.length;
       actions.forEach(button=>{button.disabled=true;});
@@ -2253,7 +2253,18 @@ async function loadSuppliersCached(){
 }
 
 /* ---------------- Inventory ---------------- */
+let INVENTORY_FOCUS_KEY='';
 async function viewInventory(){
+  const main=$('#main');dataLoads.delete(main);
+  main.innerHTML='<p class="muted">กำลังโหลดหน้าสต็อก…</p>';
+  try{
+    const module=await import('./assets/backoffice-inventory.js');
+    if(TAB!=='inventory')return;
+    const focus=INVENTORY_FOCUS_KEY;INVENTORY_FOCUS_KEY='';
+    await module.mount(main,{get:boGet,send:boSend,toast,catalog:loadCatalogProducts,store:CURRENT_STORE,focus,breadcrumb:workspaceBreadcrumb,navigate:setTab,openPurchasing:id=>{PURCHASING_FOCUS_ID=id;return setTab('purchasing');}});
+  }catch(error){if(TAB==='inventory')main.innerHTML=`<p class="data-notice">${esc(error.message)}</p>`;}
+}
+async function viewInventoryLegacy(){
   const m=$('#main');
   m.innerHTML=`${workspaceBreadcrumb('การจัดการสต็อก')}<h2>Inventory</h2>
     <div class="card">
@@ -2456,7 +2467,15 @@ async function viewSuppliers(){
 }
 
 /* ---------------- Purchase Orders ---------------- */
+let PURCHASING_FOCUS_ID='';
 async function viewPurchasing(){
+  const main=$('#main');dataLoads.delete(main);const focus=PURCHASING_FOCUS_ID;PURCHASING_FOCUS_ID='';
+  main.innerHTML='<p class="muted">กำลังโหลดใบสั่งซื้อ…</p>';
+  try{const module=await import('./assets/backoffice-purchasing.js?v=purchasing-1');if(TAB!=='purchasing')return;
+    await module.mount(main,{get:boGet,send:boSend,toast,store:CURRENT_STORE,focus,breadcrumb:workspaceBreadcrumb,navigate:setTab,restock:label=>{notifyRestock(label);refreshNotifications();}});
+  }catch(e){if(TAB==='purchasing')main.innerHTML=`<p class="muted">${esc(e.message)}</p>`;}
+}
+async function viewPurchasingLegacy(){
   const m=$('#main');
   m.innerHTML=`${workspaceBreadcrumb('ใบสั่งซื้อ',[['inventory','การจัดการสต็อก']])}<h2>Purchase Orders</h2>
     <div class="card"><h3>New purchase order</h3>
@@ -4216,6 +4235,7 @@ document.addEventListener('click',async e=>{
   const el=e.target.closest('[data-act]')||e.target.closest('.mock-orders tbody tr')?.querySelector('.order-receipt-link'); if(!el) return;
   const act=el.dataset.act;
   switch(act){
+    case 'inventory-product': {INVENTORY_FOCUS_KEY=el.dataset.key;setTab('inventory');return;}
     case 'employee-add': {openEmployeeEditor();return;}
     case 'employee-edit': {openEmployeeEditor(el.dataset.id);return;}
     case 'employee-cancel': {returnToEmployees();return;}

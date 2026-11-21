@@ -64,11 +64,10 @@ const STAFF_ROLE_PERMISSIONS = Object.freeze({
 });
 const staffSecret=()=>process.env.STAFF_SESSION_SECRET||process.env.ADMIN_SECRET||"";
 export const BACKOFFICE_PERMISSIONS=["dashboard","inventory_view","inventory_adjust","suppliers","purchasing","expenses","food_ops","kitchen_tickets","promotions","settings","shifts_manage","shifts_settings"];
-/* Shift Maker's management API is used from BackOffice (shared session) and
-   must also accept a personal owner/manager login, so an edit can be
-   attributed to a named person. Every other /api/backoffice/ route still
-   accepts only the BackOffice session. */
-const SHARED_BACKOFFICE_PATHS=new Set(["/api/backoffice/shifts"]);
+/* Shift and inventory APIs also accept personal staff sessions, preserving
+   role permissions and named audit actors. Other BackOffice routes require
+   the shared BackOffice session. */
+const SHARED_BACKOFFICE_PATHS=new Set(["/api/backoffice/shifts","/api/backoffice/inventory","/api/backoffice/stocktakes","/api/backoffice/transfers","/api/backoffice/product-settings","/api/backoffice/purchase-orders"]);
 const b64u=(v)=>Buffer.from(v).toString("base64url");
 const staffSign=(payload)=>b64u(crypto.createHmac("sha256",staffSecret()).update(payload).digest());
 function readStaffToken(token){

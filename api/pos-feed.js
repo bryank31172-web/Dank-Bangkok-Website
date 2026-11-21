@@ -100,6 +100,8 @@ function normalize(list) {
       thcLabel: num(p.thc) > 0 ? num(p.thc) + "%" : "",
       cbd: num(p.cbd),
       stock: p.stock === undefined ? 99 : num(p.stock),
+      stockRecorded: p.stock!==null&&p.stock!==undefined&&String(p.stock).trim()!==''&&Number.isFinite(Number(p.stock)),
+      inventoryUnit: p.unit==null?null:String(p.unit).trim(),
       unit: String(p.unit || "pc"),
       image: looksLikeImg(p.img) ? String(p.img) : "",
       description: "",
