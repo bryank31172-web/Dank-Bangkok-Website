@@ -54,7 +54,7 @@ async function viewSalesReport(){
   await SALES_READY;
   if(!SALES_REPORT_INITIALIZED){SALES_REPORT.preset=OV_RANGE;SALES_REPORT_INITIALIZED=true;}
   const window=reportWindow();
-  ORDERS_DATE_RANGE={start:salesLocalDate(window.start),end:salesLocalDate(+new Date(window.end)-1),preset:SALES_REPORT.datePreset||({today:'today',yesterday:'yesterday',week:'thisWeek',month:'thisMonth',year:'thisYear'}[SALES_REPORT.preset])||'custom'};
+  ORDERS_DATE_RANGE={start:salesLocalDate(window.start),end:salesLocalDate(+new Date(window.end)-1),preset:SALES_REPORT.preset==='custom'?SALES_REPORT.datePreset||'custom':({today:'today',yesterday:'yesterday',week:'thisWeek',month:'thisMonth',year:'thisYear'}[SALES_REPORT.preset])||'custom'};
   ORDERS_PAST_MONTHS=SALES_REPORT.months||3;
   ORDERS_BRANCHES=SALES_REPORT.filters.branches?new Set(JSON.parse(SALES_REPORT.filters.branches)):null;
   ORDERS_TYPE_FILTER=SALES_REPORT.filters.orderType||'';
@@ -225,7 +225,7 @@ function exportSalesReport(){
   const data=SALES_REPORT_DATA;if(!data)return toast('กรุณาโหลดรายงานก่อน',true);
   const columns=reportColumns().filter(([key])=>SALES_REPORT.columns.includes(key));
   const grouped=reportIsBreakdown();
-  const rows=[['รายงานยอดขาย'],['เริ่ม',SALES_REPORT_SCOPE.start,'สิ้นสุด (ไม่รวม)',SALES_REPORT_SCOPE.end],['จัดกลุ่มตาม',reportGroupLabel()],['ตัวกรอง',JSON.stringify(SALES_REPORT_SCOPE)],['แหล่งข้อมูล',OV_DEMO?'ข้อมูลตัวอย่าง':'รายการที่บันทึกใน DANK'],[],[...(grouped?[reportGroupLabel()]:['เริ่มกลุ่ม','สิ้นสุดกลุ่ม']),...columns.map(([,label])=>label)],
+  const rows=[['ยอดขายตามช่วงเวลา'],['เริ่ม',SALES_REPORT_SCOPE.start,'สิ้นสุด (ไม่รวม)',SALES_REPORT_SCOPE.end],['จัดกลุ่มตาม',reportGroupLabel()],['ตัวกรอง',JSON.stringify(SALES_REPORT_SCOPE)],['แหล่งข้อมูล',OV_DEMO?'ข้อมูลตัวอย่าง':'รายการที่บันทึกใน DANK'],[],[...(grouped?[reportGroupLabel()]:['เริ่มกลุ่ม','สิ้นสุดกลุ่ม']),...columns.map(([,label])=>label)],
     ...data.rows.map(row=>[...(grouped?[row.label]:[row.start,row.end]),...columns.map(([key])=>row[key]??'—')]),['รวม',...(grouped?[]:['']),...columns.map(([key])=>data.totals[key]??'—')]];
   downloadCSV(buildCSV([],rows),'dank-sales-'+SALES_REPORT.group+'-'+SALES.dateKey(SALES_REPORT_SCOPE.start)+'.csv');
 }

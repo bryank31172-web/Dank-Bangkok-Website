@@ -49,6 +49,10 @@ test('all archived receipts beyond 500 reconcile Home, report buckets and receip
   assert.equal(drill.data.totals.total,5569.20);
   const noMatch=await call(salesHandler,{...scope,employee:'missing'});
   assert.equal(noMatch.data.totals.total,0);
+  const receiptMatch=await call(salesHandler,{...scope,branches:JSON.stringify(['สาขา A']),receipt:'000001'});
+  assert.equal(receiptMatch.data.totals.orders,1);assert.equal(receiptMatch.data.orders[0].id,'000001');
+  const emptyBranches=await call(salesHandler,{...scope,branches:'[]'});
+  assert.equal(emptyBranches.data.totals.orders,0);
   const invalid=await call(salesHandler,{start:'bad',end:scope.end});assert.equal(invalid.code,400);
   assert.equal((await call(salesHandler,scope,false)).code,401);
 });
