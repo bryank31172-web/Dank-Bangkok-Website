@@ -15,6 +15,129 @@ function receipt(extra={}){
 }
 const moneyFields=['gross','discount','returns','net','tax','charges','total','cost','profit'];
 
+test('category filter selects matching receipts and supports empty and multiple selections',()=>{
+  const sale=receipt();
+  assert.equal(buildReport([sale],{...scope,categories:JSON.stringify(['Flowers'])},'day').totals.total,107);
+  assert.equal(buildReport([sale],{...scope,categories:JSON.stringify(['Other'])},'day').totals.total,0);
+  assert.equal(matches(sale,{...scope,categories:'[]'}),false);
+  assert.equal(matches(sale,{...scope,categories:JSON.stringify(['Flowers','Accessories'])}),true);
+});
+
+test('shift sessions use recorded boundaries and keep unassigned receipts explicit',()=>{
+  const first=receipt({shiftId:'s1',shiftStartedAt:'2026-11-20T08:00:00+07:00',shiftEndedAt:'2026-11-20T16:00:00+07:00',posNumber:'01',preorderDeposit:10}),
+    second=receipt({id:'two',shiftId:'s1',shiftStartedAt:first.shiftStartedAt,shiftEndedAt:first.shiftEndedAt,posNumber:'01',preorderDeposit:20}),
+    unknown=receipt({id:'unknown'});
+  const report=buildReport([first,second,unknown],scope,'shift');
+  assert.equal(report.rows.length,2);
+  const session=report.rows.find(row=>row.posNumber==='01');
+  assert.equal(session.transactions,2);
+  assert.equal(session.total,214);
+  assert.equal(session.deposits,30);
+  assert.equal(session.shiftStartedAt,first.shiftStartedAt);
+  assert.equal(report.rows.find(row=>row.orderIds.includes('unknown')).shiftStartedAt,null);
+  assert.equal(report.totals.deposits,null);
+  assert.equal(matches(unknown,{...scope,itemGroup:'shift',itemKey:session.key}),false);
+  assert.equal(matches(first,{...scope,itemGroup:'shift',itemKey:session.key}),true);
+});
+
+test('channel fees, refunds and transactions reconcile without inventing rounding',()=>{
+  const sale=receipt({channel:'website',deliveryFee:20,serviceCharge:5,total:132,rounding:0.25}),
+    refund=receipt({id:'refund',type:'refund',channel:'website',total:22,tax:0,deliveryFee:2,serviceCharge:0,rounding:0.05}),
+    cancelled=receipt({id:'cancelled',status:'cancelled',deliveryFee:999});
+  const report=buildReport([sale,refund,cancelled],scope,'channel');
+  assert.equal(report.rows.length,1);
+  assert.equal(report.rows[0].transactions,2);
+  assert.equal(report.rows[0].total,110);
+  assert.equal(report.rows[0].deliveryFee,18);
+  assert.equal(report.rows[0].serviceCharge,5);
+  assert.equal(report.rows[0].rounding,0.2);
+  assert.equal(report.rows[0].net,80);
+  assert.equal(buildReport([receipt()],scope,'channel').rows[0].rounding,null);
+});
+
+test('product report metadata, quantities, values and weighted averages reconcile to receipts',()=>{
+  const sale=receipt(),refund=receipt({id:'refund',type:'refund',tax:1.4,total:21.4,discount:0,cost:10,items:[{productKey:'p1',name:'Same name',sku:'001',category:'Flowers',qty:1,lineTotal:20}]}),
+    cancelled=receipt({id:'cancelled',status:'cancelled'});
+  const report=buildReport([sale,refund,cancelled],scope,'product');
+  assert.equal(report.totals.soldQty,3);
+  assert.equal(report.totals.productValue,107);
+  assert.equal(report.totals.returnedValue,21.4);
+  assert.equal(report.totals.averageCost,20);
+  assert.equal(report.totals.averageNet,40);
+  assert.equal(report.rows.find(row=>row.sku==='001').category,'Flowers');
+  const skus=buildReport([sale,refund,cancelled],scope,'sku');
+  const firstSku=skus.rows.find(row=>row.sku==='001');
+  assert.equal(firstSku.productName,'Same name');
+  assert.equal(firstSku.skuName,'Same name');
+  assert.equal(firstSku.category,'Flowers');
+  for(const key of ['soldQty','productValue','discount','net','cost','profit']){
+    assert.equal(Math.round(skus.rows.reduce((sum,row)=>sum+row[key],0)*100),Math.round(report.totals[key]*100),key);
+  }
+  const categories=buildReport([sale,refund,cancelled],scope,'category');
+  for(const key of ['soldQty','productValue','discount','net','cost','profit']){
+    assert.equal(Math.round(categories.rows.reduce((sum,row)=>sum+row[key],0)*100),Math.round(report.totals[key]*100),key);
+  }
+  assert.equal(categories.totals.averageCost,report.totals.averageCost);
+  assert.equal(categories.totals.averageNet,report.totals.averageNet);
+  for(const key of ['soldQty','productValue','returnedValue','discount','net','cost','profit']){
+    assert.equal(Math.round(report.rows.reduce((sum,row)=>sum+row[key],0)*100),Math.round(report.totals[key]*100),key);
+  }
+  for(const row of report.rows){
+    const receipts=[sale,refund,cancelled].filter(order=>matches(order,{...scope,itemGroup:'product',itemKey:row.key}));
+    assert.ok(row.orderIds.every(id=>receipts.some(order=>order.id===id)));
+  }
+  const unknown=buildReport([receipt({cost:null,items:[{name:'Unknown',qty:1,lineTotal:110}]})],scope,'product');
+  assert.equal(unknown.rows[0].averageCost,null);
+  assert.equal(unknown.rows[0].profit,null);
+});
+
+test('time report percentages use gross sales and preserve unknown manual discounts',()=>{
+  const sale=receipt({manualDiscount:5}),refund=receipt({id:'refund',type:'refund',total:20,tax:0,cost:5});
+  const totals=buildReport([sale,refund],scope,'day').totals;
+  assert.equal(totals.transactions,2);
+  assert.equal(totals.discountPct,9.09);
+  assert.equal(totals.manualDiscountPct,4.55);
+  assert.equal(totals.manualDiscount,5);
+  assert.equal(buildReport([receipt()],scope,'day').totals.manualDiscount,null);
+  assert.equal(buildReport([receipt()],scope,'day').totals.manualDiscountPct,null);
+  assert.equal(buildReport([],scope,'day').totals.manualDiscountPct,0);
+});
+
+test('transaction reports reconcile and drill down without duplicating split payments',()=>{
+  const sale=receipt({channel:'website',shiftName:'Morning',promoCode:'SAVE',payments:[{method:'Cash',amount:50},{method:'PromptPay',amount:57}]}),
+    refund=receipt({id:'refund',type:'refund',total:20,tax:0,cost:5,channel:'website'}),
+    cancelled=receipt({id:'cancelled',status:'cancelled'});
+  for(const group of ['channel','shift','promotion']){
+    const report=buildReport([sale,refund,cancelled],scope,group);
+    assert.equal(report.totals.total,87);
+    assert.equal(report.rows.reduce((sum,row)=>sum+row.total,0),87);
+    for(const row of report.rows){
+      assert.deepEqual([sale,refund].filter(order=>matches(order,{...scope,itemGroup:group,itemKey:row.key})).map(o=>o.id).sort(),row.orderIds.slice().sort());
+    }
+  }
+  const paymentReport=buildReport([sale],scope,'payment');
+  assert.deepEqual(paymentReport.rows.map(row=>[row.label,row.charged]),[['Cash',50],['PromptPay',57]]);
+  assert.equal(paymentReport.totals.transactions,1);
+  assert.equal(paymentReport.totals.charged,107);
+  for(const row of paymentReport.rows)assert.ok(matches(sale,{...scope,itemGroup:'payment',itemKey:row.key}));
+});
+
+test('payment report separates channels, reconciles refunds and preserves unknown split amounts',()=>{
+  const first=receipt({channel:'website',payments:[{method:'Cash',amount:107}]}),
+    second=receipt({id:'two',channel:'store',payments:[{method:'Cash',amount:107}]}),
+    refund=receipt({id:'refund',type:'refund',channel:'website',total:20,tax:0,payments:[{method:'Cash',amount:20}]});
+  const report=buildReport([first,second,refund],scope,'payment');
+  assert.equal(report.rows.length,2);
+  assert.equal(report.totals.charged,214);
+  assert.equal(report.totals.refunded,20);
+  assert.equal(report.totals.paymentNet,194);
+  assert.equal(report.rows.find(row=>row.channel==='website').paymentNet,87);
+  assert.equal(matches(second,{...scope,itemGroup:'payment',itemKey:report.rows.find(row=>row.channel==='website').key}),false);
+  const unknown=buildReport([receipt({payments:[{method:'Cash'},{method:'Card'}]})],scope,'payment');
+  assert.equal(unknown.totals.charged,null);
+  assert.equal(unknown.rows[0].preorderDeposit,null);
+});
+
 test('product, category and SKU rows reconcile with receipt totals including returns and cancellations',()=>{
   const sale=receipt(),refund=receipt({id:'refund',type:'refund',tax:1.4,discount:0,total:21.4,cost:10,items:[{productKey:'p1',name:'Same name',sku:'001',category:'Flowers',qty:1,lineTotal:20}]}),
     cancelled=receipt({id:'cancelled',status:'cancelled'}),outside=receipt({id:'outside',at:scope.end});

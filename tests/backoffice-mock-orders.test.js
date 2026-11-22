@@ -5,11 +5,12 @@ import vm from 'node:vm';
 
 test('mock order financial columns reconcile with dashboard sales for every period', () => {
   const html = fs.readFileSync(new URL('../backoffice.html', import.meta.url), 'utf8');
-  const output = { innerHTML: '', focus() {}, scrollIntoView() {} };
+  const output = { innerHTML: '', focus() {}, scrollIntoView() {},append() {} };
   const storage = new Map();
   const context = {
     BOI18n:{t:value=>value,formatDate:(value,method,options)=>new Date(value)[method]('th-TH-u-ca-gregory',options)},
     OV_RANGE: 'today', OV_DEMO: true,
+    STORE_DIRECTORY:[{id:'main',name:'DANK Pattanakarn (Main)'},{id:'sathorn',name:'DANK Sathorn'},{id:'deleted',name:'Deleted store',deletedAt:'2026-11-01'}],
     SALES:null,SALES_RETURN_TO_REPORT:false,ORDERS_EXACT_SCOPE:null,OV_LAST_DATA:null,
     currentDemoSalesData:()=>context.overviewDemoData(),
     OV_RANGES: ['today', 'week', 'month', 'year'].map(id => ({ id, label: id })),
@@ -34,8 +35,9 @@ test('mock order financial columns reconcile with dashboard sales for every peri
     }
     assert.equal(data.mockOrders.reduce((sum, order) => sum + cents(order.total), 0), cents(data.sales.total));
     context.viewOrders();
-    const headings = [...output.innerHTML.matchAll(/<th>(.*?)<\/th>/g)].map(match => match[1]);
-    assert.deepEqual(headings, ['เลขที่รายการ', 'วันที่ / เวลา', 'สาขา', 'พนักงาน', 'ประเภทคำสั่งซื้อ', 'ราคาก่อนส่วนลด', 'ส่วนลด', 'ภาษี', 'กำไร', 'ยอดรวม']);
+    const headings = [...output.innerHTML.matchAll(/<th>(.*?)<\/th>/g)].map(match => match[1].replace(/<details[\s\S]*?<\/details>/,'').trim());
+    assert.deepEqual(headings, ['เลขที่รายการ', 'วันที่ / เวลา', 'สาขา', 'พนักงาน', 'ประเภทคำสั่งซื้อ', 'ราคาก่อนส่วนลด', 'ส่วนลด', 'ภาษี', 'ยอดรวม', 'ต้นทุน', 'กำไร']);
+    assert.ok(data.mockOrders.every(order=>order.branch!=='Deleted store'));
     const body = output.innerHTML.match(/<tbody>([\s\S]*?)<\/tbody>/)[1];
     assert.equal((body.match(/<tr>/g) || []).length, 12);
     assert(output.innerHTML.includes('แสดง 1-12 จาก 12 แถว'));

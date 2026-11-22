@@ -458,12 +458,22 @@
   .overview-sync-tooltip[hidden]{display:none}
   .overview-period-help{display:inline-grid;place-items:center;width:16px;height:16px;border:1px solid currentColor;border-radius:50%;padding:0;margin-left:6px;background:transparent;color:var(--muted);font-size:11px;vertical-align:middle;cursor:help}
   .overview-chart-period{color:var(--muted);font-size:11px;line-height:1.6;margin:-4px 0 12px}
-  @media(max-width:760px){.dashboard-period-controls{width:100%}}
+  @media(max-width:760px){
+    .overview-heading{display:grid;grid-template-columns:auto minmax(0,1fr);gap:10px;align-items:center}
+    .overview-heading>div:first-child{grid-area:1/1}
+    .overview-heading>div:first-child p{display:none}
+    .overview-heading h2{margin:0}
+    .overview-heading .dashboard-period-controls,.overview-heading .dashboard-actions{display:contents}
+    .overview-heading .period-switch{grid-area:1/2;justify-self:end;display:flex;white-space:nowrap}
+    .overview-heading .period-switch .btn{padding:6px 8px;font-size:12px}
+    .overview-heading .dashboard-preview{grid-area:2/1/3/3;justify-self:end}
+    .overview-heading .overview-context{grid-column:1/-1}
+  }
   @media(max-width:1100px){.metric-value.metric-price{font-size:calc(28px - 1.5pt)}}
   .mock-orders{white-space:nowrap}
   .order-type-pill{display:inline-block;border-radius:999px;padding:4px 10px;font-weight:700}
   .order-type-pill.in-store{background:#2947FF;color:#fff}
-  .order-type-pill.delivery{background:#FFFF00;color:#1d222a}
+  .order-type-pill.delivery{background:#FF8A05;color:#1d222a}
   .mock-orders th{text-transform:none}
   .mock-orders th:nth-child(n+6),.mock-orders td:nth-child(n+6),.mock-orders tfoot td:not(:first-child){text-align:right;font-variant-numeric:tabular-nums}
   .mock-orders tfoot td{font-weight:600;padding-top:16px;border-bottom:0}
@@ -567,7 +577,7 @@
   .member-tier-pill{display:inline-block;border:0;border-radius:999px;padding:4px 10px;font-weight:700;color:#1d222a}
   .member-tier-pill.silver{background:linear-gradient(135deg,#f1f2f3,#b8bec5)}
   .member-tier-pill.bronze{background:linear-gradient(135deg,#ffc59f,#c78257)}
-  .member-tier-pill:is(.gold,.platinum){background:linear-gradient(135deg,#ffe6ad,#c99b52)}
+  .member-tier-pill:is(.gold,.platinum){background:linear-gradient(135deg,#ffe8a3,#d4a62a)}
   .member-tier-pill.diamond{background:linear-gradient(135deg,#e0f6ff,#8bc8eb)}
   .member-card-flip{position:relative;perspective:1000px;margin-bottom:12px}
   .member-card-flip-inner{position:relative;z-index:1;pointer-events:none;display:grid;transform-style:preserve-3d;transition:transform .5s ease-in-out}
@@ -599,14 +609,24 @@
   .tier-comparison thead th:first-child{text-align:left}
   .tier-comparison thead th{color:#172b4d;font-size:14px}
   .tier-comparison thead small{display:block;font-weight:400;margin-top:4px}
-  .tier-comparison .tier-silver{background:#e9eef5}
-  .tier-comparison .tier-platinum{background:#fff1cb}
-  .tier-comparison .tier-bronze{background:#f5dfd0}
-  .tier-comparison .tier-diamond{background:#eae1ff}
+  .tier-comparison .tier-silver{background:linear-gradient(135deg,#f1f2f3,#b8bec5)}
+  .tier-comparison .tier-gold{background:linear-gradient(135deg,#ffe8a3,#d4a62a)}
+  .tier-comparison .tier-bronze{background:linear-gradient(135deg,#ffc59f,#c78257)}
+  .tier-comparison .tier-diamond{background:linear-gradient(135deg,#e0f6ff,#8bc8eb)}
   .tier-comparison .current-tier{box-shadow:inset 0 3px #2563eb}
   .tier-comparison .tier-category th{background:var(--bg);color:var(--text);font-weight:700}
   .orders-pagination{display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;border-top:1px solid var(--line);padding-top:16px;margin-top:16px;font-size:12px;color:var(--muted)}
   .orders-page-controls{display:flex;align-items:center;gap:12px}
+  .orders-selection-menu{display:inline-block;position:relative;vertical-align:middle;text-align:left}
+  .orders-selection-menu summary{cursor:pointer;list-style:none;border:1px solid var(--line);border-radius:6px;padding:5px 8px;display:flex;align-items:center;justify-content:center;text-align:center;min-height:36px;box-sizing:border-box}
+  .orders-selection-menu summary::-webkit-details-marker{display:none}
+  .orders-selection-menu>div{position:absolute;top:100%;left:0;z-index:20;min-width:210px;padding:6px;background:var(--panel);border:1px solid var(--line);border-radius:8px;box-shadow:0 6px 18px #0002}
+  .orders-selection-menu button{display:block;width:100%;border:0;background:transparent;color:var(--text);padding:10px;text-align:left;cursor:pointer}
+  .orders-selection-menu button:hover{background:var(--bg)}
+  .mock-orders input[type=checkbox]{accent-color:#FF8A05;width:16px;height:16px;vertical-align:middle;margin-right:8px}
+  .mock-orders thead th:first-child,.mock-orders tbody td:first-child{display:flex;align-items:center;gap:12px}
+  .mock-orders .orders-selection-menu{flex:0 0 80px;box-sizing:border-box}
+  .mock-orders tbody td:first-child input[type=checkbox]{flex:0 0 16px;margin:0 32px}
   .orders-page-controls .btn{font-size:12px;padding:6px 10px}
   .period-switch .btn:not(.ghost){background:#FF8A05;color:#fff}
   .cumulative-sales h3,.overview-metrics .dashboard-stock h3,.overview-bottom .best-selling h3{font-size:18px;font-weight:700;color:var(--text)}
@@ -616,10 +636,44 @@
   .best-selling table{table-layout:fixed;width:100%}
   .best-selling th{position:sticky;top:0;background:var(--panel);z-index:1;height:44px;padding:6px 10px}
   .best-selling tbody tr{height:44px}
+  .best-selling-rank{display:none}
+  @media(max-width:1366px){
+    .best-selling-rank{display:inline-block;min-width:28px;font-variant-numeric:tabular-nums}
+    .best-selling-scroll{height:auto;max-height:none;overflow-y:visible;flex:none}
+    .overview-bottom{grid-auto-rows:auto}
+  }
   .best-selling td{height:44px;padding:6px 10px}
   .best-selling td:first-child{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .best-selling .product-order-link{max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;vertical-align:middle}
   .cumulative-sales svg.chart{flex:1;min-height:0;max-height:100%}
+  .store-sales-chart{margin-top:16px}
+  .store-sales-chart h3{font-size:18px;margin:0 0 24px}
+  .store-sales-row{display:grid;grid-template-columns:minmax(100px,190px) minmax(0,1fr);gap:14px;align-items:center;margin:16px 0;font-size:13px}
+  .store-sales-name{text-align:right;overflow-wrap:anywhere}
+  .store-sales-track{min-width:0;border-bottom:1px dashed var(--line);padding-bottom:8px;background:repeating-linear-gradient(to right,transparent 0,transparent calc(25% - 1px),var(--line) calc(25% - 1px),var(--line) 25%)}
+  .store-sales-bar{height:32px;background:#FF8A05;border-radius:0 4px 4px 0;display:flex;align-items:center;justify-content:flex-end}
+  .store-sales-value{font-variant-numeric:tabular-nums;white-space:nowrap;font-size:12px;color:#172b4d;padding:0 8px;font-weight:600}
+  .store-sales-axis{display:flex;justify-content:space-between;color:var(--muted);font-size:10px;grid-column:2;gap:6px}
+  .store-sales-note{font-size:12px;color:var(--muted);margin:18px 0 0}
+  @media(min-width:761px) and (max-width:1366px){
+    #ovBody{display:grid;grid-template-columns:minmax(0,7fr) minmax(0,3fr);gap:16px}
+    #ovBody>.overview-metrics{grid-column:1/-1;margin-bottom:0}
+    #ovBody>.overview-bottom{display:contents}
+    #ovBody .cumulative-sales{grid-area:2/1;min-height:440px}
+    #ovBody>.store-sales-chart{grid-area:2/2;margin:0;min-width:0}
+    #ovBody .best-selling{grid-area:3/1/4/3}
+    #ovBody>.data-notice{grid-column:1/-1}
+    #ovBody .store-sales-row{grid-template-columns:1fr;gap:6px}
+    #ovBody .store-sales-name{text-align:left}
+    #ovBody .store-sales-axis{grid-column:1}
+  }
+  @media(min-width:761px) and (max-width:850px){
+    #ovBody{grid-template-columns:minmax(0,1fr)}
+    #ovBody .cumulative-sales{grid-area:2/1}
+    #ovBody>.store-sales-chart{grid-area:3/1}
+    #ovBody .best-selling{grid-area:4/1}
+  }
+  @media(max-width:760px){.store-sales-row{grid-template-columns:1fr;gap:8px}.store-sales-name{text-align:left}.store-sales-axis{grid-column:1}}
   .product-order-link{font:inherit;color:inherit;background:transparent;border:0;padding:0;text-align:left;cursor:pointer}
   .product-order-link:hover{color:var(--brand);text-decoration:underline}
   .best-selling-all{align-self:flex-start;margin-top:16px;border:0;padding:0;background:transparent;color:var(--brand);font-size:13px;font-weight:600}
@@ -658,7 +712,12 @@
   .staff-subnav.open>.t-acc-panel-inner{opacity:1;filter:blur(0);transition-duration:var(--acc-expand)}
   .sidebar-collapsed nav.side .t-acc-chevron{display:none}
   .staff-subnav-inner{min-height:0;overflow:hidden;display:flex;flex-direction:column;gap:3px}
-  nav.side .staff-subnav button{padding-left:44px;font-size:12px}
+  nav.side .staff-subnav button{padding-left:56px;font-size:12px}
+  nav.side>button,nav.side>.staff-subnav,nav.side>.side-footer{flex-shrink:0}
+  nav.side>button{min-height:44px}
+  #reportsSubnav{display:none}
+  #reportsSubnav.open{display:flex;flex-direction:column;gap:3px}
+  nav.side .staff-subnav button{flex-shrink:0;box-sizing:border-box;height:calc((1.6em + 19px)*.85);min-height:0;padding-top:0;padding-bottom:0}
   .sidebar-collapsed .staff-subnav{display:none}
   .commission-card{padding:30px;border-radius:16px}
   .commission-option{display:flex;align-items:flex-start;gap:10px;cursor:pointer;font-size:16px;line-height:1.7}
@@ -759,7 +818,55 @@
     .orders-date-inputs{padding-left:0;padding-right:0}
   }
   @media(max-width:700px){.orders-toolbar-actions{width:100%;justify-content:space-between;gap:8px}.orders-tool-button{font-size:12px;padding:9px 12px}}
+  @media(max-width:760px){
+    .orders-toolbar.orders-list-toolbar{
+      display:grid;grid-template-columns:auto minmax(0,1fr) auto;
+      gap:10px;align-items:stretch;reading-flow:grid-rows;
+    }
+    .orders-list-toolbar>.orders-filter-search,
+    .orders-list-toolbar>.orders-toolbar-actions{display:contents}
+    .orders-list-toolbar .orders-search{grid-area:1/1/2/3;width:70%;min-width:0;min-height:46px}
+    .orders-list-toolbar [data-act="orders-csv"]{grid-area:1/3/2/4;white-space:nowrap}
+    .orders-list-toolbar .orders-branch-wrap{grid-area:2/1/3/2}
+    .orders-list-toolbar .orders-date-wrap{grid-area:2/2/3/4;min-width:0}
+    .orders-list-toolbar #ordersDateButton{width:100%}
+    .orders-list-toolbar .orders-tool-button svg,
+    .orders-list-toolbar .orders-search svg{flex-shrink:0}
+    .orders-pagination{flex-direction:column;justify-content:center;text-align:center}
+    .orders-pagination>span{width:100%}
+    .orders-page-controls{width:100%;justify-content:center}
+  }
   .mobile-bottom-nav{display:none}
+  .products-dropup{position:absolute;bottom:calc(100% + 10px);right:0;width:210px;padding:8px;border:1px solid var(--line);border-radius:14px;background:var(--panel);box-shadow:0 8px 30px #0003}
+  .products-dropup[hidden]{display:none}
+  .products-dropup:not([hidden]){transform-origin:bottom center;animation:products-dropup-expand .3s ease both}
+  @keyframes products-dropup-expand{from{opacity:0;transform:translateY(8px) scaleY(.85)}to{opacity:1;transform:translateY(0) scaleY(1)}}
+  @media(prefers-reduced-motion:reduce){.products-dropup:not([hidden]){animation:none}}
+  #productsSubnav{display:none}
+  #productsSubnav.open{display:flex;flex-direction:column;gap:3px}
+  .mobile-bottom-nav .products-dropup button{width:100%;height:35.7px;min-height:35.7px;box-sizing:border-box;color:var(--text);font-size:14px;align-items:center;justify-content:center;text-align:center;padding:0 14px}
+  .orders-heading-actions{display:flex;align-items:center;justify-content:flex-end;gap:10px;margin-left:auto}
+  .orders-heading{flex-wrap:nowrap}
+  .report-header-actions .orders-tool-button[data-sales-act="csv"]{background:#FF8A05;border-color:#FF8A05;color:#fff;white-space:nowrap}
+  .orders-toolbar.sales-report-toolbar{display:grid;grid-template-columns:auto minmax(100px,1fr) auto;gap:12px;align-items:center}
+  .sales-report-toolbar>.orders-filter-search,.sales-report-toolbar>.orders-toolbar-actions{display:contents}
+  .sales-report-toolbar .orders-search{width:70%;min-width:0}
+  .sales-report-toolbar .orders-date-wrap{justify-self:end;min-width:0}
+  .orders-toolbar.sales-report-toolbar.sales-toolbar-reduced{grid-template-columns:minmax(0,1fr) auto}
+  .sales-toolbar-reduced .orders-search{width:70%}
+  .orders-toolbar.sales-report-toolbar.sales-toolbar-date-only{display:flex;justify-content:flex-end}
+  .sales-toolbar-date-only .orders-filter-search{display:none}
+  @media(max-width:600px){
+    .orders-toolbar.sales-report-toolbar{grid-template-columns:auto minmax(0,1fr);gap:10px}
+    .sales-report-toolbar .orders-date-wrap{grid-column:1/-1;justify-self:stretch}
+    .sales-report-toolbar #ordersDateButton{width:100%}
+  }
+  @media(min-width:761px){
+    .orders-toolbar.orders-list-toolbar{display:grid;grid-template-columns:auto minmax(140px,1fr) auto;gap:12px;align-items:center}
+    .orders-list-toolbar>.orders-filter-search,.orders-list-toolbar>.orders-toolbar-actions{display:contents}
+    .orders-list-toolbar .orders-search{width:70%;min-width:0}
+    .orders-list-toolbar .orders-date-wrap{justify-self:end}
+  }
   #tabletMenuToggle{display:none}
   @media screen and (max-width:1024px){
     nav.side,#sidebarToggle{display:none}
@@ -782,7 +889,7 @@
       transform-origin:bottom center;
       z-index:40;
       display:grid;
-      grid-template-columns:repeat(4,minmax(0,1fr));
+      grid-template-columns:repeat(5,minmax(0,1fr));
       width:min(560px,calc(100% - 24px));
       padding:6px;
       gap:3px;
@@ -817,7 +924,8 @@
     .sidebar-collapsed nav.side .nav-label{max-width:none;opacity:1}
     .sidebar-collapsed nav.side .staff-subnav{display:grid}
     .sidebar-collapsed nav.side .t-acc-chevron{display:inline-flex}
-    nav.side .staff-subnav-inner button{padding-left:36px}
+    nav.side .staff-subnav button{padding-left:56px}
+    nav.side .staff-subnav button{height:calc((1.6em + 24px)*.85);padding-top:0;padding-bottom:0}
     nav.side .side-footer{display:block}
   }
   @media(prefers-reduced-motion:reduce){nav.side{transition:none!important}}
@@ -863,6 +971,8 @@
   .sales-report-table{white-space:nowrap;font-variant-numeric:tabular-nums}.sales-report-table th:not(:first-child),.sales-report-table td:not(:first-child){text-align:right}.sales-report-table th button,.sales-cell-link{background:none;border:0;padding:0;color:inherit;font:inherit}.sales-cell-link:hover{text-decoration:underline;color:var(--brand)}
   .sales-report-table tfoot{font-weight:700;background:var(--bg)}.sales-column-picker{position:relative;font-size:12px}.sales-column-picker>div{position:absolute;right:0;top:100%;z-index:10;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:12px;width:240px;box-shadow:0 5px 20px #0002}.sales-column-picker label{display:block;padding:5px}
   .sales-breakdown-chart{display:grid;gap:10px}
+  .product-report-table th:first-child,.product-report-table td:first-child{position:sticky;left:0;z-index:1;background:var(--panel);min-width:230px;max-width:320px;white-space:normal;box-shadow:3px 0 6px #0001}
+  .product-report-table thead th:first-child{z-index:2}
   .sales-breakdown-row{display:grid;grid-template-columns:minmax(80px,1fr) minmax(50px,3fr) auto;gap:12px;align-items:center;text-align:left;background:transparent;color:var(--text);border:0;padding:4px;font-size:12px}
   .sales-breakdown-row:hover{background:var(--bg)}
   .sales-breakdown-label{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -935,6 +1045,10 @@ $('#tabletMenuToggle').addEventListener('click',()=>{
   setTabletMenu(!document.documentElement.classList.contains('tablet-menu-open'));
 });
 document.addEventListener('click',event=>{
+  if(typeof REPORTS_DROPUP_OPEN!=='undefined'&&REPORTS_DROPUP_OPEN&&!event.target.closest('#reportsDropup,[data-tab="reports"]')){
+    REPORTS_DROPUP_OPEN=false;
+    const menu=$('#reportsDropup');if(menu)menu.hidden=true;
+  }
   if(document.documentElement.classList.contains('tablet-menu-open')&&!event.target.closest('#nav,#tabletMenuToggle'))setTabletMenu(false);
 },true);
 document.addEventListener('keydown',event=>{
@@ -956,6 +1070,14 @@ function setAccordion(item,open){
 }
 
 document.addEventListener('click',event=>{
+  if(typeof PRODUCTS_DROPUP_OPEN!=='undefined'&&PRODUCTS_DROPUP_OPEN&&!event.target.closest('#productsDropup,[data-act="products-menu"]')){
+    PRODUCTS_DROPUP_OPEN=false;
+    const menu=$('#productsDropup');if(menu)menu.hidden=true;
+    document.querySelector('#mobileBottomNav [data-act="products-menu"]')?.setAttribute('aria-expanded','false');
+  }
+  document.querySelectorAll('.orders-selection-menu[open]').forEach(menu=>{
+    if(!menu.contains(event.target))menu.open=false;
+  });
   const item=event.target.closest('.t-acc-head')?.closest('.t-acc[data-open]');
   document.querySelectorAll('.t-acc[data-open="true"]').forEach(open=>{
     if(!open.contains(event.target))setAccordion(open,false);
@@ -1192,6 +1314,7 @@ function toast(msg,isErr){
 
 function iconSVG(name){
   const paths={home:'<path d="m3 10 9-7 9 7v10H3Z"/><path d="M9 20v-7h6v7"/>',orders:'<path d="M6 3h12v18l-3-2-3 2-3-2-3 2Z"/><path d="M9 8h6M9 12h6"/>',reports:'<rect x="3" y="3" width="18" height="18" rx="3"/><path d="M7 16v-4m5 4V7m5 9v-6"/>',customers:'<circle cx="9" cy="8" r="3"/><path d="M3 21v-2a6 6 0 0 1 12 0v2m2-15a3 3 0 0 1 0 6m1 3a5 5 0 0 1 3 4v2"/>',products:'<path d="M4 7h16l1 14H3Z"/><path d="M8 8V6a4 4 0 0 1 8 0v2"/>',inventory:'<path d="m3 7 9-4 9 4v10l-9 4-9-4Z"/><path d="m3 7 9 4 9-4M12 11v10M7 5l10 4"/>',staff:'<rect x="3" y="5" width="18" height="15" rx="2"/><circle cx="9" cy="11" r="2"/><path d="M6 17a3 3 0 0 1 6 0m3-7h3m-3 4h3M9 3v4m6-4v4"/>',promotions:'<path d="M3 8V4h8l10 10-7 7L3 10Z"/><circle cx="7.5" cy="7.5" r=".5"/><path d="m11 15 5-5"/>',settings:'<path d="m10 3-1 3-3 1-3 3 2 2-1 4 4 1 2 4h4l1-4 4-1 2-4-3-2-1-4-4-1Z"/><circle cx="12" cy="12" r="3"/>',logout:'<path d="M9 4H4v16h5m6-12 4 4-4 4M8 12h11"/>',restock:'<path d="m3 7 9-4 9 4v10l-9 4-9-4Z"/><path d="m3 7 9 4 9-4m-5 6-4 4-2-2"/>'};
+  paths.calendar='<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M7 3v4m10-4v4M7 14h2m3 0h2m3 0h1M7 17h2m3 0h2"/>';
   return `<svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths[name]||paths.inventory}</svg>`;
 }
 let stockNotifications=[],catalogNotifications=[],localRestocks=[],notificationUnavailable=false;
@@ -1234,7 +1357,7 @@ function closeNotifications(){ $('#notificationPanel').inert=true;$('#notificati
 document.addEventListener('click',e=>{if(!e.target.closest('.notification-wrap'))closeNotifications();});
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('#notificationPanel').inert){closeNotifications();$('#notificationBell').focus();}});
 const NAV=[
-  {id:'overview',label:'ภาพรวมธุรกิจ',icon:'🏠',perm:'dashboard'},
+  {id:'overview',label:'หน้าหลัก',icon:'🏠',perm:'dashboard'},
   {id:'orders',label:'รายการทั้งหมด',icon:'🧾',perm:'dashboard'},
   {id:'reports',label:'รายงาน',icon:'📊',perm:'dashboard'},
   {id:'relationships',label:'บริหารความสัมพันธ์',children:[
@@ -1243,44 +1366,64 @@ const NAV=[
   ]},
   {id:'products',label:'สินค้า',icon:'🛍️',perm:'inventory_view'},
   {id:'inventory',label:'การจัดการสต็อก',icon:'📦',perm:'inventory_view'},
+  {id:'scheduling',label:'จัดการตารางงาน',icon:'📅',perm:'settings'},
   {id:'staff',label:'พนักงาน',icon:'👨‍💼',perm:'settings'},
   {id:'settings',label:'ตั้งค่า',icon:'⚙️',perm:'settings'},
 ];
 
-const STAFF_TABS=[['shifts','Shift Maker'],['leave','Leave & Availability'],['shiftrequests','Shift Requests'],['performance','ผลงานพนักงาน'],['activity','บันทึกกิจกรรม'],['commission','การตั้งค่าคอมมิชชั่น']];
+const STAFF_TABS=[['performance','ผลงานพนักงาน'],['activity','บันทึกกิจกรรม'],['commission','การตั้งค่าคอมมิชชั่น']];
 let STAFF_MENU_OPEN=false;
 let STAFF_SUBTAB_SELECTED=false;
 let SETTINGS_MENU_OPEN=false;
 let RELATIONSHIPS_MENU_OPEN=false;
+let PRODUCTS_MENU_OPEN=false,PRODUCTS_DROPUP_OPEN=false;
+let REPORTS_MENU_OPEN=false,REPORTS_DROPUP_OPEN=false;
 function renderNav(){
   const nav=$('#nav');
-  const bottomTabs=['overview','orders','products','inventory'];
+  const bottomTabs=['overview','orders','reports','inventory','products'];
   $('#mobileBottomNav').innerHTML=bottomTabs.map(id=>NAV.find(item=>item.id===id))
     .filter(item=>can(item.perm))
-    .map(item=>`<button type="button" data-act="tab" data-tab="${item.id}" ${TAB===item.id?'aria-current="page"':''}>${iconSVG(item.id==='overview'?'home':item.id)}<span>${esc(item.label)}</span></button>`).join('');
+    .map(item=>`<button type="button" data-act="${item.id==='products'?'products-menu':'tab'}" data-tab="${item.id}" ${item.id==='products'?`aria-expanded="${PRODUCTS_DROPUP_OPEN}" aria-controls="productsDropup"`:''} ${(TAB===item.id&&item.id!=='reports')||(item.id==='products'&&TAB==='product-categories')?'aria-current="page"':''}>${iconSVG(item.id==='overview'?'home':item.id)}<span>${esc(item.label)}</span></button>`).join('')+`<div id="productsDropup" class="products-dropup" ${PRODUCTS_DROPUP_OPEN?'':'hidden'}><button data-act="tab" data-tab="products">สินค้า</button><button data-act="tab" data-tab="product-categories">ประเภทสินค้า</button></div><div id="reportsDropup" class="products-dropup" style="max-height:60vh;overflow-y:auto" ${REPORTS_DROPUP_OPEN?'':'hidden'}>${REPORT_PAGES.map(([id,label])=>`<button data-act="report-page" data-page="${id}" ${TAB==='reports'&&REPORT_PAGE===id?'aria-current="page"':''}>${esc(label)}</button>`).join('')}</div>`;
   const items=NAV.filter(n=>n.children?n.children.some(child=>can(child.perm)):can(n.perm));
   const relationshipTabs=NAV.find(n=>n.id==='relationships').children.filter(child=>can(child.perm));
   const signature=[...items,...relationshipTabs].map(n=>n.id).join(',');
   if(nav.dataset.items!==signature){
     nav.innerHTML=items.map(n=>{
+      if(n.id==='products')return `<button data-act="products-menu" aria-controls="productsSubnav" data-tab="products"><span class="nav-icon">${iconSVG('products')}</span><span class="nav-label">สินค้า</span></button><div id="productsSubnav" class="staff-subnav" role="group" aria-label="สินค้า"><button data-act="tab" data-tab="products"><span class="nav-label">สินค้า</span></button><button data-act="tab" data-tab="product-categories"><span class="nav-label">ประเภทสินค้า</span></button></div>`;
+      if(n.id==='reports')return `<button data-act="tab" data-tab="reports" aria-controls="reportsSubnav"><span class="nav-icon">${iconSVG('reports')}</span><span class="nav-label">รายงาน</span></button><div id="reportsSubnav" class="staff-subnav" role="group" aria-label="รายงาน">${REPORT_PAGES.map(([id,label])=>`<button type="button" data-act="report-page" data-page="${id}"><span class="nav-label">${esc(label)}</span></button>`).join('')}</div>`;
+      if(n.id==='scheduling')return `<button data-act="tab" data-tab="scheduling" aria-label="จัดการตารางงาน"><span class="nav-icon">${iconSVG('calendar')}</span><span class="nav-label">จัดการตารางงาน</span></button>`;
       if(n.id==='relationships'){
         return `<button data-act="tab" data-tab="relationships" aria-controls="relationshipsSubnav" aria-label="${n.label}" title="${n.label}"><span class="nav-icon">${iconSVG('customers')}</span><span class="nav-label">${n.label}</span></button>
           <div id="relationshipsSubnav" class="staff-subnav t-acc t-acc-panel" role="group" aria-label="${n.label}" inert><div class="staff-subnav-inner t-acc-panel-inner">
             ${relationshipTabs.map(tab=>`<button data-act="tab" data-tab="${tab.id}"><span class="nav-label">${tab.label}</span></button>`).join('')}
           </div></div>`;
       }
-      return `<button data-act="tab" data-tab="${n.id}" aria-label="${esc(n.label)}" title="${esc(n.label)}" ${n.id==='staff'?'aria-controls="staffSubnav"':''} ${n.id==='settings'?'aria-controls="settingsSubnav"':''}><span class="nav-icon">${iconSVG(n.id==='overview'?'home':n.id)}</span><span class="nav-label">${esc(n.label)}</span></button>${n.id==='staff'?`<div id="staffSubnav" class="staff-subnav t-acc t-acc-panel" role="group" aria-label="เมนูพนักงาน" inert><div class="staff-subnav-inner t-acc-panel-inner">${STAFF_TABS.map(([id,label])=>`<button data-act="staff-tab" data-tab="${id}" aria-label="${label}" title="${label}"><span class="nav-label">${label}</span></button>`).join('')}</div></div>`:''}${n.id==='settings'?'<div id="settingsSubnav" class="staff-subnav t-acc t-acc-panel" role="group" aria-label="เมนูตั้งค่า" inert><div class="staff-subnav-inner t-acc-panel-inner"><button data-act="tab" data-tab="stores" aria-label="สาขา" title="สาขา"><span class="nav-label">สาขา</span></button><button type="button" data-act="tab" data-tab="language"><span class="nav-label">ภาษา</span></button></div></div>':''}`;
+      return `<button data-act="tab" data-tab="${n.id}" aria-label="${esc(n.label)}" title="${esc(n.label)}" ${n.id==='staff'?'aria-controls="staffSubnav"':''} ${n.id==='settings'?'aria-controls="settingsSubnav"':''}><span class="nav-icon">${iconSVG(n.id==='overview'?'home':n.id)}</span><span class="nav-label">${esc(n.label)}</span></button>${n.id==='staff'?`<div id="staffSubnav" class="staff-subnav t-acc t-acc-panel" role="group" aria-label="เมนูพนักงาน" inert><div class="staff-subnav-inner t-acc-panel-inner">${STAFF_TABS.filter(([id])=>!['shifts','leave'].includes(id)).map(([id,label])=>`<button data-act="staff-tab" data-tab="${id}" aria-label="${label}" title="${label}"><span class="nav-label">${label}</span></button>`).join('')}</div></div>`:''}${n.id==='settings'?'<div id="settingsSubnav" class="staff-subnav t-acc t-acc-panel" role="group" aria-label="เมนูตั้งค่า" inert><div class="staff-subnav-inner t-acc-panel-inner"><button data-act="tab" data-tab="stores" aria-label="สาขา" title="สาขา"><span class="nav-label">สาขา</span></button><button type="button" data-act="tab" data-tab="language"><span class="nav-label">ภาษา</span></button></div></div>':''}`;
     }).join('')+`<div class="side-footer"><button data-act="logout" aria-label="ออกจากระบบ" title="ออกจากระบบ"><span class="nav-icon">${iconSVG('logout')}</span><span class="nav-label">ออกจากระบบ</span></button></div>`;
     nav.dataset.items=signature;
   }
   nav.querySelectorAll('[data-act="tab"],[data-act="staff-tab"]').forEach(button=>{
     const active=button.dataset.act==='staff-tab'
-      ?TAB==='staff'&&STAFF_SUBTAB_SELECTED&&button.dataset.tab===STAFF_TAB
-      :TAB===button.dataset.tab&&!(TAB==='staff'&&STAFF_SUBTAB_SELECTED);
+      ?((TAB==='staff'&&STAFF_SUBTAB_SELECTED)||(TAB==='scheduling'))&&button.dataset.tab===STAFF_TAB
+      :TAB===button.dataset.tab&&button.dataset.tab!=='reports'&&!(TAB==='staff'&&STAFF_SUBTAB_SELECTED);
     button.classList.toggle('on',active);
     if(active)button.setAttribute('aria-current','page');else button.removeAttribute('aria-current');
   });
   const relationshipMenu=$('#relationshipsSubnav');
+  const productsMenu=$('#productsSubnav');
+  if(productsMenu){productsMenu.classList.toggle('open',PRODUCTS_MENU_OPEN);productsMenu.inert=!PRODUCTS_MENU_OPEN;nav.querySelector('[data-act="products-menu"]').setAttribute('aria-expanded',String(PRODUCTS_MENU_OPEN));}
+  const reportsMenu=$('#reportsSubnav');
+  if(reportsMenu){
+    reportsMenu.classList.toggle('open',REPORTS_MENU_OPEN);reportsMenu.inert=!REPORTS_MENU_OPEN;
+    nav.querySelector('[data-tab="reports"]').setAttribute('aria-expanded',String(REPORTS_MENU_OPEN));
+    reportsMenu.querySelectorAll('button').forEach(button=>{
+      const active=TAB==='reports'&&button.dataset.page===REPORT_PAGE;
+      button.classList.toggle('on',active);
+      if(active)button.setAttribute('aria-current','page');else button.removeAttribute('aria-current');
+    });
+  }
+  const schedulingMenu=$('#schedulingSubnav');
+  if(schedulingMenu){schedulingMenu.classList.toggle('open',TAB==='scheduling');schedulingMenu.inert=TAB!=='scheduling';}
   if(relationshipMenu){
     relationshipMenu.classList.toggle('open',RELATIONSHIPS_MENU_OPEN);
     relationshipMenu.inert=!RELATIONSHIPS_MENU_OPEN;
@@ -1326,8 +1469,8 @@ function currentDemoSalesData(){
 let OV_RANGE='today';
 let OV_DEMO=true;
 async function viewOverview(){
-  $('#main').innerHTML=`<div class="workspace-heading">
-    <div><h2>ภาพรวมธุรกิจ</h2><p class="muted">ติดตามยอดขายและความเคลื่อนไหวของร้านคุณ</p></div>
+  $('#main').innerHTML=`<div class="workspace-heading overview-heading">
+    <div><h2>หน้าหลัก</h2><p class="muted">ติดตามยอดขายและความเคลื่อนไหวของร้านคุณ</p></div>
     <div class="dashboard-period-controls"><div class="dashboard-actions">
       <label class="dashboard-preview"><input type="checkbox" data-act="ov-demo" ${OV_DEMO?'checked':''}>ข้อมูลตัวอย่าง</label>
       <div class="period-switch">${OV_RANGES.map(range=>`<button class="btn ${range.id===OV_RANGE?'':'ghost'}" data-act="ov-range" data-range="${range.id}">${range.label}</button>`).join('')}</div>
@@ -1341,8 +1484,8 @@ function overviewMockOrders(total,now,range=OV_RANGE){
   const weights=[2400,1850,3200,950,2600,1750,4250,1950,2800,3400,1650,2150];
   const names=['MAC1','Blue Dream','Gelato','OG Kush','Wedding Cake','Gorilla Glue','Pineapple Express','Sour Diesel','White Widow','Runtz'];
   const customers=['คุณอาร์ม','คุณเมย์','คุณต้น','คุณแพรว','คุณเจมส์','คุณแนน','คุณบี','คุณกอล์ฟ','คุณฟ้า','คุณมิน','คุณโจ','คุณพลอย'];
-  const branches=['DANK Pattanakarn (Main)','DANK Sathorn','DANK Petchaboon','DANK Hotel Phuket'];
-  const branchNames=branches.map(name=>typeof STORE_DIRECTORY!=='undefined'?STORE_DIRECTORY.find(store=>store.originalName===name)?.name||name:name);
+  const branchNames=STORE_DIRECTORY.filter(store=>!store.deletedAt).map(store=>store.name);
+  if(!branchNames.length)return [];
   const employees=['คุณต้น','คุณเมย์','คุณอาร์ม'];
   const orderTypes=['หน้าร้าน','เดลิเวอรี่'];
   const start=new Date(now);
@@ -1614,7 +1757,7 @@ function renderDashboard(data, failed = false) {
     ? stockRows.map(row => `<tr><td>${esc(row.name || row.product_name || row.product_key)}</td><td>${esc(row.balance)} ${esc(row.unit||'')}</td></tr>`).join('')
     : `<tr><td colspan="2" class="empty-table">${stockAvailable ? 'ไม่มีสินค้าสต็อกต่ำ' : 'ยังไม่สามารถโหลดข้อมูลสต็อกได้'}</td></tr>`;
   const productTable = products.length
-    ? products.map(row => `<tr><td><button class="product-order-link" data-act="best-selling-orders" data-product="${esc(row.name)}" aria-label="ดูรายการขาย ${esc(row.name)}">${esc(row.name)}</button></td><td>${Number(row.gramsSold).toLocaleString('en-US', {maximumFractionDigits: 2})}</td></tr>`).join('')
+    ? products.slice(0,10).map((row,index) => `<tr><td><span class="best-selling-rank">${index+1})</span><button class="product-order-link" data-act="best-selling-orders" data-product="${esc(row.name)}" aria-label="ดูรายการขาย ${esc(row.name)}">${esc(row.name)}</button></td><td>${Number(row.gramsSold).toLocaleString('en-US', {maximumFractionDigits: 2})}</td></tr>`).join('')
     : '<tr><td colspan="2" class="empty-table">ยังไม่มีข้อมูลยอดขายเป็นกรัม</td></tr>';
   const currentTrend=data.trend?.current||data.trend?.today;
   const previousTrend=data.trend?.previous||data.trend?.yesterday;
@@ -1647,7 +1790,31 @@ function renderDashboard(data, failed = false) {
         <button class="best-selling-all" data-act="orders-all">ดูรายการทั้งหมด →</button>
       </section>
     </div>
+    ${storeSalesChart(data,available)}
     ${!available || !stockAvailable ? '<div class="data-notice">ข้อมูลบางส่วนยังไม่พร้อมใช้งาน</div>' : ''}`;
+}
+
+function storeSalesChart(data,available){
+  let rows=data.storeSales?.rows;
+  if(Array.isArray(data.mockOrders)){
+    const totals=new Map();
+    for(const order of data.mockOrders){
+      if(order.cancelledAt||order.status==='cancelled')continue;
+      const name=order.branch||'ไม่ระบุร้านค้า';
+      const cents=Math.round(Number(order.total||0)*100)*(order.kind==='return'?-1:1);
+      totals.set(name,(totals.get(name)||0)+cents);
+    }
+    rows=[...totals].map(([name,cents])=>({name,total:cents/100}));
+  }
+  rows=(rows||[]).slice().sort((a,b)=>b.total-a.total);
+  const maximum=Math.max(2500,Math.ceil(Math.max(0,...rows.map(row=>Math.abs(row.total)))/2500)*2500);
+  const chart=rows.map(row=>{
+    const store=typeof STORE_DIRECTORY!=='undefined'?STORE_DIRECTORY.find(store=>store.id===row.storeId):null;
+    const name=row.name||store?.name||row.storeId||'ไม่ระบุร้านค้า';
+    return `<div class="store-sales-row"><span class="store-sales-name">${esc(name)}</span><div class="store-sales-track" style="background-size:${2500/maximum*400}% 100%"><div class="store-sales-bar" style="width:${Math.abs(row.total)/maximum*100}%"><span class="store-sales-value">${Number(row.total).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}</span></div></div></div>`;
+  }).join('');
+  const axis=rows.length?`<div class="store-sales-row"><div class="store-sales-axis">${Array.from({length:maximum/2500+1},(_,index)=>`<span>${(index*2500).toLocaleString('en-US')}</span>`).join('')}</div></div>`:'';
+  return `<section class="card store-sales-chart" aria-label="ยอดขายต่อร้านค้า"><h3>ยอดขายต่อร้านค้า <span class="chart-currency">(บาท)</span></h3>${available?(chart+axis||'<p class="muted">ไม่มีรายการขายในช่วงเวลานี้</p>'):'<p class="muted">ยังไม่สามารถโหลดข้อมูลยอดขายได้</p>'}<p class="store-sales-note">ยอดขายสุทธิหลังหักรายการคืน · ไม่รวมรายการยกเลิก · ตามช่วงเวลาที่เลือก</p></section>`;
 }
 
 async function loadOverview(){
@@ -1789,6 +1956,19 @@ function readCatalogImport(data,products){
   return imported;
 }
 
+async function viewProductCategories(){
+  const main=$('#main');
+  main.innerHTML=`${workspaceBreadcrumb('ประเภทสินค้า',[['products','สินค้า']])}<div class="workspace-heading"><h2>ประเภทสินค้า</h2></div><div id="productCategories" class="card"><p class="muted">กำลังโหลด…</p></div>`;
+  const products=await loadCatalogProducts();
+  if(TAB!=='product-categories')return;
+  const groups=new Map();
+  for(const product of products){
+    const name=product.category||'ไม่มีประเภทสินค้า';
+    if(!groups.has(name))groups.set(name,[]);
+    groups.get(name).push(product);
+  }
+  $('#productCategories').innerHTML=[...groups].sort(([a],[b])=>a.localeCompare(b)).map(([name,rows])=>`<details style="padding:12px 0;border-bottom:1px solid var(--line)"><summary style="cursor:pointer">${esc(name)} <span class="muted">(${rows.length} สินค้า)</span></summary><table><thead><tr><th>สินค้า</th><th>SKU</th></tr></thead><tbody>${rows.map(product=>`<tr><td>${esc(product.name)}</td><td>${esc(product.sku||'—')}</td></tr>`).join('')}</tbody></table></details>`).join('')||'<p class="muted">ยังไม่มีสินค้า เพิ่มหรือนำเข้าสินค้าเพื่อแสดงประเภทสินค้า</p>';
+}
 async function viewProducts(){
   const target=catalogNotificationTarget;
   catalogNotificationTarget=null;
@@ -2943,11 +3123,7 @@ function viewSettings(){
 function renderStoreDirectory(){
   const search=STORE_SEARCH.trim().toLowerCase();
   const rows=STORE_DIRECTORY.filter(store=>!store.deletedAt&&[store.name,store.city,store.postalCode].some(value=>String(value||'').toLowerCase().includes(search)));
-  const pages=Math.max(1,Math.ceil(rows.length/STORE_PAGE_SIZE));
-  STORE_PAGE=Math.min(STORE_PAGE,pages);
-  const offset=(STORE_PAGE-1)*STORE_PAGE_SIZE;
-  $('#storeDirectoryResults').innerHTML=`<div class="orders-table-scroll"><table class="stores-table"><thead><tr><th>ชื่อร้านค้า</th><th>เมือง</th><th>รหัสไปรษณีย์</th></tr></thead><tbody>${rows.slice(offset,offset+STORE_PAGE_SIZE).map(store=>`<tr><td><button class="store-name-button" data-act="store-directory-edit" data-id="${esc(store.id)}">${esc(store.name)}</button></td><td>${esc(store.city||'—')}</td><td>${esc(store.postalCode||'—')}</td></tr>`).join('')||'<tr><td colspan="3" class="empty-table">ไม่พบร้านค้า</td></tr>'}</tbody></table></div>
-    <div class="store-pagination"><span role="status">แสดง ${rows.length?offset+1:0}-${Math.min(offset+STORE_PAGE_SIZE,rows.length)} จาก ${rows.length.toLocaleString('en-US')} แถว</span><div class="store-pagination-controls"><button class="store-page-button" data-act="store-directory-page" data-page="${STORE_PAGE-1}" aria-label="หน้าก่อนหน้า" ${STORE_PAGE===1?'disabled':''}>‹</button><span class="store-page-number">${STORE_PAGE}</span><button class="store-page-button" data-act="store-directory-page" data-page="${STORE_PAGE+1}" aria-label="หน้าถัดไป" ${STORE_PAGE===pages?'disabled':''}>›</button><select id="storePageSize" aria-label="จำนวนร้านค้าต่อหน้า">${[20,50,100].map(size=>`<option value="${size}" ${STORE_PAGE_SIZE===size?'selected':''}>${size} / หน้า</option>`).join('')}</select></div></div>`;
+  $('#storeDirectoryResults').innerHTML=`<div class="orders-table-scroll"><table class="stores-table"><thead><tr><th>ชื่อร้านค้า</th><th>เมือง</th><th>รหัสไปรษณีย์</th></tr></thead><tbody>${rows.map(store=>`<tr><td><button class="store-name-button" data-act="store-directory-edit" data-id="${esc(store.id)}">${esc(store.name)}</button></td><td>${esc(store.city||'—')}</td><td>${esc(store.postalCode||'—')}</td></tr>`).join('')||'<tr><td colspan="3" class="empty-table">ไม่พบร้านค้า</td></tr>'}</tbody></table></div>`;
 }
 function openStoreEditor(id){
   const store=STORE_DIRECTORY.find(row=>row.id===id&&!row.deletedAt);
@@ -2980,6 +3156,8 @@ function saveStoreDirectory(form){
     if(ORDERS_SOURCE_DATA)ORDERS_SOURCE_DATA.mockOrders.forEach(order=>{if(order.branch===previous.name)order.branch=name;});
     if(ORDERS_BRANCHES?.delete(previous.name))ORDERS_BRANCHES.add(name);
   }
+  OV_LAST_DATA=null;
+  ORDERS_SOURCE_DATA=null;
   viewSettings();
   toast('บันทึกร้านค้าแล้ว');
 }
@@ -3019,6 +3197,9 @@ async function deleteStoreDirectory(id){
     const store=rows.find(row=>row.id===id);
     if(store)ORDERS_BRANCHES.delete(store.name);
   }
+  OV_LAST_DATA=null;
+  ORDERS_SOURCE_DATA=null;
+  ORDERS_SELECTED.clear();
   viewSettings();toast('ลบร้านค้าแล้ว');
 }
 async function viewSettingsLegacy(){
@@ -3135,12 +3316,13 @@ async function viewPromotions(){
   }catch(e){ redemptionLoad.reveal(()=>{ redemptions.innerHTML=`<p class="muted">${esc(e.message)}</p>`; }); }
 }
 
-const VIEWS={overview:viewOverview,products:viewProducts,inventory:viewInventory,food:viewFood,kitchen:viewKitchen,
+const VIEWS={overview:viewOverview,products:viewProducts,'product-categories':viewProductCategories,inventory:viewInventory,food:viewFood,kitchen:viewKitchen,
   reports:viewReports,suppliers:viewSuppliers,purchasing:viewPurchasing,expenses:viewExpenses,settings:viewSettings,stores:viewSettings,'settings-legacy':viewSettingsLegacy,promotions:viewPromotions,
-  orders:viewOrders,customers:viewDirectory,staff:viewStaff};
+  orders:viewOrders,customers:viewDirectory,staff:viewStaff,scheduling:viewShiftMaker};
 
 const ORDERS_PAGE_SIZE=20;
 let ORDERS_PAGE=1;
+const ORDERS_SELECTED=new Set();
 let ORDERS_PRODUCT_FILTER='';
 let ORDERS_SEARCH='';
 let ORDERS_SOURCE_PERIOD='';
@@ -3158,7 +3340,7 @@ let STAFF_TAB='directory';
 let STAFF_SEARCH='';
 
 function ordersBranches(){
-  if(onSalesReport())return SALES_REPORT_OPTIONS.branch||[];
+  if(onSalesReport())return SALES_REPORT_OPTIONS.category||[];
   if(!OV_DEMO)return [...new Set((ORDERS_SOURCE_DATA?.mockOrders||[]).map(order=>order.branch).filter(Boolean))];
   if(typeof STORE_DIRECTORY!=='undefined'&&STORE_DIRECTORY.length)return STORE_DIRECTORY.filter(store=>!store.deletedAt).map(store=>store.name);
   return [...new Set(ORDERS_SOURCE_DATA.mockOrders.map(order=>order.branch).filter(Boolean))];
@@ -3178,9 +3360,10 @@ function openOrdersBranches(){
   closeOrdersDatePicker();
   ORDERS_BRANCH_DRAFT=new Set(ORDERS_BRANCHES===null?ordersBranches():ORDERS_BRANCHES);
   $('#ordersBranchPanel').innerHTML=`
-    <strong>สาขา</strong>
-    <label class="orders-branch-search"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><circle cx="10" cy="10" r="6"/><path d="m15 15 5 5"/></svg><input type="search" id="ordersBranchSearch" placeholder="ค้นหาสาขา" aria-label="ค้นหาสาขา"></label>
-    <label class="orders-branch-option orders-branch-all"><input type="checkbox" id="ordersBranchAll">สาขาทั้งหมด</label>
+    <strong>${onSalesReport()?'ประเภทสินค้า':'สาขา'}</strong>
+    <label class="orders-branch-search"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><circle cx="10" cy="10" r="6"/><path d="m15 15 5 5"/></svg><input type="search" id="ordersBranchSearch" placeholder="${onSalesReport()?'ค้นหาประเภทสินค้า':'ค้นหาสาขา'}" aria-label="${onSalesReport()?'ค้นหาประเภทสินค้า':'ค้นหาสาขา'}"></label>
+    <label class="orders-branch-option orders-branch-all"><input type="checkbox" id="ordersBranchAll">${onSalesReport()?'ประเภทสินค้าทั้งหมด':'สาขาทั้งหมด'}</label>
+    ${onSalesReport()?'<p class="muted" style="font-size:11px">เลือกใบเสร็จที่มีประเภทสินค้าที่เลือก ยอดรายงานเป็นยอดเต็มใบเสร็จ</p>':''}
     <div id="ordersBranchList" class="orders-branch-list"></div>
     <label class="orders-type-filter">ประเภทคำสั่งซื้อ<select id="ordersTypeFilter"><option value="">ทุกประเภท</option>${(onSalesReport()?(SALES_REPORT_OPTIONS.orderType||[]):OV_DEMO?ORDER_TYPES:[...new Set(ORDERS_SOURCE_DATA.mockOrders.map(order=>order.orderType))]).map(type=>`<option value="${esc(type)}" ${type===ORDERS_TYPE_FILTER?'selected':''}>${esc(type)}</option>`).join('')}</select></label>
     <div class="orders-date-actions"><button data-act="orders-branch-cancel">ยกเลิก</button><button class="apply" data-act="orders-branch-apply">ใช้</button></div>`;
@@ -3348,11 +3531,16 @@ function buildCSV(headings,rows){
   };
   return '\uFEFF'+[headings.map(label=>BOI18n.t(label)),...rows].map(row=>row.map(cell).join(',')).join('\r\n');
 }
+function orderWithCalculatedProfit(order){
+  const cost=order.cost??null;
+  const net=order.net??(order.tax==null?null:Math.round((order.total-order.tax-(order.charges||0))*100)/100);
+  return {...order,cost,profit:cost===null||net===null?null:Math.round((net-cost)*100)/100};
+}
 function buildOrdersCSV(orders){
-  const headings=['เลขที่รายการ','วันที่ / เวลา','สาขา','พนักงาน','ประเภทคำสั่งซื้อ','ราคาก่อนส่วนลด','ส่วนลด','ภาษี','กำไร','ยอดรวม'];
-  const rows=orders.map(order=>[
+  const headings=['เลขที่รายการ','วันที่ / เวลา','สาขา','พนักงาน','ประเภทคำสั่งซื้อ','ราคาก่อนส่วนลด','ส่วนลด','ภาษี','ยอดรวม','ต้นทุน','กำไร'];
+  const rows=orders.map(orderWithCalculatedProfit).map(order=>[
     order.id,BOI18n.formatDate(order.at,'toLocaleString',{year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false}),
-    order.branch,order.employee,order.orderType,order.subtotal,order.discount,order.tax,order.profit,order.total
+    order.branch,order.employee,order.orderType,order.subtotal,order.discount,order.tax,order.total,order.cost,order.profit
   ]);
   return buildCSV(headings,rows);
 }
@@ -3364,7 +3552,7 @@ function downloadCSV(csv,filename){
   setTimeout(()=>URL.revokeObjectURL(url),1000);
 }
 function exportOrdersCSV(){
-  const csv=buildOrdersCSV(filteredOrders().filter(order=>!order.cancelledAt));
+  const csv=buildOrdersCSV(filteredOrders().filter(order=>ORDERS_SELECTED.size?ORDERS_SELECTED.has(order.id):!order.cancelledAt));
   downloadCSV(csv,`dank-orders-${orderDateKey(ORDERS_DATE_RANGE.start)}-${orderDateKey(ORDERS_DATE_RANGE.end)}.csv`);
 }
 
@@ -3377,7 +3565,7 @@ function workspaceBreadcrumb(current,parents=[]){
 }
 
 function ordersToolbarMarkup(search,range,report=false){
-  const markup=`<div class="orders-toolbar">
+  const markup=`<div class="orders-toolbar${report?'':' orders-list-toolbar'}">
       <div class="orders-filter-search"><div class="orders-branch-wrap t-acc t-acc-overlay">
       <button id="ordersBranchButton" class="orders-tool-button" data-act="orders-branch-toggle" aria-expanded="false" aria-controls="ordersBranchPanel"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M3 9h18l-2-6H5Z"/><path d="M4 9v12h16V9M8 21v-7h8v7M3 9v3h18V9"/></svg><span>ตัวกรอง</span>${accordionChevron}</button>
       <div class="t-acc-panel"><div class="t-acc-panel-inner"><div id="ordersBranchPanel" class="orders-branch-popover" role="dialog" aria-label="ตัวกรอง" inert></div></div></div>
@@ -3413,9 +3601,10 @@ async function viewOrders(){
   ORDERS_BRANCH_DRAFT=null;
   $('#main').innerHTML=`
     ${workspaceBreadcrumb('รายการทั้งหมด')}
-    <div class="workspace-heading"><div><h2>รายการทั้งหมด</h2><p id="ordersCount" class="muted"></p></div>${SALES_RETURN_TO_REPORT?'<button class="btn ghost" data-act="sales-report-return">← กลับรายงาน</button>':''}</div>
+    <div class="workspace-heading orders-heading"><div><h2>รายการทั้งหมด</h2><p id="ordersCount" class="muted"></p></div><div class="orders-heading-actions">${SALES_RETURN_TO_REPORT?'<button class="btn ghost" data-act="sales-report-return">← กลับรายงาน</button>':''}</div></div>
     ${ORDERS_EXACT_SCOPE?.itemGroup?'<p class="data-notice">รายการที่มีสินค้าในกลุ่มที่เลือก ยอดในหน้านี้เป็นยอดเต็มใบเสร็จ</p>':''}
     ${ordersToolbarMarkup(ORDERS_SEARCH,ORDERS_DATE_RANGE)}<div id="ordersResults"></div>`;
+  $('.orders-heading-actions').append($('#main [data-act="orders-csv"]'));
   renderOrdersResults();
 }
 
@@ -3501,9 +3690,9 @@ async function returnToOrders(receiptId){
 }
 
 function renderOrdersResults(){
-  const orders=filteredOrders();
+  const orders=filteredOrders().map(orderWithCalculatedProfit);
   const activeOrders=orders.filter(order=>!order.cancelledAt);
-  const totals={subtotal:0,discount:0,tax:0,profit:0,total:0};
+  const totals={subtotal:0,discount:0,tax:0,total:0,cost:0,profit:0};
   for(const order of activeOrders){
     const sign=order.kind==='return'?-1:1;
     for(const key of Object.keys(totals))totals[key]=totals[key]===null||order[key]===null?null:totals[key]+sign*Math.round(order[key]*100);
@@ -3519,15 +3708,15 @@ function renderOrdersResults(){
     ${ORDERS_PRODUCT_FILTER?`<div class="order-product-filter"><span>สินค้า ${esc(ORDERS_PRODUCT_FILTER)}</span><button class="product-order-link" data-act="orders-all">แสดงทั้งหมด ×</button></div>`:''}
     <div class="card">
       <div class="orders-table-scroll">
-      <table class="mock-orders"><thead><tr><th>เลขที่รายการ</th><th>วันที่ / เวลา</th><th>สาขา</th><th>พนักงาน</th><th>ประเภทคำสั่งซื้อ</th><th>ราคาก่อนส่วนลด</th><th>ส่วนลด</th><th>ภาษี</th><th>กำไร</th><th>ยอดรวม</th></tr></thead>
+      <table class="mock-orders"><thead><tr><th><details class="orders-selection-menu"><summary aria-label="เลือกชุดรายการ">Select ▾</summary><div><button type="button" data-act="orders-select-page">All orders(this page)</button><button type="button" data-act="orders-select-all">All orders(every page)</button><button type="button" data-act="orders-select-clear">ล้างการเลือก</button></div></details> เลขที่รายการ</th><th>วันที่ / เวลา</th><th>สาขา</th><th>พนักงาน</th><th>ประเภทคำสั่งซื้อ</th><th>ราคาก่อนส่วนลด</th><th>ส่วนลด</th><th>ภาษี</th><th>ยอดรวม</th><th>ต้นทุน</th><th>กำไร</th></tr></thead>
         <tbody>${pageOrders.map(order=>`<tr>
-          <td><button type="button" class="order-receipt-link" data-act="order-detail" data-id="${esc(order.id)}">${esc(order.id)}</button>${order.cancelledAt?' <span class="order-cancelled">ยกเลิกแล้ว</span>':''}</td>
+          <td><input type="checkbox" data-act="orders-select" data-id="${esc(order.id)}" aria-label="เลือกรายการ ${esc(order.id)}" ${ORDERS_SELECTED.has(order.id)?'checked':''}> <button type="button" class="order-receipt-link" data-act="order-detail" data-id="${esc(order.id)}">${esc(order.id)}</button>${order.cancelledAt?' <span class="order-cancelled">ยกเลิกแล้ว</span>':''}</td>
           <td>${BOI18n.formatDate(order.at,'toLocaleString',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'})}</td>
           <td>${esc(order.branch)}</td><td>${esc(order.employee)}</td><td><span class="order-type-pill ${order.orderType==='หน้าร้าน'?'in-store':'delivery'}">${esc(order.orderType)}</span></td>
           <td>${order.subtotal===null?'—':dashboardMoney(order.subtotal)}</td><td>${dashboardMoney(order.discount)}</td>
-          <td>${order.tax===null?'—':dashboardMoney(order.tax)}</td><td>${order.profit===null?'—':dashboardMoney(order.profit)}</td><td>${dashboardMoney(order.total*(order.kind==='return'?-1:1))}</td>
-        </tr>`).join('')||'<tr><td colspan="10" class="empty-table">ไม่พบรายการที่ตรงกับการค้นหา</td></tr>'}</tbody>
-        <tfoot><tr><td colspan="5">รวมทั้งหมด ${activeOrders.filter(o=>o.kind!=='return').length.toLocaleString('en-US')} รายการ</td>${['subtotal','discount','tax','profit','total'].map(key=>`<td>${totals[key]===null?'—':dashboardMoney(totals[key]/100)}</td>`).join('')}</tr></tfoot>
+          <td>${order.tax===null?'—':dashboardMoney(order.tax)}</td><td>${dashboardMoney(order.total*(order.kind==='return'?-1:1))}</td><td>${order.cost===null?'—':dashboardMoney(order.cost)}</td><td>${order.profit===null?'—':dashboardMoney(order.profit)}</td>
+        </tr>`).join('')||'<tr><td colspan="11" class="empty-table">ไม่พบรายการที่ตรงกับการค้นหา</td></tr>'}</tbody>
+        <tfoot><tr><td colspan="5">รวมทั้งหมด ${activeOrders.filter(o=>o.kind!=='return').length.toLocaleString('en-US')} รายการ</td>${['subtotal','discount','tax','total','cost','profit'].map(key=>`<td>${totals[key]===null?'—':dashboardMoney(totals[key]/100)}</td>`).join('')}</tr></tfoot>
       </table>
       </div>
       <div class="orders-pagination">
@@ -3859,19 +4048,20 @@ function viewStaffSales(){
 /* Shift Maker lives in its own module (assets/backoffice-shifts.js) and only
    needs the session token, the toast and the page's breadcrumb from here. */
 function viewShiftMaker(){
-  const titles={shifts:'Shift Maker',leave:'Leave & Availability',shiftrequests:'Shift Requests'};
+  const titles={shifts:'จัดการตารางงาน',leave:'Leave & Availability'};
   const main=$('#main');
   // Cancel any other view's pending data load so it cannot paint over Shift Maker
   // when its fetch finishes late, and drop the skeleton reveal classes it left.
   dataLoads.delete(main);main.classList.remove('t-skel','is-revealed');main.removeAttribute('aria-busy');
-  main.innerHTML='<p class="muted">Loading Shift Maker...</p>';
+  main.innerHTML='<p class="muted">กำลังโหลดตารางงาน…</p>';
   import('./assets/backoffice-shifts.js').then(m=>{
-    if(!['shifts','leave','shiftrequests'].includes(STAFF_TAB))return;
-    m.mount(main,{tab:STAFF_TAB,getToken:()=>KEY,toast,heading:title=>`${workspaceBreadcrumb(titles[STAFF_TAB]||title,[['staff','\u0e1e\u0e19\u0e31\u0e01\u0e07\u0e32\u0e19']])}<div class="workspace-heading"><div><h2>${esc(title)}</h2></div></div>`});
+    if(!['shifts','leave'].includes(STAFF_TAB))return;
+    m.mount(main,{tab:'shifts',getToken:()=>KEY,toast,heading:()=>`${workspaceBreadcrumb('จัดการตารางงาน')}<div class="workspace-heading"><h2>จัดการตารางงาน</h2></div>`});
   }).catch(error=>{main.innerHTML=`<p class="data-notice">${esc(error.message)}</p>`;});
 }
 function viewStaff(){
-  if(['shifts','leave','shiftrequests'].includes(STAFF_TAB)){viewShiftMaker();return;}
+  rememberBackofficePage();
+  if(['shifts','leave'].includes(STAFF_TAB)){viewShiftMaker();return;}
   if(STAFF_TAB==='performance'){viewStaffSales();return;}
   const orders=overviewDemoData().mockOrders;
   let content='';
@@ -3900,11 +4090,11 @@ function customerDate(value){
   });
 }
 
-const MEMBER_TIERS=['Silver','Bronze','Platinum','Diamond'];
+const MEMBER_TIERS=['Silver','Bronze','Gold','Diamond'];
 const MEMBER_UPGRADES={
   Silver:{start:0,target:10000,next:'Bronze'},
-  Bronze:{start:10001,target:30000,next:'Platinum'},
-  Platinum:{start:30001,target:100000,next:'Diamond'}
+  Bronze:{start:10001,target:30000,next:'Gold'},
+  Gold:{start:30001,target:100000,next:'Diamond'}
 };
 
 function memberCompletedSpendCents(history){
@@ -3917,8 +4107,7 @@ function readAddedMembers(){
   const members=JSON.parse(localStorage.getItem(ADDED_MEMBERS_KEY)||'[]');
   if(!Array.isArray(members))throw new Error('Invalid member list');
   return members.map(member=>{
-    if(member.tier==='Gold')return {...member,tier:'Platinum'};
-    if(member.tier==='Platinum'&&!member.tierVersion)return {...member,tier:'Bronze'};
+    if(member.tier==='Platinum')return {...member,tier:'Gold'};
     return member;
   });
 }
@@ -4112,43 +4301,39 @@ function openMemberCard(dialog,member){
 }
 
 function openTierComparison(dialog,currentTier){
+  const outsideFrame=event=>{
+    const rect=dialog.getBoundingClientRect();
+    return event.clientX<rect.left||event.clientX>rect.right||event.clientY<rect.top||event.clientY>rect.bottom;
+  };
+  let startedOutside=false;
+  dialog.onpointerdown=event=>{startedOutside=event.target===dialog&&outsideFrame(event);};
+  dialog.onclick=event=>{
+    if(startedOutside&&event.target===dialog&&outsideFrame(event))dialog.close();
+    startedOutside=false;
+  };
   const titleId=esc(dialog.getAttribute('aria-labelledby'));
   const title=currentTier?'เปรียบเทียบระดับสมาชิก':'เงื่อนไขระดับสมาชิก';
-  const tiers=[['Silver',3],['Bronze',3],['Platinum',5],['Diamond',7]];
-  const groups=[
-    ['Perks',[
-      ['Trip Coins earned','Base rate','+20%','+50%','+100%'],
-      ['Airport lounge visits','—','—','1','2'],
-      ['Complimentary eSIM data','—','—','1 GB / 3 days ×1','3 GB / 5 days ×1'],
-      ['Airport transfer vehicle upgrades','—','—','—','2'],
-      ['Train refund fee waivers','—','—','—','2'],
-      ['Complimentary attraction admission','—','—','—','—']
-    ]],
-    ['Services',[
-      ['Hotel cancellation after a flight change','✓','✓','✓','✓'],
-      ['Dedicated travel support','—','—','—','—']
-    ]],
-    ['Deals',[
-      ['Member hotel rates','✓','✓','✓','✓']
-    ]]
-  ];
+  const tiers=['Silver','Bronze','Gold','Diamond'];
+  const benefits=['ส่วนลด','ของขวัญฟรี','ดีลพิเศษ'];
   dialog.innerHTML=`
     <header><h2 id="${titleId}">${title}</h2><form method="dialog"><button class="btn ghost" autofocus>ปิด</button></form></header>
-    <p class="muted">ตัวอย่างสิทธิประโยชน์ ดัดแปลงจาก <a href="https://www.trip.com/customer/loyalty/" target="_blank" rel="noopener noreferrer">Trip.com</a></p>
     <div class="orders-table-scroll" tabindex="0" role="region" aria-labelledby="${titleId}">
       <table class="tier-comparison">
-        <thead><tr><th scope="col">Benefits</th>${tiers.map(([tier,count])=>`
-          <th scope="col" class="tier-${tier.toLowerCase()}${tier===currentTier?' current-tier':''}"${tier===currentTier?' aria-current="true"':''}>${tier}<small>${count} rewards</small></th>`).join('')}</tr></thead>
-        ${groups.map(([label,rows])=>`<tbody>
-          <tr class="tier-category"><th scope="rowgroup" colspan="5">${label}</th></tr>
-          ${rows.map(([benefit,...values])=>`<tr><th scope="row">${benefit}</th>${values.map(value=>`<td${value==='✓'?' aria-label="Included"':''}>${value}</td>`).join('')}</tr>`).join('')}
-        </tbody>`).join('')}
+        <thead><tr><th scope="col">สิทธิประโยชน์</th>${tiers.map(tier=>`
+          <th scope="col" class="tier-${tier.toLowerCase()}${tier===currentTier?' current-tier':''}"${tier===currentTier?' aria-current="true"':''}>${tier}</th>`).join('')}</tr></thead>
+        <tbody>${benefits.map(benefit=>`<tr><th scope="row">${benefit}</th>${tiers.map(()=>'<td>—</td>').join('')}</tr>`).join('')}</tbody>
       </table>
     </div>`;
   dialog.showModal();
 }
 
-function setTab(id){
+function rememberBackofficePage(){
+  try{sessionStorage.setItem('dankBOPage',JSON.stringify({tab:TAB,staffTab:STAFF_TAB}));}catch(_){}
+}
+function setTab(id,restoredStaffTab=null){
+  REPORTS_MENU_OPEN=id==='reports';REPORTS_DROPUP_OPEN=false;
+  PRODUCTS_DROPUP_OPEN=false;
+  PRODUCTS_MENU_OPEN=['products','product-categories'].includes(id);
   const relationshipTabs=NAV.find(n=>n.id==='relationships').children;
   const relationshipTab=relationshipTabs.find(tab=>tab.id===id);
   if(!id||(relationshipTab&&!can(relationshipTab.perm)))return;
@@ -4160,8 +4345,13 @@ function setTab(id){
   SETTINGS_MENU_OPEN=['settings','stores','settings-legacy'].includes(id);
   RELATIONSHIPS_MENU_OPEN=Boolean(relationshipTab);
   STAFF_SUBTAB_SELECTED=false;
-  if(id==='staff')STAFF_TAB='directory';
+  if(id==='staff'){
+    STAFF_TAB=restoredStaffTab&&STAFF_TABS.some(([key])=>key===restoredStaffTab)?restoredStaffTab:'directory';
+    STAFF_SUBTAB_SELECTED=STAFF_TAB!=='directory';
+  }
+  if(id==='scheduling')STAFF_TAB='shifts';
   TAB=id; renderNav();
+  rememberBackofficePage();
   return (VIEWS[id]||viewOverview)();
   const tools={inventory:[['inventory','ภาพรวมสต็อก'],['suppliers','ผู้จัดจำหน่าย'],['purchasing','ใบสั่งซื้อ']],products:[['products','สินค้าทั้งหมด'],['food','อาหารและเครื่องดื่ม'],['kitchen','รายการครัว']],reports:[['reports','รายงานการขาย'],['expenses','ค่าใช้จ่าย']]};
   const group=tools[id]||Object.values(tools).find(rows=>rows.some(r=>r[0]===id));
@@ -4245,7 +4435,10 @@ document.addEventListener('click',async e=>{
     case 'store-directory-cancel': {viewSettings();return;}
     case 'store-directory-delete': {await deleteStoreDirectory(el.dataset.id);return;}
     case 'store-directory-page': {STORE_PAGE=Math.max(1,Number(el.dataset.page));renderStoreDirectory();return;}
-    case 'staff-tab': {STAFF_TAB=el.dataset.tab;STAFF_SUBTAB_SELECTED=true;renderNav();viewStaff();return;}
+    case 'staff-tab': {
+      if(['shifts','leave'].includes(el.dataset.tab)){setTab('scheduling');return;}
+      STAFF_TAB=el.dataset.tab;STAFF_SUBTAB_SELECTED=true;rememberBackofficePage();renderNav();viewStaff();return;
+    }
     case 'orders-branch-toggle': {if(ORDERS_BRANCH_DRAFT)closeOrdersBranches(true);else openOrdersBranches();return;}
     case 'orders-branch-cancel': {closeOrdersBranches(true);return;}
     case 'orders-branch-apply': {
@@ -4277,7 +4470,19 @@ document.addEventListener('click',async e=>{
       }
       draft.preset='custom';renderOrdersDatePicker();return;
     }
+    case 'report-page': {const mobile=el.closest('#mobileBottomNav');await openReportPage(el.dataset.page);if(mobile)window.scrollTo({top:0,behavior:'instant'});return;}
     case 'orders-csv': {exportOrdersCSV();return;}
+    case 'orders-select': {
+      if(el.checked)ORDERS_SELECTED.add(el.dataset.id);else ORDERS_SELECTED.delete(el.dataset.id);
+      return;
+    }
+    case 'orders-select-page':
+    case 'orders-select-all': {
+      const rows=filteredOrders();
+      const selected=act==='orders-select-page'?rows.slice((ORDERS_PAGE-1)*ORDERS_PAGE_SIZE,ORDERS_PAGE*ORDERS_PAGE_SIZE):rows;
+      selected.forEach(order=>ORDERS_SELECTED.add(order.id));renderOrdersResults();return;
+    }
+    case 'orders-select-clear': {ORDERS_SELECTED.clear();renderOrdersResults();return;}
     case 'order-detail': {openOrderDetail(el.dataset.id);return;}
     case 'order-cancel': {cancelOrder(el.dataset.id);return;}
     case 'order-back': {returnToOrders(el.dataset.id);return;}
@@ -4341,7 +4546,21 @@ document.addEventListener('click',async e=>{
       }
       return;
     }
+    case 'products-menu': {
+      if(el.closest('#mobileBottomNav'))PRODUCTS_DROPUP_OPEN=!PRODUCTS_DROPUP_OPEN;
+      else{PRODUCTS_MENU_OPEN=!PRODUCTS_MENU_OPEN;if(document.documentElement.classList.contains('sidebar-collapsed'))setSidebarCollapsed(false);}
+      renderNav();return;
+    }
     case 'tab': {
+      if(el.dataset.tab==='reports'){
+        if(el.closest('#mobileBottomNav')){
+          REPORTS_DROPUP_OPEN=!REPORTS_DROPUP_OPEN;PRODUCTS_DROPUP_OPEN=false;
+        }else{
+          REPORTS_MENU_OPEN=!REPORTS_MENU_OPEN;
+          if(document.documentElement.classList.contains('sidebar-collapsed'))setSidebarCollapsed(false);
+        }
+        renderNav();return;
+      }
       if(el.dataset.tab==='language'){BOI18n.open();return;}
       if(el.dataset.ext){ location.href=el.dataset.ext; return; }
       if(el.dataset.tab==='relationships'){
@@ -4366,7 +4585,10 @@ document.addEventListener('click',async e=>{
       if(el.dataset.tab==='staff'&&TAB==='staff'){
         STAFF_MENU_OPEN=!STAFF_MENU_OPEN;STAFF_SUBTAB_SELECTED=false;STAFF_TAB='directory';renderNav();viewStaff();return;
       }
-      setTab(el.dataset.tab); return;
+      const fromMobileBar=el.closest('#mobileBottomNav');
+      setTab(el.dataset.tab);
+      if(fromMobileBar)window.scrollTo({top:0,behavior:'instant'});
+      return;
     }
     case 'ov-range': {
       OV_RANGE=el.dataset.range;
@@ -4623,7 +4845,20 @@ async function boot(){
   await loadStoreDirectory();
   renderNav();
   const firstAllowed=NAV.find(n=>!n.external&&(n.children?n.children.some(child=>can(child.perm)):can(n.perm)));
-  startup.reveal(()=>setTab(firstAllowed?.children?.find(child=>can(child.perm))?.id||firstAllowed?.id||'overview'));
+  let savedPage;
+  try{savedPage=JSON.parse(sessionStorage.getItem('dankBOPage')||'null');}catch(_){}
+  try{
+    const reportPage=sessionStorage.getItem('dankBOReportPage');
+    if(REPORT_PAGES.some(([id])=>id===reportPage)){
+      REPORT_PAGE=reportPage;
+      SALES_REPORT.group=REPORT_BREAKDOWNS.some(([id])=>id===reportPage)?reportPage:'day';
+      if(reportPage==='tax')SALES_REPORT.columns=['orders','net','tax','total'];
+    }
+  }catch(_){}
+  const pagePermissions={'product-categories':'inventory_view',stores:'settings','settings-legacy':'settings',food:'inventory_view',kitchen:'inventory_view',suppliers:'inventory_view',purchasing:'inventory_view',expenses:'dashboard'};
+  const savedNav=NAV.flatMap(item=>item.children||[item]).find(item=>item.id===savedPage?.tab);
+  const savedAllowed=savedPage&&Object.hasOwn(VIEWS,savedPage.tab)&&can(savedNav?.perm||pagePermissions[savedPage.tab]||'dashboard');
+  startup.reveal(()=>setTab(savedAllowed?savedPage.tab:firstAllowed?.children?.find(child=>can(child.perm))?.id||firstAllowed?.id||'overview',savedAllowed?savedPage.staffTab:null));
   refreshNotifications();
 }
 boot();

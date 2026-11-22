@@ -22,6 +22,7 @@ export default async function handler(req,res){
     const options={};
     for(const key of ['branch','employee','channel','orderType'])options[key]=[...new Set(inDate.map(o=>o[key]))].sort();
     options.payment=[...new Set(inDate.flatMap(o=>o.paymentMethods))].sort();
+    options.category=[...new Set(inDate.flatMap(o=>o.items.map(item=>item.category||'ไม่มีประเภทสินค้า')))].sort();
     const report=buildReport(all,scope,q.group||'day');
     return res.status(200).json({...report,options,scope,source:'recorded',lastSyncedAt:new Date().toISOString(),
       coverage:{indexed:records.indexed,missing:records.missing,complete:records.missing===0},

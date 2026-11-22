@@ -257,6 +257,12 @@ export default async function handler(req, res) {
       note: "DANK has no in-store/offline sales data to compare against (BRYAN POS counter sales are never written back here) — this breaks down website orders by how they were fulfilled (delivery / table / pickup), not an online-vs-offline split.",
     };
     out.salesByStoreBreakdown = { ...salesByStore(current), source: "recorded" };
+    const storeTotals=new Map();
+    for(const order of liveCurrent){
+      const id=order.storeId||'';
+      storeTotals.set(id,money((storeTotals.get(id)||0)+signedSale(order)));
+    }
+    out.storeSales={source:'recorded',rows:[...storeTotals].map(([storeId,total])=>({storeId,total})).sort((a,b)=>b.total-a.total)};
     const productRows = topProducts(current, Infinity);
     out.topProducts = { rows: productRows.slice(0, 8), source: "recorded" };
     out.topProductsByGrams = {

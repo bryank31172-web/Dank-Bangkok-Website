@@ -48,7 +48,6 @@ export async function mount(root, opts = {}) {
     }
     S.loading = false;
     if (S.tab === 'leave') return renderLeaveTab();
-    if (S.tab === 'shiftrequests') return renderRequestsTab();
     await load();
   } catch (e) {
     S.loading = false;
@@ -172,7 +171,6 @@ function renderStatus() {
     ${v.errors.length ? `<button class="sm-pill err" data-sm="publish">⛔ ${v.errors.length} blocking</button>` : ''}
     ${v.warnings.length ? `<button class="sm-pill warn" data-sm="publish">⚠ ${v.warnings.length} warning${v.warnings.length > 1 ? 's' : ''}</button>` : ''}
     ${S.role ? `<button class="sm-pill info" data-sm="clear-role">Showing ${esc(S.role)} only ✕</button>` : ''}
-    ${S.pendingRequests ? `<button class="sm-pill warn" data-sm="goto-requests">${S.pendingRequests} pending request${S.pendingRequests > 1 ? 's' : ''}</button>` : ''}
     <span class="sm-saving">${S.inflight ? 'Saving…' : S.loading ? 'Loading…' : 'All changes saved'}</span>`;
 }
 

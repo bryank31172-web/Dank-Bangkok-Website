@@ -43,6 +43,7 @@ test('dashboard compares the same elapsed period and counts recorded gram weight
 
   const data = await dashboard();
   assert.equal(data.sales.total, 400);
+  assert.deepEqual(data.storeSales,{source:'recorded',rows:[{storeId:'',total:400}]});
   assert.equal(data.reportingPeriod.start, new Date(2026, 10, 12).toISOString());
   assert.equal(data.reportingPeriod.end, new Date(2026, 10, 12, 12).toISOString());
   assert.equal(data.comparisonPeriod.start, new Date(2026, 10, 11).toISOString());

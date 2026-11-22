@@ -1,6 +1,7 @@
 // Shared, deterministic reporting rules for the browser and server.
 export const ZONE='Asia/Bangkok';
-export const BREAKDOWN_GROUPS=['product','category','sku'];
+export const ORDER_GROUPS=['channel','payment','shift','promotion'];
+export const BREAKDOWN_GROUPS=['product','category','sku',...ORDER_GROUPS];
 const OFFSET=7*3600000, DAY=86400000;
 export const round=value=>Math.round((Number(value)||0)*100)/100;
 const number=value=>value!==null&&value!==undefined&&value!==''&&Number.isFinite(Number(value))?Number(value):null;
@@ -72,15 +73,25 @@ export function normalizeOrder(raw){
     customer:typeof customer==='object'?String(customer?.name??'ไม่ระบุ'):String(customer??raw.name??'ไม่ระบุ'),
     customerId:customerId===null?null:String(customerId),firstPurchaseAt:raw.firstPurchaseAt??null,
     product:items.map(i=>i.name).join(', '),qty:items.reduce((sum,i)=>sum+i.quantity,0),items,payments,paymentMethods,
-    subtotal:net===null?number(get('subtotal')):round(net+discount),discount,tax,charges,total,net,
+    subtotal:net===null?number(get('subtotal')):round(net+discount),discount,manualDiscount:number(raw.manualDiscount),tax,charges,total,net,
+    deliveryFee:amount(number(raw.deliveryFee))??0,serviceCharge:amount(number(raw.serviceCharge))??0,
+    rounding:number(raw.rounding??raw.roundingAdjustment),
     gross:net===null?null:round(net+discount),cost,profit:cost===null||net===null?null:round(net-cost),
+    shift:String(raw.shiftName??raw.shiftId??'ไม่ระบุกะทำงาน'),
+    shiftId:raw.shiftId==null?null:String(raw.shiftId),
+    shiftStartedAt:raw.shiftStartedAt??null,shiftEndedAt:raw.shiftEndedAt??null,
+    preorderDeposit:number(raw.preorderDeposit),
+    promotion:String(raw.promotionName??raw.promoCode??(typeof raw.promo==='string'?raw.promo:null)??'ไม่ระบุโปรโมชั่น'),
     posNumber:get('posNumber')??null,activity:get('activity')??[],
   };
 }
 export function matches(order,scope={}){
+  let categories=scope.categories;
+  if(typeof categories==='string'&&categories){try{categories=JSON.parse(categories);}catch{return false;}}
   let branches=scope.branches;
   if(typeof branches==='string'&&branches){try{branches=JSON.parse(branches);}catch{return false;}}
   return (!scope.start||order.at>=+new Date(scope.start))&&(!scope.end||order.at<+new Date(scope.end))&&
+    (!Array.isArray(categories)||order.items.some(item=>categories.includes(item.category||'ไม่มีประเภทสินค้า')))&&
     (!Array.isArray(branches)||branches.includes(order.branch))&&
     (!scope.receipt||String(order.id).toLowerCase().includes(String(scope.receipt).toLowerCase()))&&
     (!scope.store||scope.store==='all'||order.storeId===scope.store||order.branch===scope.store)&&
@@ -101,6 +112,11 @@ function itemGroup(item,group){
 }
 const itemWeight=item=>Math.abs(number(item.subtotal)??number(item.total)??((number(item.unitPrice)!==null)?item.unitPrice*item.quantity:0));
 function orderMatchesItemGroup(order,group,key){
+  if(group==='shift')return shiftReportKey(order)===key;
+  if(group==='payment'){
+    try{const [,method,channel]=JSON.parse(key);return (order.paymentMethods.length?order.paymentMethods:['ไม่ระบุวิธีชำระเงิน']).includes(method)&&(!channel||channel===order.channel);}catch{return false;}
+  }
+  if(ORDER_GROUPS.includes(group))return JSON.stringify([group,orderGroupLabel(order,group)])===key;
   if(!BREAKDOWN_GROUPS.includes(group))return false;
   if(key===JSON.stringify(['unallocated',group]))
     return !order.items.some(item=>itemWeight(item)>0)&&['gross','discount','net','tax','charges','total','cost'].some(field=>Number(order[field])!==0&&order[field]!==null);
@@ -130,6 +146,13 @@ export function summarize(orders){
   const net=complete('net')?round(sum(sales,'net')-sum(returns,'net')):null;
   const cost=complete('cost')?round(sum(sales,'cost')-sum(returns,'cost')):null;
   return {
+    transactions:live.length,
+    deliveryFee:round(sum(sales,'deliveryFee')-sum(returns,'deliveryFee')),
+    serviceCharge:round(sum(sales,'serviceCharge')-sum(returns,'serviceCharge')),
+    rounding:live.every(o=>o.rounding!=null)?round(sum(sales,'rounding')-sum(returns,'rounding')):null,
+    manualDiscount:sales.every(o=>!o.discount||o.manualDiscount!=null)?sum(sales,'manualDiscount'):null,
+    discountPct:complete('gross')&&sum(sales,'gross')?round(sum(sales,'discount')/sum(sales,'gross')*100):sales.length?null:0,
+    manualDiscountPct:sales.every(o=>!o.discount||o.manualDiscount!=null)?(sum(sales,'gross')?round(sum(sales,'manualDiscount')/sum(sales,'gross')*100):0):null,
     orders:sales.length,gross:complete('gross')?sum(sales,'gross'):null,discount:sum(sales,'discount'),
     returns:sum(returns,'total'),net,tax:complete('tax')?round(sum(sales,'tax')-sum(returns,'tax')):null,
     charges:round(sum(sales,'charges')-sum(returns,'charges')),total:round(sum(sales,'total')-sum(returns,'total')),
@@ -141,6 +164,18 @@ export function summarize(orders){
   };
 }
 export function buildReport(orders,scope,group='day'){
+  if(group==='shift')return buildShiftReport(orders,scope);
+  if(group==='payment')return buildPaymentReport(orders,scope);
+  if(ORDER_GROUPS.includes(group)){
+    const selected=orders.filter(order=>matches(order,scope)),groups=new Map();
+    for(const order of selected){
+      if(order.cancelledAt)continue;
+      const label=orderGroupLabel(order,group);
+      if(!groups.has(label))groups.set(label,[]);
+      groups.get(label).push(order);
+    }
+    return {rows:[...groups].map(([label,rows])=>({key:JSON.stringify([group,label]),label,orderIds:rows.map(o=>o.id),...summarize(rows)})).sort((a,b)=>(b.total||0)-(a.total||0)),totals:summarize(selected),orders:selected,group};
+  }
   if(BREAKDOWN_GROUPS.includes(group))return buildItemReport(orders,scope,group);
   const selected=orders.filter(o=>matches(o,scope)),buckets=[];
   let cursor=+new Date(scope.start),end=+new Date(scope.end);
@@ -153,6 +188,56 @@ export function buildReport(orders,scope,group='day'){
     cursor=to;
   }
   return {rows:buckets,totals:summarize(selected),orders:selected};
+}
+
+function orderGroupLabel(order,group){
+  if(group==='payment')return [...new Set(order.paymentMethods||[])].sort().join(' + ')||'ไม่ระบุวิธีชำระเงิน';
+  return order[group]||'ไม่ระบุ';
+}
+
+function shiftReportKey(order){
+  return JSON.stringify(['shift',order.shiftId||`receipt:${order.id}`,order.storeId,order.posNumber]);
+}
+function buildShiftReport(orders,scope){
+  const selected=orders.filter(order=>matches(order,scope)),groups=new Map();
+  for(const order of selected){
+    if(order.cancelledAt)continue;
+    const key=shiftReportKey(order);
+    if(!groups.has(key))groups.set(key,[]);
+    groups.get(key).push(order);
+  }
+  const deposit=rows=>rows.every(o=>o.preorderDeposit!=null)?round(rows.reduce((sum,o)=>sum+(o.kind==='return'?-1:1)*o.preorderDeposit,0)):null;
+  const rows=[...groups].map(([key,receipts])=>{
+    const unique=field=>{const values=[...new Set(receipts.map(o=>o[field]).filter(Boolean))];return values.length===1?values[0]:null;};
+    return {key,label:unique('shiftStartedAt')||'ไม่ระบุเวลาเข้ากะ',shiftStartedAt:unique('shiftStartedAt'),shiftEndedAt:unique('shiftEndedAt'),branch:unique('branch'),posNumber:unique('posNumber'),...summarize(receipts),deposits:deposit(receipts),orderIds:receipts.map(o=>o.id)};
+  });
+  return {rows,orders:selected,group:'shift',totals:{...summarize(selected),deposits:deposit(selected.filter(o=>!o.cancelledAt))}};
+}
+
+function buildPaymentReport(orders,scope){
+  const selected=orders.filter(order=>matches(order,scope)),groups=new Map();
+  for(const order of selected){
+    if(order.cancelledAt)continue;
+    const methods=order.paymentMethods.length?order.paymentMethods:['ไม่ระบุวิธีชำระเงิน'];
+    const amounts=methods.map(method=>{
+      if(methods.length===1)return Math.abs(order.total);
+      const payments=order.payments.filter(p=>p.method===method);
+      return payments.length&&payments.every(p=>number(p.amount)!==null)?round(payments.reduce((sum,p)=>sum+Math.abs(Number(p.amount)),0)):null;
+    });
+    const complete=amounts.every(value=>value!==null)&&Math.round(amounts.reduce((a,b)=>a+b,0)*100)===Math.round(Math.abs(order.total)*100);
+    methods.forEach((method,index)=>{
+      const key=JSON.stringify(['payment',method,order.channel]);
+      if(!groups.has(key))groups.set(key,{key,label:method,channel:order.channel,orders:[],charged:0,refunded:0,complete:true});
+      const row=groups.get(key);row.orders.push(order);
+      if(!complete)row.complete=false;
+      else if(order.kind==='return')row.refunded=round(row.refunded+amounts[index]);
+      else row.charged=round(row.charged+amounts[index]);
+    });
+  }
+  const rows=[...groups.values()].map(row=>({...summarize(row.orders),key:row.key,label:row.label,channel:row.channel,orderIds:[...new Set(row.orders.map(o=>o.id))],transactions:new Set(row.orders.map(o=>o.id)).size,charged:row.complete?row.charged:null,refunded:row.complete?row.refunded:null,paymentNet:row.complete?round(row.charged-row.refunded):null,preorderDeposit:null}));
+  const live=selected.filter(o=>!o.cancelledAt),complete=rows.every(row=>row.charged!==null);
+  const sum=key=>complete?round(rows.reduce((total,row)=>total+row[key],0)):null;
+  return {rows,orders:selected,group:'payment',totals:{...summarize(selected),transactions:new Set(live.map(o=>o.id)).size,charged:sum('charged'),refunded:sum('refunded'),paymentNet:sum('paymentNet'),preorderDeposit:null}};
 }
 
 // Apportion recorded order amounts in integer cents. Prefer complete line snapshots.
@@ -179,8 +264,12 @@ export function buildItemReport(orders,scope,group='product'){
   const fields=['gross','discount','net','tax','charges','total','cost'];
   let allocatedOrders=0,missingMetadata=0,unallocatedOrders=0;
   const add=(key,label,order,item,amounts,missing=false)=>{
-    if(!groups.has(key))groups.set(key,{key,label,missing,lines:[],receipts:new Set(),qty:0});
+    if(!groups.has(key))groups.set(key,{key,label,missing,lines:[],receipts:new Set(),qty:0,categories:new Set(),skus:new Set(),productNames:new Set(),skuNames:new Set()});
     const bucket=groups.get(key);
+    if(item.name)bucket.productNames.add(item.name);
+    if(item.skuName||item.variantName||item.name)bucket.skuNames.add(item.skuName||item.variantName||item.name);
+    if(item.category)bucket.categories.add(item.category);
+    if(item.sku)bucket.skus.add(item.sku);
     bucket.lines.push({...order,...amounts,qty:item.quantity});
     if(order.kind!=='return')bucket.receipts.add(order.id);
     bucket.qty+=order.kind==='return'?-item.quantity:item.quantity;
@@ -215,8 +304,22 @@ export function buildItemReport(orders,scope,group='product'){
     const totals=summarize(bucket.lines);
     totals.orders=bucket.receipts.size;
     totals.average=totals.net===null?null:totals.orders?round(totals.net/totals.orders):0;
-    return {key:bucket.key,label:bucket.label,missing:bucket.missing,orderIds:[...new Set(bucket.lines.map(order=>order.id))],...totals,qty:round(bucket.qty)};
+    return {key:bucket.key,label:bucket.label,missing:bucket.missing,productName:[...bucket.productNames].sort().join(', ')||null,skuName:[...bucket.skuNames].sort().join(', ')||null,category:[...bucket.categories].sort().join(', ')||null,sku:[...bucket.skus].sort().join(', ')||null,orderIds:[...new Set(bucket.lines.map(order=>order.id))],...totals,qty:round(bucket.qty),...productReportMetrics(bucket.lines,totals,round(bucket.qty))};
   }).sort((a,b)=>(b.total??0)-(a.total??0)||a.label.localeCompare(b.label));
   const totals={...summarize(selected),qty:round(rows.reduce((sum,row)=>sum+row.qty,0))};
+  Object.assign(totals,productReportMetrics(selected,totals,totals.qty));
   return {rows,totals,orders:selected,group,allocation:{allocatedOrders,missingMetadata,unallocatedOrders}};
+}
+
+function productReportMetrics(orders,totals,netQuantity){
+  const sales=orders.filter(o=>!o.cancelledAt&&o.kind!=='return');
+  const returns=orders.filter(o=>!o.cancelledAt&&o.kind==='return');
+  const sum=(rows,get)=>round(rows.reduce((n,row)=>n+Math.round(get(row)*100),0)/100);
+  return {
+    soldQty:sum(sales,o=>o.qty||0),
+    productValue:sum(sales,o=>(o.total??0)-(o.charges??0)),
+    returnedValue:sum(returns,o=>(o.total??0)-(o.charges??0)),
+    averageCost:totals.cost===null||!netQuantity?null:round(totals.cost/netQuantity),
+    averageNet:totals.net===null||!netQuantity?null:round(totals.net/netQuantity),
+  };
 }

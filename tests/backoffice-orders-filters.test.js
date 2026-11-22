@@ -18,7 +18,7 @@ function setup() {
     ] }),
     Date: class extends Date { constructor(...args) { super(...(args.length ? args : [2026, 10, 12, 13])); } },
     $: selector => {
-      if (!elements.has(selector)) elements.set(selector, { innerHTML: '', textContent: '', value: '', hidden: true, focus() {}, setAttribute() {} });
+      if (!elements.has(selector)) elements.set(selector, { innerHTML: '', textContent: '', value: '', hidden: true, focus() {}, setAttribute() {}, append() {} });
       return elements.get(selector);
     },
   };

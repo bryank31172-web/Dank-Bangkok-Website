@@ -4,20 +4,41 @@ const SALES_COLUMNS=[
   ['net','ยอดขายสุทธิ'],['tax','ภาษี'],['total','ยอดขายรวม'],['cost','ต้นทุน'],['profit','กำไรขั้นต้น'],
   ['margin','อัตรากำไร %'],['average','ยอดสุทธิเฉลี่ยต่อรายการ'],['customers','ลูกค้าที่ระบุตัวตน'],['newCustomers','ลูกค้าใหม่'],['returningCustomers','ลูกค้าเดิม']
 ];
+const TIME_REPORT_COLUMNS=[['total','ยอดขายทั้งหมด'],['transactions','ธุรกรรมทั้งหมด'],['discount','ส่วนลดทั้งหมด'],['discountPct','ส่วนลด(%)'],['manualDiscount','ส่วนลดที่ทำด้วยตนเอง'],['manualDiscountPct','ส่วนลดที่ทำด้วยตนเอง(%)'],['tax','ภาษี'],['profit','กำไรขั้นต้น'],['margin','เปอร์เซ็นต์กำไรขั้นต้น'],['net','ยอดขายสุทธิ'],['average','ยอดขายสุทธิโดยเฉลี่ย']];
 let SALES_REPORT={preset:'month',group:'day',metric:'total',compare:false,filters:{},columns:['orders','gross','discount','returns','net','tax','total'],page:1,sort:'start',direction:1};
 let SALES_REPORT_DATA=null,SALES_REPORT_SCOPE=null,SALES_REPORT_TOKEN=0,SALES_REPORT_INITIALIZED=false;
 let SALES_REPORT_OPTIONS={};
 let SALES_REPORT_PRINTING=false;
-const REPORT_BREAKDOWNS=[['product','สินค้า'],['category','หมวดหมู่'],['sku','SKU']];
+const REPORT_BREAKDOWNS=[['product','สินค้า'],['category','ประเภทสินค้า'],['sku','SKUs'],['channel','ช่องทางธุรกรรม'],['payment','วิธีการชำระเงิน'],['shift','การเข้ากะทำงาน'],['promotion','โปรโมชั่น']];
+const REPORT_PAGES=[['time','ยอดขายตามเวลา'],...REPORT_BREAKDOWNS,['tax','รายงานภาษี']];
+let REPORT_PAGE='time';
+const PRODUCT_REPORT_COLUMNS=[['category','ประเภทสินค้า'],['sku','SKU ID'],['soldQty','สินค้าที่ขายไปทั้งหมด'],['productValue','มูลค่าสินค้า (THB)'],['returnedValue','มูลค่าสินค้าที่ถูกส่งคืน (THB)'],['discount','ส่วนลดทั้งหมด (THB)'],['discountPct','ส่วนลด (%)'],['net','มูลค่าสุทธิสินค้า (THB)'],['averageCost','ค่าใช้จ่ายโดยเฉลี่ย (THB)'],['averageNet','มูลค่าสุทธิสินค้าโดยเฉลี่ย (THB)'],['profit','กำไรขั้นต้น (THB)'],['margin','เปอร์เซ็นต์กำไรขั้นต้น (%)']];
+function reportPageTitle(){return REPORT_PAGES.find(([id])=>id===REPORT_PAGE)?.[1]||'ยอดขายตามเวลา';}
+async function openReportPage(id){
+  if(!REPORT_PAGES.some(([key])=>key===id))return;
+  REPORT_PAGE=id;SALES_REPORT.page=1;SALES_REPORT.sort='start';
+  SALES_REPORT.group=REPORT_BREAKDOWNS.some(([key])=>key===id)?id:'day';
+  SALES_REPORT.columns=id==='tax'?['orders','net','tax','total']:['orders','gross','discount','returns','net','tax','total'];
+  await setTab('reports');
+}
 function reportIsBreakdown(){return REPORT_BREAKDOWNS.some(([key])=>key===SALES_REPORT.group);}
-function reportColumns(){return reportIsBreakdown()?[['qty','จำนวนสินค้าสุทธิ'],...SALES_COLUMNS]:SALES_COLUMNS;}
-function reportGroupLabel(){return REPORT_BREAKDOWNS.find(([key])=>key===SALES_REPORT.group)?.[1]||'วันที่ / เวลา';}
+const CATEGORY_REPORT_COLUMNS=PRODUCT_REPORT_COLUMNS.filter(([key])=>!['category','sku','returnedValue'].includes(key)).map(([key,label])=>[key,key==='soldQty'?'จำนวนสินค้าที่ขายไปทั้งหมด':label]);
+const SKU_REPORT_COLUMNS=[['category','ประเภทสินค้า'],['skuName','SKU สินค้า'],['sku','SKU ID'],...CATEGORY_REPORT_COLUMNS];
+const CHANNEL_REPORT_COLUMNS=[['total','ยอดขายทั้งหมด (THB)'],['transactions','ธุรกรรมทั้งหมด'],['discount','ส่วนลดทั้งหมด (THB)'],['discountPct','ส่วนลด (%)'],['tax','ภาษี (THB)'],['rounding','ปัดเศษทั้งหมด (THB)'],['deliveryFee','ค่าจัดส่ง (THB)'],['serviceCharge','ค่าบริการ (THB)'],['profit','กำไรขั้นต้น (THB)'],['margin','เปอร์เซ็นต์กำไรขั้นต้น (%)'],['returns','ยอดคืนทั้งหมด (THB)'],['net','ยอดขายสุทธิ (THB)'],['average','ยอดขายสุทธิโดยเฉลี่ย (THB)']];
+const PAYMENT_REPORT_COLUMNS=[['channel','ช่องทางการทำรายการ'],['charged','ยอดเงินที่เรียกเก็บ (THB)'],['transactions','ธุรกรรมทั้งหมด'],['refunded','ยอดคืนทั้งหมด (THB)'],['preorderDeposit','เงินมัดจำพรีออร์เดอร์ (THB)'],['paymentNet','ยอดขายสุทธิ (THB)']];
+const SHIFT_REPORT_COLUMNS=[['shiftEndedAt','จบกะ'],['branch','ร้านค้า'],['transactions','ธุรกรรมทั้งหมด'],['total','ยอดขายทั้งหมด (THB)']];
+function shiftReportDate(value){return value&&Number.isFinite(+new Date(value))?BOI18n.formatDate(value,'toLocaleString',{timeZone:'Asia/Bangkok',day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit',hour12:false}):'—';}
+function reportColumns(){return REPORT_PAGE==='shift'?SHIFT_REPORT_COLUMNS:REPORT_PAGE==='payment'?PAYMENT_REPORT_COLUMNS:REPORT_PAGE==='channel'?CHANNEL_REPORT_COLUMNS:REPORT_PAGE==='sku'?SKU_REPORT_COLUMNS:REPORT_PAGE==='category'?CATEGORY_REPORT_COLUMNS:REPORT_PAGE==='product'?PRODUCT_REPORT_COLUMNS:REPORT_PAGE==='time'?TIME_REPORT_COLUMNS:reportIsBreakdown()?[['qty','จำนวนสินค้าสุทธิ'],...SALES_COLUMNS]:SALES_COLUMNS;}
+function reportVisibleColumns(){return reportColumns().filter(([key])=>['time','product','category','sku','channel','payment','shift'].includes(REPORT_PAGE)||SALES_REPORT.columns.includes(key));}
+function reportGroupLabel(){return REPORT_PAGE==='shift'?'เข้ากะ':REPORT_PAGE==='payment'?'วิธีชำระเงิน':REPORT_PAGE==='channel'?'ช่องทางการทำรายการ':['product','sku'].includes(REPORT_PAGE)?'ชื่อสินค้า':REPORT_BREAKDOWNS.find(([key])=>key===SALES_REPORT.group)?.[1]||'วันที่ / เวลา';}
 function salesLocalDate(iso){const [y,m,d]=SALES.dateKey(iso).split('-').map(Number);return new Date(y,m-1,d);}
 function salesSavedFilters(){try{const value=JSON.parse(localStorage.getItem('dankSalesSavedFilters')||'[]');return Array.isArray(value)?value:[];}catch{return [];}}
 function salesMoney(value,key){
+  if(key==='shiftEndedAt')return shiftReportDate(value);
+  if(['category','sku','skuName','channel','branch','posNumber'].includes(key))return value==null?'—':esc(String(value));
   if(value===null||value===undefined)return '—';
-  if(['orders','customers','newCustomers','returningCustomers'].includes(key))return Number(value).toLocaleString('en-US');
-  return Number(value).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})+(key==='margin'?'%':'');
+  if(['orders','transactions','customers','newCustomers','returningCustomers'].includes(key))return Number(value).toLocaleString('en-US');
+  return Number(value).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})+(['margin','discountPct','manualDiscountPct'].includes(key)?'%':'');
 }
 function reportWindow(){
   if(SALES_REPORT.preset==='custom'&&SALES_REPORT.datePreset&&SALES_REPORT.datePreset!=='custom'){
@@ -52,36 +73,46 @@ function reportSelect(id,label,options,value){
 }
 async function viewSalesReport(){
   await SALES_READY;
+  const hideSearch=['payment','shift','time'].includes(REPORT_PAGE);
+  const hideFilters=['payment','channel'].includes(REPORT_PAGE);
+  if(hideSearch)delete SALES_REPORT.filters.receipt;
+  if(hideFilters){delete SALES_REPORT.filters.branches;delete SALES_REPORT.filters.categories;delete SALES_REPORT.filters.orderType;}
+  if(REPORT_PAGE==='channel'&&!CHANNEL_REPORT_COLUMNS.some(([key])=>key===SALES_REPORT.metric))SALES_REPORT.metric='total';
+  if(REPORT_PAGE==='payment'&&!PAYMENT_REPORT_COLUMNS.some(([key])=>key===SALES_REPORT.metric))SALES_REPORT.metric='paymentNet';
+  if(REPORT_PAGE==='shift'&&!SHIFT_REPORT_COLUMNS.some(([key])=>key===SALES_REPORT.metric))SALES_REPORT.metric='total';
+  if(['product','category','sku'].includes(REPORT_PAGE)&&!reportColumns().some(([key])=>key===SALES_REPORT.metric))SALES_REPORT.metric='productValue';
+  try{sessionStorage.setItem('dankBOReportPage',REPORT_PAGE);}catch(_){}
+  renderNav();
+  if(REPORT_PAGE==='kds'){
+    $('#main').innerHTML=`${workspaceBreadcrumb(reportPageTitle(),[['reports','รายงาน']])}<div class="workspace-heading"><h2>${reportPageTitle()}</h2></div><section class="card"><p>ยังไม่มีข้อมูลเวลาเริ่มเตรียมและเวลาทำเสร็จของแต่ละคำสั่งซื้อ KDS สำหรับคำนวณรายงานนี้</p><p class="muted">เมื่อเชื่อมข้อมูล KDS แล้ว รายงานนี้จะใช้ระยะเวลาระหว่างเริ่มเตรียมและทำเสร็จ ไม่ใช้เวลาเปิดใบเสร็จแทน</p></section>`;
+    return;
+  }
   if(!SALES_REPORT_INITIALIZED){SALES_REPORT.preset=OV_RANGE;SALES_REPORT_INITIALIZED=true;}
   const window=reportWindow();
   ORDERS_DATE_RANGE={start:salesLocalDate(window.start),end:salesLocalDate(+new Date(window.end)-1),preset:SALES_REPORT.preset==='custom'?SALES_REPORT.datePreset||'custom':({today:'today',yesterday:'yesterday',week:'thisWeek',month:'thisMonth',year:'thisYear'}[SALES_REPORT.preset])||'custom'};
   ORDERS_PAST_MONTHS=SALES_REPORT.months||3;
-  ORDERS_BRANCHES=SALES_REPORT.filters.branches?new Set(JSON.parse(SALES_REPORT.filters.branches)):null;
+  ORDERS_BRANCHES=SALES_REPORT.filters.categories?new Set(JSON.parse(SALES_REPORT.filters.categories)):null;
   ORDERS_TYPE_FILTER=SALES_REPORT.filters.orderType||'';
-  const controls=`
-    ${reportSelect('salesGroup','จัดกลุ่มตาม',[['hour','รายชั่วโมง'],['day','รายวัน'],['week','รายสัปดาห์'],['month','รายเดือน'],['year','รายปี'],...REPORT_BREAKDOWNS],SALES_REPORT.group)}
-    <button class="btn" data-sales-act="apply">แสดงรายงาน</button>`;
-  $('#main').innerHTML=`${workspaceBreadcrumb('ยอดขายตามช่วงเวลา',[['reports','รายงาน']])}
-    <div class="workspace-heading"><div><h2>ยอดขายตามช่วงเวลา</h2><p class="muted">วิเคราะห์ยอดขายและเปิดดูใบเสร็จที่นำมาคำนวณ</p></div><div class="row report-header-actions">
-      <button class="btn ghost" data-sales-act="save">บันทึกตัวกรอง</button><button class="btn ghost" data-sales-act="pdf">ส่งออก PDF</button><button class="btn ghost" data-sales-act="delivery">ตั้งเวลาส่งรายงาน</button></div></div>
+  $('#main').innerHTML=`${workspaceBreadcrumb(reportPageTitle(),[['reports','รายงาน']])}
+    <div class="workspace-heading"><div><h2>${reportPageTitle()}</h2><p class="muted">วิเคราะห์ยอดขายและเปิดดูใบเสร็จที่นำมาคำนวณ</p></div><div class="row report-header-actions">
+      </div></div>
     ${ordersToolbarMarkup(SALES_REPORT.filters.receipt||'',ORDERS_DATE_RANGE,true)}
-    <div class="sales-report-mode"><label><input type="checkbox" id="salesDemo" ${OV_DEMO?'checked':''}> ข้อมูลตัวอย่าง</label><button class="product-order-link" data-sales-act="legacy">รายงานประเภทอื่น →</button></div>
-    <section class="card sales-report-controls"><div class="sales-report-fields">${controls}</div>
-      <div class="sales-report-saved"><label>ตัวกรองที่บันทึกไว้ <select id="salesSaved"><option value="">เลือกชุดตัวกรอง</option>${salesSavedFilters().map((saved,i)=>`<option value="${i}">${esc(saved.name)}</option>`).join('')}</select></label><button class="btn ghost" data-sales-act="delete-saved">ลบชุดที่เลือก</button><small class="muted">บันทึกในเบราว์เซอร์นี้</small></div>
-      <div id="salesFilters" class="sales-report-fields"></div><div id="salesChips" class="sales-chips"></div>
-    </section><div id="salesReportBody" aria-live="polite"></div>`;
+    <div id="salesReportBody" aria-live="polite"></div>`;
+  $('.report-header-actions').append($('#main [data-sales-act="csv"]'));
+  $('#main .orders-toolbar').classList.add('sales-report-toolbar');
+  if(hideSearch)$('#main .orders-search')?.remove();
+  if(hideFilters)$('#main .orders-branch-wrap')?.remove();
+  const toolbar=$('#main .orders-toolbar');
+  if(REPORT_PAGE==='payment'){
+    $('.report-header-actions').prepend($('#main .orders-date-wrap'));
+    toolbar.remove();
+  }
+  if(hideSearch||hideFilters)toolbar.classList.add('sales-toolbar-reduced');
+  if(hideSearch&&hideFilters)toolbar.classList.add('sales-toolbar-date-only');
   await loadSalesReport();
 }
 function reportRenderFilters(){
-  const labels={store:'สาขา',branches:'สาขา',receipt:'หมายเลขใบเสร็จ',channel:'ช่องทางขาย',orderType:'ประเภทคำสั่งซื้อ',employee:'พนักงาน',payment:'วิธีชำระเงิน'};
-  $('#salesFilters').innerHTML=['channel','employee','payment'].map(key=>{
-    const label=labels[key];
-    const values=SALES_REPORT_OPTIONS[key==='store'?'branch':key]||[];
-    if(SALES_REPORT.filters[key]&&!values.includes(SALES_REPORT.filters[key]))values.push(SALES_REPORT.filters[key]);
-    return reportSelect('salesFilter-'+key,label,[['','ทั้งหมด'],...values.map(v=>[v,v])],SALES_REPORT.filters[key]||'');
-  }).join('')+'<button class="btn ghost" data-sales-act="clear">ล้างทั้งหมด</button>';
-  $('#salesChips').innerHTML=Object.entries(SALES_REPORT.filters).filter(([,v])=>v).map(([key,value])=>`<button type="button" data-sales-act="remove-filter" data-key="${key}">${labels[key]||key}: ${esc(key==='branches'?JSON.parse(value).join(', '):value)} ×</button>`).join('');
-  ORDERS_BRANCHES=SALES_REPORT.filters.branches?new Set(JSON.parse(SALES_REPORT.filters.branches)):null;
+  ORDERS_BRANCHES=SALES_REPORT.filters.categories?new Set(JSON.parse(SALES_REPORT.filters.categories)):null;
   ORDERS_TYPE_FILTER=SALES_REPORT.filters.orderType||'';
   const search=$('#salesReceiptSearch');if(search&&search.value!==(SALES_REPORT.filters.receipt||''))search.value=SALES_REPORT.filters.receipt||'';
 }
@@ -106,6 +137,7 @@ async function loadSalesReport(){
       data.options={};
       for(const key of ['branch','employee','channel','orderType'])data.options[key]=[...new Set(all.map(o=>o[key]))];
       data.options.payment=[...new Set(all.flatMap(o=>o.payments.map(p=>p.method)))];
+      data.options.category=[...new Set(all.flatMap(o=>o.items.map(item=>item.category||'ไม่มีประเภทสินค้า')))];
       data.note='ข้อมูลตัวอย่างชุดเดียวกับภาพรวมธุรกิจและรายการทั้งหมด ขอบเขตตัวอย่าง: '+overviewPeriodText(sample.reportingPeriod);
       if(SALES_REPORT.compare){
         const prior=SALES.previousWindow(window,SALES_REPORT.preset);
@@ -161,21 +193,24 @@ function reportBreakdownChart(data){
       </span><span>${salesMoney(row[metric],metric)}${data.previous?`<small class="muted">${salesMoney(prior?prior[metric]:0,metric)}</small>`:''}</span></button>`;
   }).join('')}</div><p class="muted sales-report-note">กราฟแสดง 12 กลุ่มแรกของช่วงที่เลือก ตารางและ CSV แสดงทุกกลุ่ม</p>`;
 }
-function reportBucketLabel(row){return row.label!==undefined?(row.missing?BOI18n.t(row.label):row.label):BOI18n.formatDate(row.start,'toLocaleString',{timeZone:'Asia/Bangkok',day:'numeric',month:'short',year:'numeric',...(SALES_REPORT.group==='hour'?{hour:'2-digit',minute:'2-digit'}:{})});}
+function reportBucketLabel(row){if(REPORT_PAGE==='shift')return shiftReportDate(row.shiftStartedAt);if(REPORT_PAGE==='sku')return row.productName||'ไม่ระบุสินค้า';return row.label!==undefined?(row.missing?BOI18n.t(row.label):row.label):BOI18n.formatDate(row.start,'toLocaleString',{timeZone:'Asia/Bangkok',...(REPORT_PAGE==='time'?{weekday:'long'}:{}),day:'numeric',month:'short',year:'numeric',...(SALES_REPORT.group==='hour'?{hour:'2-digit',minute:'2-digit'}:{})});}
 function renderSalesReportBody(){
   const data=SALES_REPORT_DATA;if(!data||!$('#salesReportBody'))return;
-  const columns=reportColumns(),visible=columns.filter(([key])=>SALES_REPORT.columns.includes(key));
+  const columns=reportColumns(),visible=reportVisibleColumns();
   const indexed=data.rows.map((row,index)=>({...row,index}));
-  indexed.sort((a,b)=>SALES_REPORT.direction*(['start','label'].includes(SALES_REPORT.sort)?String(a[SALES_REPORT.sort]??a.label??'').localeCompare(String(b[SALES_REPORT.sort]??b.label??'')):(a[SALES_REPORT.sort]??-Infinity)-(b[SALES_REPORT.sort]??-Infinity)));
+  indexed.sort((a,b)=>SALES_REPORT.direction*(['start','label','productName','category','sku','skuName','channel','branch','posNumber','shiftEndedAt'].includes(SALES_REPORT.sort)?String(a[SALES_REPORT.sort]??a.label??'').localeCompare(String(b[SALES_REPORT.sort]??b.label??'')):(a[SALES_REPORT.sort]??-Infinity)-(b[SALES_REPORT.sort]??-Infinity)));
   const pages=Math.max(1,Math.ceil(indexed.length/20));SALES_REPORT.page=Math.min(pages,SALES_REPORT.page);
   const rows=SALES_REPORT_PRINTING?indexed:indexed.slice((SALES_REPORT.page-1)*20,SALES_REPORT.page*20);
   $('#salesReportBody').innerHTML=`<div class="sales-report-scope"><span>${esc(overviewPeriodText(SALES_REPORT_SCOPE))} · เวลาไทย (UTC+7) · THB</span><span>${OV_DEMO?'ข้อมูลตัวอย่าง':'ข้อมูลที่บันทึกใน DANK'} · ${data.totals.orders} รายการขาย</span></div>
     <p class="muted sales-report-note">${esc(data.note||'')}${data.coverage?.missing?' · ⚠ มีรายการที่อ่านไม่ได้ '+data.coverage.missing+' รายการ':''}</p>
-    <div class="sales-report-summary">${[['total','ยอดขายรวม'],['orders','รายการขาย'],['net','ยอดขายสุทธิ'],['profit','กำไรขั้นต้น']].map(([key,label])=>`<button class="card" data-sales-act="drill-all"><span class="muted">${label}</span><strong>${salesMoney(data.totals[key],key)}</strong></button>`).join('')}</div>
-    ${reportIsBreakdown()?'<p class="muted sales-report-note">ส่วนลด ภาษี และต้นทุนระดับใบเสร็จจะจัดสรรตามมูลค่ารายการ โดยใช้จำนวนเงินตอนขาย ไม่ใช้ราคาปัจจุบัน · จำนวนรายการและลูกค้าอาจซ้ำระหว่างกลุ่ม</p>':''}
-    <section class="card"><div class="sales-report-chart-controls">${reportSelect('salesMetric','แสดงกราฟ',columns,SALES_REPORT.metric)}<label><input id="salesCompare" type="checkbox" ${SALES_REPORT.compare?'checked':''}> เปรียบเทียบช่วงก่อนหน้า</label></div>${reportChart(data)}</section>
+    ${REPORT_PAGE==='shift'?'<p class="muted sales-report-note">เวลาเข้ากะ จบกะ POS# และมัดจำใช้ค่าที่บันทึกไว้จริง · ใบเสร็จที่ยังไม่ผูกกับรหัสกะแสดงแยกใบเสร็จ โดยเวลาเป็น — ไม่ถือว่าเป็นกะที่ยืนยันแล้ว · ยอดขายและธุรกรรมไม่รวมรายการยกเลิก</p>':''}
+    ${REPORT_PAGE==='payment'?'<p class="muted sales-report-note">ยอดขายสุทธิในรายงานนี้ = ยอดเงินที่เรียกเก็บ − ยอดคืน · ใบเสร็จที่ชำระหลายวิธีแสดงเฉพาะยอดของแต่ละวิธี โดยยอดรวมธุรกรรมนับใบเสร็จครั้งเดียว · หากยอดแยกวิธีไม่ครบหรือไม่ตรงใบเสร็จจะแสดง — · เงินมัดจำพรีออร์เดอร์ยังไม่มีข้อมูลแยกให้คำนวณ</p>':''}
+    ${['product','category','sku'].includes(REPORT_PAGE)?'<p class="muted sales-report-note">มูลค่าสินค้า = ยอดขายหลังส่วนลดรวมภาษี ไม่รวมค่าจัดส่งและค่าบริการ · มูลค่าสุทธิ = ยอดขายหลังส่วนลด ไม่รวมภาษี หักคืนสินค้า · ส่วนลด (%) เทียบยอดก่อนส่วนลด · ค่าใช้จ่ายและมูลค่าสุทธิเฉลี่ย = ต้นทุนและยอดสุทธิ ÷ จำนวนสินค้าสุทธิหลังคืน · ยอดรวมค่าเฉลี่ยคำนวณแบบถ่วงน้ำหนัก · ประเภทสินค้าและ SKU ใช้ข้อมูลในใบเสร็จ ณ เวลาขาย</p>':''}
+    ${REPORT_PAGE!=='shift'?`<div class="sales-report-summary">${[['total','ยอดขายรวม'],['orders','รายการขาย'],['net','ยอดขายสุทธิ'],['profit','กำไรขั้นต้น']].map(([key,label])=>`<button class="card" data-sales-act="drill-all"><span class="muted">${label}</span><strong>${salesMoney(data.totals[key],key)}</strong></button>`).join('')}</div>`:''}
+    ${reportIsBreakdown()&&REPORT_PAGE!=='shift'?'<p class="muted sales-report-note">ส่วนลด ภาษี และต้นทุนระดับใบเสร็จจะจัดสรรตามมูลค่ารายการ โดยใช้จำนวนเงินตอนขาย ไม่ใช้ราคาปัจจุบัน · จำนวนรายการและลูกค้าอาจซ้ำระหว่างกลุ่ม</p>':''}
+    ${REPORT_PAGE!=='shift'?`<section class="card"><div class="sales-report-chart-controls">${reportSelect('salesMetric','แสดงกราฟ',columns.filter(([key])=>!['category','sku','skuName','channel','branch','posNumber','shiftEndedAt'].includes(key)),SALES_REPORT.metric)}<label><input id="salesCompare" type="checkbox" ${SALES_REPORT.compare?'checked':''}> เปรียบเทียบช่วงก่อนหน้า</label></div>${reportChart(data)}</section>`:''}
     <section class="card"><div class="section-heading"><h3>รายละเอียดรายงาน</h3><details class="sales-column-picker"><summary>เลือกคอลัมน์</summary><div>${columns.map(([key,label])=>`<label><input type="checkbox" data-sales-column="${key}" ${SALES_REPORT.columns.includes(key)?'checked':''}> ${label}</label>`).join('')}</div></details></div>
-      <div class="orders-table-scroll"><table class="sales-report-table"><thead><tr><th><button data-sales-act="sort" data-key="${reportIsBreakdown()?'label':'start'}">${reportGroupLabel()} ↕</button></th>${visible.map(([key,label])=>`<th><button data-sales-act="sort" data-key="${key}">${label} ↕</button></th>`).join('')}</tr></thead><tbody>
+      <div class="orders-table-scroll"><table class="sales-report-table ${['product','category','sku','channel','payment'].includes(REPORT_PAGE)?'product-report-table':''}"><thead><tr><th><button data-sales-act="sort" data-key="${REPORT_PAGE==='sku'?'productName':reportIsBreakdown()?'label':'start'}">${reportGroupLabel()} ↕</button></th>${visible.map(([key,label])=>`<th><button data-sales-act="sort" data-key="${key}">${label} ↕</button></th>`).join('')}</tr></thead><tbody>
         ${rows.map(row=>`<tr><td><button class="product-order-link" data-sales-act="drill" data-index="${row.index}">${esc(reportBucketLabel(row))}</button></td>${visible.map(([key])=>`<td><button data-sales-act="drill" data-index="${row.index}" class="sales-cell-link">${salesMoney(row[key],key)}</button></td>`).join('')}</tr>`).join('')||`<tr><td colspan="${visible.length+1}" class="empty-table">ไม่พบรายการ</td></tr>`}
         </tbody><tfoot><tr><th>รวมช่วงที่เลือก</th>${visible.map(([key])=>`<td>${salesMoney(data.totals[key],key)}</td>`).join('')}</tr></tfoot></table></div>
       <div class="orders-pagination"><span>แสดง ${rows.length?((SALES_REPORT.page-1)*20+1):0}-${Math.min(SALES_REPORT.page*20,indexed.length)} จาก ${indexed.length} กลุ่ม</span><div><button class="btn ghost" data-sales-act="page" data-page="${SALES_REPORT.page-1}" ${SALES_REPORT.page===1?'disabled':''}>ก่อนหน้า</button> ${SALES_REPORT.page} / ${pages} <button class="btn ghost" data-sales-act="page" data-page="${SALES_REPORT.page+1}" ${SALES_REPORT.page===pages?'disabled':''}>ถัดไป</button></div></div>
@@ -200,7 +235,8 @@ async function applySalesReportDates(start,end,preset,months){
 }
 async function applySalesReportBranches(branches,type){
   delete SALES_REPORT.filters.store;
-  SALES_REPORT.filters.branches=branches.length===ordersBranches().length?'':JSON.stringify(branches);
+  delete SALES_REPORT.filters.branches;
+  SALES_REPORT.filters.categories=branches.length===ordersBranches().length?'':JSON.stringify(branches);
   SALES_REPORT.filters.orderType=type;
   closeOrdersBranches();await loadSalesReport();$('#ordersBranchButton')?.focus();
 }
@@ -223,10 +259,14 @@ async function reportDrill(index){
 }
 function exportSalesReport(){
   const data=SALES_REPORT_DATA;if(!data)return toast('กรุณาโหลดรายงานก่อน',true);
-  const columns=reportColumns().filter(([key])=>SALES_REPORT.columns.includes(key));
+  const columns=reportVisibleColumns();
+  if(REPORT_PAGE==='time'){
+    const rows=[['วันที่ / เวลา',...columns.map(([,label])=>label)],...data.rows.map(row=>[reportBucketLabel(row),...columns.map(([key])=>row[key]??'—')]),['รวมช่วงที่เลือก',...columns.map(([key])=>data.totals[key]??'—')]];
+    downloadCSV(buildCSV([],rows),'dank-sales-time-'+SALES.dateKey(SALES_REPORT_SCOPE.start)+'.csv');return;
+  }
   const grouped=reportIsBreakdown();
   const rows=[['ยอดขายตามช่วงเวลา'],['เริ่ม',SALES_REPORT_SCOPE.start,'สิ้นสุด (ไม่รวม)',SALES_REPORT_SCOPE.end],['จัดกลุ่มตาม',reportGroupLabel()],['ตัวกรอง',JSON.stringify(SALES_REPORT_SCOPE)],['แหล่งข้อมูล',OV_DEMO?'ข้อมูลตัวอย่าง':'รายการที่บันทึกใน DANK'],[],[...(grouped?[reportGroupLabel()]:['เริ่มกลุ่ม','สิ้นสุดกลุ่ม']),...columns.map(([,label])=>label)],
-    ...data.rows.map(row=>[...(grouped?[row.label]:[row.start,row.end]),...columns.map(([key])=>row[key]??'—')]),['รวม',...(grouped?[]:['']),...columns.map(([key])=>data.totals[key]??'—')]];
+    ...data.rows.map(row=>[...(grouped?[reportBucketLabel(row)]:[row.start,row.end]),...columns.map(([key])=>row[key]??'—')]),['รวม',...(grouped?[]:['']),...columns.map(([key])=>data.totals[key]??'—')]];
   downloadCSV(buildCSV([],rows),'dank-sales-'+SALES_REPORT.group+'-'+SALES.dateKey(SALES_REPORT_SCOPE.start)+'.csv');
 }
 async function openOverviewOrders(product=''){
